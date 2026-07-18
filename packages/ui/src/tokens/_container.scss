@@ -1,0 +1,7 @@
+// Design tokens — Container Widths.
+// Source of truth: UI_UX_GUIDELINES.md §5.2.
+
+$container-content: 1200px; // standard page content, listings, forms
+$container-wide: 1440px; // dashboards, data tables, admin panel
+$container-narrow: 720px; // checkout, legal pages, auth forms
+// Full Bleed = 100vw, applied directly, no token needed.

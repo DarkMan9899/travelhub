@@ -1,0 +1,12 @@
+// Design tokens — Z-Index Scale.
+// Source of truth: COMPONENT_LIBRARY.md Part I. A raw numeric z-index in
+// any component file is a design-system violation — use these names only.
+
+$z-base: 0;
+$z-sticky-header: 100;
+$z-dropdown: 200;
+$z-drawer: 300;
+$z-modal-backdrop: 400;
+$z-modal: 410;
+$z-toast: 500;
+$z-tooltip: 600;

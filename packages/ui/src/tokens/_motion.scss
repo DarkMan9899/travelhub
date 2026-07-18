@@ -1,0 +1,20 @@
+// Design tokens — Animation / Transition.
+// Source of truth: UI_UX_GUIDELINES.md §10.1.
+
+$motion-micro: 150ms; // hover/press feedback
+$motion-micro-slow: 250ms; // toast/tooltip enter-exit
+$motion-transition: 300ms; // panel/drawer transitions
+$motion-transition-slow: 400ms; // page transitions
+
+$ease-out: cubic-bezier(0, 0, 0.2, 1);
+$ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+// Every consumer MUST additionally wrap animation in a
+// prefers-reduced-motion check — see FRONTEND_ARCHITECTURE.md §9.4/§31.
+@mixin reduced-motion-safe {
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

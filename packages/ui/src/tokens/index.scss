@@ -1,0 +1,15 @@
+// @travelhub/ui design tokens — single entry point.
+// Import this one file to get every token; never import individual
+// partials directly from a consuming app, so the token surface stays a
+// single, stable contract.
+
+@forward 'colors';
+@forward 'typography';
+@forward 'spacing';
+@forward 'radius';
+@forward 'elevation';
+@forward 'breakpoints';
+@forward 'container';
+@forward 'z-index';
+@forward 'motion';
+@forward 'sizes';

@@ -1,0 +1,8 @@
+// Design tokens — Corner Radius.
+// Source of truth: UI_UX_GUIDELINES.md §6.1.
+
+$radius-sm: 8px; // tags, badges, small buttons
+$radius-md: 12px; // inputs, buttons, small cards
+$radius-lg: 16px; // cards, dropdowns, modals
+$radius-xl: 24px; // hero panels, feature cards, images
+$radius-full: 999px; // pills, avatars, toggle tracks

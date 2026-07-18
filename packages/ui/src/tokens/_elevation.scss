@@ -1,0 +1,22 @@
+// Design tokens — Elevation (shadow scale).
+// Source of truth: UI_UX_GUIDELINES.md §6.2. Always cool-neutral black,
+// never colored.
+
+@use 'colors';
+
+@mixin elevation-0 {
+  box-shadow: none;
+  border: 1px solid colors.$color-gray-200;
+}
+
+@mixin elevation-1 {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.04);
+}
+
+@mixin elevation-2 {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+@mixin elevation-3 {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+}

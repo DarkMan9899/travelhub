@@ -1,0 +1,65 @@
+# Travel Hub Armenia — local development infrastructure.
+# Per SPRINT_0_IMPLEMENTATION_PLAN.md, Chapter 7.
+# The application services (apps/api, apps/web) run OUTSIDE Docker during
+# local development (fast hot-reload via nodemon/Vite) and connect to these
+# containerized backing services. A production Dockerfile for apps/api is
+# validated in CI (see .github/workflows/ci.yml) but is not part of the
+# everyday local inner loop.
+
+name: travelhub
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: travelhub-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_ROOT_PASSWORD:-root_dev_only}
+      MYSQL_DATABASE: ${DATABASE_NAME:-travelhub_dev}
+      MYSQL_USER: ${DATABASE_USER:-travelhub}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-travelhub_dev_only}
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: travelhub-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: travelhub-mailpit
+    restart: unless-stopped
+    ports:
+      - '1025:1025' # SMTP — local email-capture, never a real send (Ch. 7)
+      - '8025:8025' # Web UI
+
+  adminer:
+    image: adminer:latest
+    container_name: travelhub-adminer
+    restart: unless-stopped
+    ports:
+      - '8081:8080'
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:
+  redis_data:

@@ -1,0 +1,34 @@
+// Design tokens — Typography.
+// Source of truth: UI_UX_GUIDELINES.md §4.
+
+$font-heading: 'Manrope', sans-serif;
+$font-body: 'Inter', sans-serif;
+
+// Size / line-height pairs, in px (converted to rem via the rem() function
+// in functions.scss at point of use — FRONTEND_ARCHITECTURE.md §9.3).
+$font-size-display: 56px;
+$line-height-display: 64px;
+
+$font-size-h1: 40px;
+$line-height-h1: 48px;
+
+$font-size-h2: 32px;
+$line-height-h2: 40px;
+
+$font-size-h3: 24px;
+$line-height-h3: 32px;
+
+$font-size-h4: 20px;
+$line-height-h4: 28px;
+
+$font-size-body-large: 18px;
+$line-height-body-large: 28px;
+
+$font-size-body: 16px;
+$line-height-body: 24px;
+
+$font-size-small: 14px;
+$line-height-small: 20px;
+
+$font-size-micro: 12px;
+$line-height-micro: 16px;

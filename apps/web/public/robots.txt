@@ -1,0 +1,5 @@
+# Sprint 1: no indexable content exists yet. This file exists so the
+# build pipeline and future SEO wiring (FRONTEND_ARCHITECTURE.md §33.4)
+# have a real file to extend rather than a missing one to remember.
+User-agent: *
+Disallow:

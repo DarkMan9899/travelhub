@@ -1,0 +1,26 @@
+// Design tokens — Component sizing scales.
+// Source of truth: COMPONENT_LIBRARY.md Part I (Icon/Button/Input/Modal
+// sizes — the four scales that document introduced as additive,
+// non-contradicting specifications).
+
+// Icon sizes
+$icon-size-sm: 16px;
+$icon-size-md: 20px;
+$icon-size-lg: 24px; // default — matches the platform's 24px icon grid
+$icon-size-xl: 32px;
+
+// Button sizes (height)
+$button-height-sm: 36px;
+$button-height-md: 44px; // minimum touch target
+$button-height-lg: 52px;
+
+// Input sizes (height)
+$input-height-sm: 36px;
+$input-height-md: 48px; // default, per UI_UX_GUIDELINES.md §9.2
+$input-height-lg: 56px;
+
+// Modal sizes (max-width)
+$modal-width-sm: 400px;
+$modal-width-md: 560px; // default
+$modal-width-lg: 720px;
+// modal "full" size = 100vw / 100vh, applied directly on Mobile.

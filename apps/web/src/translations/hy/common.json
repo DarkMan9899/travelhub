@@ -1,0 +1,13 @@
+{
+  "app": {
+    "name": "Travel Hub Armenia"
+  },
+  "nav": {
+    "home": "Գլխավոր",
+    "search": "Փնտրել"
+  },
+  "status": {
+    "loading": "Բեռնվում է...",
+    "comingSoon": "Շուտով"
+  }
+}

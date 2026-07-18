@@ -1,0 +1,20 @@
+// Design tokens — Colors.
+// Source of truth: UI_UX_GUIDELINES.md §3, restated in COMPONENT_LIBRARY.md
+// Part I. Every component MUST consume these variables — a hardcoded hex
+// value anywhere outside this file is a design-system violation.
+
+$color-ink: #0b1a2b;
+$color-navy: #0f2a4a; // Primary
+$color-royal-blue: #1d5fd6; // Accent — the only color used for interactive affordances
+$color-gold: #c9a24b; // Luxury accent — premium/verified badges only, never a button
+
+$color-gray-900: #17202a; // Primary body text
+$color-gray-600: #5b6773; // Secondary text, captions
+$color-gray-400: #9aa6b2; // Disabled text, subtle icons
+$color-gray-200: #e4e8ec; // Borders, dividers
+$color-gray-100: #f3f5f7; // App background, surface
+$color-white: #ffffff;
+
+$color-success: #1e8e5a;
+$color-warning: #c9761f;
+$color-danger: #c13a3a;

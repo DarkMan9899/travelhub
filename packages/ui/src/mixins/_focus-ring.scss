@@ -1,0 +1,13 @@
+// Shared focus-ring mixin — UI_UX_GUIDELINES.md §9.2 / FRONTEND_ARCHITECTURE.md
+// §9.3. Every focusable custom component includes this rather than
+// reimplementing focus styling, guaranteeing consistent, accessible focus
+// treatment platform-wide.
+
+@use '../tokens/colors' as colors;
+
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid colors.$color-royal-blue;
+    outline-offset: 2px;
+  }
+}

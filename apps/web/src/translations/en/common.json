@@ -1,0 +1,13 @@
+{
+  "app": {
+    "name": "Travel Hub Armenia"
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search"
+  },
+  "status": {
+    "loading": "Loading...",
+    "comingSoon": "Coming soon"
+  }
+}

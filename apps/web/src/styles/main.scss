@@ -1,0 +1,57 @@
+// Travel Hub Armenia — global stylesheet entry point.
+// Implements FRONTEND_ARCHITECTURE.md §9: design tokens are consumed from
+// @travelhub/ui exclusively (never redefined here), plus a minimal,
+// intentional global reset. All component-level styling lives in each
+// component's own .module.scss (§9.1) — this file is global/base only.
+
+@use '../../../../packages/ui/src/tokens' as tokens;
+
+// ---------------------------------------------------------------------
+// Minimal base reset — deliberately small. Anything component-specific
+// belongs in that component's own SCSS Module, never here.
+// ---------------------------------------------------------------------
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: tokens.$font-body;
+  font-size: tokens.$font-size-body;
+  line-height: tokens.$line-height-body;
+  color: tokens.$color-gray-900;
+  background: tokens.$color-white;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: tokens.$font-heading;
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+// Respect reduced-motion preference platform-wide
+// (FRONTEND_ARCHITECTURE.md §9.4 / §30).
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,11 @@
+// Shared SCSS functions — FRONTEND_ARCHITECTURE.md §9.3.
+
+@use 'sass:math';
+
+// Converts a px value (as specified in UI_UX_GUIDELINES.md /
+// COMPONENT_LIBRARY.md) to rem, keeping the whole system scalable with
+// the user's root font-size preference (an accessibility requirement —
+// FRONTEND_ARCHITECTURE.md §30).
+@function rem($px, $base: 16px) {
+  @return math.div($px, $base) * 1rem;
+}

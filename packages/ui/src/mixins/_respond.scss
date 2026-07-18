@@ -1,0 +1,27 @@
+// Shared responsive mixin — FRONTEND_ARCHITECTURE.md §9.3.
+// No component authors a raw @media query with a hand-typed pixel value;
+// every breakpoint reference goes through this mixin.
+
+@use '../tokens/breakpoints' as bp;
+
+@mixin respond($breakpoint) {
+  @if $breakpoint == mobile-large {
+    @media (min-width: bp.$breakpoint-mobile-large) {
+      @content;
+    }
+  } @else if $breakpoint == tablet {
+    @media (min-width: bp.$breakpoint-tablet) {
+      @content;
+    }
+  } @else if $breakpoint == laptop {
+    @media (min-width: bp.$breakpoint-laptop) {
+      @content;
+    }
+  } @else if $breakpoint == desktop {
+    @media (min-width: bp.$breakpoint-desktop) {
+      @content;
+    }
+  } @else {
+    @error "Unknown breakpoint `#{$breakpoint}`. Use one of: mobile-large, tablet, laptop, desktop.";
+  }
+}

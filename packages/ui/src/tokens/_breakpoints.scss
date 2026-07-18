@@ -1,0 +1,9 @@
+// Design tokens — Breakpoints.
+// Source of truth: UI_UX_GUIDELINES.md §5.3.
+// Consumed exclusively via the respond() mixin in mixins.scss — no
+// component authors a raw @media query with a hand-typed pixel value.
+
+$breakpoint-mobile-large: 480px;
+$breakpoint-tablet: 768px;
+$breakpoint-laptop: 1024px;
+$breakpoint-desktop: 1440px;

@@ -1,0 +1,1 @@
+npm run test --workspaces --if-present -- --run 2>/dev/null || npm run test --workspaces --if-present

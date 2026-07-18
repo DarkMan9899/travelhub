@@ -1,0 +1,12 @@
+{
+  "name": "@travelhub/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure, framework-free utility functions and constants shared between apps/web and apps/api.",
+  "main": "src/index.js",
+  "files": ["src"],
+  "scripts": {
+    "test": "node --test src/**/*.test.js"
+  },
+  "license": "UNLICENSED"
+}
