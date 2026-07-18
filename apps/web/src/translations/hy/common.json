@@ -9,5 +9,8 @@
   "status": {
     "loading": "Բեռնվում է...",
     "comingSoon": "Շուտով"
+  },
+  "a11y": {
+    "skipToContent": "Անցնել բովանդակությանը"
   }
 }

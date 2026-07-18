@@ -1,0 +1,50 @@
+// Footer — site chrome. Tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+.footer {
+  background-color: tokens.$color-gray-100;
+  border-top: 1px solid tokens.$color-gray-200;
+  padding-block: tokens.$space-12;
+}
+
+.columns {
+  margin-bottom: tokens.$space-8;
+}
+
+.columnTitle {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+}
+
+.linkList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  color: tokens.$color-gray-600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  @include focus.focus-ring;
+
+  &:hover {
+    color: tokens.$color-royal-blue;
+    text-decoration: underline;
+  }
+}
+
+.bottomText {
+  margin: 0;
+  padding-top: tokens.$space-6;
+  border-top: 1px solid tokens.$color-gray-200;
+  font-size: 0.75rem;
+  color: tokens.$color-gray-400;
+}

@@ -1,0 +1,24 @@
+// Divider — thin rule separator. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+
+.divider {
+  border: none;
+  background-color: colors.$color-gray-200;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.divider--horizontal {
+  width: 100%;
+  height: 1px;
+  margin-block: spacing.$space-4;
+}
+
+.divider--vertical {
+  width: 1px;
+  height: auto;
+  align-self: stretch;
+  margin-inline: spacing.$space-4;
+}

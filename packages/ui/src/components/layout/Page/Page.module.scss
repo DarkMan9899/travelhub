@@ -1,0 +1,19 @@
+// Page — top-level per-route wrapper. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.page {
+  padding-block: spacing.$space-8;
+}
+
+.title {
+  margin: 0 0 spacing.$space-6;
+  font-family: typography.$font-heading;
+  font-weight: 700;
+  font-size: fn.rem(32px);
+  line-height: fn.rem(40px);
+  color: colors.$color-gray-900;
+}

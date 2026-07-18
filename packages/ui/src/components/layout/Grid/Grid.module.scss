@@ -1,0 +1,27 @@
+// Grid — UI_UX_GUIDELINES.docx §5.3 responsive grid. Tokens only.
+
+@use '../../../tokens/grid' as grid;
+@use '../../../mixins/gap-scale' as gapScale;
+@use '../../../mixins/respond' as respond;
+
+.grid {
+  display: grid;
+  min-width: 0;
+  @include gapScale.gap-classes('gap');
+}
+
+.grid--auto {
+  grid-template-columns: repeat(grid.$grid-columns-mobile, 1fr);
+
+  @include respond.respond(tablet) {
+    grid-template-columns: repeat(grid.$grid-columns-tablet, 1fr);
+  }
+
+  @include respond.respond(laptop) {
+    grid-template-columns: repeat(grid.$grid-columns-laptop, 1fr);
+  }
+}
+
+.grid--fixed {
+  grid-template-columns: repeat(var(--grid-columns, 1), 1fr);
+}

@@ -1,0 +1,37 @@
+// AppLayout — generic page shell. Tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+
+.appLayout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+// Standard accessible skip-link pattern: visually hidden until it
+// receives keyboard focus, then rendered as a real, visible, focused
+// element pinned above everything else — WCAG 2.4.1 Bypass Blocks.
+.skipLink {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: tokens.$z-tooltip;
+  padding: tokens.$space-3 tokens.$space-4;
+  background-color: tokens.$color-royal-blue;
+  color: tokens.$color-white;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 tokens.$radius-sm 0;
+
+  &:focus {
+    top: 0;
+  }
+}
+
+.main {
+  flex: 1;
+
+  &:focus-visible {
+    outline: none;
+  }
+}

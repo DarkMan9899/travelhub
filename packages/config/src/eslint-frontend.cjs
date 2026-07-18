@@ -29,6 +29,18 @@ module.exports = {
     react: { version: 'detect' },
     'import/resolver': {
       node: { extensions: ['.js', '.jsx'] },
+      // `eslint-import-resolver-node` never learned to read package.json
+      // "exports" maps (confirmed against its own source — it has no
+      // reference to the "exports" field at all), so every subpath
+      // export (e.g. `@travelhub/ui/components/layout`) fails
+      // `import/no-unresolved` even though Vite resolves it correctly at
+      // build/test time. `typescript` here is misleadingly named — it
+      // works for plain JS too and is one of the few resolvers with full
+      // "exports"-map support, so it's added alongside `node`, not in
+      // place of it.
+      typescript: {
+        extensions: ['.js', '.jsx'],
+      },
     },
     'boundaries/elements': [
       { type: 'app', pattern: 'src/app/*' },

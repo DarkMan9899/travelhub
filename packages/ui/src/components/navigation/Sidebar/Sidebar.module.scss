@@ -1,0 +1,157 @@
+// Sidebar — COMPONENT_LIBRARY.md Part II §3 "Sidebar Navigation". Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/motion' as motion;
+@use '../../../tokens/z-index' as z;
+@use '../../../mixins/respond' as respond;
+@use '../../../mixins/focus-ring' as focus;
+@use '../../../functions' as fn;
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  background-color: colors.$color-white;
+  border-inline-end: 1px solid colors.$color-gray-200;
+  transition: width motion.$motion-transition motion.$ease-out;
+  @include motion.reduced-motion-safe;
+
+  // Mobile/Tablet: a horizontally-scrollable bottom bar rather than a
+  // persistent side column (COMPONENT_LIBRARY.md Sidebar Navigation
+  // Responsive Behaviour — see Sidebar.jsx's file header for the
+  // documented simplification against the "or slide-in drawer" half of
+  // that clause).
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: z.$z-sticky-header;
+  flex-direction: row;
+  border-inline-end: none;
+  border-top: 1px solid colors.$color-gray-200;
+  overflow-x: auto;
+
+  @include respond.respond(tablet) {
+    position: static;
+    flex-direction: column;
+    border-top: none;
+    border-inline-end: 1px solid colors.$color-gray-200;
+    overflow-x: visible;
+    width: 260px;
+    height: 100%;
+  }
+}
+
+.sidebar--collapsed {
+  @include respond.respond(tablet) {
+    width: 72px;
+  }
+}
+
+.nav {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.group {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+
+  @include respond.respond(tablet) {
+    flex-direction: column;
+    padding: spacing.$space-4 spacing.$space-2;
+  }
+}
+
+.groupLabel {
+  margin: 0 0 spacing.$space-2;
+  padding-inline: spacing.$space-4;
+  font-size: fn.rem(12px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: colors.$color-gray-400;
+}
+
+.list {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @include respond.respond(tablet) {
+    flex-direction: column;
+    gap: spacing.$space-1;
+  }
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: spacing.$space-1;
+  min-width: 64px;
+  min-height: 44px;
+  padding: spacing.$space-2;
+  border-inline-start: 3px solid transparent;
+  color: colors.$color-gray-600;
+  text-decoration: none;
+  white-space: nowrap;
+  @include focus.focus-ring;
+
+  @include respond.respond(tablet) {
+    flex-direction: row;
+    justify-content: flex-start;
+    min-width: 0;
+    padding: spacing.$space-2 spacing.$space-4;
+    border-radius: radius.$radius-md;
+  }
+
+  &:hover {
+    color: colors.$color-royal-blue;
+    background-color: colors.$color-gray-100;
+  }
+}
+
+.item--active {
+  color: colors.$color-royal-blue;
+  font-weight: 600;
+  border-inline-start-color: colors.$color-royal-blue;
+  background-color: colors.$color-gray-100;
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.label {
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  margin-inline-start: auto;
+}
+
+.toggleIcon {
+  width: 16px;
+  height: 16px;
+  transition: transform motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+}
+
+.toggleIcon--collapsed {
+  transform: rotate(180deg);
+}

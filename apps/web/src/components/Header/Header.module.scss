@@ -1,0 +1,56 @@
+// Header — site chrome. Tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+.header {
+  background-color: tokens.$color-white;
+  border-bottom: 1px solid tokens.$color-gray-200;
+}
+
+.bar {
+  min-height: 64px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: tokens.$color-navy;
+  text-decoration: none;
+  flex-shrink: 0;
+  @include focus.focus-ring;
+}
+
+.nav {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.navList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: tokens.$color-gray-900;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  @include focus.focus-ring;
+
+  &:hover {
+    color: tokens.$color-royal-blue;
+  }
+}
+
+.actions {
+  flex-shrink: 0;
+}

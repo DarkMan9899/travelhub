@@ -1,0 +1,20 @@
+// Section — UI_UX_GUIDELINES.docx §5.4 vertical rhythm. Tokens only.
+
+@use '../../../tokens/spacing' as spacing;
+@use '../../../mixins/respond' as respond;
+
+.section {
+  min-width: 0;
+}
+
+.spacing-default {
+  padding-block: spacing.$space-16;
+
+  @include respond.respond(tablet) {
+    padding-block: spacing.$space-24;
+  }
+}
+
+.spacing-none {
+  padding-block: 0;
+}

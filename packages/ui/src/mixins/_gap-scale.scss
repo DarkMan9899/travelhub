@@ -1,0 +1,28 @@
+// Shared `gap` utility-class generator — used by Stack, Inline, and Grid
+// (all three are gap-based flex/grid layout primitives) so the
+// spacing-scale → class-name mapping is defined once, not duplicated
+// per component (FRONTEND_ARCHITECTURE.md §39 / this sprint's "no
+// duplicated layout logic" requirement).
+
+@use '../tokens/spacing' as spacing;
+
+$gap-scale: (
+  '0': 0,
+  '1': spacing.$space-1,
+  '2': spacing.$space-2,
+  '3': spacing.$space-3,
+  '4': spacing.$space-4,
+  '6': spacing.$space-6,
+  '8': spacing.$space-8,
+  '12': spacing.$space-12,
+  '16': spacing.$space-16,
+  '24': spacing.$space-24,
+);
+
+@mixin gap-classes($prefix: 'gap') {
+  @each $key, $value in $gap-scale {
+    &.#{$prefix}-#{$key} {
+      gap: $value;
+    }
+  }
+}

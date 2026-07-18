@@ -1,0 +1,48 @@
+// Container — COMPONENT_LIBRARY.md Part I "Container Widths". Tokens
+// only. Logical properties (margin-inline/padding-inline) throughout so
+// this flips correctly under `dir="rtl"` with no separate RTL styles
+// (FRONTEND_ARCHITECTURE.md's RTL-readiness rule).
+
+@use '../../../tokens/container' as container;
+@use '../../../tokens/grid' as grid;
+@use '../../../mixins/respond' as respond;
+
+.container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: grid.$grid-margin-mobile;
+  box-sizing: border-box;
+
+  @include respond.respond(mobile-large) {
+    padding-inline: grid.$grid-margin-mobile-large;
+  }
+
+  @include respond.respond(tablet) {
+    padding-inline: grid.$grid-margin-tablet;
+  }
+
+  @include respond.respond(laptop) {
+    padding-inline: grid.$grid-margin-laptop;
+  }
+
+  @include respond.respond(desktop) {
+    padding-inline: 0;
+  }
+}
+
+.container--content {
+  max-width: container.$container-content;
+}
+
+.container--wide {
+  max-width: container.$container-wide;
+}
+
+.container--narrow {
+  max-width: container.$container-narrow;
+}
+
+.container--full {
+  max-width: 100%;
+  padding-inline: 0;
+}

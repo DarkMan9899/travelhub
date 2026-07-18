@@ -1,0 +1,28 @@
+// Design tokens — Responsive Grid.
+// Source of truth: UI_UX_GUIDELINES.docx §5.3 "Responsive Grid" — not
+// duplicated in COMPONENT_LIBRARY.md's Part I token digest, so restated
+// here directly from the source document. Columns/gutters/margins per
+// breakpoint (mobile-first; each tier holds until the next @media
+// override in the consuming component).
+
+$grid-columns-mobile: 4;
+$grid-gutter-mobile: 16px;
+$grid-margin-mobile: 16px;
+
+$grid-columns-mobile-large: 4;
+$grid-gutter-mobile-large: 16px;
+$grid-margin-mobile-large: 24px;
+
+$grid-columns-tablet: 8;
+$grid-gutter-tablet: 24px;
+$grid-margin-tablet: 32px;
+
+$grid-columns-laptop: 12;
+$grid-gutter-laptop: 24px;
+$grid-margin-laptop: 48px;
+
+$grid-columns-desktop: 12;
+$grid-gutter-desktop: 32px;
+// Desktop margin is "auto (centered, max 1200–1440px)" per the source
+// table — i.e. the Container primitive's own centering, not a fixed
+// pixel margin here.

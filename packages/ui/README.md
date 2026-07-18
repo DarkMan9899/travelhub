@@ -52,6 +52,34 @@ Spinner`, `Skeleton`, `EmptyState`, `Alert`, `Modal`, `Drawer` —
   already covers `COMPONENT_LIBRARY.md`'s merged "Select / Dropdown"
   catalog entry — no separate `Dropdown` component exists.
 
+## Sprint 4 status (Layout System)
+
+- **New `layout` group — `Container`, `Section`, `Page`, `Stack`,
+  `Inline`, `Grid`, `Divider` implemented.** Not a `COMPONENT_LIBRARY.md`
+  catalog group (its Part II has eight groups, none named "Layout") —
+  these are zero-domain-knowledge structural primitives, which
+  `FRONTEND_ARCHITECTURE.md` §3.1 defines as exactly what belongs in
+  `ui/`, just not individually cataloged. See that group's own README
+  for the full reasoning and per-component docs.
+- **`navigation` group — `Breadcrumbs`, `Sidebar` implemented**,
+  filling in two previously-scaffolded-only `COMPONENT_LIBRARY.md`
+  entries ("Breadcrumb", "Sidebar Navigation").
+- **New token file `tokens/_grid.scss`** — `UI_UX_GUIDELINES.docx` §5.3's
+  responsive column/gutter/margin table, not present in
+  `COMPONENT_LIBRARY.md`'s token digest.
+- **New shared infra:** `mixins/_gap-scale.scss` and
+  `utils/spacingScale.js` — the gap-based spacing scale used by `Stack`,
+  `Inline`, and `Grid`, defined once rather than duplicated per
+  component.
+- **`Header`, `Footer`, `AppLayout` were built in `apps/web`, not here**
+  — `FRONTEND_ARCHITECTURE.md` §3.1 explicitly assigns page chrome
+  (header/footer/page-shell) to `apps/web/src/components/` and
+  `src/layouts/`, not the framework-agnostic `ui/` design-system
+  package. See `apps/web/src/components/README.md` and
+  `apps/web/src/layouts/README.md`.
+- No pages, business logic, authentication, or API/database work was
+  touched — out of scope by design.
+
 ## Usage
 
 Consuming apps import the token entry point once
@@ -71,4 +99,6 @@ import {
   Drawer,
   Alert,
 } from '@travelhub/ui/components/feedback-overlays';
+import { Container, Page, Stack, Grid } from '@travelhub/ui/components/layout';
+import { Breadcrumbs, Sidebar } from '@travelhub/ui/components/navigation';
 ```

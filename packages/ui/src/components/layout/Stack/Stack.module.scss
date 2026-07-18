@@ -1,0 +1,26 @@
+// Stack — vertical flex layout primitive. Tokens only.
+
+@use '../../../mixins/gap-scale' as gapScale;
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  @include gapScale.gap-classes('gap');
+}
+
+.align-stretch {
+  align-items: stretch;
+}
+
+.align-flex-start {
+  align-items: flex-start;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.align-flex-end {
+  align-items: flex-end;
+}
