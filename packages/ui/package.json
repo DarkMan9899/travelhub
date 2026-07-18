@@ -2,13 +2,55 @@
   "name": "@travelhub/ui",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "description": "Shared design-system component library, implementing COMPONENT_LIBRARY.md and UI_UX_GUIDELINES.md. Consumed by apps/web.",
   "main": "src/index.js",
-  "sideEffects": ["**/*.scss"],
-  "files": ["src"],
+  "exports": {
+    ".": "./src/index.js",
+    "./components/primitives": "./src/components/primitives/index.js",
+    "./components/form-controls": "./src/components/form-controls/index.js"
+  },
+  "sideEffects": [
+    "**/*.scss"
+  ],
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "lint": "eslint . --ext .js,.jsx",
+    "lint:fix": "eslint . --ext .js,.jsx --fix",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "prop-types": "^15.8.1"
+  },
   "peerDependencies": {
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.2",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@travelhub/config": "*",
+    "@vitejs/plugin-react": "^4.3.3",
+    "eslint": "^8.57.1",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-boundaries": "^4.2.2",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.3.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sass-embedded": "^1.80.6",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.4"
   },
   "license": "UNLICENSED"
 }

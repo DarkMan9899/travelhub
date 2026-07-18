@@ -1,0 +1,35 @@
+// FieldWrapper — shared label/helper/error chrome for Input and Textarea.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../functions' as fn;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-1;
+  width: 100%;
+}
+
+.helperText {
+  margin: 0;
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+  color: colors.$color-gray-600;
+}
+
+.errorText {
+  display: flex;
+  align-items: center;
+  gap: spacing.$space-1;
+  margin: 0;
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+  color: colors.$color-danger;
+}
+
+.errorIcon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}

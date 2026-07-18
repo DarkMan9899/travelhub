@@ -1,0 +1,96 @@
+// Radio — COMPONENT_LIBRARY.md Part II §2. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/motion' as motion;
+@use '../../../functions' as fn;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-1;
+}
+
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: spacing.$space-2;
+  cursor: pointer;
+}
+
+.wrapper--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background-color: colors.$color-white;
+  border: 1.5px solid colors.$color-gray-400;
+  border-radius: 50%;
+  transition: border-color motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: colors.$color-royal-blue;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity motion.$motion-micro motion.$ease-out,
+    transform motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+}
+
+.input:checked + .circle {
+  border-color: colors.$color-royal-blue;
+
+  .dot {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.input:focus-visible + .circle {
+  outline: 2px solid colors.$color-royal-blue;
+  outline-offset: 2px;
+}
+
+.input:disabled + .circle {
+  background-color: colors.$color-gray-100;
+  border-color: colors.$color-gray-200;
+}
+
+.label {
+  font-size: fn.rem(16px);
+  line-height: fn.rem(24px);
+  color: colors.$color-gray-900;
+}
+
+.errorText {
+  margin: 0;
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+  color: colors.$color-danger;
+}

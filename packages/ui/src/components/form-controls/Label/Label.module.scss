@@ -1,0 +1,38 @@
+// Label — shared form-field label. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../functions' as fn;
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: spacing.$space-1;
+  font-weight: 600;
+  color: colors.$color-gray-900;
+  cursor: pointer;
+}
+
+.label--sm {
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+}
+
+.label--md {
+  font-size: fn.rem(16px);
+  line-height: fn.rem(24px);
+}
+
+.label--lg {
+  font-size: fn.rem(18px);
+  line-height: fn.rem(28px);
+}
+
+.label--disabled {
+  color: colors.$color-gray-400;
+  cursor: not-allowed;
+}
+
+.required {
+  color: colors.$color-danger;
+}

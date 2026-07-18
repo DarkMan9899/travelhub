@@ -55,9 +55,34 @@ module.exports = {
         rules: [
           { from: 'app', allow: ['app', 'routes', 'providers', 'api'] },
           { from: 'routes', allow: ['routes', 'pages', 'layouts', 'guards'] },
-          { from: 'layouts', allow: ['layouts', 'components', 'ui', 'contexts', 'hooks', 'utils'] },
-          { from: 'pages', allow: ['pages', 'modules', 'layouts', 'hooks', 'utils'] },
-          { from: 'modules', allow: ['modules', 'components', 'ui', 'hooks', 'api', 'services', 'utils', 'contexts'] },
+          {
+            from: 'layouts',
+            allow: [
+              'layouts',
+              'components',
+              'ui',
+              'contexts',
+              'hooks',
+              'utils',
+            ],
+          },
+          {
+            from: 'pages',
+            allow: ['pages', 'modules', 'layouts', 'hooks', 'utils'],
+          },
+          {
+            from: 'modules',
+            allow: [
+              'modules',
+              'components',
+              'ui',
+              'hooks',
+              'api',
+              'services',
+              'utils',
+              'contexts',
+            ],
+          },
           { from: 'components', allow: ['components', 'ui', 'hooks', 'utils'] },
           { from: 'ui', allow: ['ui', 'utils'] },
           { from: 'hooks', allow: ['hooks', 'utils', 'api'] },
@@ -84,7 +109,11 @@ module.exports = {
     // i18next `t()` wrapper is in universal use from Sprint 1 onward.
     'react/jsx-no-literals': [
       'warn',
-      { noStrings: true, ignoreProps: true, allowedStrings: ['·', '—', '&nbsp;'] },
+      {
+        noStrings: true,
+        ignoreProps: true,
+        allowedStrings: ['·', '—', '&nbsp;'],
+      },
     ],
     'import/prefer-default-export': 'off',
     'import/no-extraneous-dependencies': [
@@ -94,9 +123,14 @@ module.exports = {
           '**/*.test.jsx',
           '**/*.test.js',
           '**/*.spec.js',
-          'tests/**',
-          'vite.config.js',
-          'playwright.config.js',
+          // `**/`-prefixed so these still match when ESLint is invoked with a
+          // cwd other than the package root — e.g. lint-staged's pre-commit
+          // hook, which runs from the repo root against absolute file paths
+          // rather than `npm run lint`'s package-relative invocation.
+          '**/tests/**',
+          '**/vite.config.js',
+          '**/vitest.config.js',
+          '**/playwright.config.js',
         ],
       },
     ],

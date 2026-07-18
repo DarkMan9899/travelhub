@@ -1,15 +1,14 @@
 /**
  * @travelhub/ui — public entry point.
  *
- * INTENTIONALLY EMPTY IN SPRINT 1.
- *
- * This package will export every component defined in COMPONENT_LIBRARY.md
- * (Button, Input, Modal, ListingCard, BookingCalendar, ...), one file per
- * component, grouped under src/components/ exactly per that document's
- * eight groups. Sprint 1 scaffolds the folder structure and the design
- * token foundation (src/tokens/) only — no component implementation ships
- * in this sprint, consistent with Sprint 1's "no business logic, no pages"
- * scope. Component implementation is the subject of a dedicated,
- * subsequent sprint.
+ * Sprint 2 scope: the eight UI Foundation components (Button, Input,
+ * Textarea, Label, Checkbox, Radio, Switch, Select) from the primitives
+ * and form-controls groups. The remaining groups scaffolded in Sprint 1
+ * (Navigation, Feedback & Overlays, Data Display, Listing & Media,
+ * Booking & Payment, Dashboard) remain unimplemented — no logic ships
+ * for them here, consistent with COMPONENT_LIBRARY.md Part II's eight
+ * groups being built incrementally, not all at once.
  */
-module.exports = {};
+
+export * from './components/primitives/index.js';
+export * from './components/form-controls/index.js';

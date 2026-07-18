@@ -1,0 +1,78 @@
+// Switch — COMPONENT_LIBRARY.md Part II §2. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/motion' as motion;
+@use '../../../functions' as fn;
+
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: spacing.$space-2;
+  cursor: pointer;
+}
+
+.wrapper--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 24px;
+  padding: 2px;
+  background-color: colors.$color-gray-400;
+  border-radius: radius.$radius-full;
+  transition: background-color motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+}
+
+.thumb {
+  width: 20px;
+  height: 20px;
+  background-color: colors.$color-white;
+  border-radius: radius.$radius-full;
+  transition: transform motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+}
+
+.input:checked + .track {
+  background-color: colors.$color-royal-blue;
+
+  .thumb {
+    transform: translateX(16px);
+  }
+}
+
+.input:focus-visible + .track {
+  outline: 2px solid colors.$color-royal-blue;
+  outline-offset: 2px;
+}
+
+.input:disabled + .track {
+  background-color: colors.$color-gray-200;
+}
+
+.label {
+  font-size: fn.rem(16px);
+  line-height: fn.rem(24px);
+  color: colors.$color-gray-900;
+}

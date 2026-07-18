@@ -1,0 +1,95 @@
+// Input — COMPONENT_LIBRARY.md Part II §2. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/sizes' as sizes;
+@use '../../../tokens/typography' as typography;
+@use '../../../tokens/motion' as motion;
+@use '../../../functions' as fn;
+
+.inputWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: spacing.$space-2;
+  width: 100%;
+  padding: 0 spacing.$space-4;
+  background-color: colors.$color-white;
+  border: 1px solid colors.$color-gray-200;
+  border-radius: radius.$radius-md;
+  transition:
+    border-color motion.$motion-micro motion.$ease-out,
+    box-shadow motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+
+  &:focus-within {
+    border-color: colors.$color-royal-blue;
+    box-shadow: 0 0 0 3px rgba(29, 95, 214, 0.15);
+  }
+}
+
+.inputWrapper--sm {
+  height: sizes.$input-height-sm;
+}
+
+.inputWrapper--md {
+  height: sizes.$input-height-md;
+}
+
+.inputWrapper--lg {
+  height: sizes.$input-height-lg;
+}
+
+.inputWrapper--error {
+  border-color: colors.$color-danger;
+  border-width: 1.5px;
+
+  &:focus-within {
+    border-color: colors.$color-danger;
+    box-shadow: 0 0 0 3px rgba(193, 58, 58, 0.15);
+  }
+}
+
+.inputWrapper--disabled {
+  background-color: colors.$color-gray-100;
+  cursor: not-allowed;
+
+  .input {
+    cursor: not-allowed;
+  }
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: typography.$font-body;
+  font-size: fn.rem(16px);
+  line-height: fn.rem(24px);
+  color: colors.$color-gray-900;
+
+  &::placeholder {
+    color: colors.$color-gray-400;
+  }
+
+  &:disabled {
+    color: colors.$color-gray-400;
+  }
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: sizes.$icon-size-md;
+  height: sizes.$icon-size-md;
+  color: colors.$color-gray-600;
+
+  :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+}

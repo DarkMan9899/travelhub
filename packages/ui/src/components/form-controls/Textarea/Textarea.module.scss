@@ -1,0 +1,76 @@
+// Textarea — COMPONENT_LIBRARY.md Part II §2. Shares Input's visual
+// language (border/focus/error treatment) but textarea has no wrapping
+// span since it does not support icon slots.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/typography' as typography;
+@use '../../../tokens/motion' as motion;
+@use '../../../functions' as fn;
+
+.textarea {
+  width: 100%;
+  padding: spacing.$space-3 spacing.$space-4;
+  background-color: colors.$color-white;
+  border: 1px solid colors.$color-gray-200;
+  border-radius: radius.$radius-md;
+  font-family: typography.$font-body;
+  font-size: fn.rem(16px);
+  line-height: fn.rem(24px);
+  color: colors.$color-gray-900;
+  resize: vertical;
+  transition:
+    border-color motion.$motion-micro motion.$ease-out,
+    box-shadow motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+
+  &::placeholder {
+    color: colors.$color-gray-400;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: colors.$color-royal-blue;
+    box-shadow: 0 0 0 3px rgba(29, 95, 214, 0.15);
+  }
+
+  &:disabled {
+    background-color: colors.$color-gray-100;
+    color: colors.$color-gray-400;
+    cursor: not-allowed;
+  }
+}
+
+.textarea--sm {
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+}
+
+.textarea--lg {
+  font-size: fn.rem(18px);
+  line-height: fn.rem(28px);
+}
+
+.textarea--error {
+  border-color: colors.$color-danger;
+  border-width: 1.5px;
+
+  &:focus {
+    border-color: colors.$color-danger;
+    box-shadow: 0 0 0 3px rgba(193, 58, 58, 0.15);
+  }
+}
+
+// Mobile (§5.3 of COMPONENT_LIBRARY.md's Textarea Responsive Behaviour):
+// autoResize grows the box with content instead of relying on the
+// textarea's own scrollbar competing with the page scroll. A max-height
+// keeps a runaway amount of content from pushing the rest of the form
+// off-screen; the exact cap is an implementation default, not specified
+// by COMPONENT_LIBRARY.md, and should be revisited with design if a
+// different ceiling is wanted.
+.textarea--auto-resize {
+  overflow: hidden;
+  max-height: fn.rem(320px);
+  resize: none;
+}
