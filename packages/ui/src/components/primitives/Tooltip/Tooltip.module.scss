@@ -1,0 +1,61 @@
+// Tooltip — COMPONENT_LIBRARY.md Part II §1. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/z-index' as z;
+@use '../../../tokens/motion' as motion;
+@use '../../../functions' as fn;
+
+.wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: z.$z-tooltip;
+  padding: spacing.$space-1 spacing.$space-3;
+  background-color: colors.$color-ink;
+  color: colors.$color-white;
+  border-radius: radius.$radius-sm;
+  font-size: fn.rem(12px);
+  line-height: fn.rem(16px);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tooltip-in motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+}
+
+.tooltip--top {
+  bottom: calc(100% + #{spacing.$space-2});
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip--bottom {
+  top: calc(100% + #{spacing.$space-2});
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip--left {
+  right: calc(100% + #{spacing.$space-2});
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tooltip--right {
+  left: calc(100% + #{spacing.$space-2});
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

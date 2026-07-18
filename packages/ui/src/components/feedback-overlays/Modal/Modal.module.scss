@@ -1,0 +1,117 @@
+// Modal — COMPONENT_LIBRARY.md Part II §4. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/z-index' as z;
+@use '../../../tokens/motion' as motion;
+@use '../../../mixins/respond' as respond;
+@use '../../../functions' as fn;
+
+// Merges with Overlay's own `.backdrop` (position: fixed; inset: 0;) —
+// this just adds the modal-specific z-index and centers the panel.
+.backdrop {
+  z-index: z.$z-modal-backdrop;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: spacing.$space-4;
+}
+
+.modal {
+  z-index: z.$z-modal;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 90vh;
+  background-color: colors.$color-white;
+  border-radius: radius.$radius-lg;
+  overflow: hidden;
+  animation: modal-in motion.$motion-micro-slow motion.$ease-out;
+  @include motion.reduced-motion-safe;
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.modal--sm {
+  max-width: 400px;
+}
+
+.modal--md {
+  max-width: 560px;
+}
+
+.modal--lg {
+  max-width: 720px;
+}
+
+// `full` is always a full-screen takeover; every OTHER size collapses
+// to full-screen automatically below the Mobile-Large breakpoint too
+// (COMPONENT_LIBRARY.md Modal Responsive Behaviour).
+.modal--full {
+  max-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
+}
+
+.modal--sm,
+.modal--md,
+.modal--lg {
+  @media (max-width: 479px) {
+    max-width: 100vw;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: spacing.$space-4;
+  padding: spacing.$space-6 spacing.$space-6 spacing.$space-4;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: fn.rem(20px);
+  line-height: fn.rem(28px);
+  font-weight: 700;
+  color: colors.$color-gray-900;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 spacing.$space-6 spacing.$space-6;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: spacing.$space-3;
+  padding: spacing.$space-4 spacing.$space-6 spacing.$space-6;
+  flex-shrink: 0;
+
+  @include respond.respond(mobile-large) {
+    padding-top: spacing.$space-4;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

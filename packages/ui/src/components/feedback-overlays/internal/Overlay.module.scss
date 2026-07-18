@@ -1,0 +1,25 @@
+// Overlay — shared backdrop for Modal and Drawer. z-index is deliberately
+// NOT set here — each consumer supplies its own token (z-modal-backdrop
+// vs. z-drawer) via the `backdropClassName`/`className` props, since the
+// two live at different levels of COMPONENT_LIBRARY.md Part I's z-index
+// scale.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/motion' as motion;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(colors.$color-ink, 0.5);
+  animation: overlay-backdrop-in motion.$motion-transition motion.$ease-out;
+  @include motion.reduced-motion-safe;
+}
+
+@keyframes overlay-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,50 @@
+// Badge — COMPONENT_LIBRARY.md Part II §1. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../functions' as fn;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: radius.$radius-sm;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge--sm {
+  padding: 0 spacing.$space-2;
+  font-size: fn.rem(12px);
+  line-height: fn.rem(20px);
+}
+
+.badge--md {
+  padding: spacing.$space-1 spacing.$space-3;
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+}
+
+// --- Variant colors, filled (solid) vs. unfilled (12%-opacity
+// background, UI_UX_GUIDELINES.md §9.5) --------------------------------
+
+@each $name,
+  $color
+    in (
+      success: colors.$color-success,
+      warning: colors.$color-warning,
+      danger: colors.$color-danger,
+      neutral: colors.$color-gray-600,
+      info: colors.$color-royal-blue
+    )
+{
+  .badge--#{$name}.badge--filled {
+    background-color: $color;
+    color: colors.$color-white;
+  }
+
+  .badge--#{$name}.badge--unfilled {
+    background-color: rgba($color, 0.12);
+    color: $color;
+  }
+}

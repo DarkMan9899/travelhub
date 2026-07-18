@@ -28,11 +28,29 @@ only (no server-side usage).
   usage examples and any documented deviations from the spec.
 - No pages, business logic, authentication, or API/database work was
   touched this sprint — out of scope by design (UI Foundation only).
-- The remaining six `COMPONENT_LIBRARY.md` Part II groups (Navigation,
-  Feedback & Overlays, Data Display, Listing & Media, Booking &
-  Payment, Dashboard) and the rest of `primitives`/`form-controls`
-  (`Badge`, `Tag`, `Avatar`, `Tooltip`, `Icon`, `DatePicker`,
-  `TimePicker`, `SearchBar`) remain scaffolded only.
+
+## Sprint 3 status (Feedback, Overlays & remaining primitives)
+
+- **`primitives/Badge`, `Avatar`, `Tooltip` and `feedback-overlays/
+Spinner`, `Skeleton`, `EmptyState`, `Alert`, `Modal`, `Drawer` —
+  implemented**, each with colocated `.module.scss`, unit tests, and
+  full keyboard/ARIA support. `Modal`/`Drawer` share their focus-trap,
+  portal, and dismissal behaviour via a new `hooks/useFocusTrap.js` and
+  a private `feedback-overlays/internal/Overlay` component, rather than
+  duplicating it.
+- `Alert` is not a `COMPONENT_LIBRARY.md` catalog entry — see that
+  component's file header for why it was built anyway.
+- `Button`'s loading-state spinner was refactored this sprint to reuse
+  the new `feedback-overlays/Spinner` (in a `decorative` mode) instead
+  of its own private copy — a cross-sprint DRY cleanup, not new scope.
+- No pages, business logic, authentication, or API/database work was
+  touched — out of scope by design.
+- The remaining `COMPONENT_LIBRARY.md` Part II groups (Navigation, Data
+  Display, Listing & Media, Booking & Payment, Dashboard) and the rest
+  of `primitives`/`form-controls` (`Tag`, `Icon`, `DatePicker`,
+  `TimePicker`, `SearchBar`) remain scaffolded only. `Select` (Sprint 2)
+  already covers `COMPONENT_LIBRARY.md`'s merged "Select / Dropdown"
+  catalog entry — no separate `Dropdown` component exists.
 
 ## Usage
 
@@ -41,6 +59,16 @@ Consuming apps import the token entry point once
 their group:
 
 ```jsx
-import { Button } from '@travelhub/ui/components/primitives';
+import {
+  Button,
+  Badge,
+  Avatar,
+  Tooltip,
+} from '@travelhub/ui/components/primitives';
 import { Input, Select } from '@travelhub/ui/components/form-controls';
+import {
+  Modal,
+  Drawer,
+  Alert,
+} from '@travelhub/ui/components/feedback-overlays';
 ```

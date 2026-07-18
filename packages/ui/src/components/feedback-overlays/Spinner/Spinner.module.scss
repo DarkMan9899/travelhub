@@ -1,0 +1,67 @@
+// Spinner — COMPONENT_LIBRARY.md Part II §4 "Loading Spinner". Tokens only.
+
+@use '../../../tokens/sizes' as sizes;
+
+.spinner {
+  display: inline-flex;
+  color: currentColor;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    animation: spinner-rotate 800ms linear infinite;
+  }
+}
+
+.spinner--sm svg {
+  width: sizes.$icon-size-sm;
+  height: sizes.$icon-size-sm;
+}
+
+.spinner--md svg {
+  width: sizes.$icon-size-lg;
+  height: sizes.$icon-size-lg;
+}
+
+.spinner--lg svg {
+  width: sizes.$icon-size-xl;
+  height: sizes.$icon-size-xl;
+}
+
+.track {
+  stroke: currentColor;
+  opacity: 0.25;
+}
+
+.indicator {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-dasharray: 42;
+  stroke-dashoffset: 32;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Reduced motion: a rotating spinner can trigger vestibular discomfort,
+// so this falls back to a subtle pulsing opacity instead of simply
+// freezing the animation (COMPONENT_LIBRARY.md Loading Spinner
+// Accessibility clause).
+@media (prefers-reduced-motion: reduce) {
+  .spinner svg {
+    animation: spinner-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes spinner-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}

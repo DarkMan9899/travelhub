@@ -1,0 +1,66 @@
+// Alert — see Alert.jsx's file header for why this exists outside
+// COMPONENT_LIBRARY.md's catalog. Tokens only, mirroring Badge/Toast's
+// existing color-mapping approach.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../functions' as fn;
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: spacing.$space-3;
+  padding: spacing.$space-3 spacing.$space-4;
+  border-radius: radius.$radius-md;
+  border-left: 4px solid transparent;
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-weight: 600;
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+  color: colors.$color-gray-900;
+}
+
+.message {
+  font-size: fn.rem(14px);
+  line-height: fn.rem(20px);
+  color: colors.$color-gray-600;
+
+  .title ~ & {
+    margin-top: spacing.$space-1;
+  }
+}
+
+@each $name,
+  $color
+    in (
+      success: colors.$color-success,
+      warning: colors.$color-warning,
+      danger: colors.$color-danger,
+      info: colors.$color-royal-blue
+    )
+{
+  .alert--#{$name} {
+    background-color: rgba($color, 0.08);
+    border-left-color: $color;
+
+    .icon {
+      color: $color;
+    }
+  }
+}

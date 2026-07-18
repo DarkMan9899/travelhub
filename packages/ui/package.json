@@ -8,7 +8,8 @@
   "exports": {
     ".": "./src/index.js",
     "./components/primitives": "./src/components/primitives/index.js",
-    "./components/form-controls": "./src/components/form-controls/index.js"
+    "./components/form-controls": "./src/components/form-controls/index.js",
+    "./components/feedback-overlays": "./src/components/feedback-overlays/index.js"
   },
   "sideEffects": [
     "**/*.scss"

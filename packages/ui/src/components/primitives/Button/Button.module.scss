@@ -158,28 +158,3 @@
   align-items: center;
   justify-content: center;
 }
-
-.spinner {
-  width: sizes.$icon-size-md;
-  height: sizes.$icon-size-md;
-  animation: button-spin 700ms linear infinite;
-  @include motion.reduced-motion-safe;
-}
-
-.spinnerTrack {
-  stroke: currentColor;
-  opacity: 0.25;
-}
-
-.spinnerIndicator {
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-dasharray: 42;
-  stroke-dashoffset: 32;
-}
-
-@keyframes button-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}

@@ -1,0 +1,114 @@
+// Drawer — COMPONENT_LIBRARY.md Part II §4. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/z-index' as z;
+@use '../../../tokens/motion' as motion;
+@use '../../../mixins/respond' as respond;
+@use '../../../functions' as fn;
+
+// Merges with Overlay's own `.backdrop` (position: fixed; inset: 0;).
+.backdrop {
+  z-index: z.$z-drawer;
+  display: flex;
+}
+
+.backdrop--right {
+  justify-content: flex-end;
+}
+
+.backdrop--bottom {
+  align-items: flex-end;
+}
+
+.backdrop--auto {
+  align-items: flex-end;
+
+  @include respond.respond(tablet) {
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+}
+
+.drawer {
+  display: flex;
+  flex-direction: column;
+  background-color: colors.$color-white;
+  @include motion.reduced-motion-safe;
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.drawer--right {
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  animation: drawer-in-right motion.$motion-transition motion.$ease-out;
+}
+
+.drawer--bottom {
+  width: 100%;
+  max-height: 85vh;
+  border-radius: radius.$radius-lg radius.$radius-lg 0 0;
+  animation: drawer-in-bottom motion.$motion-transition motion.$ease-out;
+}
+
+.drawer--auto {
+  width: 100%;
+  max-height: 85vh;
+  border-radius: radius.$radius-lg radius.$radius-lg 0 0;
+  animation: drawer-in-bottom motion.$motion-transition motion.$ease-out;
+
+  @include respond.respond(tablet) {
+    max-width: 420px;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    animation: drawer-in-right motion.$motion-transition motion.$ease-out;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: spacing.$space-4;
+  padding: spacing.$space-6 spacing.$space-6 spacing.$space-4;
+  flex-shrink: 0;
+  border-bottom: 1px solid colors.$color-gray-200;
+}
+
+.title {
+  margin: 0;
+  font-size: fn.rem(20px);
+  line-height: fn.rem(28px);
+  font-weight: 700;
+  color: colors.$color-gray-900;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: spacing.$space-6;
+}
+
+@keyframes drawer-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-in-bottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

@@ -5,47 +5,22 @@
  * <button> semantics throughout (never a styled <div>), so keyboard
  * activation (Space/Enter) and default focus behaviour come for free.
  *
- * Icon/Spinner are referenced as "Dependencies" in the spec but are not
- * yet standalone ui/ primitives (COMPONENT_LIBRARY.md Part II §1's Icon
- * entry and the Feedback group's Loading Spinner are out of this sprint's
- * scope). `iconLeft`/`iconRight` therefore accept any renderable node
- * (e.g. a lucide-react icon element supplied by the consumer) and the
- * loading indicator is a small element private to this component rather
- * than a separately exported Spinner.
+ * Icon is referenced as a "Dependency" in the spec but is not yet a
+ * standalone ui/ primitive (COMPONENT_LIBRARY.md Part II §1's Icon entry
+ * is out of scope so far). `iconLeft`/`iconRight` therefore accept any
+ * renderable node (e.g. a lucide-react icon element supplied by the
+ * consumer). The loading indicator reuses `feedback-overlays/Spinner`
+ * (COMPONENT_LIBRARY.md's "inline within a Button" Spinner variant) in
+ * `decorative` mode, since this button already carries `aria-busy` and
+ * its own accessible name.
  */
 
 import PropTypes from 'prop-types';
+import Spinner from '../../feedback-overlays/Spinner/Spinner.jsx';
 import styles from './Button.module.scss';
 
 const VARIANTS = ['primary', 'secondary', 'ghost', 'destructive'];
 const SIZES = ['sm', 'md', 'lg'];
-
-function LoadingIndicator() {
-  return (
-    <svg
-      className={styles.spinner}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <circle
-        className={styles.spinnerTrack}
-        cx="12"
-        cy="12"
-        r="9"
-        strokeWidth="3"
-      />
-      <circle
-        className={styles.spinnerIndicator}
-        cx="12"
-        cy="12"
-        r="9"
-        strokeWidth="3"
-      />
-    </svg>
-  );
-}
 
 export default function Button({
   children,
@@ -97,7 +72,7 @@ export default function Button({
       </span>
       {loading && (
         <span className={styles.spinnerWrapper}>
-          <LoadingIndicator />
+          <Spinner size="sm" decorative />
         </span>
       )}
     </button>

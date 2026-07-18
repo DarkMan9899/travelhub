@@ -1,0 +1,60 @@
+// EmptyState — COMPONENT_LIBRARY.md Part II §4. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/motion' as motion;
+@use '../../../mixins/respond' as respond;
+@use '../../../functions' as fn;
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: spacing.$space-8 spacing.$space-4;
+  animation: empty-state-in motion.$motion-transition motion.$ease-out;
+  @include motion.reduced-motion-safe;
+}
+
+.illustration {
+  display: none;
+  margin-bottom: spacing.$space-4;
+
+  // Illustration scales down / is omitted below Tablet width to
+  // preserve vertical space (COMPONENT_LIBRARY.md EmptyState Responsive
+  // Behaviour) — shown from Tablet up only.
+  @include respond.respond(tablet) {
+    display: inline-flex;
+    width: 96px;
+    height: 96px;
+  }
+}
+
+.title {
+  margin: 0 0 spacing.$space-2;
+  font-size: fn.rem(20px);
+  line-height: fn.rem(28px);
+  font-weight: 600;
+  color: colors.$color-gray-900;
+}
+
+.description {
+  margin: 0;
+  max-width: 40ch;
+  font-size: fn.rem(16px);
+  line-height: fn.rem(24px);
+  color: colors.$color-gray-600;
+}
+
+.action {
+  margin-top: spacing.$space-6;
+}
+
+@keyframes empty-state-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
