@@ -21,6 +21,8 @@ import createListingsContainer from '../modules/listings/module.container.js';
 import createListingRoutes from '../modules/listings/module.routes.js';
 import createSearchContainer from '../modules/search/module.container.js';
 import createSearchRoutes from '../modules/search/module.routes.js';
+import createAvailabilityContainer from '../modules/availability/module.container.js';
+import createAvailabilityRoutes from '../modules/availability/module.routes.js';
 
 export default function createV1Router({
   guards,
@@ -45,6 +47,12 @@ export default function createV1Router({
     permissionResolver,
   });
   const searchContainer = createSearchContainer({ permissionResolver });
+  // Availability depends on Listings' public Service interface, never its
+  // Repository directly (BACKEND_ARCHITECTURE.md §4's cross-module rule).
+  const availabilityContainer = createAvailabilityContainer({
+    listingService: listingsContainer.listingService,
+    permissionResolver,
+  });
 
   router.use(
     '/auth',
@@ -64,6 +72,13 @@ export default function createV1Router({
   router.use(
     '/search',
     createSearchRoutes({ searchController: searchContainer.searchController }),
+  );
+  router.use(
+    '/availability',
+    createAvailabilityRoutes({
+      availabilityController: availabilityContainer.availabilityController,
+      guards,
+    }),
   );
 
   return router;
