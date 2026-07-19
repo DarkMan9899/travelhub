@@ -17,6 +17,8 @@ import createUsersContainer from '../modules/users/module.container.js';
 import createUserRoutes from '../modules/users/module.routes.js';
 import createAuthContainer from '../modules/auth/module.container.js';
 import createAuthRoutes from '../modules/auth/module.routes.js';
+import createListingsContainer from '../modules/listings/module.container.js';
+import createListingRoutes from '../modules/listings/module.routes.js';
 
 export default function createV1Router({
   guards,
@@ -36,6 +38,10 @@ export default function createV1Router({
     auditLogger,
     permissionResolver,
   });
+  const listingsContainer = createListingsContainer({
+    auditLogger,
+    permissionResolver,
+  });
 
   router.use(
     '/auth',
@@ -44,6 +50,13 @@ export default function createV1Router({
   router.use(
     '/users',
     createUserRoutes({ userController: usersContainer.userController, guards }),
+  );
+  router.use(
+    '/listings',
+    createListingRoutes({
+      listingController: listingsContainer.listingController,
+      guards,
+    }),
   );
 
   return router;
