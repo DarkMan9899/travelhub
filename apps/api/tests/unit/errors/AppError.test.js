@@ -12,6 +12,7 @@ import {
   ValidationError,
   NotFoundError,
   ConflictError,
+  LockedError,
 } from '../../../src/errors/AppError.js';
 
 describe('Exception Hierarchy (BACKEND_ARCHITECTURE.md §24)', () => {
@@ -46,5 +47,12 @@ describe('Exception Hierarchy (BACKEND_ARCHITECTURE.md §24)', () => {
     expect(new ValidationError()).toBeInstanceOf(AppError);
     expect(new NotFoundError()).toBeInstanceOf(AppError);
     expect(new ConflictError()).toBeInstanceOf(AppError);
+  });
+
+  test('LockedError (Sprint 6) maps to 423 ACCOUNT_LOCKED by default', () => {
+    const err = new LockedError();
+    expect(err.httpStatus).toBe(423);
+    expect(err.code).toBe('ACCOUNT_LOCKED');
+    expect(err).toBeInstanceOf(AppError);
   });
 });

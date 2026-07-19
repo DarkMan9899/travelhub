@@ -3,20 +3,48 @@
  *
  * Implements BACKEND_ARCHITECTURE.md §49 (API Versioning): URL path
  * versioning, routing versioned by directory rather than runtime
- * feature-flagging — this file is that directory's entry point. Each
- * module's future `module.routes.js` (Ch.2) is mounted here, e.g.:
- *   import authRoutes from '../modules/auth/module.routes.js';
- *   router.use('/auth', authRoutes);
+ * feature-flagging — this file is that directory's entry point.
  *
- * Sprint 5 scope: the mount point itself. No module routes exist yet —
- * this sprint is database/infrastructure foundation only
- * (`apps/api/src/modules/*` remain scaffold-only until their own sprint).
+ * Sprint 6: the first modules are wired in. Each module owns its own
+ * `module.container.js` (constructs that module's Repositories/Services,
+ * §17) and `module.routes.js` (route wiring only, §2) — this file's only
+ * job is composing them together with the shared guards/services
+ * constructed once in `src/app.js`'s composition root.
  */
 
 import { Router } from 'express';
+import createUsersContainer from '../modules/users/module.container.js';
+import createUserRoutes from '../modules/users/module.routes.js';
+import createAuthContainer from '../modules/auth/module.container.js';
+import createAuthRoutes from '../modules/auth/module.routes.js';
 
-const router = Router();
+export default function createV1Router({
+  guards,
+  auditLogger,
+  permissionResolver,
+}) {
+  const router = Router();
 
-// Module routers are mounted here in future sprints.
+  const usersContainer = createUsersContainer({
+    auditLogger,
+    permissionResolver,
+  });
+  // Auth depends on Users' public Service interface, never its
+  // Repository directly (BACKEND_ARCHITECTURE.md §4's cross-module rule).
+  const authContainer = createAuthContainer({
+    userService: usersContainer.userService,
+    auditLogger,
+    permissionResolver,
+  });
 
-export default router;
+  router.use(
+    '/auth',
+    createAuthRoutes({ authController: authContainer.authController, guards }),
+  );
+  router.use(
+    '/users',
+    createUserRoutes({ userController: usersContainer.userController, guards }),
+  );
+
+  return router;
+}

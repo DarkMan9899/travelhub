@@ -107,6 +107,26 @@ const PERMISSIONS = [
     description: 'Suspend a user account',
   },
   {
+    key: 'user.list',
+    module: 'users',
+    description: 'List/search user accounts',
+  },
+  {
+    key: 'user.view',
+    module: 'users',
+    description: "View another user's account (not just one's own)",
+  },
+  {
+    key: 'user.update',
+    module: 'users',
+    description: "Update another user's account fields (not just one's own)",
+  },
+  {
+    key: 'user.delete',
+    module: 'users',
+    description: "Deactivate another user's account (not just one's own)",
+  },
+  {
     key: 'role.manage',
     module: 'admin',
     description: 'Create/edit roles and their permissions',

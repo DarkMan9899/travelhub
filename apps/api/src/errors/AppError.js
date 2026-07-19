@@ -78,6 +78,15 @@ export class ConflictError extends AppError {
   }
 }
 
+export class LockedError extends AppError {
+  constructor(
+    message = 'This account is temporarily locked. Please try again later.',
+    code = 'ACCOUNT_LOCKED',
+  ) {
+    super(message, { code, httpStatus: 423 });
+  }
+}
+
 export class RateLimitError extends AppError {
   constructor(message = 'Too many requests. Please try again shortly.') {
     super(message, { code: 'RATE_LIMITED', httpStatus: 429 });

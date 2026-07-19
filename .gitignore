@@ -27,6 +27,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+.claude/
 
 # Test / coverage output
 coverage/

@@ -65,9 +65,24 @@ export function verifyRefreshToken(token) {
   }
 }
 
+/**
+ * Decodes a token's payload WITHOUT verifying its signature — used only
+ * to read a claim (e.g. `exp`) off a token this process just signed
+ * itself, never to trust an externally-supplied token's contents.
+ * Callers that need to trust the payload must use `verifyAccessToken`/
+ * `verifyRefreshToken` instead (Sprint 6: `AuthenticationService` uses
+ * this right after `signRefreshToken` to persist the same `exp` the
+ * token itself carries, instead of re-deriving it from
+ * `config.jwt.refreshExpiry`'s duration string a second time).
+ */
+export function decodeToken(token) {
+  return jwt.decode(token);
+}
+
 export default {
   signAccessToken,
   signRefreshToken,
   verifyAccessToken,
   verifyRefreshToken,
+  decodeToken,
 };
