@@ -19,6 +19,8 @@ import createAuthContainer from '../modules/auth/module.container.js';
 import createAuthRoutes from '../modules/auth/module.routes.js';
 import createListingsContainer from '../modules/listings/module.container.js';
 import createListingRoutes from '../modules/listings/module.routes.js';
+import createSearchContainer from '../modules/search/module.container.js';
+import createSearchRoutes from '../modules/search/module.routes.js';
 
 export default function createV1Router({
   guards,
@@ -42,6 +44,7 @@ export default function createV1Router({
     auditLogger,
     permissionResolver,
   });
+  const searchContainer = createSearchContainer({ permissionResolver });
 
   router.use(
     '/auth',
@@ -57,6 +60,10 @@ export default function createV1Router({
       listingController: listingsContainer.listingController,
       guards,
     }),
+  );
+  router.use(
+    '/search',
+    createSearchRoutes({ searchController: searchContainer.searchController }),
   );
 
   return router;
