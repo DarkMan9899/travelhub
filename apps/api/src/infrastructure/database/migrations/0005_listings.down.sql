@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS listing_slug_history;
+DROP TABLE IF EXISTS listing_tag;
+DROP TABLE IF EXISTS listing_amenity_listing;
+DROP TABLE IF EXISTS listing_category_listing;
+DROP TABLE IF EXISTS listing_locations;
+DROP TABLE IF EXISTS listing_translations;
+DROP TABLE IF EXISTS listings;
+DROP TABLE IF EXISTS listing_statuses;
+DROP TABLE IF EXISTS listing_types;

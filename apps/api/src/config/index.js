@@ -27,6 +27,11 @@ const env = cleanEnv(process.env, {
   DATABASE_NAME: str({ default: 'travelhub' }),
   DATABASE_USER: str({ default: 'travelhub' }),
   DATABASE_PASSWORD: str({ default: '' }),
+  // Isolated database for the `integration` Jest project (Sprint 5 §"test
+  // database isolation") — never the same database as DATABASE_NAME, so
+  // integration tests can freely migrate/seed/truncate without touching
+  // development data.
+  DATABASE_NAME_TEST: str({ default: 'travelhub_test' }),
 
   // Redis (BACKEND_ARCHITECTURE.md §38)
   REDIS_URL: url({ default: 'redis://localhost:6379' }),
@@ -70,7 +75,7 @@ const config = Object.freeze({
   database: Object.freeze({
     host: env.DATABASE_HOST,
     port: env.DATABASE_PORT,
-    name: env.DATABASE_NAME,
+    name: env.NODE_ENV === 'test' ? env.DATABASE_NAME_TEST : env.DATABASE_NAME,
     user: env.DATABASE_USER,
     password: env.DATABASE_PASSWORD,
   }),

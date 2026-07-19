@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS city_translations;
+DROP TABLE IF EXISTS cities;
+DROP TABLE IF EXISTS region_translations;
+DROP TABLE IF EXISTS regions;
+DROP TABLE IF EXISTS country_translations;
+DROP TABLE IF EXISTS countries;
+DROP TABLE IF EXISTS exchange_rates;
+DROP TABLE IF EXISTS currencies;
+DROP TABLE IF EXISTS languages;

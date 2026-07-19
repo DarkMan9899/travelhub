@@ -1,0 +1,146 @@
+/**
+ * Seeds every fixed-vocabulary lookup table created in migrations
+ * 0002-0011. These are not optional/example data — the schema has no
+ * native ENUMs (DATABASE_ARCHITECTURE.md §1), so the platform cannot
+ * function until these rows exist (e.g. nothing can be booked until
+ * `booking_statuses` has a "DRAFT" row to reference).
+ */
+
+import { upsertByCode } from './helpers.js';
+
+export default async function seedLookups(connection) {
+  await upsertByCode(connection, 'user_statuses', [
+    { code: 'ACTIVE', name: 'Active' },
+    { code: 'SUSPENDED', name: 'Suspended' },
+    { code: 'BANNED', name: 'Banned' },
+    { code: 'PENDING_DELETION', name: 'Pending Deletion' },
+  ]);
+
+  await upsertByCode(connection, 'moderation_statuses', [
+    { code: 'PENDING', name: 'Pending' },
+    { code: 'APPROVED', name: 'Approved' },
+    { code: 'REJECTED', name: 'Rejected' },
+    { code: 'FLAGGED', name: 'Flagged' },
+  ]);
+
+  await upsertByCode(connection, 'partner_employee_roles', [
+    { code: 'OWNER', name: 'Owner' },
+    { code: 'MANAGER', name: 'Manager' },
+    { code: 'EDITOR', name: 'Editor' },
+    { code: 'BOOKING_MANAGER', name: 'Booking Manager' },
+    { code: 'ANALYTICS_VIEWER', name: 'Analytics Viewer' },
+  ]);
+
+  await upsertByCode(connection, 'listing_statuses', [
+    { code: 'DRAFT', name: 'Draft' },
+    { code: 'PENDING_REVIEW', name: 'Pending Review' },
+    { code: 'PUBLISHED', name: 'Published' },
+    { code: 'UNPUBLISHED', name: 'Unpublished' },
+    { code: 'ARCHIVED', name: 'Archived' },
+  ]);
+
+  await upsertByCode(connection, 'listing_types', [
+    { code: 'HOTEL', name: 'Hotel' },
+    { code: 'PROPERTY', name: 'Property' },
+    { code: 'RESTAURANT', name: 'Restaurant' },
+    { code: 'TOUR', name: 'Tour' },
+    { code: 'CAR_RENTAL', name: 'Car Rental' },
+    { code: 'ATTRACTION', name: 'Attraction' },
+  ]);
+
+  await upsertByCode(connection, 'media_types', [
+    { code: 'IMAGE', name: 'Image' },
+    { code: 'VIDEO', name: 'Video' },
+    { code: 'DOCUMENT', name: 'Document' },
+  ]);
+
+  await upsertByCode(connection, 'media_upload_statuses', [
+    { code: 'PENDING', name: 'Pending' },
+    { code: 'UPLOADING', name: 'Uploading' },
+    { code: 'COMPLETED', name: 'Completed' },
+    { code: 'FAILED', name: 'Failed' },
+  ]);
+
+  await upsertByCode(connection, 'bookable_unit_types', [
+    { code: 'HOTEL_ROOM', name: 'Hotel Room' },
+    { code: 'PROPERTY_UNIT', name: 'Property Unit' },
+    { code: 'RESTAURANT_TABLE', name: 'Restaurant Table' },
+    { code: 'TOUR_DEPARTURE', name: 'Tour Departure' },
+    { code: 'VEHICLE', name: 'Vehicle' },
+  ]);
+
+  await upsertByCode(connection, 'availability_statuses', [
+    { code: 'AVAILABLE', name: 'Available' },
+    { code: 'BOOKED', name: 'Booked' },
+    { code: 'BLOCKED', name: 'Blocked' },
+    { code: 'HELD', name: 'Held' },
+  ]);
+
+  await upsertByCode(connection, 'booking_types', [
+    { code: 'HOTEL_ROOM_BOOKING', name: 'Hotel Room Booking' },
+    { code: 'PROPERTY_BOOKING', name: 'Property Booking' },
+    { code: 'RESTAURANT_RESERVATION', name: 'Restaurant Reservation' },
+    { code: 'TOUR_BOOKING', name: 'Tour Booking' },
+    { code: 'CAR_RENTAL_BOOKING', name: 'Car Rental Booking' },
+  ]);
+
+  // MVP, no-payment-gateway vocabulary (Sprint 5 §9) — see migration
+  // 0008's header comment for the amendment rationale.
+  await upsertByCode(connection, 'booking_statuses', [
+    { code: 'DRAFT', name: 'Draft' },
+    { code: 'PENDING_VENDOR', name: 'Pending Vendor' },
+    { code: 'CONFIRMED', name: 'Confirmed' },
+    { code: 'REJECTED', name: 'Rejected' },
+    { code: 'CANCELLED_BY_CUSTOMER', name: 'Cancelled by Customer' },
+    { code: 'CANCELLED_BY_VENDOR', name: 'Cancelled by Vendor' },
+    { code: 'COMPLETED', name: 'Completed' },
+    { code: 'NO_SHOW', name: 'No Show' },
+    { code: 'EXPIRED', name: 'Expired' },
+  ]);
+
+  await upsertByCode(connection, 'payment_statuses', [
+    { code: 'NOT_REQUIRED_ON_PLATFORM', name: 'Not Required on Platform' },
+    { code: 'PAY_AT_PROPERTY', name: 'Pay at Property' },
+    { code: 'PAID_OFFLINE', name: 'Paid Offline' },
+    { code: 'REFUNDED_OFFLINE', name: 'Refunded Offline' },
+  ]);
+
+  await upsertByCode(
+    connection,
+    'ad_placement_types',
+    [
+      { code: 'HOMEPAGE_HERO', name: 'Homepage Hero', max_concurrent_slots: 3 },
+      {
+        code: 'HOMEPAGE_SECTION',
+        name: 'Homepage Section',
+        max_concurrent_slots: 6,
+      },
+      { code: 'CATEGORY_TOP', name: 'Category Top', max_concurrent_slots: 3 },
+      { code: 'CITY_TOP', name: 'City Top', max_concurrent_slots: 3 },
+      {
+        code: 'SEARCH_SPONSORED',
+        name: 'Search Sponsored',
+        max_concurrent_slots: 5,
+      },
+      {
+        code: 'LISTING_BADGE',
+        name: 'Listing Badge',
+        max_concurrent_slots: null,
+      },
+      { code: 'BANNER', name: 'Banner', max_concurrent_slots: 4 },
+    ],
+    { extraColumns: ['max_concurrent_slots'] },
+  );
+
+  await upsertByCode(connection, 'advertisement_statuses', [
+    { code: 'REQUEST_SUBMITTED', name: 'Request Submitted' },
+    { code: 'AWAITING_OFFLINE_PAYMENT', name: 'Awaiting Offline Payment' },
+    { code: 'PAID_MANUAL', name: 'Manually Marked Paid' },
+    { code: 'APPROVED', name: 'Approved' },
+    { code: 'SCHEDULED', name: 'Scheduled' },
+    { code: 'ACTIVE', name: 'Active' },
+    { code: 'EXPIRED', name: 'Expired' },
+    { code: 'REJECTED', name: 'Rejected' },
+    { code: 'CANCELLED', name: 'Cancelled' },
+  ]);
+}

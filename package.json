@@ -22,7 +22,12 @@
     "dev:web": "npm run dev --workspace apps/web",
     "dev:api": "npm run dev --workspace apps/api",
     "docker:up": "docker compose -f docker/docker-compose.yml up -d",
-    "docker:down": "docker compose -f docker/docker-compose.yml down"
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "db:migrate": "npm run db:migrate --workspace apps/api",
+    "db:migrate:down": "npm run db:migrate:down --workspace apps/api",
+    "db:migrate:status": "npm run db:migrate:status --workspace apps/api",
+    "db:seed": "npm run db:seed --workspace apps/api",
+    "db:reset": "npm run db:reset --workspace apps/api"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.3.0",

@@ -4,6 +4,16 @@
   "private": true,
   "description": "Shared JSDoc type definitions mirroring API_SPECIFICATION.md / OPENAPI_SCHEMA_REFERENCE.md resource shapes, consumed by both apps/web and apps/api.",
   "main": "src/index.js",
-  "files": ["src"],
-  "license": "UNLICENSED"
+  "files": [
+    "src"
+  ],
+  "license": "UNLICENSED",
+  "scripts": {
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix"
+  },
+  "devDependencies": {
+    "@travelhub/config": "*",
+    "eslint": "^8.57.1"
+  }
 }

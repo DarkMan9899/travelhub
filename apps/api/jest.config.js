@@ -33,6 +33,10 @@ export default {
       testEnvironment: 'node',
       testMatch: ['<rootDir>/tests/integration/**/*.test.js'],
       transform: {},
+      // Sprint 5: ensures the isolated DATABASE_NAME_TEST database exists
+      // on the MySQL server before any integration test connects to it —
+      // see tests/integration/globalSetup.js.
+      globalSetup: '<rootDir>/tests/integration/globalSetup.js',
     },
     {
       displayName: 'contract',
