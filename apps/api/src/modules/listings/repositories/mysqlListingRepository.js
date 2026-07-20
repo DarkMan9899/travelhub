@@ -182,6 +182,14 @@ export class MySqlListingRepository extends ListingRepositoryPort {
     }
   }
 
+  /**
+   * A `PATCH /listings/:id` with a partial `location` (e.g. only
+   * `{latitude, longitude}`, set once coordinates are known separately
+   * from the city) must not erase fields it didn't mention — `COALESCE`
+   * keeps each column's existing value whenever the caller didn't supply
+   * a new one, on both the first insert (existing value doesn't exist
+   * yet, so it's simply the provided default) and every later update.
+   */
   async upsertLocation(
     {
       listingId,
@@ -197,8 +205,10 @@ export class MySqlListingRepository extends ListingRepositoryPort {
         `INSERT INTO listing_locations (listing_id, address_id, city_id, latitude, longitude)
          VALUES (?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
-           address_id = VALUES(address_id), city_id = VALUES(city_id),
-           latitude = VALUES(latitude), longitude = VALUES(longitude)`,
+           address_id = COALESCE(VALUES(address_id), address_id),
+           city_id = COALESCE(VALUES(city_id), city_id),
+           latitude = COALESCE(VALUES(latitude), latitude),
+           longitude = COALESCE(VALUES(longitude), longitude)`,
         [listingId, addressId, cityId, latitude, longitude],
       );
     } catch (err) {

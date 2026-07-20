@@ -29,6 +29,8 @@ export function toCalendarEntryResponse(entry) {
     date: entry.date,
     status: entry.statusCode,
     quantity_available: entry.quantityAvailable,
+    price_override_amount: entry.priceOverrideAmount,
+    price_override_currency: entry.priceOverrideCurrencyCode,
     created_at: entry.createdAt,
     updated_at: entry.updatedAt,
   };

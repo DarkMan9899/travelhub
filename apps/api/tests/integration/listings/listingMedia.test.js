@@ -136,7 +136,12 @@ describe('GET /listings/:id/media — list', () => {
       .set('Content-Type', 'image/png')
       .send(ONE_PX_PNG);
 
-    const res = await request(app).get(`/api/v1/listings/${listingId}/media`);
+    // The listing is a DRAFT (never published in this file) — an
+    // anonymous request 404s via ListingService.getListing's masking, so
+    // this owner-media-management check must authenticate as the owner.
+    const res = await request(app)
+      .get(`/api/v1/listings/${listingId}/media`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
   });
@@ -178,9 +183,9 @@ describe('DELETE /listings/:id/media/:mediaId — remove', () => {
       .set('Authorization', `Bearer ${vendor.accessToken}`);
     expect(deleteRes.status).toBe(200);
 
-    const listRes = await request(app).get(
-      `/api/v1/listings/${listingId}/media`,
-    );
+    const listRes = await request(app)
+      .get(`/api/v1/listings/${listingId}/media`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
     expect(listRes.body.data).toHaveLength(0);
   });
 });

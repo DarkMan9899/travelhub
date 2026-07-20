@@ -103,8 +103,12 @@ export class BlackoutService {
   }
 
   /** Blackout ranges overlapping `[from, to]`, for calendar veto computation. */
-  async getActiveRangesForListing(listingId, { from, to }) {
-    return this.#blackoutRepository.listForListing(listingId, { from, to });
+  async getActiveRangesForListing(listingId, { from, to }, connection) {
+    return this.#blackoutRepository.listForListing(
+      listingId,
+      { from, to },
+      connection,
+    );
   }
 }
 

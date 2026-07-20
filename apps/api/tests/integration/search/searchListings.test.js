@@ -268,8 +268,14 @@ describe('GET /search/listings — visibility', () => {
 
 describe('GET /search/listings — sorting and cursor pagination', () => {
   test('alphabetical sort paginates correctly across two pages via the composite cursor', async () => {
+    // Scoped with `keyword` (matching this file's own distinctive fixture
+    // description text, "a lovely place to stay") so this assertion is
+    // unaffected by other listings the full test suite's other files
+    // create in the same shared database — an unfiltered query here
+    // would otherwise see every published listing across the whole run,
+    // not just these three.
     const page1 = await request(app).get(
-      '/api/v1/search/listings?sort=alphabetical&limit=2',
+      '/api/v1/search/listings?sort=alphabetical&limit=2&keyword=lovely',
     );
     expect(page1.status).toBe(200);
     expect(page1.body.data).toHaveLength(2);
@@ -280,7 +286,7 @@ describe('GET /search/listings — sorting and cursor pagination', () => {
     ]);
 
     const page2 = await request(app).get(
-      `/api/v1/search/listings?sort=alphabetical&limit=2&cursor=${page1.body.meta.next_cursor}`,
+      `/api/v1/search/listings?sort=alphabetical&limit=2&keyword=lovely&cursor=${page1.body.meta.next_cursor}`,
     );
     expect(page2.status).toBe(200);
     expect(page2.body.data.map((r) => r.id)).toEqual([listingGyumri]);

@@ -45,6 +45,11 @@ const env = cleanEnv(process.env, {
   // Booking Engine constants (BOOKING_ENGINE_ARCHITECTURE.md §5.2) — tunable
   // without a deploy, per BACKEND_ARCHITECTURE.md §18's system_settings note.
   RESERVATION_HOLD_DURATION_MINUTES: num({ default: 15 }),
+  // Sprint 10: how long a booking may sit in PENDING_VENDOR before the
+  // scheduled sweep auto-expires it — a separate, much longer window than
+  // the reservation-hold TTL above (that one guards checkout; this one
+  // guards a vendor's response time on an already-created booking).
+  BOOKING_PENDING_VENDOR_SLA_HOURS: num({ default: 48 }),
 
   // Rate limiting (BACKEND_ARCHITECTURE.md §48 / API_SPECIFICATION.md §17)
   RATE_LIMIT_AUTHENTICATED_PER_MINUTE: num({ default: 300 }),
@@ -93,6 +98,7 @@ const config = Object.freeze({
 
   booking: Object.freeze({
     holdDurationMinutes: env.RESERVATION_HOLD_DURATION_MINUTES,
+    pendingVendorSlaHours: env.BOOKING_PENDING_VENDOR_SLA_HOURS,
   }),
 
   rateLimit: Object.freeze({

@@ -43,6 +43,11 @@ async function login(email, password) {
   };
 }
 
+const ONE_PX_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64',
+);
+
 async function createListing(title) {
   const res = await request(app)
     .post('/api/v1/listings')
@@ -53,6 +58,29 @@ async function createListing(title) {
       translations: [{ languageId, title }],
     });
   return res.body.data.id;
+}
+
+/**
+ * Non-owner requests below must actually reach `ListingService
+ * .getListing`'s owner-vs-permission branch (a genuine 403) rather than
+ * its earlier "not published and not the owner" 404-masking branch — so
+ * every listing these tests act on must be published first, the same
+ * `location` + image + `/publish` sequence `listings/listingCrud.test.js`
+ * already establishes as the minimum publish-readiness bar.
+ */
+async function publishListing(id) {
+  await request(app)
+    .patch(`/api/v1/listings/${id}`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ location: { latitude: 40.1772, longitude: 44.5035 } });
+  await request(app)
+    .post(`/api/v1/listings/${id}/media`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .set('Content-Type', 'image/png')
+    .send(ONE_PX_PNG);
+  await request(app)
+    .post(`/api/v1/listings/${id}/publish`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`);
 }
 
 async function registerUnit(targetListingId, bookableUnitType = 'HOTEL_ROOM') {
@@ -94,6 +122,7 @@ beforeAll(async () => {
   listingId = await createListing(
     `Availability CRUD Test Listing ${Date.now()}-${Math.floor(Math.random() * 100000)}`,
   );
+  await publishListing(listingId);
   unitId = await registerUnit(listingId);
 }, 60_000);
 

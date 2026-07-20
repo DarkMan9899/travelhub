@@ -95,7 +95,17 @@ app.use((req, res, next) => {
 
 // 6. Routes — health checks (unversioned) + the /api/v1 mount point.
 app.use(healthRoutes);
-app.use('/api/v1', createV1Router({ guards, auditLogger, permissionResolver }));
+const v1 = createV1Router({ guards, auditLogger, permissionResolver });
+app.use('/api/v1', v1.router);
+
+// Sprint 10: exposes the Service instances `server.js` needs to register
+// the hold-expiry/pending-vendor-SLA scheduled jobs. Not used by app.js
+// itself, and never imported by tests (which import `app` only) — no
+// BullMQ worker starts as a side effect of importing this module.
+export const services = {
+  availabilityService: v1.availabilityService,
+  bookingService: v1.bookingService,
+};
 
 // 7. 404 — no matching route
 app.use((req, res, next) => {

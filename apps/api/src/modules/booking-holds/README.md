@@ -8,9 +8,13 @@ Rules, Error Strategy, and Validation Strategy.
 **Endpoint contract:** see `API_SPECIFICATION.md` for this module's exact
 request/response shapes.
 
-**Sprint 1 status:** folder scaffold only. No controllers, services,
-repositories, or business logic exist yet — this module is implemented in
-a future sprint per the project roadmap.
+**Sprint 10 status:** implemented, scoped down from this catalog entry's
+aspirational spec — no Pricing/Payments/`DistributedLockManager`
+dependency (none of those exist yet). Owns no table of its own;
+`reservation_holds` stays owned by the `availability` module (this
+module's only Repository-level dependency, injected as
+`AvailabilityService`). See `services/bookingHoldsService.js` and the
+approved Sprint 10 architecture proposal for the full design.
 
 ## Folder contents (per BACKEND_ARCHITECTURE.md §2)
 

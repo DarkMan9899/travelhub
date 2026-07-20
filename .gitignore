@@ -36,3 +36,6 @@ test-results/
 
 # Docker volumes (bind-mounted local data, never versioned)
 docker/mysql/data/
+
+# Local file storage provider's dev/test-time uploads (never versioned)
+apps/api/uploads/

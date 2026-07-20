@@ -20,7 +20,13 @@
 
 export const CALENDAR_DAY_STATUSES = Object.freeze(['AVAILABLE', 'BLOCKED']);
 
-function isVetoedByBlackout(dateStr, blockedRanges) {
+/**
+ * Whether `dateStr` falls inside any of `blockedRanges` — shared by
+ * `expandCalendarDays` (below) and, since Sprint 10, by
+ * `AvailabilityService.reserveCapacity`'s pre-hold blackout veto check,
+ * so both call sites agree on exactly one definition of "blocked."
+ */
+export function isVetoedByBlackout(dateStr, blockedRanges) {
   return blockedRanges.some(
     (range) => range.dateFrom <= dateStr && range.dateTo >= dateStr,
   );
@@ -76,4 +82,9 @@ export function expandCalendarDays(
   }));
 }
 
-export default { CALENDAR_DAY_STATUSES, enumerateDates, expandCalendarDays };
+export default {
+  CALENDAR_DAY_STATUSES,
+  enumerateDates,
+  expandCalendarDays,
+  isVetoedByBlackout,
+};

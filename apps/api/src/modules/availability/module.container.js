@@ -17,6 +17,7 @@
 import { MySqlBookableUnitRepository } from './repositories/mysqlBookableUnitRepository.js';
 import { MySqlAvailabilityCalendarRepository } from './repositories/mysqlAvailabilityCalendarRepository.js';
 import { MySqlBlackoutRepository } from './repositories/mysqlBlackoutRepository.js';
+import { MySqlReservationHoldRepository } from './repositories/mysqlReservationHoldRepository.js';
 import { BookableUnitService } from './services/bookableUnitService.js';
 import { BlackoutService } from './services/blackoutService.js';
 import { AvailabilityService } from './services/availabilityService.js';
@@ -30,6 +31,9 @@ export default function createAvailabilityContainer({
   const availabilityCalendarRepository =
     new MySqlAvailabilityCalendarRepository();
   const blackoutRepository = new MySqlBlackoutRepository();
+  // Sprint 10: reservation_holds — Availability keeps owning this table
+  // too, same as its other three (see availabilityService.js's header).
+  const reservationHoldRepository = new MySqlReservationHoldRepository();
 
   const bookableUnitService = new BookableUnitService({
     bookableUnitRepository,
@@ -37,6 +41,7 @@ export default function createAvailabilityContainer({
   const blackoutService = new BlackoutService({ blackoutRepository });
   const availabilityService = new AvailabilityService({
     availabilityCalendarRepository,
+    reservationHoldRepository,
     bookableUnitService,
     blackoutService,
     listingService,
@@ -49,6 +54,7 @@ export default function createAvailabilityContainer({
     bookableUnitRepository,
     availabilityCalendarRepository,
     blackoutRepository,
+    reservationHoldRepository,
     bookableUnitService,
     blackoutService,
     availabilityService,

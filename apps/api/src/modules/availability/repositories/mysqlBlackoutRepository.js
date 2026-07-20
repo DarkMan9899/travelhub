@@ -25,11 +25,7 @@ import {
   decodeCursor,
   buildPageMeta,
 } from '../../../infrastructure/database/pagination.js';
-
-function toDateString(value) {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-  return value;
-}
+import { toDateString } from '../../../infrastructure/database/dateFormat.js';
 
 function toDomain(row) {
   return {

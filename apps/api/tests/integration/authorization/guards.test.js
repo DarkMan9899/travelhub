@@ -31,6 +31,7 @@ import { createRequireHostGuard } from '../../../src/guards/requireHost.js';
 
 let pool;
 let permissionResolver;
+let requirePermission;
 
 beforeAll(async () => {
   await up();
@@ -39,6 +40,11 @@ beforeAll(async () => {
   permissionResolver = new PermissionResolver(
     new MySqlPermissionRepository(pool),
   );
+  // Must be constructed here, after `permissionResolver` is assigned —
+  // `describe` block bodies run synchronously during Jest's collection
+  // phase, before any `beforeAll` hook runs, so building the guard at
+  // `describe`-body scope would permanently close over `undefined`.
+  requirePermission = createRequirePermissionGuard(permissionResolver);
 }, 60_000);
 
 afterAll(async () => {
@@ -51,8 +57,6 @@ function mockRes() {
 }
 
 describe('requirePermission (real DB-backed PermissionResolver)', () => {
-  const requirePermission = createRequirePermissionGuard(permissionResolver);
-
   test('SUPER_ADMIN passes a check for any seeded permission', async () => {
     const req = { principal: { userId: 1, roles: ['SUPER_ADMIN'] } };
     const next = (err) => {

@@ -8,9 +8,14 @@ Rules, Error Strategy, and Validation Strategy.
 **Endpoint contract:** see `API_SPECIFICATION.md` for this module's exact
 request/response shapes.
 
-**Sprint 1 status:** folder scaffold only. No controllers, services,
-repositories, or business logic exist yet — this module is implemented in
-a future sprint per the project roadmap.
+**Sprint 10 status:** implemented, scoped down from this catalog entry's
+aspirational spec — no Payments/Refunds/Wallet dependency (none of those
+modules or tables exist yet); stays inside migration 0008's documented
+MVP, offline-payment model. Owns `bookings`/`booking_items`/
+`booking_guests`/`booking_status_history`; depends on `AvailabilityService`
+(capacity/pricing) and `ListingService` (partner resolution) only — never
+a second Repository over their tables. See `services/bookingService.js`
+and the approved Sprint 10 architecture proposal for the full design.
 
 ## Folder contents (per BACKEND_ARCHITECTURE.md §2)
 

@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { CALENDAR_DAY_STATUSES } from '../../../core/domain/calendarExpansion.js';
 import { BOOKABLE_UNIT_TYPES } from '../../../core/domain/bookableUnitTypes.js';
+import { isoDateSchema } from '../../../validation/isoDate.js';
 
 const MAX_CALENDAR_SPAN_DAYS = 366;
 
@@ -20,21 +21,6 @@ const listingIdParams = z.object({
 });
 const passthroughQuery = z.object({}).passthrough();
 const passthroughParams = z.object({}).passthrough();
-
-/** `YYYY-MM-DD`, structurally well-formed AND a real calendar date (rejects e.g. 2026-02-30). */
-const isoDateSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected a date in YYYY-MM-DD format.')
-  .refine(
-    (value) => {
-      const parsed = new Date(`${value}T00:00:00Z`);
-      return (
-        !Number.isNaN(parsed.getTime()) &&
-        parsed.toISOString().slice(0, 10) === value
-      );
-    },
-    { message: 'Invalid calendar date.' },
-  );
 
 const paginationShape = {
   cursor: z.string().optional(),
@@ -71,6 +57,20 @@ export const listUnitsQuerySchema = z.object({
 
 // --- availability_calendar (primary engine) ---
 
+/** Both-or-neither: a price override is meaningless without its currency. */
+function refinePriceOverridePair(data, ctx) {
+  const hasAmount = data.priceOverrideAmount !== undefined;
+  const hasCurrency = data.priceOverrideCurrency !== undefined;
+  if (hasAmount !== hasCurrency) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'priceOverrideAmount and priceOverrideCurrency must be provided together.',
+      path: ['priceOverrideCurrency'],
+    });
+  }
+}
+
 export const setAvailabilitySchema = z.object({
   params: passthroughParams,
   query: passthroughQuery,
@@ -81,11 +81,19 @@ export const setAvailabilitySchema = z.object({
       dateTo: isoDateSchema,
       status: z.enum(CALENDAR_DAY_STATUSES).default('AVAILABLE'),
       quantityAvailable: z.coerce.number().int().min(0).optional(),
+      priceOverrideAmount: z.coerce.number().positive().optional(),
+      priceOverrideCurrency: z
+        .string()
+        .trim()
+        .length(3)
+        .toUpperCase()
+        .optional(),
     })
     .refine((data) => data.dateTo >= data.dateFrom, {
       message: 'dateTo must not be before dateFrom.',
       path: ['dateTo'],
-    }),
+    })
+    .superRefine(refinePriceOverridePair),
 });
 
 export const updateCalendarEntrySchema = z.object({
@@ -95,10 +103,18 @@ export const updateCalendarEntrySchema = z.object({
     .object({
       status: z.enum(CALENDAR_DAY_STATUSES).optional(),
       quantityAvailable: z.coerce.number().int().min(0).optional(),
+      priceOverrideAmount: z.coerce.number().positive().optional(),
+      priceOverrideCurrency: z
+        .string()
+        .trim()
+        .length(3)
+        .toUpperCase()
+        .optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: 'At least one field must be provided.',
-    }),
+    })
+    .superRefine(refinePriceOverridePair),
 });
 
 export const calendarEntryIdParamsSchema = z.object({

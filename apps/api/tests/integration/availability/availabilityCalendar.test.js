@@ -61,6 +61,34 @@ async function registerUnit(targetListingId, bookableUnitType = 'HOTEL_ROOM') {
   return res.body.data.id;
 }
 
+const ONE_PX_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64',
+);
+
+/**
+ * The public-view tests below need an actually PUBLISHED listing — an
+ * anonymous request against a DRAFT 404s via `ListingService.getListing`'s
+ * masking (correct, and exactly what `draftListingId`'s own tests exist to
+ * prove) before it ever reaches the calendar logic these tests target.
+ * `draftListingId` is deliberately left unpublished; this is never called
+ * for it.
+ */
+async function publishListing(id) {
+  await request(app)
+    .patch(`/api/v1/listings/${id}`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ location: { latitude: 40.1772, longitude: 44.5035 } });
+  await request(app)
+    .post(`/api/v1/listings/${id}/media`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .set('Content-Type', 'image/png')
+    .send(ONE_PX_PNG);
+  await request(app)
+    .post(`/api/v1/listings/${id}/publish`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`);
+}
+
 beforeAll(async () => {
   await up();
   await seedAll();
@@ -88,6 +116,7 @@ beforeAll(async () => {
   listingId = await createListing(
     `Availability Calendar Test ${Date.now()}-${Math.floor(Math.random() * 100000)}`,
   );
+  await publishListing(listingId);
   const listingUnitId = await registerUnit(listingId, 'HOTEL_ROOM');
 
   // A calendar-level block (availability_calendar), independent of blackout.
@@ -119,6 +148,7 @@ beforeAll(async () => {
   multiUnitListingId = await createListing(
     `Multi Unit Availability Test ${Date.now()}-${Math.floor(Math.random() * 100000)}`,
   );
+  await publishListing(multiUnitListingId);
   await registerUnit(multiUnitListingId, 'HOTEL_ROOM');
   await registerUnit(multiUnitListingId, 'RESTAURANT_TABLE');
 }, 60_000);
