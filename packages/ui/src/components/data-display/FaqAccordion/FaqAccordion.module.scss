@@ -1,0 +1,65 @@
+// FaqAccordion — COMPONENT_LIBRARY.md Part II §5 "Accordion". Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.accordion {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  border-bottom: 1px solid colors.$color-gray-200;
+}
+
+.itemHeading {
+  margin: 0;
+  font: inherit;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: spacing.$space-4;
+  width: 100%;
+  padding: spacing.$space-4 0;
+  background: none;
+  border: none;
+  font-family: typography.$font-body;
+  font-size: fn.rem(typography.$font-size-body);
+  font-weight: 600;
+  color: colors.$color-gray-900;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid colors.$color-royal-blue;
+    outline-offset: 2px;
+  }
+}
+
+.chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: colors.$color-gray-600;
+  transition: transform 200ms ease;
+}
+
+.chevron--open {
+  transform: rotate(180deg);
+}
+
+.panel {
+  padding-bottom: spacing.$space-4;
+  color: colors.$color-gray-600;
+  font-size: fn.rem(typography.$font-size-body);
+  line-height: 1.6;
+
+  &[hidden] {
+    display: none;
+  }
+}

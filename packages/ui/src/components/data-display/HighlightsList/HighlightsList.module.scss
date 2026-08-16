@@ -1,0 +1,31 @@
+// HighlightsList — Listing detail hero. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/sizes' as sizes;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: spacing.$space-4;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: spacing.$space-2;
+  font-size: fn.rem(typography.$font-size-small);
+  color: colors.$color-gray-600;
+}
+
+.icon {
+  flex-shrink: 0;
+  width: sizes.$icon-size-sm;
+  height: sizes.$icon-size-sm;
+  color: colors.$color-royal-blue;
+}

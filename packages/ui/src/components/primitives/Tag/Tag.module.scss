@@ -1,0 +1,55 @@
+// Tag — COMPONENT_LIBRARY.md Part II §1. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: spacing.$space-1;
+  background-color: colors.$color-gray-100;
+  color: colors.$color-gray-900;
+  border-radius: radius.$radius-full;
+  font-weight: 500;
+}
+
+.tag--sm {
+  padding: spacing.$space-1 spacing.$space-2;
+  font-size: fn.rem(typography.$font-size-micro);
+}
+
+.tag--md {
+  padding: spacing.$space-2 spacing.$space-3;
+  font-size: fn.rem(typography.$font-size-small);
+}
+
+.tag--selected {
+  background-color: colors.$color-royal-blue;
+  color: colors.$color-white;
+}
+
+.remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+
+  svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid colors.$color-royal-blue;
+    outline-offset: 1px;
+  }
+}

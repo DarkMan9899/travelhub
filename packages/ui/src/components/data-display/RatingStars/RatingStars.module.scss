@@ -1,0 +1,44 @@
+// RatingStars — COMPONENT_LIBRARY.md Part II §5 "Rating". Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/sizes' as sizes;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.ratingStars {
+  display: inline-flex;
+  align-items: center;
+  gap: spacing.$space-1;
+  color: colors.$color-gold;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.star {
+  color: colors.$color-gold;
+}
+
+.ratingStars--sm .star {
+  width: sizes.$icon-size-sm;
+  height: sizes.$icon-size-sm;
+}
+
+.ratingStars--md .star {
+  width: sizes.$icon-size-md;
+  height: sizes.$icon-size-md;
+}
+
+.ratingStars--lg .star {
+  width: sizes.$icon-size-lg;
+  height: sizes.$icon-size-lg;
+}
+
+.count {
+  font-size: fn.rem(typography.$font-size-small);
+  font-weight: 600;
+  color: colors.$color-gray-900;
+}

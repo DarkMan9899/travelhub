@@ -1,0 +1,47 @@
+// Card — UI_UX_GUIDELINES.md §6.2. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/elevation' as elevation;
+@use '../../../tokens/motion' as motion;
+
+.card {
+  display: block;
+  background-color: colors.$color-white;
+  border-radius: radius.$radius-lg;
+  color: inherit;
+  text-decoration: none;
+
+  @include elevation.elevation-0;
+}
+
+.card--padding-none {
+  padding: 0;
+}
+
+.card--padding-sm {
+  padding: spacing.$space-3;
+}
+
+.card--padding-md {
+  padding: spacing.$space-4;
+}
+
+.card--padding-lg {
+  padding: spacing.$space-6;
+}
+
+.card--interactive {
+  transition: box-shadow motion.$motion-micro motion.$ease-out;
+  cursor: pointer;
+
+  &:hover {
+    @include elevation.elevation-1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid colors.$color-royal-blue;
+    outline-offset: 2px;
+  }
+}

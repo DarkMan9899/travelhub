@@ -1,0 +1,27 @@
+// Icon — COMPONENT_LIBRARY.md Part II §1. Tokens only.
+
+@use '../../../tokens/sizes' as sizes;
+
+.icon--sm {
+  width: sizes.$icon-size-sm;
+  height: sizes.$icon-size-sm;
+  stroke-width: 1.5px;
+}
+
+.icon--md {
+  width: sizes.$icon-size-md;
+  height: sizes.$icon-size-md;
+  stroke-width: 1.5px;
+}
+
+.icon--lg {
+  width: sizes.$icon-size-lg;
+  height: sizes.$icon-size-lg;
+  stroke-width: 1.5px;
+}
+
+.icon--xl {
+  width: sizes.$icon-size-xl;
+  height: sizes.$icon-size-xl;
+  stroke-width: 1.5px;
+}

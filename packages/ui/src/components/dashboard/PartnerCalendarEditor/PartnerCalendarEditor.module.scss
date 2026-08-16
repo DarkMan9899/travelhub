@@ -1,0 +1,150 @@
+// PartnerCalendarEditor — COMPONENT_LIBRARY.md Part II §8. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-4;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: fn.rem(20px);
+  color: colors.$color-gray-600;
+  background: none;
+  border: none;
+  border-radius: radius.$radius-sm;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: colors.$color-gray-100;
+  }
+
+  &:disabled {
+    color: colors.$color-gray-400;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid colors.$color-royal-blue;
+    outline-offset: 2px;
+  }
+}
+
+.monthLabel {
+  font-weight: 600;
+  color: colors.$color-gray-900;
+  text-transform: capitalize;
+}
+
+.legend {
+  display: flex;
+  gap: spacing.$space-4;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: spacing.$space-2;
+  font-size: fn.rem(typography.$font-size-small);
+  color: colors.$color-gray-600;
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legendSwatch--available {
+  background-color: colors.$color-success;
+}
+
+.legendSwatch--blocked {
+  background-color: colors.$color-danger;
+}
+
+.legendSwatch--booked {
+  background-color: colors.$color-royal-blue;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-1;
+}
+
+.weekRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: spacing.$space-1;
+}
+
+.emptyCell {
+  height: 40px;
+}
+
+.day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  background-color: colors.$color-gray-100;
+  border: none;
+  border-radius: radius.$radius-sm;
+  font-size: fn.rem(typography.$font-size-small);
+  color: colors.$color-gray-900;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: colors.$color-gray-200;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid colors.$color-royal-blue;
+    outline-offset: 1px;
+  }
+}
+
+.day--available {
+  background-color: rgba(colors.$color-success, 0.12);
+  color: colors.$color-success-strong;
+}
+
+.day--blocked {
+  background-color: rgba(colors.$color-danger, 0.12);
+  color: colors.$color-danger-strong;
+}
+
+.day--booked {
+  background-color: rgba(colors.$color-royal-blue, 0.12);
+  color: colors.$color-royal-blue;
+}
+
+.day--selected {
+  outline: 2px solid colors.$color-royal-blue;
+  outline-offset: -2px;
+}

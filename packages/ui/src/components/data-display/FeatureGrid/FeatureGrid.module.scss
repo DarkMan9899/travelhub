@@ -1,0 +1,72 @@
+// FeatureGrid — Listing detail amenities. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/sizes' as sizes;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.featureGrid {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-6;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-3;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: fn.rem(typography.$font-size-body);
+  font-weight: 600;
+  color: colors.$color-gray-900;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: spacing.$space-3;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: spacing.$space-2;
+  color: colors.$color-gray-900;
+  font-size: fn.rem(typography.$font-size-body);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: sizes.$icon-size-md;
+  height: sizes.$icon-size-md;
+  color: colors.$color-royal-blue;
+}
+
+.toggle {
+  align-self: flex-start;
+  padding: spacing.$space-2 spacing.$space-4;
+  background: none;
+  border: 1px solid colors.$color-gray-200;
+  border-radius: radius.$radius-md;
+  font-size: fn.rem(typography.$font-size-small);
+  font-weight: 600;
+  color: colors.$color-royal-blue;
+  cursor: pointer;
+
+  &:hover {
+    background-color: colors.$color-gray-100;
+  }
+
+  &:focus-visible {
+    outline: 2px solid colors.$color-royal-blue;
+    outline-offset: 2px;
+  }
+}

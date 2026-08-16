@@ -1,0 +1,103 @@
+// WizardProgress — Phase 5. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.wizardProgress {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-2;
+}
+
+.summary {
+  margin: 0;
+  font-size: fn.rem(typography.$font-size-small);
+  font-weight: 600;
+  color: colors.$color-gray-600;
+}
+
+.steps {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+
+  &:last-child {
+    flex: 0 0 auto;
+  }
+}
+
+.stepButton {
+  display: flex;
+  align-items: center;
+  gap: spacing.$space-2;
+  padding: spacing.$space-1 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid colors.$color-royal-blue;
+    outline-offset: 2px;
+  }
+}
+
+.stepNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: colors.$color-gray-100;
+  color: colors.$color-gray-600;
+  font-size: fn.rem(typography.$font-size-small);
+  font-weight: 600;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.stepButton--current .stepNumber {
+  background-color: colors.$color-royal-blue;
+  color: colors.$color-white;
+}
+
+.stepButton--completed .stepNumber {
+  background-color: colors.$color-success;
+  color: colors.$color-white;
+}
+
+.stepLabel {
+  font-size: fn.rem(typography.$font-size-small);
+  font-weight: 600;
+  color: colors.$color-gray-600;
+  white-space: nowrap;
+}
+
+.stepButton--current .stepLabel {
+  color: colors.$color-gray-900;
+}
+
+.connector {
+  flex: 1;
+  height: 2px;
+  margin: 0 spacing.$space-2;
+  background-color: colors.$color-gray-200;
+}

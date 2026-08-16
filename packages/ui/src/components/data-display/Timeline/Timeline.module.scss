@@ -1,0 +1,66 @@
+// Timeline — Listing detail itinerary. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  gap: spacing.$space-4;
+}
+
+.marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+}
+
+.markerDot {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  background-color: colors.$color-royal-blue;
+  border-radius: 50%;
+}
+
+.markerLine {
+  flex: 1;
+  width: 2px;
+  min-height: spacing.$space-8;
+  background-color: colors.$color-gray-200;
+}
+
+.content {
+  padding-bottom: spacing.$space-6;
+}
+
+.title {
+  margin: 0 0 spacing.$space-1;
+  font-size: fn.rem(typography.$font-size-body);
+  font-weight: 600;
+  color: colors.$color-gray-900;
+}
+
+.duration {
+  margin: 0 0 spacing.$space-1;
+  font-size: fn.rem(typography.$font-size-small);
+  color: colors.$color-gray-600;
+}
+
+.description {
+  margin: 0;
+  font-size: fn.rem(typography.$font-size-body);
+  color: colors.$color-gray-600;
+  line-height: 1.6;
+}

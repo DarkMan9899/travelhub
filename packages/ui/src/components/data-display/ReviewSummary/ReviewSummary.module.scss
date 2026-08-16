@@ -1,0 +1,73 @@
+// ReviewSummary — COMPONENT_LIBRARY.md Part II §5. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/typography' as typography;
+@use '../../../functions' as fn;
+
+.reviewSummary {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-4;
+}
+
+.headline {
+  display: flex;
+  align-items: center;
+  gap: spacing.$space-4;
+}
+
+.average {
+  font-family: typography.$font-heading;
+  font-size: fn.rem(typography.$font-size-h1);
+  font-weight: 700;
+  color: colors.$color-gray-900;
+  line-height: 1;
+}
+
+.starsAndCount {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-1;
+}
+
+.count {
+  font-size: fn.rem(typography.$font-size-small);
+  color: colors.$color-gray-600;
+}
+
+.distribution {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-2;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.distributionRow {
+  display: grid;
+  grid-template-columns: 16px 1fr 32px;
+  align-items: center;
+  gap: spacing.$space-2;
+}
+
+.distributionLabel,
+.distributionCount {
+  font-size: fn.rem(typography.$font-size-small);
+  color: colors.$color-gray-600;
+}
+
+.distributionTrack {
+  height: 8px;
+  background-color: colors.$color-gray-200;
+  border-radius: radius.$radius-full;
+  overflow: hidden;
+}
+
+.distributionFill {
+  display: block;
+  height: 100%;
+  background-color: colors.$color-gold;
+}

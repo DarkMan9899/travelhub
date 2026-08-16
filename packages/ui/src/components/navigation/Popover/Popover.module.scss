@@ -1,0 +1,44 @@
+// Popover — Phase 10. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/elevation' as elevation;
+@use '../../../tokens/z-index' as z;
+
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+.panel {
+  position: absolute;
+  z-index: z.$z-dropdown;
+  margin-top: spacing.$space-2;
+  min-width: 200px;
+  padding: spacing.$space-2;
+  background-color: colors.$color-white;
+  border-radius: radius.$radius-lg;
+
+  @include elevation.elevation-2;
+}
+
+.panel--bottom-start {
+  top: 100%;
+  left: 0;
+}
+
+.panel--bottom-end {
+  top: 100%;
+  right: 0;
+}
+
+.panel--top-start {
+  bottom: 100%;
+  left: 0;
+}
+
+.panel--top-end {
+  bottom: 100%;
+  right: 0;
+}

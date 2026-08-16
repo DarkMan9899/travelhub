@@ -1,0 +1,12 @@
+// Shared glassmorphism mixin — UI_UX_GUIDELINES.md's "tasteful glass/
+// translucency" guidance: a subtle frosted-white surface, used sparingly
+// (Home hero search widget, showcase panels) rather than page-wide, per
+// the "avoid excessive blur" design-quality rule.
+
+@use '../tokens/colors' as colors;
+
+@mixin glass-surface($opacity: 0.9, $blur: 16px) {
+  background-color: rgba(colors.$color-white, $opacity);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+}

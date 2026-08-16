@@ -1,0 +1,40 @@
+// ErrorState — mirrors EmptyState's layout. Tokens only.
+
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../functions' as fn;
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: spacing.$space-8 spacing.$space-4;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: spacing.$space-4;
+  color: colors.$color-danger;
+}
+
+.title {
+  margin: 0 0 spacing.$space-2;
+  font-size: fn.rem(20px);
+  line-height: fn.rem(28px);
+  font-weight: 600;
+  color: colors.$color-gray-900;
+}
+
+.description {
+  margin: 0;
+  max-width: 40ch;
+  font-size: fn.rem(16px);
+  line-height: fn.rem(24px);
+  color: colors.$color-gray-600;
+}
+
+.action {
+  margin-top: spacing.$space-6;
+}
