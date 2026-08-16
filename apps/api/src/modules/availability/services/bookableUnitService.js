@@ -38,6 +38,9 @@ export class BookableUnitService {
     capacity = DEFAULT_CAPACITY,
     sourceTable = DEFAULT_SOURCE_TABLE,
     sourceId,
+    timeSlotStart,
+    timeSlotEnd,
+    unitLabel,
     createdBy,
   }) {
     const resolvedSourceId = sourceId ?? listingId;
@@ -55,6 +58,7 @@ export class BookableUnitService {
       bookableUnitTypeId,
       sourceTable,
       sourceId: resolvedSourceId,
+      unitLabel,
     });
     if (existing) return existing;
 
@@ -64,6 +68,9 @@ export class BookableUnitService {
       sourceTable,
       sourceId: resolvedSourceId,
       capacity,
+      timeSlotStart,
+      timeSlotEnd,
+      unitLabel,
       createdBy,
     });
   }

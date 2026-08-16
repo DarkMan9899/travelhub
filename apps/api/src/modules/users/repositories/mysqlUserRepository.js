@@ -15,14 +15,21 @@ import { getMysqlPool } from '../../../infrastructure/database/mysqlPool.js';
 import { mapMysqlError } from '../../../infrastructure/database/errorMapping.js';
 import { scopeActive } from '../../../infrastructure/database/softDelete.js';
 import { UserRepository as UserRepositoryPort } from '../../../core/interfaces/UserRepository.js';
+import {
+  decodeCursor,
+  buildPageMeta,
+} from '../../../infrastructure/database/pagination.js';
 
 const SELECT_COLUMNS = `
   u.id, u.email, u.normalized_email, u.phone, u.password_hash, u.first_name, u.last_name,
-  u.avatar_media_id, u.preferred_language_id, u.preferred_currency_id, u.status_id, us.code AS status_code,
+  u.avatar_media_id, m.url AS avatar_url, u.preferred_language_id, u.preferred_currency_id, u.status_id, us.code AS status_code,
   u.is_email_verified, u.is_phone_verified, u.last_login_at, u.created_at, u.updated_at, u.deleted_at
 `;
-const FROM_USERS_JOINED =
-  'FROM users u JOIN user_statuses us ON us.id = u.status_id';
+const FROM_USERS_JOINED = `
+  FROM users u
+  JOIN user_statuses us ON us.id = u.status_id
+  LEFT JOIN media m ON m.id = u.avatar_media_id AND m.deleted_at IS NULL
+`;
 
 const PROFILE_FIELD_TO_COLUMN = Object.freeze({
   firstName: 'first_name',
@@ -43,6 +50,7 @@ function toDomain(row) {
     firstName: row.first_name,
     lastName: row.last_name,
     avatarMediaId: row.avatar_media_id,
+    avatarUrl: row.avatar_url,
     preferredLanguageId: row.preferred_language_id,
     preferredCurrencyId: row.preferred_currency_id,
     statusId: row.status_id,
@@ -110,6 +118,79 @@ export class MySqlUserRepository extends UserRepositoryPort {
     return toDomain(rows[0]);
   }
 
+  /**
+   * Phase 11 Admin Platform: `GET /users` — cursor-paginated, newest
+   * first. `keyword` matches email/first_name/last_name (LIKE — this
+   * table has no FULLTEXT index, and admin user-search volume doesn't
+   * warrant one yet, same tradeoff `mysqlSearchRepository`'s non-keyword
+   * filters already accept). `roleCodes` is a correlated subquery
+   * (GROUP_CONCAT) rather than a JOIN, so a user with N roles still
+   * produces exactly one row.
+   */
+  async listAdmin({ keyword, statusCode, cursor = null, limit = 20 } = {}) {
+    const conditions = [scopeActive('u')];
+    const params = [];
+
+    if (keyword) {
+      conditions.push(
+        '(u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)',
+      );
+      const pattern = `%${keyword}%`;
+      params.push(pattern, pattern, pattern);
+    }
+    if (statusCode) {
+      conditions.push('us.code = ?');
+      params.push(statusCode);
+    }
+
+    const decoded = decodeCursor(cursor);
+    if (decoded?.id) {
+      conditions.push('u.id < ?');
+      params.push(decoded.id);
+    }
+
+    const [rows] = await this.#pool.query(
+      `SELECT ${SELECT_COLUMNS},
+              (SELECT GROUP_CONCAT(r.code) FROM role_user ru
+                 JOIN roles r ON r.id = ru.role_id
+                 WHERE ru.user_id = u.id) AS role_codes
+       ${FROM_USERS_JOINED}
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY u.id DESC
+       LIMIT ?`,
+      [...params, limit + 1],
+    );
+
+    const { rows: pageRows, meta } = buildPageMeta(rows, limit, (row) => ({
+      id: row.id,
+    }));
+    return {
+      rows: pageRows.map((row) => ({
+        ...toDomain(row),
+        roleCodes: row.role_codes ? row.role_codes.split(',') : [],
+      })),
+      meta,
+    };
+  }
+
+  /**
+   * Phase 11 Admin Platform: `PATCH /users/:id/status` — suspend/
+   * activate/ban. `statusCode` is validated against the `user_statuses`
+   * enum by the caller (Zod, `userValidators.js`); this method trusts it
+   * and resolves the id via the same subquery pattern `create()` uses.
+   */
+  async updateStatusByCode(id, statusCode, connection = this.#pool) {
+    try {
+      await connection.query(
+        `UPDATE users SET status_id = (SELECT id FROM user_statuses WHERE code = ?) WHERE id = ?`,
+        [statusCode, id],
+      );
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+    return this.findById(id, connection);
+  }
+
   async updateProfile(id, fields, connection = this.#pool) {
     const assignments = [];
     const values = [];
@@ -164,6 +245,35 @@ export class MySqlUserRepository extends UserRepositoryPort {
       [userId],
     );
     return rows.map((row) => row.code);
+  }
+
+  /**
+   * Phase 13 (Notifications): bulk recipient resolution for an
+   * admin-authored announcement's role-scoped audience — deliberately
+   * unpaginated (a "notify everyone with this role" fan-out, not a UI
+   * list) and excludes soft-deleted/non-active users the same way
+   * `scopeActive('u')` already does for `listAdmin`.
+   */
+  async listUserIdsByRole(roleCodes, connection = this.#pool) {
+    if (roleCodes.length === 0) return [];
+    const placeholders = roleCodes.map(() => '?').join(', ');
+    const [rows] = await connection.query(
+      `SELECT DISTINCT u.id
+       FROM users u
+       JOIN role_user ru ON ru.user_id = u.id
+       JOIN roles r ON r.id = ru.role_id
+       WHERE ${scopeActive('u')} AND r.code IN (${placeholders})`,
+      roleCodes,
+    );
+    return rows.map((row) => row.id);
+  }
+
+  /** Phase 13 (Notifications): bulk recipient resolution for an announcement's "everyone" audience. */
+  async listAllUserIds(connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT u.id FROM users u WHERE ${scopeActive('u')}`,
+    );
+    return rows.map((row) => row.id);
   }
 
   /**

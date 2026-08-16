@@ -6,7 +6,11 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { generateBookingReference } from '../../../../src/core/domain/bookingReference.js';
+import {
+  generateBookingReference,
+  generatePaymentReference,
+  generateRefundReference,
+} from '../../../../src/core/domain/bookingReference.js';
 
 describe('generateBookingReference', () => {
   test('fits within the booking_reference column width (VARCHAR(30))', () => {
@@ -42,5 +46,28 @@ describe('generateBookingReference', () => {
       new Date('2026-01-05T00:00:00Z'),
     );
     expect(reference).toMatch(/^BK-20260105-[A-Z2-9]{8}$/);
+  });
+});
+
+describe('generatePaymentReference / generateRefundReference (Phase 16)', () => {
+  test('generatePaymentReference matches the PAY-<date>-<random> shape and fits VARCHAR(30)', () => {
+    const reference = generatePaymentReference(
+      new Date('2026-01-05T00:00:00Z'),
+    );
+    expect(reference).toMatch(/^PAY-20260105-[A-Z2-9]{8}$/);
+    expect(reference.length).toBeLessThanOrEqual(30);
+  });
+
+  test('generateRefundReference matches the RF-<date>-<random> shape and fits VARCHAR(30)', () => {
+    const reference = generateRefundReference(new Date('2026-01-05T00:00:00Z'));
+    expect(reference).toMatch(/^RF-20260105-[A-Z2-9]{8}$/);
+    expect(reference.length).toBeLessThanOrEqual(30);
+  });
+
+  test('payment and refund references never collide with each other in shape', () => {
+    const payment = generatePaymentReference();
+    const refund = generateRefundReference();
+    expect(payment.startsWith('PAY-')).toBe(true);
+    expect(refund.startsWith('RF-')).toBe(true);
   });
 });

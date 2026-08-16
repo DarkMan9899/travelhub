@@ -1,0 +1,32 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="">
+  <defs>
+    <linearGradient id="expBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f2a4a" />
+      <stop offset="100%" stop-color="#0b1a2b" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="300" fill="url(#expBg)" />
+
+  <circle cx="200" cy="150" r="70" fill="none" stroke="#c9a24b" stroke-width="4" opacity="0.9" />
+  <circle cx="200" cy="150" r="6" fill="#c9a24b" />
+  <path
+    d="M200 150 L232 110"
+    stroke="#c9a24b"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+  <path
+    d="M200 150 L172 190"
+    stroke="#1d5fd6"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+
+  <g opacity="0.5" stroke="#1d5fd6" stroke-width="2">
+    <line x1="200" y1="56" x2="200" y2="72" />
+    <line x1="200" y1="228" x2="200" y2="244" />
+    <line x1="106" y1="150" x2="122" y2="150" />
+    <line x1="278" y1="150" x2="294" y2="150" />
+  </g>
+</svg>

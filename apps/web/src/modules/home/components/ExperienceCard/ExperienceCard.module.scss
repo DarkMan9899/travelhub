@@ -1,0 +1,109 @@
+// ExperienceCard — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+@use 'mixins/truncate-lines' as truncate;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  border-radius: tokens.$radius-lg;
+  overflow: hidden;
+  background-color: tokens.$color-white;
+  border: 2px solid transparent;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform tokens.$motion-micro tokens.$ease-out,
+    box-shadow tokens.$motion-micro tokens.$ease-out,
+    border-color tokens.$motion-micro tokens.$ease-out;
+  @include tokens.elevation-1;
+  @include tokens.reduced-motion-safe;
+  @include focus.focus-ring;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba(tokens.$color-royal-blue, 0.25);
+    @include tokens.elevation-3;
+
+    .image {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background-color: tokens.$color-gray-100;
+
+  // A soft top scrim so the badge stays legible over any image, not
+  // just dark ones — richer depth than a flat photo with a badge
+  // floating directly on top of it. `::before` (not `::after`) so it
+  // paints behind the badge, not over it.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(11, 26, 43, 0.35) 0%,
+      rgba(11, 26, 43, 0) 35%
+    );
+  }
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform tokens.$motion-transition tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+}
+
+.badge {
+  position: absolute;
+  top: tokens.$space-3;
+  left: tokens.$space-3;
+  z-index: 1;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding: tokens.$space-4;
+}
+
+.location {
+  margin: 0;
+  font-size: tokens.$font-size-micro;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: tokens.$color-royal-blue;
+}
+
+.name {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  line-height: tokens.$line-height-h4;
+  color: tokens.$color-gray-900;
+  @include truncate.truncate-lines(2);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-2;
+}
+
+.duration {
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+  white-space: nowrap;
+}

@@ -1,8 +1,8 @@
 /**
- * Public export surface for the "auth" module.
- * Sprint 1: intentionally empty — no components/hooks/queries exist yet.
- * See README.md for this module's scope and FRONTEND_ARCHITECTURE.md
- * Chapter 6 for the cross-module dependency rules this file's exports
- * are governed by.
+ * `auth` module public export surface (FRONTEND_ARCHITECTURE.md §6.2) —
+ * the ONLY entry point other modules/pages may import from (§6.3).
  */
-export {};
+
+export { default as LoginForm } from './components/LoginForm/LoginForm.jsx';
+export { default as RegisterForm } from './components/RegisterForm/RegisterForm.jsx';
+export { default as useLogoutMutation } from './mutations/useLogoutMutation.js';

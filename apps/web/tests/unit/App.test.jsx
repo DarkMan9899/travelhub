@@ -23,8 +23,12 @@ describe('App bootstrap (FRONTEND_ARCHITECTURE.md §3-4)', () => {
     window.history.pushState({}, '', '/xx');
     render(<App />);
 
+    // NotFoundPage was upgraded off literal "404" text to a translated
+    // EmptyState (Application Foundation phase) — the test harness's
+    // i18n instance defaults to Armenian (tests/setup.js), so this
+    // asserts the real translated copy, not a hardcoded English string.
     await waitFor(() => {
-      expect(screen.getByText('404')).toBeInTheDocument();
+      expect(screen.getByText('Էջը չի գտնվել')).toBeInTheDocument();
     });
   });
 });

@@ -101,7 +101,7 @@ describe('Seed determinism (Sprint 5 §15/§17)', () => {
     );
   });
 
-  test('every payment_statuses row from Sprint 5 §9 is present after seeding', async () => {
+  test("every payment_statuses row from Sprint 5 §9 (plus Phase 16's online-payment extension) is present after seeding", async () => {
     const pool = getMysqlPool();
     const [rows] = await pool.query(
       'SELECT code FROM payment_statuses ORDER BY code',
@@ -112,6 +112,11 @@ describe('Seed determinism (Sprint 5 §15/§17)', () => {
         'PAY_AT_PROPERTY',
         'PAID_OFFLINE',
         'REFUNDED_OFFLINE',
+        'AWAITING_PAYMENT',
+        'PAID_ONLINE',
+        'PAYMENT_FAILED',
+        'PARTIALLY_REFUNDED_ONLINE',
+        'REFUNDED_ONLINE',
       ].sort(),
     );
   });

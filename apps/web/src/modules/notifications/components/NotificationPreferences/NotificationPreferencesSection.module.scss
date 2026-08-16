@@ -1,0 +1,41 @@
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.heading {
+  margin: 0 0 tokens.$space-1;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  color: tokens.$color-gray-900;
+}
+
+.description {
+  margin: 0 0 tokens.$space-4;
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding: tokens.$space-3;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+
+  @include respond.respond(tablet) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.categoryName {
+  margin: 0;
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+}
+
+.switches {
+  display: flex;
+  gap: tokens.$space-6;
+}

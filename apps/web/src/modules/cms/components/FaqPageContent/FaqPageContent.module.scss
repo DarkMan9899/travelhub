@@ -1,0 +1,54 @@
+// FaqPageContent — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+.list {
+  max-width: 70ch;
+}
+
+.item {
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  padding: tokens.$space-4;
+  transition: border-color tokens.$motion-micro tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+
+  &:hover {
+    border-color: tokens.$color-gray-400;
+  }
+}
+
+.question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-3;
+  cursor: pointer;
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+  list-style: none;
+
+  @include focus.focus-ring;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: tokens.$color-gray-600;
+  transition: transform tokens.$motion-micro tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+}
+
+.item[open] .chevron {
+  transform: rotate(180deg);
+}
+
+.answer {
+  margin: tokens.$space-3 0 0;
+  color: tokens.$color-gray-600;
+  line-height: tokens.$line-height-body;
+}

@@ -18,14 +18,22 @@ import { MySqlBookableUnitRepository } from './repositories/mysqlBookableUnitRep
 import { MySqlAvailabilityCalendarRepository } from './repositories/mysqlAvailabilityCalendarRepository.js';
 import { MySqlBlackoutRepository } from './repositories/mysqlBlackoutRepository.js';
 import { MySqlReservationHoldRepository } from './repositories/mysqlReservationHoldRepository.js';
+import { MySqlInventoryLedgerRepository } from './repositories/mysqlInventoryLedgerRepository.js';
+import { MySqlInventoryBlockRepository } from './repositories/mysqlInventoryBlockRepository.js';
+import { MySqlExternalReservationRepository } from './repositories/mysqlExternalReservationRepository.js';
+import { MySqlInventoryConnectionRepository } from './repositories/mysqlInventoryConnectionRepository.js';
 import { BookableUnitService } from './services/bookableUnitService.js';
 import { BlackoutService } from './services/blackoutService.js';
 import { AvailabilityService } from './services/availabilityService.js';
+import { InventoryConnectionService } from './services/inventoryConnectionService.js';
 import { createAvailabilityController } from './controllers/availabilityController.js';
+import { createInventoryConnectionController } from './controllers/inventoryConnectionController.js';
 
 export default function createAvailabilityContainer({
   listingService,
   permissionResolver,
+  auditLogger,
+  eventBus,
 }) {
   const bookableUnitRepository = new MySqlBookableUnitRepository();
   const availabilityCalendarRepository =
@@ -34,6 +42,13 @@ export default function createAvailabilityContainer({
   // Sprint 10: reservation_holds — Availability keeps owning this table
   // too, same as its other three (see availabilityService.js's header).
   const reservationHoldRepository = new MySqlReservationHoldRepository();
+  // Phase 17: three new tables Availability owns for the same reason.
+  const inventoryLedgerRepository = new MySqlInventoryLedgerRepository();
+  const inventoryBlockRepository = new MySqlInventoryBlockRepository();
+  const externalReservationRepository =
+    new MySqlExternalReservationRepository();
+  const inventoryConnectionRepository =
+    new MySqlInventoryConnectionRepository();
 
   const bookableUnitService = new BookableUnitService({
     bookableUnitRepository,
@@ -46,18 +61,44 @@ export default function createAvailabilityContainer({
     blackoutService,
     listingService,
     permissionResolver,
+    auditLogger,
+    inventoryLedgerRepository,
+    inventoryBlockRepository,
+    externalReservationRepository,
+    eventBus,
   });
+  const inventoryConnectionService = new InventoryConnectionService({
+    inventoryConnectionRepository,
+    bookableUnitService,
+    externalReservationRepository,
+    listingService,
+    permissionResolver,
+    auditLogger,
+    eventBus,
+  });
+  // Late-bound to avoid a circular constructor dependency — both
+  // Services live in this module and are constructed here together.
+  inventoryConnectionService.setAvailabilityService(availabilityService);
   const availabilityController =
     createAvailabilityController(availabilityService);
+  const inventoryConnectionController = createInventoryConnectionController(
+    inventoryConnectionService,
+  );
 
   return {
     bookableUnitRepository,
     availabilityCalendarRepository,
     blackoutRepository,
     reservationHoldRepository,
+    inventoryLedgerRepository,
+    inventoryBlockRepository,
+    externalReservationRepository,
+    inventoryConnectionRepository,
     bookableUnitService,
     blackoutService,
     availabilityService,
+    inventoryConnectionService,
     availabilityController,
+    inventoryConnectionController,
   };
 }

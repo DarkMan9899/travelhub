@@ -1,0 +1,26 @@
+// FeaturedDestinations — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+// DestinationCard is a fixed 4:5 aspect-ratio card — its height scales
+// directly with slide width, so this basis stays close to its original
+// tuning (unlike the flatter listing/experience cards below). The
+// "dominant active card" read comes from the center-focus scale/opacity
+// emphasis (Showcase.jsx), not from inflating the base width, which
+// would otherwise blow the card height out of proportion.
+.slide {
+  flex: 0 0 80%;
+
+  @include respond.respond(mobile-large) {
+    flex: 0 0 58%;
+  }
+
+  @include respond.respond(tablet) {
+    flex: 0 0 44%;
+  }
+
+  @include respond.respond(laptop) {
+    flex: 0 0 30%;
+  }
+}

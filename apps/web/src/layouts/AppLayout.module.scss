@@ -6,6 +6,12 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  // A safety net for decorative chrome that intentionally bleeds past
+  // its own component box (e.g. Showcase's floated-clear nav buttons at
+  // the `wide` Container's zero-padding desktop breakpoint) — clips the
+  // rare few-pixel overshoot before it can force a page-level
+  // horizontal scrollbar, without affecting any section's own layout.
+  overflow-x: hidden;
 }
 
 // Standard accessible skip-link pattern: visually hidden until it

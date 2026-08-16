@@ -1,0 +1,35 @@
+// AboutPageContent — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.lead {
+  margin: 0;
+  max-width: 70ch;
+  font-size: tokens.$font-size-body-large;
+  line-height: tokens.$line-height-body-large;
+  color: tokens.$color-gray-600;
+}
+
+.valuesGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-6;
+
+  @include respond.respond(tablet) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.valueTitle {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  line-height: tokens.$line-height-h4;
+  color: tokens.$color-gray-900;
+}
+
+.valueDescription {
+  margin: 0;
+  color: tokens.$color-gray-600;
+}

@@ -120,4 +120,18 @@ export const sensitiveRateLimiter = failOpenOnStoreError(
   'sensitive',
 );
 
+/**
+ * AI Platform endpoints (Phase 15) — deliberately the tightest tier,
+ * since every `/ai/*` request potentially calls a metered third-party
+ * provider. A fixed, conservative ceiling rather than a new
+ * `config.rateLimit.*` env var: unlike the three tiers above (which
+ * exist to tune *general* API traffic), this is a cost-control guardrail
+ * specific to AI calls, not something an operator needs to retune
+ * platform-wide the same way.
+ */
+export const aiRateLimiter = failOpenOnStoreError(
+  createRateLimiter({ max: 20, prefix: 'ai' }),
+  'ai',
+);
+
 export default publicRateLimiter;

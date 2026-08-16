@@ -1,0 +1,29 @@
+// CustomerAccountLayout — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-8;
+  padding-block: tokens.$space-8;
+
+  @include respond.respond(tablet) {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.sidebar {
+  flex-shrink: 0;
+
+  @include respond.respond(tablet) {
+    width: 240px;
+  }
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}

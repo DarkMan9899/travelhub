@@ -1,0 +1,21 @@
+// ListingMap — tokens only, consumed from @travelhub/ui.
+// Leaflet requires an explicit, non-percentage-only container height to
+// size its tile grid correctly.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.wrapper {
+  width: 100%;
+}
+
+.map {
+  width: 100%;
+  height: 240px;
+  border-radius: tokens.$radius-lg;
+  z-index: 0;
+
+  @include respond.respond(tablet) {
+    height: 320px;
+  }
+}

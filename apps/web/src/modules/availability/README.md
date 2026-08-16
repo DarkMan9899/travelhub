@@ -8,6 +8,15 @@ consume.
 **Sprint 1 status:** folder scaffold only. No components, hooks, queries,
 mutations, or business logic exist yet.
 
+**Phase 5 status:** `constants/bookableUnitTypes.js`, `queries/
+useBookableUnitsQuery`, `useBlackoutsQuery`, and `mutations/
+useRegisterBookableUnitMutation`, `useCreateBlackoutMutation`,
+`useRemoveBlackoutMutation` implemented — scoped to exactly what
+`PartnerListingWizard`'s `AvailabilityStep` (`modules/listings`) needs:
+registering a bookable unit and managing blackout dates.
+`availability_calendar` (day-by-day price/status overrides) remains
+scaffolded only — out of this phase's scope.
+
 ## Folder contents (per FRONTEND_ARCHITECTURE.md §3.2 / §6.2)
 
 - `components/` — module-owned UI, composing `@travelhub/ui` primitives

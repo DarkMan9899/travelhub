@@ -26,6 +26,7 @@ export const REDIS_KEY_PREFIXES = Object.freeze({
   RATE_LIMIT: 'ratelimit:',
   HOLD: 'hold:',
   IDEMPOTENCY: 'idempotency:',
+  TYPING: 'typing:',
 });
 
 let client;

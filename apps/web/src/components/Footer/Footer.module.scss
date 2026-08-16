@@ -46,5 +46,9 @@
   padding-top: tokens.$space-6;
   border-top: 1px solid tokens.$color-gray-200;
   font-size: 0.75rem;
-  color: tokens.$color-gray-400;
+  // $color-gray-400 is documented as "disabled text" and fails WCAG AA
+  // contrast against the footer's $color-gray-100 background (found via
+  // an automated axe scan during Phase 11 verification) — gray-600 is
+  // the token this design system reserves for secondary/caption text.
+  color: tokens.$color-gray-600;
 }

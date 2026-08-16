@@ -1,0 +1,32 @@
+// AmenitiesStep — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+
+.groups {
+  margin-top: tokens.$space-4;
+}
+
+.group {
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  overflow: hidden;
+}
+
+.groupHeader {
+  display: block;
+  width: 100%;
+  padding: tokens.$space-3 tokens.$space-4;
+  text-align: left;
+  background-color: tokens.$color-gray-100;
+  border: none;
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+  cursor: pointer;
+}
+
+.groupBody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: tokens.$space-2;
+  padding: tokens.$space-4;
+}

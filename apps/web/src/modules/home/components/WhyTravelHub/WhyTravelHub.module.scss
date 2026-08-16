@@ -1,0 +1,65 @@
+// WhyTravelHub — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+// A tinted panel — alternates with the plain-background sections around
+// it (FeaturedListings/Categories/Testimonials) for page-level rhythm
+// instead of one flat, undifferentiated scroll.
+.panel {
+  padding: tokens.$space-8 tokens.$space-6;
+  border-radius: tokens.$radius-xl;
+  background-color: tokens.$color-gray-100;
+
+  @include respond.respond(laptop) {
+    padding: tokens.$space-12 tokens.$space-8;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-8;
+
+  @include respond.respond(mobile-large) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond.respond(laptop) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: tokens.$space-3;
+}
+
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: tokens.$space-16;
+  height: tokens.$space-16;
+  border-radius: tokens.$radius-full;
+  background-color: rgba(tokens.$color-gold, 0.12);
+  color: tokens.$color-gold;
+}
+
+.itemTitle {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  line-height: tokens.$line-height-h4;
+  color: tokens.$color-gray-900;
+}
+
+.itemDescription {
+  margin: 0;
+  font-size: tokens.$font-size-body;
+  line-height: tokens.$line-height-body;
+  color: tokens.$color-gray-600;
+}

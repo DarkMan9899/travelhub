@@ -122,8 +122,10 @@ beforeAll(async () => {
   listingId = await createListing(
     `Availability CRUD Test Listing ${Date.now()}-${Math.floor(Math.random() * 100000)}`,
   );
-  await publishListing(listingId);
+  // Unit must exist BEFORE publish — Phase 5's publish-readiness gate now
+  // requires >=1 bookable unit (ListingService#checkPublishReadiness).
   unitId = await registerUnit(listingId);
+  await publishListing(listingId);
 }, 60_000);
 
 afterAll(async () => {

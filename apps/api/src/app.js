@@ -32,12 +32,16 @@ import requireAuth from './guards/requireAuth.js';
 import { requireRole } from './guards/requireRole.js';
 import { createRequirePermissionGuard } from './guards/requirePermission.js';
 import { createRequireHostGuard } from './guards/requireHost.js';
-import { publicRateLimiter } from './middleware/rateLimiter.js';
+import {
+  publicRateLimiter,
+  authenticatedRateLimiter,
+} from './middleware/rateLimiter.js';
 import errorHandler from './middleware/errorHandler.js';
 import healthRoutes from './monitoring/healthRoutes.js';
 import createV1Router from './routes/v1.js';
 import { NotFoundError } from './errors/AppError.js';
 import { AuditLogger } from './core/domain/auditLogger.js';
+import { DomainEventBus } from './core/events/domainEventBus.js';
 import { MySqlAuditLogRepository } from './infrastructure/database/repositories/auditLogRepository.js';
 import { PermissionResolver } from './core/domain/permissionResolver.js';
 import { MySqlPermissionRepository } from './infrastructure/database/repositories/permissionRepository.js';
@@ -51,6 +55,10 @@ app.disable('x-powered-by');
 
 // --- Composition root (BACKEND_ARCHITECTURE.md §17) ---
 const auditLogger = new AuditLogger(new MySqlAuditLogRepository());
+// Phase 13 (Notifications): shared singleton every module's business
+// service publishes domain events onto and the Notifications module
+// subscribes to — the same shared-singleton lifecycle as `auditLogger`.
+const eventBus = new DomainEventBus();
 const permissionResolver = new PermissionResolver(
   new CachedPermissionRepository(new MySqlPermissionRepository()),
 );
@@ -74,8 +82,21 @@ app.use(
 
 // 2. Body parsing — cookieParser reads the httpOnly refresh-token cookie
 // web clients rely on (FRONTEND_ARCHITECTURE.md §34.1); setting a cookie
-// needs no extra middleware, only reading one back does.
-app.use(express.json({ limit: '1mb' }));
+// needs no extra middleware, only reading one back does. `verify` captures
+// the exact raw bytes onto `req.rawBody` alongside the normal parsed
+// `req.body` — added for Phase 16's payment-provider webhook route, which
+// needs the untouched raw body to verify a provider's HMAC signature
+// (`PaymentProvider#verifyWebhook`). A one-line, additive capture with no
+// behavior change for any other route (`req.body` still parses exactly as
+// before).
+app.use(
+  express.json({
+    limit: '1mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -85,17 +106,31 @@ app.use(requestContext);
 // 4. Authentication — populate-only, never rejects (BACKEND_ARCHITECTURE.md §11's order).
 app.use(authenticate);
 
-// 5. Rate-limit foundation — global baseline, before any route/Controller
-// code (BACKEND_ARCHITECTURE.md §48). Health checks are exempt: orchestration
-// liveness/readiness probes must never be throttled.
+// 5. Rate-limit foundation, before any route/Controller code (BACKEND_
+// ARCHITECTURE.md §48). Health checks are exempt: orchestration
+// liveness/readiness probes must never be throttled. `req.principal` is
+// already resolved by step 4 above, so an authenticated request gets the
+// higher `authenticatedPerMinute` ceiling instead of being capped at the
+// public tier — previously every request, authenticated or not, was
+// limited to the public tier's 20/min regardless of `authenticatedRateLimiter`
+// being fully implemented, which throttled normal logged-in dashboard usage
+// far more aggressively than intended (verified during Phase 11 pre-flight).
+// Sensitive endpoints (login/register/refresh) layer their own stricter
+// `sensitiveRateLimiter` on top at the route level.
 app.use((req, res, next) => {
   if (req.path.startsWith('/health/')) return next();
-  return publicRateLimiter(req, res, next);
+  const limiter = req.principal ? authenticatedRateLimiter : publicRateLimiter;
+  return limiter(req, res, next);
 });
 
 // 6. Routes — health checks (unversioned) + the /api/v1 mount point.
 app.use(healthRoutes);
-const v1 = createV1Router({ guards, auditLogger, permissionResolver });
+const v1 = createV1Router({
+  guards,
+  auditLogger,
+  permissionResolver,
+  eventBus,
+});
 app.use('/api/v1', v1.router);
 
 // Sprint 10: exposes the Service instances `server.js` needs to register
@@ -104,7 +139,14 @@ app.use('/api/v1', v1.router);
 // BullMQ worker starts as a side effect of importing this module.
 export const services = {
   availabilityService: v1.availabilityService,
+  // Phase 17: registers the scheduled inventory reconciliation sweep.
+  inventoryConnectionService: v1.inventoryConnectionService,
   bookingService: v1.bookingService,
+  // Phase 13: registers the notification delivery worker.
+  notificationDeliveryService: v1.notificationDeliveryService,
+  notificationDeliveryQueue: v1.notificationDeliveryQueue,
+  // Phase 16: registers the local-provider settlement worker.
+  paymentService: v1.paymentService,
 };
 
 // 7. 404 — no matching route

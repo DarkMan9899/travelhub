@@ -23,7 +23,11 @@ import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import styles from './AppLayout.module.scss';
 
-export default function AppLayout({ header, footer, children }) {
+export default function AppLayout({
+  header = undefined,
+  footer = undefined,
+  children,
+}) {
   const { t } = useTranslation();
 
   return (
@@ -44,9 +48,4 @@ AppLayout.propTypes = {
   header: PropTypes.node,
   footer: PropTypes.node,
   children: PropTypes.node.isRequired,
-};
-
-AppLayout.defaultProps = {
-  header: undefined,
-  footer: undefined,
 };

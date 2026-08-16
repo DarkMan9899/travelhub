@@ -1,0 +1,21 @@
+// RelatedListings — tokens only, consumed from @travelhub/ui.
+// Plain responsive CSS grid, not the `Grid` layout primitive — see this
+// component's own file header for why.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-6;
+  margin-block-start: tokens.$space-4;
+
+  @include respond.respond(mobile-large) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond.respond(laptop) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

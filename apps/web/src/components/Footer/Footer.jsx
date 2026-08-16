@@ -17,7 +17,7 @@ import PropTypes from 'prop-types';
 import { Container, Grid, Stack } from '@travelhub/ui/components/layout';
 import styles from './Footer.module.scss';
 
-export default function Footer({ columns, bottomText }) {
+export default function Footer({ columns = [], bottomText = undefined }) {
   return (
     <footer className={styles.footer}>
       <Container size="wide">
@@ -63,9 +63,4 @@ Footer.propTypes = {
     }),
   ),
   bottomText: PropTypes.string,
-};
-
-Footer.defaultProps = {
-  columns: [],
-  bottomText: undefined,
 };

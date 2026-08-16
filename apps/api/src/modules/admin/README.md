@@ -8,9 +8,14 @@ Rules, Error Strategy, and Validation Strategy.
 **Endpoint contract:** see `API_SPECIFICATION.md` for this module's exact
 request/response shapes.
 
-**Sprint 1 status:** folder scaffold only. No controllers, services,
-repositories, or business logic exist yet — this module is implemented in
-a future sprint per the project roadmap.
+**Phase 11 status:** `GET /admin/dashboard` implemented (marketplace
+metrics composed from existing users/partners/listings/bookings/
+audit_logs tables — no new tables needed). Every route in this module
+requires one of the four admin-area roles (ADMIN/SUPER_ADMIN/MODERATOR/
+SUPPORT) via `requireRole`. Later Phase 11 stages add audit-log reads,
+system health, and settings/feature-flags here — per-entity admin
+actions (suspend a user, verify a partner, moderate a listing) live in
+their own existing modules instead, never duplicated here.
 
 ## Folder contents (per BACKEND_ARCHITECTURE.md §2)
 

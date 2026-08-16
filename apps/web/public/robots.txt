@@ -1,5 +1,14 @@
-# Sprint 1: no indexable content exists yet. This file exists so the
-# build pipeline and future SEO wiring (FRONTEND_ARCHITECTURE.md §33.4)
-# have a real file to extend rather than a missing one to remember.
+# Phase 20 (SEO) note: this static placeholder is what `vite dev`/
+# `vite preview` serves directly from public/. A production build MUST
+# run `npm run generate:seo-files` (or `npm run prerender`, which calls
+# it) afterward — that overwrites dist/robots.txt with the real,
+# manifest-driven file (scripts/generateSeoFiles.mjs, scripts/lib/
+# buildSitemap.mjs's buildRobotsTxt) that correctly references
+# sitemap.xml at the configured PUBLIC_SITE_URL and disallows the
+# private-area path prefixes. A bare `vite build` with no generation
+# step leaves this placeholder in dist/ — this is disallow-everything on
+# purpose, since an unrun generation step means no real sitemap/origin
+# exists yet either, and serving an indexable-looking robots.txt would
+# be worse than blocking crawl until the real one is generated.
 User-agent: *
-Disallow:
+Disallow: /

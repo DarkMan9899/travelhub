@@ -1,0 +1,62 @@
+// ListingGallery — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+@use 'mixins/focus-ring' as focus;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: tokens.$space-2;
+
+  @include respond.respond(tablet) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.thumbnailButton {
+  display: block;
+  padding: 0;
+  border: none;
+  border-radius: tokens.$radius-md;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: tokens.$color-gray-100;
+  aspect-ratio: 4 / 3;
+  @include focus.focus-ring;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lightbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: tokens.$space-3;
+  position: relative;
+}
+
+.lightboxMedia {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: tokens.$radius-md;
+}
+
+.counter {
+  position: absolute;
+  bottom: tokens.$space-3;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: tokens.$space-1 tokens.$space-3;
+  border-radius: tokens.$radius-full;
+  background-color: rgba(tokens.$color-gray-900, 0.7);
+  color: tokens.$color-white;
+  font-size: tokens.$font-size-small;
+}

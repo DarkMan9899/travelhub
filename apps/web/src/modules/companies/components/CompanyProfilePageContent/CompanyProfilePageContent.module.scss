@@ -1,0 +1,100 @@
+// CompanyProfilePageContent — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.hero {
+  border-radius: tokens.$radius-lg;
+  overflow: hidden;
+  background-color: tokens.$color-white;
+  @include tokens.elevation-1;
+}
+
+.coverImage {
+  width: 100%;
+  aspect-ratio: 4 / 1;
+  object-fit: cover;
+  display: block;
+  background-color: tokens.$color-gray-100;
+}
+
+.heroBody {
+  display: flex;
+  align-items: flex-end;
+  gap: tokens.$space-4;
+  padding: tokens.$space-6;
+}
+
+.logo {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: tokens.$radius-full;
+  border: 3px solid tokens.$color-white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+  margin-top: -48px;
+  background-color: tokens.$color-white;
+}
+
+.name {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h2;
+  line-height: tokens.$line-height-h2;
+  color: tokens.$color-gray-900;
+}
+
+.verifiedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-1;
+  padding: tokens.$space-1 tokens.$space-2;
+  border-radius: tokens.$radius-sm;
+  background-color: rgba(tokens.$color-royal-blue, 0.1);
+  color: tokens.$color-royal-blue;
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+}
+
+.description {
+  margin: tokens.$space-2 0 0;
+  color: tokens.$color-gray-600;
+  max-width: 60ch;
+}
+
+.contactRow {
+  flex-wrap: wrap;
+}
+
+.contactLink {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-1;
+  color: tokens.$color-gray-900;
+  text-decoration: none;
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+
+  &:hover {
+    color: tokens.$color-royal-blue;
+  }
+}
+
+// Plain responsive CSS grid, not the `Grid` layout primitive — see
+// `RelatedListings`'s file header for why card grids in this app use a
+// local `.module.scss` grid instead of `Grid`'s fixed `columns`.
+.listingsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-6;
+  margin-block-start: tokens.$space-4;
+
+  @include respond.respond(mobile-large) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond.respond(laptop) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

@@ -1,0 +1,57 @@
+// NumberStepperField — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-1;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+}
+
+.input {
+  width: 64px;
+  height: tokens.$input-height-md;
+  padding: 0 tokens.$space-2;
+  text-align: center;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  font-size: 1rem;
+  color: tokens.$color-gray-900;
+
+  &:focus-visible {
+    outline: none;
+    border-color: tokens.$color-royal-blue;
+    box-shadow: 0 0 0 3px rgba(29, 95, 214, 0.15);
+  }
+
+  &:disabled {
+    background-color: tokens.$color-gray-100;
+    color: tokens.$color-gray-400;
+  }
+
+  // Browser-native up/down spinners duplicate the +/- buttons this
+  // field already provides.
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+  appearance: textfield;
+}
+
+.unit {
+  font-size: 0.875rem;
+  color: tokens.$color-gray-600;
+}
+
+.errorText {
+  margin: 0;
+  font-size: 0.875rem;
+  color: tokens.$color-danger;
+}

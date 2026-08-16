@@ -1,0 +1,57 @@
+// SearchWidget — tokens only, consumed from @travelhub/ui.
+//
+// A deliberately compact, low-visual-weight bar: no per-field labels
+// (an aria-label carries the name instead — see SearchWidget.jsx's file
+// header), a single tight row at laptop+ with fields flush against each
+// other so their own borders read as segment dividers, lighter elevation
+// than a stand-alone card. This is what keeps the search area feeling
+// like a natural continuation of the Hero rather than a second, dominant
+// block competing with the headline for attention.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+@use 'mixins/glass' as glass;
+
+.widget {
+  @include glass.glass-surface(0.94, 20px);
+  border-radius: tokens.$radius-lg;
+  padding: tokens.$space-2;
+  @include tokens.elevation-2;
+
+  @include respond.respond(laptop) {
+    border-radius: tokens.$radius-xl;
+    padding: tokens.$space-1;
+  }
+}
+
+.fields {
+  align-items: stretch;
+  row-gap: tokens.$space-2;
+
+  @include respond.respond(laptop) {
+    align-items: center;
+    row-gap: 0;
+  }
+}
+
+.field {
+  flex: 1 1 100%;
+
+  @include respond.respond(mobile-large) {
+    flex: 1 1 calc(50% - #{tokens.$space-2});
+  }
+
+  @include respond.respond(laptop) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.submitWrapper {
+  flex: 1 1 100%;
+
+  @include respond.respond(laptop) {
+    flex: 0 0 auto;
+    margin-inline-start: tokens.$space-1;
+  }
+}

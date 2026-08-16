@@ -7,6 +7,14 @@
  * connection parameters directly from environment variables rather than
  * importing src/config/index.js's singleton, since globalSetup does not
  * share module state with the test files it precedes.
+ *
+ * Fail-fast safety net: `package.json`'s `test:integration`/`test:contract`
+ * scripts now explicitly set NODE_ENV=test (rather than relying on Jest's
+ * own implicit default), and this file asserts that landed correctly
+ * before creating anything — every integration test file that follows
+ * imports `src/config/index.js`, whose `database.name` branches on this
+ * exact same NODE_ENV check, so a wrong NODE_ENV here would otherwise
+ * only surface once a test file starts running real queries.
  */
 
 import mysql from 'mysql2/promise';
@@ -14,6 +22,14 @@ import mysql from 'mysql2/promise';
 const IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
 export default async function globalSetup() {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error(
+      `Integration tests require NODE_ENV=test, but it is "${process.env.NODE_ENV}". ` +
+        'Run via `npm run test:integration` (which sets this explicitly) ' +
+        'rather than invoking Jest directly.',
+    );
+  }
+
   const host = process.env.DATABASE_HOST || 'localhost';
   const port = Number(process.env.DATABASE_PORT || 3306);
   const user = process.env.DATABASE_USER || 'travelhub';

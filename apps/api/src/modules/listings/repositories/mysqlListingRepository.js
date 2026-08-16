@@ -29,10 +29,21 @@ import {
 } from '../../../infrastructure/database/pagination.js';
 import { ListingRepository as ListingRepositoryPort } from '../../../core/interfaces/ListingRepository.js';
 
+/** One value table per non-enum primitive — mirrors the Generic Attribute Engine's own convention (see search's mysqlSearchRepository.js). */
+const ATTRIBUTE_VALUE_TABLES = {
+  INTEGER: 'listing_attribute_values_integer',
+  DECIMAL: 'listing_attribute_values_decimal',
+  BOOLEAN: 'listing_attribute_values_boolean',
+  STRING: 'listing_attribute_values_string',
+  DATE: 'listing_attribute_values_date',
+};
+const ENUM_ATTRIBUTE_DATA_TYPES = ['ENUM', 'MULTI_ENUM'];
+
 const LISTING_SELECT_COLUMNS = `
   l.id, l.partner_id, l.listing_type_id, lt.code AS listing_type_code, l.slug,
   l.status_id, ls.code AS status_code, l.moderation_status_id, ms.code AS moderation_status_code,
-  l.is_contact_visible, l.is_featured, l.published_at, l.unpublished_at,
+  l.moderation_notes,
+  l.is_contact_visible, l.is_featured, l.published_at, l.unpublished_at, l.archived_at,
   l.canonical_url, l.og_image_media_id, l.is_indexable, l.is_sitemap_included,
   l.created_at, l.updated_at, l.deleted_at, l.created_by, l.updated_by
 `;
@@ -41,6 +52,24 @@ const FROM_LISTINGS_JOINED = `
   JOIN listing_types lt ON lt.id = l.listing_type_id
   JOIN listing_statuses ls ON ls.id = l.status_id
   JOIN moderation_statuses ms ON ms.id = l.moderation_status_id
+`;
+
+/**
+ * Stage 11.3 (Admin Platform — Listing Moderation) admin list columns:
+ * additive to `LISTING_SELECT_COLUMNS`, joining the owning partner's
+ * display name and a correlated-subquery title (the primary translation
+ * — same "pick one, correlated subquery" precedent
+ * `mysqlPartnerRepository.js`'s `listing_count` already uses, scoped here
+ * to a single row instead of a count).
+ */
+const ADMIN_SELECT_COLUMNS = `
+  ${LISTING_SELECT_COLUMNS},
+  p.display_name AS partner_display_name,
+  (SELECT title FROM listing_translations WHERE listing_id = l.id ORDER BY language_id ASC LIMIT 1) AS title
+`;
+const ADMIN_FROM_JOINED = `
+  ${FROM_LISTINGS_JOINED}
+  JOIN partners p ON p.id = l.partner_id
 `;
 
 function toListingDomain(row) {
@@ -55,10 +84,12 @@ function toListingDomain(row) {
     statusCode: row.status_code,
     moderationStatusId: row.moderation_status_id,
     moderationStatusCode: row.moderation_status_code,
+    moderationNotes: row.moderation_notes,
     isContactVisible: Boolean(row.is_contact_visible),
     isFeatured: Boolean(row.is_featured),
     publishedAt: row.published_at,
     unpublishedAt: row.unpublished_at,
+    archivedAt: row.archived_at,
     canonicalUrl: row.canonical_url,
     ogImageMediaId: row.og_image_media_id,
     isIndexable: Boolean(row.is_indexable),
@@ -71,11 +102,21 @@ function toListingDomain(row) {
   };
 }
 
+/** Stage 11.3 admin queue row — additive to `toListingDomain`, no child collections (translations/media/etc.) fetched, same "list row is lightweight" precedent as Partners' admin summary. */
+function toAdminListingSummaryDomain(row) {
+  return {
+    ...toListingDomain(row),
+    title: row.title,
+    partnerDisplayName: row.partner_display_name,
+  };
+}
+
 function toTranslationDomain(row) {
   return {
     id: row.id,
     listingId: row.listing_id,
     languageId: row.language_id,
+    languageCode: row.language_code,
     title: row.title,
     summary: row.summary,
     description: row.description,
@@ -90,6 +131,8 @@ function toLocationDomain(row) {
     listingId: row.listing_id,
     addressId: row.address_id,
     cityId: row.city_id,
+    cityName: row.city_name,
+    countryName: row.country_name,
     latitude: row.latitude === null ? null : Number(row.latitude),
     longitude: row.longitude === null ? null : Number(row.longitude),
   };
@@ -113,6 +156,8 @@ function toMediaDomain(row) {
     fileSizeBytes: row.file_size_bytes,
     ownerUserId: row.owner_user_id,
     createdAt: row.created_at,
+    altText: row.alt_text ?? null,
+    caption: row.caption ?? null,
   };
 }
 
@@ -258,6 +303,255 @@ export class MySqlListingRepository extends ListingRepositoryPort {
     }
   }
 
+  /**
+   * Writes attribute values onto a listing — the first code in this
+   * codebase to INSERT into the Generic Attribute Engine's typed value
+   * tables (previously read-only, only ever SELECTed by the search
+   * module). `attributeValues` entries are pre-resolved by
+   * `ListingService` (code -> `attributeDefinitionId`/`dataTypeCode`,
+   * same resolution `SearchService.#resolveAttributeFilters` already does
+   * for the read side) — this method only writes, never resolves.
+   * ENUM/MULTI_ENUM entries carry `optionIds` (replace semantics, scoped
+   * to that one attribute only); every other type carries a single
+   * `value` (upsert semantics) into its matching typed table.
+   */
+  async replaceAttributeValues(
+    listingId,
+    attributeValues = [],
+    connection = this.#pool,
+  ) {
+    try {
+      // eslint-disable-next-line no-restricted-syntax -- sequential by design, same connection/transaction
+      for (const entry of attributeValues) {
+        if (ENUM_ATTRIBUTE_DATA_TYPES.includes(entry.dataTypeCode)) {
+          // eslint-disable-next-line no-await-in-loop -- sequential by design
+          await connection.query(
+            `DELETE lao FROM listing_attribute_option lao
+             JOIN attribute_options ao ON ao.id = lao.attribute_option_id
+             WHERE lao.listing_id = ? AND ao.attribute_definition_id = ?`,
+            [listingId, entry.attributeDefinitionId],
+          );
+          if (entry.optionIds.length > 0) {
+            const values = entry.optionIds.map((optionId) => [
+              listingId,
+              optionId,
+            ]);
+            // eslint-disable-next-line no-await-in-loop -- sequential by design
+            await connection.query(
+              'INSERT INTO listing_attribute_option (listing_id, attribute_option_id) VALUES ?',
+              [values],
+            );
+          }
+        } else {
+          const table = ATTRIBUTE_VALUE_TABLES[entry.dataTypeCode];
+          // eslint-disable-next-line no-await-in-loop -- sequential by design
+          await connection.query(
+            `INSERT INTO ${table} (listing_id, attribute_definition_id, value)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE value = VALUES(value)`,
+            [listingId, entry.attributeDefinitionId, entry.value],
+          );
+        }
+      }
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+  }
+
+  /** One flexible string value per (listing, policy) — see migration 0015's header for why this is untyped, unlike attribute values. */
+  async replacePolicyValues(
+    listingId,
+    policyValues = [],
+    connection = this.#pool,
+  ) {
+    try {
+      // eslint-disable-next-line no-restricted-syntax -- sequential by design, same connection/transaction
+      for (const entry of policyValues) {
+        // eslint-disable-next-line no-await-in-loop -- sequential by design
+        await connection.query(
+          `INSERT INTO listing_policy_values (listing_id, policy_definition_id, value)
+           VALUES (?, ?, ?)
+           ON DUPLICATE KEY UPDATE value = VALUES(value)`,
+          [listingId, entry.policyDefinitionId, entry.value],
+        );
+      }
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+  }
+
+  async upsertPricing(
+    listingId,
+    { pricingModelId, amount, currencyId },
+    connection = this.#pool,
+  ) {
+    try {
+      await connection.query(
+        `INSERT INTO listing_pricing (listing_id, pricing_model_id, amount, currency_id)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           pricing_model_id = VALUES(pricing_model_id), amount = VALUES(amount), currency_id = VALUES(currency_id)`,
+        [listingId, pricingModelId, amount, currencyId],
+      );
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+  }
+
+  /** COALESCE-based partial update — same rationale as `upsertLocation` above (an omitted field must not erase a previously-set one). */
+  async upsertBookingRules(
+    listingId,
+    {
+      minimumStayNights = null,
+      maximumStayNights = null,
+      advanceBookingMinHours = null,
+      advanceBookingMaxDays = null,
+    } = {},
+    connection = this.#pool,
+  ) {
+    try {
+      await connection.query(
+        `INSERT INTO listing_booking_rules
+           (listing_id, minimum_stay_nights, maximum_stay_nights, advance_booking_min_hours, advance_booking_max_days)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           minimum_stay_nights = COALESCE(VALUES(minimum_stay_nights), minimum_stay_nights),
+           maximum_stay_nights = COALESCE(VALUES(maximum_stay_nights), maximum_stay_nights),
+           advance_booking_min_hours = COALESCE(VALUES(advance_booking_min_hours), advance_booking_min_hours),
+           advance_booking_max_days = COALESCE(VALUES(advance_booking_max_days), advance_booking_max_days)`,
+        [
+          listingId,
+          minimumStayNights,
+          maximumStayNights,
+          advanceBookingMinHours,
+          advanceBookingMaxDays,
+        ],
+      );
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+  }
+
+  /**
+   * Unified read across all 5 typed tables + the ENUM/MULTI_ENUM option
+   * table, one entry per attribute keyed by `code` (not the internal id)
+   * — the wizard only ever deals in codes (same convention as the write
+   * side and `GET /listings/metadata`), never attribute_definition_id.
+   * `optionCodes` for enum types, `value` otherwise.
+   */
+  async getAttributeValues(listingId, connection = this.#pool) {
+    const [
+      [intRows],
+      [decRows],
+      [boolRows],
+      [strRows],
+      [dateRows],
+      [optionRows],
+    ] = await Promise.all([
+      connection.query(
+        `SELECT ad.code, v.value FROM listing_attribute_values_integer v
+           JOIN attribute_definitions ad ON ad.id = v.attribute_definition_id
+           WHERE v.listing_id = ?`,
+        [listingId],
+      ),
+      connection.query(
+        `SELECT ad.code, v.value FROM listing_attribute_values_decimal v
+           JOIN attribute_definitions ad ON ad.id = v.attribute_definition_id
+           WHERE v.listing_id = ?`,
+        [listingId],
+      ),
+      connection.query(
+        `SELECT ad.code, v.value FROM listing_attribute_values_boolean v
+           JOIN attribute_definitions ad ON ad.id = v.attribute_definition_id
+           WHERE v.listing_id = ?`,
+        [listingId],
+      ),
+      connection.query(
+        `SELECT ad.code, v.value FROM listing_attribute_values_string v
+           JOIN attribute_definitions ad ON ad.id = v.attribute_definition_id
+           WHERE v.listing_id = ?`,
+        [listingId],
+      ),
+      connection.query(
+        `SELECT ad.code, v.value FROM listing_attribute_values_date v
+           JOIN attribute_definitions ad ON ad.id = v.attribute_definition_id
+           WHERE v.listing_id = ?`,
+        [listingId],
+      ),
+      connection.query(
+        `SELECT ad.code, ao.code AS option_code
+           FROM listing_attribute_option lao
+           JOIN attribute_options ao ON ao.id = lao.attribute_option_id
+           JOIN attribute_definitions ad ON ad.id = ao.attribute_definition_id
+           WHERE lao.listing_id = ?`,
+        [listingId],
+      ),
+    ]);
+
+    const values = [
+      ...intRows.map((row) => ({ code: row.code, value: row.value })),
+      ...decRows.map((row) => ({ code: row.code, value: Number(row.value) })),
+      ...boolRows.map((row) => ({ code: row.code, value: Boolean(row.value) })),
+      ...strRows.map((row) => ({ code: row.code, value: row.value })),
+      ...dateRows.map((row) => ({ code: row.code, value: row.value })),
+    ];
+
+    const optionCodesByAttributeCode = new Map();
+    optionRows.forEach((row) => {
+      if (!optionCodesByAttributeCode.has(row.code)) {
+        optionCodesByAttributeCode.set(row.code, []);
+      }
+      optionCodesByAttributeCode.get(row.code).push(row.option_code);
+    });
+    optionCodesByAttributeCode.forEach((optionCodes, code) => {
+      values.push({ code, optionCodes });
+    });
+
+    return values;
+  }
+
+  async getPolicyValues(listingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT pd.code, v.value FROM listing_policy_values v
+       JOIN policy_definitions pd ON pd.id = v.policy_definition_id
+       WHERE v.listing_id = ?`,
+      [listingId],
+    );
+    return rows.map((row) => ({ code: row.code, value: row.value }));
+  }
+
+  async getPricing(listingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT pm.code AS pricing_model_code, p.amount, c.code AS currency_code
+       FROM listing_pricing p
+       JOIN pricing_models pm ON pm.id = p.pricing_model_id
+       JOIN currencies c ON c.id = p.currency_id
+       WHERE p.listing_id = ? LIMIT 1`,
+      [listingId],
+    );
+    if (rows.length === 0) return null;
+    return {
+      pricingModelCode: rows[0].pricing_model_code,
+      amount: Number(rows[0].amount),
+      currencyCode: rows[0].currency_code,
+    };
+  }
+
+  async getBookingRules(listingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT minimum_stay_nights, maximum_stay_nights, advance_booking_min_hours, advance_booking_max_days
+       FROM listing_booking_rules WHERE listing_id = ? LIMIT 1`,
+      [listingId],
+    );
+    if (rows.length === 0) return null;
+    return {
+      minimumStayNights: rows[0].minimum_stay_nights,
+      maximumStayNights: rows[0].maximum_stay_nights,
+      advanceBookingMinHours: rows[0].advance_booking_min_hours,
+      advanceBookingMaxDays: rows[0].advance_booking_max_days,
+    };
+  }
+
   async recordSlugHistory(listingId, oldSlug, connection = this.#pool) {
     await connection.query(
       'INSERT INTO listing_slug_history (listing_id, old_slug) VALUES (?, ?)',
@@ -272,20 +566,52 @@ export class MySqlListingRepository extends ListingRepositoryPort {
     );
     const listing = toListingDomain(rows[0]);
     if (!listing) return null;
+    return this.#assembleListing(listing, connection);
+  }
 
+  /**
+   * Phase 20 (SEO): shared by `findById` and `findBySlug` — both resolve
+   * the same base row shape (just a different WHERE clause) and then need
+   * the identical set of nested collections (translations/location/media/
+   * attributes/pricing/etc.), all keyed off the resolved numeric `id`.
+   * Extracted so `findBySlug` (previously a stub that returned only the
+   * bare row — never actually called anywhere until Phase 20 wired the
+   * public GET route to accept a slug, at which point it surfaced as a
+   * real 500) assembles a genuinely complete domain object, identical in
+   * shape to `findById`'s.
+   */
+  async #assembleListing(listing, connection) {
+    const { id } = listing;
     const [
       [translationRows],
       [locationRows],
       [categoryRows],
       [amenityRows],
       mediaRows,
+      attributeValues,
+      policyValues,
+      pricing,
+      bookingRules,
+      [reviewSummaryRows],
+      highlights,
+      itinerarySteps,
+      includedItems,
+      faqs,
     ] = await Promise.all([
       connection.query(
-        'SELECT * FROM listing_translations WHERE listing_id = ?',
+        `SELECT lt.*, lang.code AS language_code
+         FROM listing_translations lt
+         LEFT JOIN languages lang ON lang.id = lt.language_id
+         WHERE lt.listing_id = ?`,
         [id],
       ),
       connection.query(
-        'SELECT * FROM listing_locations WHERE listing_id = ? LIMIT 1',
+        `SELECT ll.*, c.name AS city_name, co.name AS country_name
+         FROM listing_locations ll
+         LEFT JOIN cities c ON c.id = ll.city_id
+         LEFT JOIN regions r ON r.id = c.region_id
+         LEFT JOIN countries co ON co.id = r.country_id
+         WHERE ll.listing_id = ? LIMIT 1`,
         [id],
       ),
       connection.query(
@@ -297,7 +623,29 @@ export class MySqlListingRepository extends ListingRepositoryPort {
         [id],
       ),
       this.listMedia(id, connection),
+      this.getAttributeValues(id, connection),
+      this.getPolicyValues(id, connection),
+      this.getPricing(id, connection),
+      this.getBookingRules(id, connection),
+      // Phase 12 (Product Polish): read-only rating aggregate. Not a
+      // second Repository over `reviews`' write path (all review
+      // writes/moderation still go exclusively through ReviewService) —
+      // this mirrors how this method already denormalizes reads across
+      // tables owned elsewhere (translations/location joins above).
+      connection.query(
+        `SELECT AVG(rv.rating) AS rating_average, COUNT(*) AS review_count
+         FROM reviews rv
+         JOIN moderation_statuses rs ON rs.id = rv.status_id
+         WHERE rv.listing_id = ? AND rs.code = 'APPROVED' AND rv.deleted_at IS NULL`,
+        [id],
+      ),
+      this.listHighlights(id, connection),
+      this.listItinerarySteps(id, connection),
+      this.listIncludedItems(id, connection),
+      this.listFaqs(id, connection),
     ]);
+
+    const reviewSummaryRow = reviewSummaryRows[0];
 
     return {
       ...listing,
@@ -306,6 +654,18 @@ export class MySqlListingRepository extends ListingRepositoryPort {
       categoryIds: categoryRows.map((row) => row.category_id),
       amenityIds: amenityRows.map((row) => row.amenity_id),
       media: mediaRows,
+      attributeValues,
+      policyValues,
+      pricing,
+      bookingRules,
+      ratingAverage: reviewSummaryRow?.rating_average
+        ? Number(reviewSummaryRow.rating_average)
+        : null,
+      reviewCount: reviewSummaryRow?.review_count ?? 0,
+      highlights,
+      itinerarySteps,
+      includedItems,
+      faqs,
     };
   }
 
@@ -314,7 +674,9 @@ export class MySqlListingRepository extends ListingRepositoryPort {
       `SELECT ${LISTING_SELECT_COLUMNS} ${FROM_LISTINGS_JOINED} WHERE l.slug = ? AND ${scopeActive('l')} LIMIT 1`,
       [slug],
     );
-    return toListingDomain(rows[0]);
+    const listing = toListingDomain(rows[0]);
+    if (!listing) return null;
+    return this.#assembleListing(listing, connection);
   }
 
   async slugExists(slug, { excludeId = null } = {}, connection = this.#pool) {
@@ -372,6 +734,78 @@ export class MySqlListingRepository extends ListingRepositoryPort {
       id: row.id,
     }));
     return { rows: pageRows.map(toListingDomain), meta };
+  }
+
+  /**
+   * Stage 11.3 (Admin Platform — Listing Moderation) admin queue — every
+   * listing regardless of owner or publish status, unlike `list()` above
+   * (which requires an owner/permission match on an explicit `partnerId`
+   * to see anything beyond PUBLISHED). Keyword matches the listing's
+   * primary title or the owning partner's display name.
+   * @param {{keyword?: string, moderationStatus?: string, status?: string, cursor?: string|null, limit?: number}} [opts]
+   */
+  async listAdmin({
+    keyword,
+    moderationStatus,
+    status,
+    cursor = null,
+    limit = 20,
+  } = {}) {
+    const conditions = [scopeActive('l')];
+    const params = [];
+
+    if (keyword) {
+      conditions.push(
+        `(p.display_name LIKE ?
+          OR (SELECT title FROM listing_translations WHERE listing_id = l.id ORDER BY language_id ASC LIMIT 1) LIKE ?)`,
+      );
+      const pattern = `%${keyword}%`;
+      params.push(pattern, pattern);
+    }
+    if (moderationStatus) {
+      conditions.push('ms.code = ?');
+      params.push(moderationStatus);
+    }
+    if (status) {
+      conditions.push('ls.code = ?');
+      params.push(status);
+    }
+
+    const decoded = decodeCursor(cursor);
+    if (decoded?.id) {
+      conditions.push('l.id < ?');
+      params.push(decoded.id);
+    }
+
+    const [rows] = await this.#pool.query(
+      `SELECT ${ADMIN_SELECT_COLUMNS} ${ADMIN_FROM_JOINED}
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY l.id DESC
+       LIMIT ?`,
+      [...params, limit + 1],
+    );
+
+    const { rows: pageRows, meta } = buildPageMeta(rows, limit, (row) => ({
+      id: row.id,
+    }));
+    return { rows: pageRows.map(toAdminListingSummaryDomain), meta };
+  }
+
+  /**
+   * @param {number} id
+   * @param {string} statusCode PENDING|APPROVED|REJECTED|FLAGGED
+   * @param {string|null} notes
+   * @param {number} updatedBy
+   */
+  async updateModerationStatus(id, statusCode, notes, updatedBy) {
+    await this.#pool.query(
+      `UPDATE listings
+       SET moderation_status_id = (SELECT id FROM moderation_statuses WHERE code = ?),
+           moderation_notes = ?,
+           updated_by = ?
+       WHERE id = ?`,
+      [statusCode, notes, updatedBy, id],
+    );
   }
 
   async update(id, fields, connection = this.#pool) {
@@ -432,6 +866,15 @@ export class MySqlListingRepository extends ListingRepositoryPort {
     );
   }
 
+  async markArchived(id, statusId, updatedBy, connection = this.#pool) {
+    await connection.query(
+      `UPDATE listings
+       SET status_id = ?, archived_at = UTC_TIMESTAMP(3), updated_by = ?
+       WHERE id = ?`,
+      [statusId, updatedBy, id],
+    );
+  }
+
   async softDelete(id, deletedByUserId, connection = this.#pool) {
     await connection.query(
       `UPDATE listings SET ${softDeleteAssignment()}, deleted_by = ?, updated_by = ? WHERE id = ?`,
@@ -441,10 +884,14 @@ export class MySqlListingRepository extends ListingRepositoryPort {
 
   async listMedia(listingId, connection = this.#pool) {
     const [rows] = await connection.query(
-      `SELECT m.*, mt.code AS media_type_code, mst.code AS moderation_status_code
+      `SELECT m.*, mt.code AS media_type_code, mst.code AS moderation_status_code,
+              trans.alt_text, trans.caption
        FROM media m
        JOIN media_types mt ON mt.id = m.media_type_id
        JOIN moderation_statuses mst ON mst.id = m.moderation_status_id
+       LEFT JOIN media_translations trans
+         ON trans.media_id = m.id
+         AND trans.language_id = (SELECT id FROM languages WHERE is_default = 1 LIMIT 1)
        WHERE m.mediable_type = 'listing' AND m.mediable_id = ? AND ${scopeActive('m')}
        ORDER BY m.position ASC, m.id ASC`,
       [listingId],
@@ -454,15 +901,38 @@ export class MySqlListingRepository extends ListingRepositoryPort {
 
   async findMediaById(mediaId, connection = this.#pool) {
     const [rows] = await connection.query(
-      `SELECT m.*, mt.code AS media_type_code, mst.code AS moderation_status_code
+      `SELECT m.*, mt.code AS media_type_code, mst.code AS moderation_status_code,
+              trans.alt_text, trans.caption
        FROM media m
        JOIN media_types mt ON mt.id = m.media_type_id
        JOIN moderation_statuses mst ON mst.id = m.moderation_status_id
+       LEFT JOIN media_translations trans
+         ON trans.media_id = m.id
+         AND trans.language_id = (SELECT id FROM languages WHERE is_default = 1 LIMIT 1)
        WHERE m.id = ? AND m.mediable_type = 'listing' AND ${scopeActive('m')}
        LIMIT 1`,
       [mediaId],
     );
     return rows[0] ? toMediaDomain(rows[0]) : null;
+  }
+
+  /** Upserts the default-locale alt-text/caption for one media item (Phase
+   * 18) — mirrors `listing_translations`' "one authored UI-locale" scope
+   * simplification rather than threading per-request locale through the
+   * Media step. */
+  async upsertMediaTranslation(
+    mediaId,
+    languageId,
+    { altText, caption },
+    connection = this.#pool,
+  ) {
+    await connection.query(
+      `INSERT INTO media_translations (media_id, language_id, alt_text, caption)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         alt_text = VALUES(alt_text), caption = VALUES(caption)`,
+      [mediaId, languageId, altText ?? null, caption ?? null],
+    );
   }
 
   async attachMedia(
@@ -545,6 +1015,170 @@ export class MySqlListingRepository extends ListingRepositoryPort {
       `UPDATE media SET ${softDeleteAssignment()}, deleted_by = ?, updated_by = ? WHERE id = ?`,
       [deletedByUserId, deletedByUserId, mediaId],
     );
+  }
+
+  // --- Phase 18 (Premium Listing Detail): highlights / itinerary /
+  // included-items / FAQs. All four are structurally identical ordered
+  // per-listing lists — each gets a `list*`/`replace*` pair using the same
+  // "delete all, reinsert in the given order" full-replace semantics
+  // `replaceAttributeValues` already established for MULTI_ENUM entries:
+  // the partner wizard always resends the complete desired list on save,
+  // so there is no separate per-item update/reorder endpoint to build.
+
+  async listHighlights(listingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT id, icon_code, text, sort_order
+       FROM listing_highlights WHERE listing_id = ? ORDER BY sort_order ASC, id ASC`,
+      [listingId],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      iconCode: row.icon_code,
+      text: row.text,
+      sortOrder: row.sort_order,
+    }));
+  }
+
+  async replaceHighlights(
+    listingId,
+    highlights,
+    userId,
+    connection = this.#pool,
+  ) {
+    await connection.query(
+      'DELETE FROM listing_highlights WHERE listing_id = ?',
+      [listingId],
+    );
+    // eslint-disable-next-line no-restricted-syntax -- ordered insert, must preserve sequence
+    for (const [index, highlight] of highlights.entries()) {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design
+      await connection.query(
+        `INSERT INTO listing_highlights (listing_id, icon_code, text, sort_order, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [listingId, highlight.iconCode, highlight.text, index, userId, userId],
+      );
+    }
+    return this.listHighlights(listingId, connection);
+  }
+
+  async listItinerarySteps(listingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT id, sort_order, title, description, duration_minutes
+       FROM listing_itinerary_steps WHERE listing_id = ? ORDER BY sort_order ASC, id ASC`,
+      [listingId],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      sortOrder: row.sort_order,
+      title: row.title,
+      description: row.description,
+      durationMinutes: row.duration_minutes,
+    }));
+  }
+
+  async replaceItinerarySteps(
+    listingId,
+    steps,
+    userId,
+    connection = this.#pool,
+  ) {
+    await connection.query(
+      'DELETE FROM listing_itinerary_steps WHERE listing_id = ?',
+      [listingId],
+    );
+    // eslint-disable-next-line no-restricted-syntax -- ordered insert, must preserve sequence
+    for (const [index, step] of steps.entries()) {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design
+      await connection.query(
+        `INSERT INTO listing_itinerary_steps
+           (listing_id, sort_order, title, description, duration_minutes, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          listingId,
+          index,
+          step.title,
+          step.description ?? null,
+          step.durationMinutes ?? null,
+          userId,
+          userId,
+        ],
+      );
+    }
+    return this.listItinerarySteps(listingId, connection);
+  }
+
+  async listIncludedItems(listingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT id, item_text, is_included, sort_order
+       FROM listing_included_items WHERE listing_id = ? ORDER BY is_included DESC, sort_order ASC, id ASC`,
+      [listingId],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      itemText: row.item_text,
+      isIncluded: Boolean(row.is_included),
+      sortOrder: row.sort_order,
+    }));
+  }
+
+  async replaceIncludedItems(
+    listingId,
+    items,
+    userId,
+    connection = this.#pool,
+  ) {
+    await connection.query(
+      'DELETE FROM listing_included_items WHERE listing_id = ?',
+      [listingId],
+    );
+    // eslint-disable-next-line no-restricted-syntax -- ordered insert, must preserve sequence
+    for (const [index, item] of items.entries()) {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design
+      await connection.query(
+        `INSERT INTO listing_included_items
+           (listing_id, item_text, is_included, sort_order, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          listingId,
+          item.itemText,
+          item.isIncluded ? 1 : 0,
+          index,
+          userId,
+          userId,
+        ],
+      );
+    }
+    return this.listIncludedItems(listingId, connection);
+  }
+
+  async listFaqs(listingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT id, question, answer, sort_order
+       FROM listing_faqs WHERE listing_id = ? ORDER BY sort_order ASC, id ASC`,
+      [listingId],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      question: row.question,
+      answer: row.answer,
+      sortOrder: row.sort_order,
+    }));
+  }
+
+  async replaceFaqs(listingId, faqs, userId, connection = this.#pool) {
+    await connection.query('DELETE FROM listing_faqs WHERE listing_id = ?', [
+      listingId,
+    ]);
+    // eslint-disable-next-line no-restricted-syntax -- ordered insert, must preserve sequence
+    for (const [index, faq] of faqs.entries()) {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design
+      await connection.query(
+        `INSERT INTO listing_faqs (listing_id, question, answer, sort_order, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [listingId, faq.question, faq.answer, index, userId, userId],
+      );
+    }
+    return this.listFaqs(listingId, connection);
   }
 
   /**

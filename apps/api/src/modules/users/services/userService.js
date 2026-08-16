@@ -62,6 +62,20 @@ export class UserService {
   }
 
   /**
+   * Phase 11 Admin Platform: no owner fallback — these are inherently
+   * "view/manage someone else's account" actions (a user already has
+   * `GET /auth/me`/`PATCH /users/:id` for their own profile), so the
+   * permission is required outright.
+   */
+  async #assertPermission(principal, permissionKey) {
+    const granted = await this.#permissionResolver.hasPermission(
+      principal.roles,
+      permissionKey,
+    );
+    if (!granted) throw new AuthorizationError();
+  }
+
+  /**
    * Used by AuthenticationService.register — Auth depends on this public
    * method, never the Users module's Repository directly.
    */
@@ -106,6 +120,22 @@ export class UserService {
   /** Used by AuthenticationService to build the JWT's `roles` claim. */
   async getRoleCodes(userId) {
     return this.#userRepository.getRoleCodes(userId);
+  }
+
+  /**
+   * Phase 13 (Notifications): bulk recipient resolution for an
+   * admin-authored announcement's audience. No internal permission
+   * check here — the real gate is the announcement route's own
+   * `requireRole(['ADMIN','SUPER_ADMIN'])` guard, the same
+   * guard-then-trust pattern already used for `req.principal` itself.
+   */
+  async listUserIdsByRole(roleCodes) {
+    return this.#userRepository.listUserIdsByRole(roleCodes);
+  }
+
+  /** Phase 13 (Notifications): bulk recipient resolution for an announcement's "everyone" audience. */
+  async listAllUserIds() {
+    return this.#userRepository.listAllUserIds();
   }
 
   /** Used by AuthenticationService.register to grant the default global role. */
@@ -226,6 +256,58 @@ export class UserService {
     });
 
     return this.#userRepository.findById(targetUserId);
+  }
+
+  /**
+   * Phase 11 Admin Platform: `GET /users` (admin list). No owner
+   * fallback — `user.list` is required outright.
+   */
+  async listUsers(principal, filters = {}, paginationOpts = {}) {
+    await this.#assertPermission(principal, 'user.list');
+    return this.#userRepository.listAdmin({ ...filters, ...paginationOpts });
+  }
+
+  /**
+   * Phase 11 Admin Platform: `GET /users/:id` (admin detail — distinct
+   * from `GET /auth/me`, which already covers "my own profile"). No
+   * owner fallback, same reasoning as `listUsers`.
+   */
+  async getAdminDetail(principal, targetUserId) {
+    await this.#assertPermission(principal, 'user.view');
+    const user = await this.#userRepository.findById(targetUserId);
+    if (!user) throw new NotFoundError('User not found.');
+    const roleCodes = await this.#userRepository.getRoleCodes(targetUserId);
+    return { ...user, roleCodes };
+  }
+
+  /**
+   * Phase 11 Admin Platform: `PATCH /users/:id/status` — suspend/
+   * activate/ban. `PENDING_DELETION` is deliberately excluded (a
+   * self-service account-deletion state, not an admin action) — see
+   * `userValidators.js`'s `ADMIN_SETTABLE_USER_STATUSES` for the
+   * enforced allow-list.
+   */
+  async updateStatus(principal, targetUserId, statusCode) {
+    await this.#assertPermission(principal, 'user.suspend');
+
+    const before = await this.#userRepository.findById(targetUserId);
+    if (!before) throw new NotFoundError('User not found.');
+
+    const updated = await this.#userRepository.updateStatusByCode(
+      targetUserId,
+      statusCode,
+    );
+
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'user.status_changed',
+      targetType: 'user',
+      targetId: targetUserId,
+      beforeSnapshot: { statusCode: before.statusCode },
+      afterSnapshot: { statusCode },
+    });
+
+    return updated;
   }
 }
 

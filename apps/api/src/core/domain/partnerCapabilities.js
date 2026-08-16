@@ -1,0 +1,70 @@
+/**
+ * Partner-employee capability matrix — Phase 17 spec §14 ("Manager /
+ * Staff Permissions"). `partner_employee_roles` (OWNER/MANAGER/EDITOR/
+ * BOOKING_MANAGER/ANALYTICS_VIEWER, seeded in `seeds/001_lookups.js`) is
+ * a partner-scoped RBAC system, deliberately separate from the global
+ * `roles`/`permissions` tables (Sprint 5 decision, unchanged here) — a
+ * receptionist-style `BOOKING_MANAGER` account must be able to operate
+ * inventory without ever touching a partner's financial settings,
+ * payouts, or org-wide configuration, and this matrix is what enforces
+ * that boundary server-side (never just by hiding a nav item).
+ *
+ * Pure domain logic — no database access, no request/response shapes.
+ * `OWNER` is intentionally NOT special-cased here: every caller of
+ * `roleHasCapability` already grants `OWNER` a bypass one level up
+ * (mirrors `AvailabilityService#isOwnerOrHasPermission`'s existing
+ * "owner always passes" precedent), so this matrix only needs to state
+ * what *non-owner* roles may do.
+ */
+
+export const PARTNER_CAPABILITIES = Object.freeze({
+  VIEW_AVAILABILITY: 'VIEW_AVAILABILITY',
+  MANAGE_AVAILABILITY: 'MANAGE_AVAILABILITY',
+  MANAGE_EXTERNAL_RESERVATIONS: 'MANAGE_EXTERNAL_RESERVATIONS',
+  MANAGE_MANUAL_BLOCKS: 'MANAGE_MANUAL_BLOCKS',
+  MANAGE_CONNECTIONS: 'MANAGE_CONNECTIONS',
+  VIEW_SYNC_LOGS: 'VIEW_SYNC_LOGS',
+});
+
+// Role -> the set of capabilities it grants, beyond OWNER's implicit
+// all-access bypass. `MANAGER` mirrors OWNER for inventory purposes
+// (day-to-day operational trust); `BOOKING_MANAGER` gets everything
+// operational but never `MANAGE_CONNECTIONS` (connector credentials are
+// a more sensitive, less-frequently-changed setting, kept OWNER/MANAGER
+// only); `EDITOR`/`ANALYTICS_VIEWER` are read-only here.
+const ROLE_CAPABILITIES = Object.freeze({
+  MANAGER: Object.freeze([
+    PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
+    PARTNER_CAPABILITIES.MANAGE_AVAILABILITY,
+    PARTNER_CAPABILITIES.MANAGE_EXTERNAL_RESERVATIONS,
+    PARTNER_CAPABILITIES.MANAGE_MANUAL_BLOCKS,
+    PARTNER_CAPABILITIES.MANAGE_CONNECTIONS,
+    PARTNER_CAPABILITIES.VIEW_SYNC_LOGS,
+  ]),
+  BOOKING_MANAGER: Object.freeze([
+    PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
+    PARTNER_CAPABILITIES.MANAGE_AVAILABILITY,
+    PARTNER_CAPABILITIES.MANAGE_EXTERNAL_RESERVATIONS,
+    PARTNER_CAPABILITIES.MANAGE_MANUAL_BLOCKS,
+    PARTNER_CAPABILITIES.VIEW_SYNC_LOGS,
+  ]),
+  EDITOR: Object.freeze([PARTNER_CAPABILITIES.VIEW_AVAILABILITY]),
+  ANALYTICS_VIEWER: Object.freeze([
+    PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
+    PARTNER_CAPABILITIES.VIEW_SYNC_LOGS,
+  ]),
+});
+
+/**
+ * @param {string|null} roleCode - a `partner_employee_roles.code`, or
+ *   `null`/`undefined` when the caller isn't a partner employee at all.
+ * @param {string} capability - one of `PARTNER_CAPABILITIES`.
+ * @returns {boolean}
+ */
+export function roleHasCapability(roleCode, capability) {
+  if (!roleCode) return false;
+  const granted = ROLE_CAPABILITIES[roleCode];
+  return granted ? granted.includes(capability) : false;
+}
+
+export default { PARTNER_CAPABILITIES, roleHasCapability };

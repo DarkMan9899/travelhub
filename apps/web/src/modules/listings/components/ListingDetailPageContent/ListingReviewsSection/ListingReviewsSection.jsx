@@ -1,0 +1,44 @@
+/**
+ * ListingReviewsSection — Phase 18 (Premium Listing Detail): adds the
+ * shared `ReviewSummary` primitive (big average + rating stars) above
+ * the existing `ReviewsList`, using the listing's own `rating_average`/
+ * `review_count` (Phase 12's real, backend-computed aggregate — never
+ * fabricated). No distribution bars: the backend doesn't compute a
+ * per-star breakdown, and `ReviewSummary` already treats that as
+ * optional rather than requiring an estimate. Reviews are only ever
+ * submitted from a completed booking's own detail page
+ * (`BookingDetailPageContent`'s review gate) — this section stays
+ * display-only, no "write a review" CTA here.
+ */
+
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
+import { ReviewSummary } from '@travelhub/ui/components/data-display';
+import { Stack } from '@travelhub/ui/components/layout';
+import { ReviewsList } from '../../../../reviews/index.js';
+
+export default function ListingReviewsSection({
+  listingId,
+  ratingAverage = null,
+  reviewCount = 0,
+  sectionId = undefined,
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <Stack gap="4">
+      <h2 id={sectionId}>{t('pages.listingDetail.reviews.heading')}</h2>
+      {ratingAverage !== null && (
+        <ReviewSummary average={ratingAverage} reviewCount={reviewCount} />
+      )}
+      <ReviewsList listingId={listingId} />
+    </Stack>
+  );
+}
+
+ListingReviewsSection.propTypes = {
+  listingId: PropTypes.number.isRequired,
+  ratingAverage: PropTypes.number,
+  reviewCount: PropTypes.number,
+  sectionId: PropTypes.string,
+};

@@ -1,0 +1,28 @@
+// AuthLayout — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+.authLayout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background-color: tokens.$color-gray-100;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-8;
+  padding-block: tokens.$space-16;
+}
+
+.logo {
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: tokens.$color-navy;
+  text-decoration: none;
+  @include focus.focus-ring;
+}

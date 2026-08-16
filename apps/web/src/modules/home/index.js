@@ -1,8 +1,20 @@
 /**
- * Public export surface for the "home" module.
- * Sprint 1: intentionally empty — no components/hooks/queries exist yet.
- * See README.md for this module's scope and FRONTEND_ARCHITECTURE.md
- * Chapter 6 for the cross-module dependency rules this file's exports
- * are governed by.
+ * `home` module public export surface (FRONTEND_ARCHITECTURE.md §6.2) —
+ * the ONLY entry point another module/page may import from (§6.3).
+ *
+ * Only the sections `pages/HomePage.jsx` composes directly are exported
+ * here — internal building blocks each section uses (SearchWidget,
+ * SectionHeader, ScrollReveal, and every card component) stay
+ * module-private, consistent with `listings`' own "promote only once a
+ * second consumer needs it" rule.
  */
-export {};
+
+export { default as Hero } from './components/Hero/Hero.jsx';
+export { default as FeaturedDestinations } from './components/FeaturedDestinations/FeaturedDestinations.jsx';
+export { default as FeaturedListings } from './components/FeaturedListings/FeaturedListings.jsx';
+export { default as PopularExperiences } from './components/PopularExperiences/PopularExperiences.jsx';
+export { default as Categories } from './components/Categories/Categories.jsx';
+export { default as WhyTravelHub } from './components/WhyTravelHub/WhyTravelHub.jsx';
+export { default as PartnerCta } from './components/PartnerCta/PartnerCta.jsx';
+export { default as Testimonials } from './components/Testimonials/Testimonials.jsx';
+export { default as Newsletter } from './components/Newsletter/Newsletter.jsx';

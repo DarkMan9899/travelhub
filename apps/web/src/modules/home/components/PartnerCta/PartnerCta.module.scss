@@ -1,0 +1,70 @@
+// PartnerCta — tokens only, consumed from @travelhub/ui.
+//
+// Dark navy/royal-blue gradient (same premium language as Hero) — safe
+// here because this section only ever uses Button's `primary` variant
+// (a self-contained solid fill), never `secondary`/`ghost` (which are
+// styled for a light background only — see Hero.jsx's own header
+// comment for where that distinction actually matters).
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.banner {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-6;
+  padding: tokens.$space-12 tokens.$space-6;
+  border-radius: tokens.$radius-xl;
+  background: linear-gradient(
+    135deg,
+    tokens.$color-navy 0%,
+    tokens.$color-royal-blue 100%
+  );
+  text-align: center;
+  @include tokens.elevation-3;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(
+      50% 60% at 90% 10%,
+      rgba(tokens.$color-gold, 0.25) 0%,
+      rgba(tokens.$color-gold, 0) 100%
+    );
+  }
+
+  @include respond.respond(laptop) {
+    flex-direction: row;
+    text-align: left;
+    padding: tokens.$space-16;
+  }
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  max-width: 560px;
+}
+
+.title {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h2;
+  line-height: tokens.$line-height-h2;
+  color: tokens.$color-white;
+}
+
+.description {
+  margin: 0;
+  font-size: tokens.$font-size-body-large;
+  line-height: tokens.$line-height-body-large;
+  color: tokens.$color-gray-100;
+}

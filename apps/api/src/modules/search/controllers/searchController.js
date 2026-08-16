@@ -11,7 +11,9 @@
 import {
   toSearchResultResponse,
   toCategoryResultResponse,
+  toDestinationResultResponse,
   toSuggestionResponse,
+  toFilterGroupsResponse,
 } from '../dto/searchDto.js';
 
 export function createSearchController(searchService) {
@@ -49,6 +51,22 @@ export function createSearchController(searchService) {
       }
     },
 
+    async searchDestinations(req, res, next) {
+      try {
+        const destinations = await searchService.searchDestinations(
+          req.validated.query.locale,
+        );
+        res.status(200).json({
+          success: true,
+          data: destinations.map(toDestinationResultResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
     async suggest(req, res, next) {
       try {
         const suggestions = await searchService.suggest(
@@ -58,6 +76,22 @@ export function createSearchController(searchService) {
         res.status(200).json({
           success: true,
           data: suggestions.map(toSuggestionResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getFilterDefinitions(req, res, next) {
+      try {
+        const groups = await searchService.getFilterDefinitions(
+          req.validated.query.categoryId,
+        );
+        res.status(200).json({
+          success: true,
+          data: toFilterGroupsResponse(groups),
           meta: null,
           error: null,
         });

@@ -1,0 +1,25 @@
+// Categories — tokens only, consumed from @travelhub/ui.
+//
+// Hand-rolled grid rather than the shared `Grid` primitive: `Grid`'s fixed
+// `columns` count is pinned at every breakpoint (Grid.jsx's own file
+// header), but category tiles genuinely need a different count per
+// breakpoint. 4 columns at laptop+ (not 6): with 8 real categories, 6
+// columns leaves a lopsided 6-then-2 final row (four empty cells of dead
+// space) — 4 columns divides evenly into a clean 2×4 grid instead.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: tokens.$space-3;
+
+  @include respond.respond(tablet) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  @include respond.respond(laptop) {
+    gap: tokens.$space-4;
+  }
+}

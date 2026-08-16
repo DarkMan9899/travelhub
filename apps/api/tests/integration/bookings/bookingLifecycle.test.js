@@ -99,8 +99,10 @@ async function createPendingBooking({ dateFrom, dateTo }) {
   const listingId = await createListing(
     `Lifecycle Test ${Date.now()}-${Math.random()}`,
   );
-  await publishListing(listingId);
+  // Unit must exist BEFORE publish — Phase 5's publish-readiness gate now
+  // requires >=1 bookable unit (ListingService#checkPublishReadiness).
   const unitId = await registerUnit(listingId);
+  await publishListing(listingId);
   await setPrice(unitId, dateFrom, dateTo, 8_000);
 
   const holdRes = await request(app)

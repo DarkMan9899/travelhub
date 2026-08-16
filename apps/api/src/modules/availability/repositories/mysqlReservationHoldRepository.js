@@ -94,6 +94,22 @@ export class MySqlReservationHoldRepository {
     return rows.map(toDomain);
   }
 
+  /** Active (non-expired) hold rows for one unit overlapping a date span — feeds Phase 17's per-day availability breakdown. */
+  async listActiveForUnit(
+    bookableUnitId,
+    { from, to },
+    connection = this.#pool,
+  ) {
+    const [rows] = await connection.query(
+      `SELECT * FROM reservation_holds
+       WHERE bookable_unit_id = ? AND expires_at > UTC_TIMESTAMP(3)
+         AND start_date <= ? AND end_date >= ?
+       ORDER BY start_date ASC`,
+      [bookableUnitId, to, from],
+    );
+    return rows.map(toDomain);
+  }
+
   async listActiveForUser(userId, connection = this.#pool) {
     const [rows] = await connection.query(
       `SELECT * FROM reservation_holds

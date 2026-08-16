@@ -5,8 +5,15 @@ Module Architecture) for this module's dependency rules, and the
 corresponding `API_SPECIFICATION.md` module for the endpoints it will
 consume.
 
-**Sprint 1 status:** folder scaffold only. No components, hooks, queries,
-mutations, or business logic exist yet.
+**Application Foundation status:** substantially implemented across many
+phases — see this module's `index.js` public export surface for the
+current set of queries/mutations/components. `useListingQuery` (`GET
+/listings/:id`) is this module's own single-listing read; a batch
+"published listings" browse (e.g. the Home page's Featured Listings)
+goes through the `search` module's `useSearchListingsQuery`/
+`SearchResultCard` instead (`GET /search`'s flat DTO needs no per-row
+follow-up call — see `FeaturedListings.jsx`'s own header comment for why
+this module's `GET /listings` list endpoint isn't used for that).
 
 ## Folder contents (per FRONTEND_ARCHITECTURE.md §3.2 / §6.2)
 

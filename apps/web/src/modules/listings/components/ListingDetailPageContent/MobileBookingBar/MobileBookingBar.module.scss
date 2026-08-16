@@ -1,0 +1,50 @@
+// MobileBookingBar — Phase 18.11. Tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: tokens.$z-sticky-header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-4;
+  padding: tokens.$space-3 tokens.$space-4;
+  padding-bottom: calc(#{tokens.$space-3} + env(safe-area-inset-bottom, 0px));
+  background-color: tokens.$color-white;
+  border-top: 1px solid tokens.$color-gray-200;
+  box-shadow: 0 -2px 12px rgb(0 0 0 / 8%);
+  animation: slide-up tokens.$motion-transition tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+
+  // Matches `.sidebar`'s own `laptop` threshold in
+  // ListingDetailPageContent.module.scss — the sticky sidebar takes over
+  // from this bar at exactly the breakpoint it becomes sticky at, never
+  // both at once.
+  @include respond.respond(laptop) {
+    display: none;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.priceArea {
+  min-width: 0;
+}
+
+.noPricing {
+  font-size: 0.875rem;
+  color: tokens.$color-gray-600;
+}

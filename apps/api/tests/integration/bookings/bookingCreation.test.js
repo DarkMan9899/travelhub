@@ -62,6 +62,14 @@ async function createListing(title) {
     .set('Authorization', `Bearer ${vendor.accessToken}`)
     .set('Content-Type', 'image/png')
     .send(ONE_PX_PNG);
+  // Must exist BEFORE publish — Phase 5's publish-readiness gate now
+  // requires >=1 bookable unit (ListingService#checkPublishReadiness).
+  // registerUnit (below) is idempotent per (listingId, bookableUnitTypeCode),
+  // so each call site's own later registerUnit call is a harmless re-registration.
+  await request(app)
+    .post('/api/v1/availability/units')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ listingId, bookableUnitType: 'HOTEL_ROOM' });
   await request(app)
     .post(`/api/v1/listings/${listingId}/publish`)
     .set('Authorization', `Bearer ${vendor.accessToken}`);
@@ -169,8 +177,10 @@ describe('POST /bookings — converts holds into a booking', () => {
     expect(res.body.data.listing_id).toBe(listingId);
     expect(res.body.data.booking_type).toBe('HOTEL_ROOM_BOOKING');
     expect(res.body.data.currency).toBe('AMD');
-    // Two priced days (10_000 + 10_000) at quantity 1.
-    expect(res.body.data.total_amount).toBe('20000.00');
+    // Checkout-exclusive: 2027-02-01 check-in / 2027-02-02 check-out is
+    // exactly 1 occupied night at 10_000 (accommodation date semantics —
+    // see accommodationDateSemantics.js).
+    expect(res.body.data.total_amount).toBe('10000.00');
     expect(res.body.data.items).toHaveLength(1);
     expect(res.body.data.items[0].guests).toHaveLength(1);
     expect(res.body.data.booking_reference).toMatch(/^BK-\d{8}-[A-Z2-9]{8}$/);

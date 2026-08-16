@@ -1,0 +1,54 @@
+// ContentStep — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.intro {
+  margin: 0 0 tokens.$space-4;
+  color: tokens.$color-gray-600;
+}
+
+.sectionHint {
+  margin: tokens.$space-1 0 tokens.$space-3;
+  font-size: 0.875rem;
+  color: tokens.$color-gray-600;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: end;
+  gap: tokens.$space-3;
+
+  @include respond.respond(tablet) {
+    grid-template-columns: minmax(140px, 200px) 1fr auto;
+  }
+}
+
+.stepCard {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding: tokens.$space-4;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+}
+
+.stepCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stepNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: tokens.$space-6;
+  height: tokens.$space-6;
+  border-radius: tokens.$radius-full;
+  background-color: tokens.$color-gray-100;
+  color: tokens.$color-gray-900;
+  font-size: 0.75rem;
+  font-weight: 600;
+}

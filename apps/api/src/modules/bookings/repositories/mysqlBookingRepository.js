@@ -58,6 +58,8 @@ function toBookingDomain(row) {
     cancellationReason: row.cancellation_reason,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    tripDateFrom: row.trip_date_from ? toDateString(row.trip_date_from) : null,
+    tripDateTo: row.trip_date_to ? toDateString(row.trip_date_to) : null,
   };
 }
 
@@ -245,6 +247,14 @@ export class MySqlBookingRepository {
     );
   }
 
+  /** Phase 16 — the sole write path for the booking-facing payment summary column, called only from `BookingService#recordPaymentOutcome`. */
+  async updatePaymentStatus(id, paymentStatusId, connection = this.#pool) {
+    await connection.query(
+      'UPDATE bookings SET payment_status_id = ? WHERE id = ?',
+      [paymentStatusId, id],
+    );
+  }
+
   /** Owner/admin/customer visibility is the Service's job — this is a plain filtered list. */
   async list(
     filters = {},
@@ -262,6 +272,10 @@ export class MySqlBookingRepository {
       conditions.push('b.partner_id = ?');
       params.push(filters.partnerId);
     }
+    if (filters.statusCode !== undefined) {
+      conditions.push('bs.code = ?');
+      params.push(filters.statusCode);
+    }
 
     const decoded = decodeCursor(cursor);
     if (decoded?.id) {
@@ -270,7 +284,13 @@ export class MySqlBookingRepository {
     }
 
     const [rows] = await connection.query(
-      `SELECT ${BOOKING_SELECT} ${BOOKING_FROM}
+      `SELECT ${BOOKING_SELECT}, trip.date_from AS trip_date_from, trip.date_to AS trip_date_to
+       ${BOOKING_FROM}
+       LEFT JOIN (
+         SELECT booking_id, MIN(date_from) AS date_from, MAX(date_to) AS date_to
+         FROM booking_items
+         GROUP BY booking_id
+       ) trip ON trip.booking_id = b.id
        WHERE ${conditions.join(' AND ')}
        ORDER BY b.id DESC
        LIMIT ?`,

@@ -1,0 +1,22 @@
+<svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="">
+  <defs>
+    <linearGradient id="destSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f2a4a" />
+      <stop offset="100%" stop-color="#1d5fd6" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="300" fill="url(#destSky)" />
+  <circle cx="320" cy="70" r="34" fill="#c9a24b" opacity="0.9" />
+
+  <path
+    d="M0 220 L70 150 L130 200 L200 110 L260 190 L320 130 L400 210 L400 300 L0 300 Z"
+    fill="#0b1a2b"
+    opacity="0.55"
+  />
+  <path
+    d="M0 250 L60 200 L120 240 L190 170 L250 240 L330 180 L400 250 L400 300 L0 300 Z"
+    fill="#1d5fd6"
+    opacity="0.35"
+  />
+</svg>

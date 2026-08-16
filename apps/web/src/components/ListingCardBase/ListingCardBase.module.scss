@@ -1,0 +1,109 @@
+// ListingCardBase — tokens only, consumed from @travelhub/ui. The `Card`
+// primitive supplies the base surface/hover-lift/elevation treatment;
+// this file only adds what's specific to a listing/search-result card
+// (media block, badges, title/rating/summary/price). Previously
+// duplicated near-verbatim across `ListingCard.module.scss` and
+// `SearchResultCard.module.scss` (Phase 12 de-dup).
+
+@use 'tokens' as tokens;
+@use 'mixins/truncate-lines' as truncate;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background-color: tokens.$color-gray-100;
+  overflow: hidden;
+
+  // A soft top scrim so badges stay legible over any image, not just
+  // dark ones. `::before` (not `::after`) so it paints behind the
+  // badges, not over them.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(11, 26, 43, 0.35) 0%,
+      rgba(11, 26, 43, 0) 35%
+    );
+  }
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform tokens.$motion-transition tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+}
+
+.card:hover .image {
+  transform: scale(1.05);
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  background-color: tokens.$color-gray-100;
+}
+
+.typeBadge {
+  position: absolute;
+  top: tokens.$space-3;
+  left: tokens.$space-3;
+  z-index: 1;
+}
+
+.favoriteButton {
+  position: absolute;
+  top: tokens.$space-3;
+  right: tokens.$space-3;
+  z-index: 1;
+}
+
+.galleryBadge {
+  position: absolute;
+  bottom: tokens.$space-3;
+  right: tokens.$space-3;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-1;
+  padding: tokens.$space-1 tokens.$space-2;
+  border-radius: tokens.$radius-sm;
+  background-color: rgba(11, 26, 43, 0.6);
+  color: tokens.$color-white;
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding: tokens.$space-4;
+}
+
+.title {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  line-height: tokens.$line-height-h4;
+  color: tokens.$color-gray-900;
+  @include truncate.truncate-lines(2);
+}
+
+.summary {
+  margin: 0;
+  font-size: tokens.$font-size-small;
+  line-height: tokens.$line-height-small;
+  color: tokens.$color-gray-600;
+  @include truncate.truncate-lines(2);
+}

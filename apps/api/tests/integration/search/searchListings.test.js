@@ -79,12 +79,27 @@ async function publishListing(listingId) {
   await request(app)
     .patch(`/api/v1/listings/${listingId}`)
     .set('Authorization', `Bearer ${vendor.accessToken}`)
-    .send({ location: { latitude: 40.18, longitude: 44.5 } });
+    .send({
+      location: { latitude: 40.18, longitude: 44.5 },
+      // Phase 5: hotels/apartments both have required policies
+      // (seeds/007_pricing_and_policies.js) — satisfied here so this
+      // file's publish calls keep succeeding under the new gate.
+      policyValues: [
+        { code: 'cancellation_policy', value: 'FLEXIBLE' },
+        { code: 'check_in_time', value: '14:00' },
+        { code: 'check_out_time', value: '11:00' },
+      ],
+    });
   await request(app)
     .post(`/api/v1/listings/${listingId}/media`)
     .set('Authorization', `Bearer ${vendor.accessToken}`)
     .set('Content-Type', 'image/png')
     .send(ONE_PX_PNG);
+  // Phase 5: publish now also requires >=1 bookable unit.
+  await request(app)
+    .post('/api/v1/availability/units')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ listingId, bookableUnitType: 'HOTEL_ROOM' });
   await request(app)
     .post(`/api/v1/listings/${listingId}/publish`)
     .set('Authorization', `Bearer ${vendor.accessToken}`);
@@ -188,13 +203,38 @@ describe('GET /search/listings — filtering', () => {
     expect(res.body.data.map((r) => r.id)).toEqual([listingBoutique]);
   });
 
+  // Phase 10 (redesign): `media_count`/`price_amount`/`price_currency_code`
+  // are additive fields the enriched listing card needs. This suite's
+  // fixtures attach exactly one media file during publish and never set
+  // pricing — so a real, non-zero media_count and an honest `null` price
+  // (no pricing row exists) prove both are wired correctly, not just
+  // present-but-unused in the DTO.
+  test('rows carry media_count and an honest null price when no pricing is set', async () => {
+    const res = await request(app).get(
+      '/api/v1/search/listings?keyword=Boutique',
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data[0]).toEqual(
+      expect.objectContaining({
+        media_count: 1,
+        price_amount: null,
+        price_currency_code: null,
+      }),
+    );
+  });
+
   test('category filter narrows to that category', async () => {
     const res = await request(app).get(
       `/api/v1/search/listings?categoryId=${hotelsCategoryId}`,
     );
     expect(res.status).toBe(200);
-    const ids = res.body.data.map((r) => r.id).sort();
-    expect(ids).toEqual([listingBoutique, listingGyumri].sort());
+    // categoryId is a broad, shared fixture category — other integration
+    // suites in this shared-DB run (e.g. listingCrud.test.js) also publish
+    // hotels-category listings, so assert containment, not an exact set.
+    const ids = res.body.data.map((r) => r.id);
+    expect(ids).toEqual(
+      expect.arrayContaining([listingBoutique, listingGyumri]),
+    );
   });
 
   test('listing type filter narrows to that type', async () => {
@@ -202,8 +242,11 @@ describe('GET /search/listings — filtering', () => {
       '/api/v1/search/listings?listingType=PROPERTY',
     );
     expect(res.status).toBe(200);
-    const ids = res.body.data.map((r) => r.id).sort();
-    expect(ids).toEqual([listingCozy, listingGyumri].sort());
+    // listingType is shared across suites (e.g. listingWizardFlow.test.js
+    // also publishes a PROPERTY listing) — assert containment, not an
+    // exact set.
+    const ids = res.body.data.map((r) => r.id);
+    expect(ids).toEqual(expect.arrayContaining([listingCozy, listingGyumri]));
   });
 
   test('city filter narrows to that city', async () => {
@@ -291,6 +334,36 @@ describe('GET /search/listings — sorting and cursor pagination', () => {
     expect(page2.status).toBe(200);
     expect(page2.body.data.map((r) => r.id)).toEqual([listingGyumri]);
     expect(page2.body.meta.has_more).toBe(false);
+  });
+
+  test('newest (created_at) sort paginates correctly across two pages via the composite cursor', async () => {
+    // Regression test for a real Phase 11 pre-flight finding: `created_at`
+    // cursor values were bound back to MySQL as UTC-normalized strings,
+    // which compare wrong against the column whenever the DB session's
+    // `time_zone` isn't UTC (`SYSTEM` on a non-UTC host, easy to miss in
+    // a Docker/CI MySQL that defaults to UTC) — every page after the
+    // first silently came back empty. `alphabetical`'s `title`-sorted
+    // cursor above never exercises this path at all, which is exactly
+    // why it went unnoticed until a demo dataset large enough to need a
+    // second page existed.
+    const page1 = await request(app).get(
+      '/api/v1/search/listings?sort=newest&limit=2&keyword=lovely',
+    );
+    expect(page1.status).toBe(200);
+    expect(page1.body.data).toHaveLength(2);
+    expect(page1.body.meta.has_more).toBe(true);
+
+    const page2 = await request(app).get(
+      `/api/v1/search/listings?sort=newest&limit=2&keyword=lovely&cursor=${page1.body.meta.next_cursor}`,
+    );
+    expect(page2.status).toBe(200);
+    expect(page2.body.data).toHaveLength(1);
+    expect(page2.body.meta.has_more).toBe(false);
+
+    const allIds = [...page1.body.data, ...page2.body.data].map((r) => r.id);
+    expect(new Set(allIds)).toEqual(
+      new Set([listingBoutique, listingCozy, listingGyumri]),
+    );
   });
 
   test('a malformed cursor gracefully resolves to the first page, not a 500', async () => {

@@ -1,0 +1,139 @@
+import { describe, test, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { useListingWizardState } from './useListingWizardState.js';
+
+function Harness() {
+  const {
+    currentStepId,
+    listingId,
+    categoryId,
+    completedStepIds,
+    isFirstStep,
+    isLastStep,
+    setListingId,
+    completeCreationStep,
+    setCategoryId,
+    goToStep,
+    goToNextStep,
+    goToPreviousStep,
+  } = useListingWizardState();
+
+  return (
+    <div>
+      <p data-testid="step">{currentStepId}</p>
+      <p data-testid="listingId">{listingId ?? ''}</p>
+      <p data-testid="categoryId">{categoryId ?? ''}</p>
+      <p data-testid="completed">{completedStepIds.join(',')}</p>
+      <p data-testid="isFirstStep">{String(isFirstStep)}</p>
+      <p data-testid="isLastStep">{String(isLastStep)}</p>
+      <button type="button" onClick={() => setCategoryId(3)}>
+        pick category
+      </button>
+      <button type="button" onClick={() => setListingId(42)}>
+        create listing
+      </button>
+      <button type="button" onClick={() => completeCreationStep(99)}>
+        create listing and advance
+      </button>
+      <button type="button" onClick={goToNextStep}>
+        next
+      </button>
+      <button type="button" onClick={goToPreviousStep}>
+        back
+      </button>
+      <button type="button" onClick={() => goToStep('review')}>
+        jump to review
+      </button>
+    </div>
+  );
+}
+
+function renderHarness(initialEntry = '/hy/partner/listings/new') {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Harness />
+    </MemoryRouter>,
+  );
+}
+
+describe('useListingWizardState (PartnerListingWizard)', () => {
+  test('defaults to the first step with no listing/category yet', () => {
+    renderHarness();
+    expect(screen.getByTestId('step')).toHaveTextContent('category');
+    expect(screen.getByTestId('listingId')).toHaveTextContent('');
+    expect(screen.getByTestId('isFirstStep')).toHaveTextContent('true');
+  });
+
+  test('an unrecognized ?step= value falls back to the first step', () => {
+    renderHarness('/hy/partner/listings/new?step=not-a-real-step');
+    expect(screen.getByTestId('step')).toHaveTextContent('category');
+  });
+
+  test('goToNextStep advances one step at a time', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByRole('button', { name: 'next' }));
+    expect(screen.getByTestId('step')).toHaveTextContent('basicInfo');
+    await user.click(screen.getByRole('button', { name: 'next' }));
+    expect(screen.getByTestId('step')).toHaveTextContent('location');
+  });
+
+  test('goToPreviousStep from the first step is a no-op', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByRole('button', { name: 'back' }));
+    expect(screen.getByTestId('step')).toHaveTextContent('category');
+  });
+
+  test('setCategoryId stores the locally-picked category before a listing exists', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByRole('button', { name: 'pick category' }));
+    expect(screen.getByTestId('categoryId')).toHaveTextContent('3');
+  });
+
+  test('setListingId persists the real listing id, making Category and Basic Information completed', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByRole('button', { name: 'create listing' }));
+    expect(screen.getByTestId('listingId')).toHaveTextContent('42');
+    expect(screen.getByTestId('completed')).toHaveTextContent('category');
+    expect(screen.getByTestId('completed')).toHaveTextContent('basicInfo');
+  });
+
+  test('completeCreationStep sets listingId and advances to the next step in one update', async () => {
+    const user = userEvent.setup();
+    renderHarness('/hy/partner/listings/new?step=basicInfo');
+    await user.click(
+      screen.getByRole('button', { name: 'create listing and advance' }),
+    );
+    expect(screen.getByTestId('listingId')).toHaveTextContent('99');
+    expect(screen.getByTestId('step')).toHaveTextContent('location');
+  });
+
+  test('resuming a draft deep-linked at a later step (?listingId=&step=) marks earlier steps completed', () => {
+    renderHarness('/hy/partner/listings/new?listingId=7&step=pricing');
+    expect(screen.getByTestId('step')).toHaveTextContent('pricing');
+    const completed = screen.getByTestId('completed').textContent.split(',');
+    expect(completed).toEqual(
+      expect.arrayContaining([
+        'category',
+        'basicInfo',
+        'location',
+        'attributes',
+        'amenities',
+        'media',
+      ]),
+    );
+  });
+
+  test('goToStep jumps directly to a given step', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByRole('button', { name: 'jump to review' }));
+    expect(screen.getByTestId('step')).toHaveTextContent('review');
+    expect(screen.getByTestId('isLastStep')).toHaveTextContent('true');
+  });
+});

@@ -1,0 +1,10 @@
+import { Container } from '@travelhub/ui/components/layout';
+import { DestinationPageContent } from '../modules/discovery/index.js';
+
+export default function DestinationPage() {
+  return (
+    <Container size="wide">
+      <DestinationPageContent />
+    </Container>
+  );
+}
