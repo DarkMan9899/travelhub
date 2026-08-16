@@ -10,7 +10,7 @@
  * something to fake a test around.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 function uniqueEmail(prefix) {
   return `${prefix}-${Date.now()}@example.com`;

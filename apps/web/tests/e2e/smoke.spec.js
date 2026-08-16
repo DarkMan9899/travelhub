@@ -13,7 +13,7 @@
  * regression.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test('root redirects to the default locale and renders the home hero', async ({
   page,

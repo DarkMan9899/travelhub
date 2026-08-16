@@ -17,9 +17,21 @@
  * Phase 17 demo listings — see `seeds/demo/seedDemoInventoryScenarios.js`).
  */
 
-import { test, expect, request as playwrightRequest } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import Redis from 'ioredis';
+import { test, expect, request as playwrightRequest } from './fixtures.js';
+
+// See accessibility.spec.js's identical `test.use()` for why: every
+// packages/ui overlay/transition implements `reduced-motion-safe`, and
+// without it a scan mid fade-in can sample a transient, false-positive
+// contrast/opacity state instead of the settled, real rendering.
+test.use({ reducedMotion: 'reduce' });
+
+// ListingReservationWidget's CTA is category-specific (see
+// inventory.spec.js's identical BOOK_CTA_PATTERN) — match any real label,
+// not just the GENERIC "Request to book" one.
+const BOOK_CTA_PATTERN =
+  /Request to book|Check availability|Reserve your spot|Reserve this vehicle/;
 
 const API_BASE = 'http://localhost:4000/api/v1/';
 const VENDOR = { email: 'vendor@travelhub.dev', password: 'DevVendor!2024' };
@@ -328,7 +340,7 @@ test.describe('Phase 17 accessibility — Customer-facing availability UI', () =
     await login(page, CUSTOMER, /\/en\/account$/);
     await page.goto(`/en/listings/${guideListingId}`);
     await expect(
-      page.getByRole('button', { name: 'Request to book' }),
+      page.getByRole('button', { name: BOOK_CTA_PATTERN }),
     ).toBeVisible({ timeout: 15_000 });
     await page.getByLabel('Dates').click();
 
@@ -342,8 +354,10 @@ test.describe('Phase 17 accessibility — Customer-facing availability UI', () =
       await page.getByRole('button', { name: 'Next month' }).click();
     }
     const [year, month, day] = iso.split('-').map(Number);
+    // Matches DatePicker.jsx/PartnerCalendarEditor.jsx's own dayFormatter
+    // (month: 'short', e.g. "Nov 22, 2026"), not 'long'.
     const monthName = new Intl.DateTimeFormat('en', {
-      month: 'long',
+      month: 'short',
       timeZone: 'UTC',
     }).format(new Date(Date.UTC(year, month - 1, day)));
     const dayCell = page.getByRole('gridcell', {
@@ -373,7 +387,7 @@ test.describe('Phase 17 accessibility — Customer-facing availability UI', () =
     });
     await loginCtx.dispose();
 
-    await page.getByRole('button', { name: 'Request to book' }).click();
+    await page.getByRole('button', { name: BOOK_CTA_PATTERN }).click();
     await expect(
       page.getByText(
         'These dates are no longer available. Please choose different dates.',

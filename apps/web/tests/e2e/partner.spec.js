@@ -5,7 +5,7 @@
  * accounts (hotels partner: real stats/listings/bookings tied to it).
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 async function loginAsDemoPartner(page) {
   await page.goto('/en/auth/login');

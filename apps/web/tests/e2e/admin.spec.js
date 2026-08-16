@@ -7,7 +7,7 @@
  * and the seeded dev CUSTOMER account for the negative-access case.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 async function loginAsDevAdmin(page) {
   await page.goto('/en/auth/login');

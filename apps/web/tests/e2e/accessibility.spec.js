@@ -13,8 +13,18 @@
  * actually block a screen-reader/keyboard user.
  */
 
-import { test, expect, request as playwrightRequest } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { test, expect, request as playwrightRequest } from './fixtures.js';
+
+// Every `packages/ui` overlay/transition (EmptyState, Drawer, Modal, ...)
+// implements `reduced-motion-safe` (tokens/_motion.scss), which collapses
+// its animation/transition durations to ~0 under `prefers-reduced-motion:
+// reduce`. Without this, a scan that lands mid fade-in samples a
+// transient, lighter-than-final foreground color — e.g. EmptyState's
+// description text measured at a failing 4.38:1 mid-fade even though its
+// settled color (`$color-gray-600` on white) is a real 5.78:1 — a false
+// positive from test timing, not the product's actual rendered state.
+test.use({ reducedMotion: 'reduce' });
 
 async function seriousOrCriticalViolations(page, { include, exclude } = {}) {
   let builder = new AxeBuilder({ page });
@@ -72,7 +82,10 @@ test('Listing detail page has no serious/critical accessibility violations', asy
 }) => {
   await page.goto('/en/search');
   await page.locator('a[href*="/en/listings/"]').first().click();
-  await expect(page).toHaveURL(/\/en\/listings\/\d+/);
+  // Listing links prefer the real slug over the numeric id (SearchResultCard.jsx,
+  // ListingDetailPageContent.jsx: `slug ?? id`) — assert on the route shape, not a
+  // numeric-only id that a slugged listing will never have.
+  await expect(page).toHaveURL(/\/en\/listings\/[^/]+/);
   const violations = await seriousOrCriticalViolations(page);
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 });

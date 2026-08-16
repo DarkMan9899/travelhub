@@ -9,7 +9,7 @@
  * history).
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 async function loginAsDemoCustomer(page) {
   await page.goto('/en/auth/login');

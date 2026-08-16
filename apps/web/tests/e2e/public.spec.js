@@ -6,7 +6,7 @@
  * CMS page, language switching, and 404.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 test.describe('Home', () => {
   test('renders the hero and real category/listing content', async ({
@@ -53,7 +53,10 @@ test.describe('Listing detail', () => {
     const firstListing = page.locator('a[href*="/en/listings/"]').first();
     await firstListing.click();
 
-    await expect(page).toHaveURL(/\/en\/listings\/\d+/);
+    // Listing links prefer the real slug over the numeric id (SearchResultCard.jsx,
+    // ListingDetailPageContent.jsx: `slug ?? id`) — assert on the route shape, not a
+    // numeric-only id that a slugged listing will never have.
+    await expect(page).toHaveURL(/\/en\/listings\/[^/]+/);
     await expect(page.locator('h1')).toBeVisible();
     // Amenities/pricing/location sections all render from the demo
     // listing's real backend data. `.first()`: the page also renders a

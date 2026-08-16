@@ -21,7 +21,7 @@
  * through the real `GET /search` endpoint avoids that.
  */
 
-import { test, expect, request as playwrightRequest } from '@playwright/test';
+import { test, expect, request as playwrightRequest } from './fixtures.js';
 
 const API_BASE = 'http://localhost:4000/api/v1/';
 const VENDOR = { email: 'vendor@travelhub.dev', password: 'DevVendor!2024' };

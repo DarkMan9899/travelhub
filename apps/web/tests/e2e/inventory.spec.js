@@ -23,8 +23,8 @@
  * frontend, exactly as a partner/customer/admin would perform it.
  */
 
-import { test, expect, request as playwrightRequest } from '@playwright/test';
 import Redis from 'ioredis';
+import { test, expect, request as playwrightRequest } from './fixtures.js';
 
 const API_BASE = 'http://localhost:4000/api/v1/';
 const VENDOR = { email: 'vendor@travelhub.dev', password: 'DevVendor!2024' };
@@ -155,10 +155,13 @@ function futureISOWithinWindow(daysFromNow) {
   return d.toISOString().slice(0, 10);
 }
 
+// Matches `DatePicker.jsx`/`PartnerCalendarEditor.jsx`'s own `dayFormatter`
+// (both use Intl's `month: 'short'`, e.g. "Nov 22, 2026") — NOT `'long'`,
+// which never matches either component's real gridcell aria-label.
 function accessibleDayName(isoDate) {
   const [year, month, day] = isoDate.split('-').map(Number);
   const monthName = new Intl.DateTimeFormat('en', {
-    month: 'long',
+    month: 'short',
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(year, month - 1, day)));
   return `${monthName} ${day}, ${year}`;
@@ -236,11 +239,21 @@ async function openPartnerCalendarDay(page, { listingLabel, unitLabel, iso }) {
     .click();
 }
 
+// ListingReservationWidget's CTA is category-specific
+// (requestToBookByGroup: ACCOMMODATION "Check availability", EXPERIENCE
+// "Reserve your spot", TRANSPORT "Reserve this vehicle", GENERIC
+// "Request to book") — this suite covers listings across several of
+// those groups (hotels, tours, the car-rental fleet), so every locator
+// for this button must match any of the real labels, not just the
+// GENERIC one.
+const BOOK_CTA_PATTERN =
+  /Request to book|Check availability|Reserve your spot|Reserve this vehicle/;
+
 /** Opens the customer-facing listing detail page and its reservation widget. */
 async function gotoListingDetail(page, listingId) {
   await page.goto(`/en/listings/${listingId}`);
   await expect(
-    page.getByRole('button', { name: 'Request to book' }),
+    page.getByRole('button', { name: BOOK_CTA_PATTERN }),
   ).toBeVisible({ timeout: 15_000 });
 }
 
@@ -301,7 +314,7 @@ test.describe
     });
     await dayCell.click();
     await dayCell.click(); // same-day range: start === end
-    await cPage.getByRole('button', { name: 'Request to book' }).click();
+    await cPage.getByRole('button', { name: BOOK_CTA_PATTERN }).click();
     await expect(
       cPage.getByText(
         'These dates are no longer available. Please choose different dates.',
@@ -355,7 +368,7 @@ test.describe
     });
     await dayCell.click();
     await dayCell.click(); // same-day range: start === end
-    await cPage.getByRole('button', { name: 'Request to book' }).click();
+    await cPage.getByRole('button', { name: BOOK_CTA_PATTERN }).click();
     await expect(cPage).toHaveURL(/\/booking\/checkout$/, { timeout: 10_000 });
     await customerPage.close();
   });
@@ -465,7 +478,7 @@ test.describe('Phase 17 — Inventory flow D: stale checkout is rejected', () =>
 
     // The customer's stale UI still shows the date as pickable — submit
     // anyway and confirm the server safely rejects it.
-    await page.getByRole('button', { name: 'Request to book' }).click();
+    await page.getByRole('button', { name: BOOK_CTA_PATTERN }).click();
     await expect(
       page.getByText(
         'These dates are no longer available. Please choose different dates.',
@@ -606,7 +619,7 @@ test.describe('Phase 17 — Inventory flow F: car-rental conflict', () => {
     });
     await dayCell.click();
     await dayCell.click(); // same-day range: start === end
-    await page.getByRole('button', { name: 'Request to book' }).click();
+    await page.getByRole('button', { name: BOOK_CTA_PATTERN }).click();
     await expect(
       page.getByText(
         'These dates are no longer available. Please choose different dates.',

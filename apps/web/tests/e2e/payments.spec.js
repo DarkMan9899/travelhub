@@ -23,7 +23,7 @@
  * runs, the window has partially drained.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures.js';
 
 const API_BASE_URL = 'http://localhost:4000/api/v1';
 const DEMO_PASSWORD = 'DemoPass!2024';

@@ -9,12 +9,45 @@
  * a realistic set of threads to assert against).
  */
 
-import { test, expect } from '@playwright/test';
+import Redis from 'ioredis';
+import { test, expect } from './fixtures.js';
+
+// fixtures.js's own `page` fixture only flushes once, before this test's
+// default `page` is handed over — tests here that open EXTRA contexts
+// (customer/partner/admin cross-persona checks) log in several more times
+// after that single flush, easily exceeding the real `sensitive` tier's
+// 10/min budget deep into a full-suite run. Mirrors inventory.spec.js's
+// identical fix: flush before every individual login call, not just once
+// per test.
+async function flushRateLimits() {
+  const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+  });
+  try {
+    await redis.connect();
+    const tiers = ['public', 'authenticated', 'sensitive', 'ai'];
+    const keys = (
+      await Promise.all([
+        ...tiers.map((tier) => redis.keys(`ratelimit:${tier}:*`)),
+        redis.keys('session:login_attempts:*'),
+      ])
+    ).flat();
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } catch {
+    // Fail-open — see globalSetup.js's identical rationale.
+  } finally {
+    redis.disconnect();
+  }
+}
 
 async function loginAsDemoCustomer(
   page,
   email = 'anna.harutyunyan@example.com',
 ) {
+  await flushRateLimits();
   await page.goto('/en/auth/login');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill('DemoPass!2024');
@@ -23,6 +56,7 @@ async function loginAsDemoCustomer(
 }
 
 async function loginAsDemoPartner(page) {
+  await flushRateLimits();
   await page.goto('/en/auth/login');
   await page.getByLabel('Email').fill('partner.hotels@example.com');
   await page.getByLabel('Password').fill('DemoPass!2024');
@@ -31,6 +65,7 @@ async function loginAsDemoPartner(page) {
 }
 
 async function loginAsAdmin(page) {
+  await flushRateLimits();
   await page.goto('/en/auth/login');
   await page.getByLabel('Email').fill('admin@travelhub.dev');
   await page.getByLabel('Password').fill('DevAdmin!2024');
