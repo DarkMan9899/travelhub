@@ -315,7 +315,12 @@ test.describe('Phase 17 accessibility — Customer-facing availability UI', () =
     await expect(
       page.getByRole('heading', { name: 'Availability' }),
     ).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(/left|Sold out/)).toBeVisible({
+    // The guide's unit type is TOUR_DEPARTURE (a "Full-Day Guide Service"
+    // bookable unit — see seedDemoInventoryScenarios.js), whose
+    // lowByType phrasing is "{{count}} seat(s) available", not the "Only
+    // {{count}} X left" wording other unit types (rooms/vehicles/tables)
+    // use — a bare /left/ never matches this listing's real LOW-state text.
+    await expect(page.getByText(/seats? available|Sold out/i)).toBeVisible({
       timeout: 10_000,
     });
     const violations = await seriousOrCriticalViolations(page);

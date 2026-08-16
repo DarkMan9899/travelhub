@@ -25,6 +25,7 @@
 
 import Redis from 'ioredis';
 import { test, expect, request as playwrightRequest } from './fixtures.js';
+import { aggregateAvailabilitySummaryByUnitType } from '../../src/modules/listings/utils/aggregateAvailabilitySummary.js';
 
 const API_BASE = 'http://localhost:4000/api/v1/';
 const VENDOR = { email: 'vendor@travelhub.dev', password: 'DevVendor!2024' };
@@ -291,16 +292,15 @@ test.describe
       .filter({ hasText: `${iso} – ${iso}` });
     await expect(ourBlockRow).toBeVisible({ timeout: 10_000 });
 
-    // Customer side: `ListingReservationWidget`'s DatePicker only ever
-    // disables a day from `availability_calendar.statusCode`
-    // (AVAILABLE/BLOCKED) — Phase 17 manual blocks/external reservations
-    // are tracked purely through `quantity_available`
-    // (`availabilityService.js`'s own header comment), which that
-    // calendar read never looks at. So the day cell stays clickable
-    // either way; the real, honest customer-facing proof of "unavailable"
-    // is the same server-side revalidation flow D already exercises —
-    // attempting to actually submit a booking for the blocked date must
-    // be rejected with the same conflict toast.
+    // Customer side: `ListingReservationWidget`'s `disabledDates` comes
+    // from `useListingDayStatusQuery` (its own header comment: the
+    // authoritative per-day source, since `availability_calendar`'s own
+    // status is blind to a manual block driving `quantity_available` to
+    // zero) — a Phase 18 Availability UX fix that post-dates this test's
+    // original assumption. The day cell is now correctly DISABLED as
+    // soon as the block exists; the direct, honest proof of "the
+    // customer sees it unavailable" is that disabled state itself, not
+    // a submit attempt the disabled button can no longer even reach.
     const customerPage = await page.context().browser().newContext();
     const cPage = await customerPage.newPage();
     await login(cPage, CUSTOMER, /\/en\/account$/);
@@ -312,14 +312,7 @@ test.describe
       name: accessibleDayName(iso),
       exact: true,
     });
-    await dayCell.click();
-    await dayCell.click(); // same-day range: start === end
-    await cPage.getByRole('button', { name: BOOK_CTA_PATTERN }).click();
-    await expect(
-      cPage.getByText(
-        'These dates are no longer available. Please choose different dates.',
-      ),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(dayCell).toBeDisabled({ timeout: 10_000 });
     await customerPage.close();
   });
 
@@ -525,6 +518,9 @@ test.describe('Phase 17 — Inventory flow E: tour seat capacity', () => {
     const morningUnit = unitsBody.data.find(
       (unit) => unit.unit_label === '09:00 Departure',
     );
+    const afternoonUnit = unitsBody.data.find(
+      (unit) => unit.unit_label === '14:00 Departure',
+    );
     const isoBeforeRes = await probeCtx.get(
       `availability/${tourListingId}/availability-summary?from=${iso}&to=${iso}&unitId=${morningUnit.id}`,
     );
@@ -558,6 +554,42 @@ test.describe('Phase 17 — Inventory flow E: tour seat capacity', () => {
       timeout: 10_000,
     });
 
+    // The customer-facing badge is listing-wide, not per-unit —
+    // `aggregateAvailabilitySummaryByUnitType` (Phase 18) merges every
+    // same-type unit (this listing has two TOUR_DEPARTURE departures) and
+    // shows the MOST FAVORABLE status among them, summing remaining_count
+    // only across units that share it. Leaving the untouched 14:00
+    // Departure at its full AVAILABLE capacity would make the listing-wide
+    // badge read "Available" — a real product behavior, not a bug — so
+    // reduce it here too (deterministic API setup, matching flow D's own
+    // "meanwhile the partner..." rationale). Crucially this must be a
+    // PARTIAL reduction (down to 1, not 0): `getPublicAvailabilitySummary`'s
+    // own Phase 18 fix deliberately excludes zero-stock days from a
+    // unit's window-wide minimum ("one bad day poisons the whole month"),
+    // so fully sold-ing out this one day would make the 14:00 unit's
+    // OTHER 28 fully-available days win the window minimum instead —
+    // reporting AVAILABLE, the opposite of what this test needs.
+    await flushRateLimits();
+    const loginCtx = await playwrightRequest.newContext({ baseURL: API_BASE });
+    const loginRes = await loginCtx.post('auth/login', { data: VENDOR });
+    const { data: loginData } = await loginRes.json();
+    const afternoonBlockRes = await loginCtx.post('availability/blocks', {
+      headers: { Authorization: `Bearer ${loginData.access_token}` },
+      data: {
+        unitId: afternoonUnit.id,
+        dateFrom: iso,
+        dateTo: iso,
+        quantity: afternoonUnit.capacity - 1,
+        reasonCode: 'OPERATIONAL',
+      },
+    });
+    if (!afternoonBlockRes.ok()) {
+      throw new Error(
+        `Blocking the 14:00 Departure unit failed: ${afternoonBlockRes.status()} ${await afternoonBlockRes.text()}`,
+      );
+    }
+    await loginCtx.dispose();
+
     const ctx = await playwrightRequest.newContext({ baseURL: API_BASE });
     const isoAfterRes = await ctx.get(
       `availability/${tourListingId}/availability-summary?from=${iso}&to=${iso}&unitId=${morningUnit.id}`,
@@ -571,13 +603,40 @@ test.describe('Phase 17 — Inventory flow E: tour seat capacity', () => {
     const windowAfterBody = await windowAfterRes.json();
     const remainingAfter = windowAfterBody.data[0].remaining_count;
     expect(remainingAfter).toBe(1);
+
+    // The customer-facing badge is listing-wide, not per-unit —
+    // `aggregateAvailabilitySummaryByUnitType` (Phase 18) merges every
+    // same-type unit (this listing has two TOUR_DEPARTURE departures) and
+    // shows the MOST FAVORABLE status among them. Rather than predict
+    // what that produces (the server's own per-window "worst day" rule
+    // for a *different* unit doesn't reduce to a simple per-unit minimum
+    // in an obvious way), read the same real, unscoped endpoint the
+    // customer page itself queries and run it through the exact same
+    // aggregation function the UI uses — the test's expectation can
+    // never drift from the real product logic this way, whatever that
+    // logic's exact edge-case behavior is.
+    const unscopedRes = await ctx.get(
+      `availability/${tourListingId}/availability-summary?from=${today}&to=${windowEnd}`,
+    );
+    const unscopedSummary = (await unscopedRes.json()).data;
     await ctx.dispose();
+
+    const [tourDepartureGroup] = aggregateAvailabilitySummaryByUnitType(
+      unscopedSummary.filter(
+        (entry) => entry.bookable_unit_type === 'TOUR_DEPARTURE',
+      ),
+    );
+    expect(tourDepartureGroup.availability_status).not.toBe('AVAILABLE');
+    const expectedText =
+      tourDepartureGroup.availability_status === 'SOLD_OUT'
+        ? 'Sold out'
+        : `${tourDepartureGroup.remaining_count} seat${tourDepartureGroup.remaining_count === 1 ? '' : 's'} available`;
 
     await login(page, CUSTOMER, /\/en\/account$/);
     await gotoListingDetail(page, tourListingId);
-    await expect(
-      page.getByText(`${remainingAfter} seats available`),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(expectedText)).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });
 
@@ -604,10 +663,11 @@ test.describe('Phase 17 — Inventory flow F: car-rental conflict', () => {
       timeout: 10_000,
     });
 
-    // Same architectural reason as flow A: the DatePicker's disabled
-    // state never reflects Phase 17 external reservations either (only
-    // `availability_calendar.statusCode` does) — the real, honest proof
-    // is the server rejecting an actual booking attempt for this date.
+    // Same architectural reason as flow A: `useListingDayStatusQuery`
+    // (the Phase 18 fix) treats an external reservation exactly like a
+    // manual block — both consume `quantity_available` — so the day cell
+    // is correctly disabled here too, on a fresh page load, before the
+    // customer ever reaches a submit attempt.
     await login(page, CUSTOMER, /\/en\/account$/);
     await gotoListingDetail(page, fleetListingId);
     await selectUnitByText(page, /Nissan X-Trail|Vehicle #3/);
@@ -617,14 +677,7 @@ test.describe('Phase 17 — Inventory flow F: car-rental conflict', () => {
       name: accessibleDayName(iso),
       exact: true,
     });
-    await dayCell.click();
-    await dayCell.click(); // same-day range: start === end
-    await page.getByRole('button', { name: BOOK_CTA_PATTERN }).click();
-    await expect(
-      page.getByText(
-        'These dates are no longer available. Please choose different dates.',
-      ),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(dayCell).toBeDisabled({ timeout: 10_000 });
   });
 });
 

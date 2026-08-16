@@ -282,7 +282,14 @@ test.describe.serial('Admin Booking Operations (Stage 11.4)', () => {
       .textContent();
     await page.getByRole('row').nth(1).getByRole('link').first().click();
     await expect(page).toHaveURL(/\/en\/admin\/bookings\/\d+$/);
-    await expect(page.getByText(reference)).toBeVisible();
+    // Scoped to the h1, not a bare getByText(reference): the detail
+    // page's breadcrumb also contains this same reference text (e.g.
+    // "Booking BK-..." as both the breadcrumb's current-page label and
+    // the page's own heading), so an unscoped substring match hits both
+    // and trips Playwright's strict-mode violation whenever a booking
+    // whose detail page renders that breadcrumb happens to land in
+    // this row (which one that is shifts with every reseed).
+    await expect(page.getByRole('heading', { name: reference })).toBeVisible();
     await expect(page.getByText('Status history')).toBeVisible();
   });
 

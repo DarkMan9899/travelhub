@@ -120,8 +120,16 @@ test('a listing page raw HTML includes a JSON-LD structured-data block', async (
   );
 
   expect(response.status()).toBe(200);
+  // useSeo.js/useSiteJsonLd.js tag every injected block with
+  // data-seo-source="site" (Organization/WebSite, present on every page)
+  // or "page" (this route's own schema) — the un-attributed regex this
+  // assertion used to have never matched either real tag, since both
+  // always carry that attribute. Match it explicitly and require the
+  // PAGE-scoped block specifically: this test is about a listing page's
+  // own structured data, not the site-wide Organization block every
+  // route also carries.
   const ldJsonMatch = html.match(
-    /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+    /<script type="application\/ld\+json" data-seo-source="page">([\s\S]*?)<\/script>/,
   );
   expect(ldJsonMatch).not.toBeNull();
   const parsed = JSON.parse(ldJsonMatch[1]);
