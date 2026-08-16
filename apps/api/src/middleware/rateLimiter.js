@@ -134,4 +134,38 @@ export const aiRateLimiter = failOpenOnStoreError(
   'ai',
 );
 
+/**
+ * A separate, still-bounded tier for the build-time `prerender.mjs`
+ * pipeline (Phase 20 SEO) — never reachable from the public internet.
+ * `isTrustedInternalBuildRequest` below is app.js's gate into it.
+ */
+export const internalBuildRateLimiter = failOpenOnStoreError(
+  createRateLimiter({
+    max: config.rateLimit.internalBuildPerMinute,
+    prefix: 'internal-build',
+  }),
+  'internal-build',
+);
+
+const LOOPBACK_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+/**
+ * True only for a request that BOTH presents the exact
+ * `PRERENDER_INTERNAL_TOKEN` secret AND originates from the loopback
+ * interface. `req.ip` is safe to trust as a non-spoofable signal here:
+ * this app never calls `app.set('trust proxy', ...)`, so Express derives
+ * it from the raw TCP socket address, never from a client-controlled
+ * header like `X-Forwarded-For`. A request from anywhere off-host — even
+ * one that somehow guessed the token — still resolves to the ordinary
+ * public/authenticated tiers. The token itself defaults to empty
+ * (`PRERENDER_INTERNAL_TOKEN` unset), which makes this tier entirely
+ * unreachable unless an operator opts in.
+ */
+export function isTrustedInternalBuildRequest(req) {
+  const token = config.prerenderInternalToken;
+  if (!token) return false;
+  if (req.get('X-Internal-Build-Token') !== token) return false;
+  return LOOPBACK_ADDRESSES.has(req.ip);
+}
+
 export default publicRateLimiter;

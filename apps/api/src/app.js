@@ -35,6 +35,8 @@ import { createRequireHostGuard } from './guards/requireHost.js';
 import {
   publicRateLimiter,
   authenticatedRateLimiter,
+  internalBuildRateLimiter,
+  isTrustedInternalBuildRequest,
 } from './middleware/rateLimiter.js';
 import errorHandler from './middleware/errorHandler.js';
 import healthRoutes from './monitoring/healthRoutes.js';
@@ -117,8 +119,21 @@ app.use(authenticate);
 // far more aggressively than intended (verified during Phase 11 pre-flight).
 // Sensitive endpoints (login/register/refresh) layer their own stricter
 // `sensitiveRateLimiter` on top at the route level.
+//
+// `isTrustedInternalBuildRequest` is checked before the public/authenticated
+// split: the `prerender.mjs` build pipeline (Phase 20 SEO) crawls every
+// public route as an anonymous visitor on purpose (a real crawler is never
+// logged in, so the snapshotted HTML must not accidentally show an
+// authenticated header/nav state) — it can never carry `req.principal`, so
+// without this check it would always fall into the 20/min public tier and
+// could never finish a real site's route count. The check itself requires
+// both a shared secret header and a loopback-only `req.ip` (rateLimiter.js),
+// so it changes nothing about how any real, off-host client is limited.
 app.use((req, res, next) => {
   if (req.path.startsWith('/health/')) return next();
+  if (isTrustedInternalBuildRequest(req)) {
+    return internalBuildRateLimiter(req, res, next);
+  }
   const limiter = req.principal ? authenticatedRateLimiter : publicRateLimiter;
   return limiter(req, res, next);
 });

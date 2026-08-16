@@ -55,6 +55,21 @@ const env = cleanEnv(process.env, {
   RATE_LIMIT_AUTHENTICATED_PER_MINUTE: num({ default: 300 }),
   RATE_LIMIT_PUBLIC_PER_MINUTE: num({ default: 20 }),
   RATE_LIMIT_SENSITIVE_PER_MINUTE: num({ default: 10 }),
+  // A separate, still-bounded tier for the build-time `prerender.mjs`
+  // pipeline (Phase 20 SEO), never the public internet: a full site crawl
+  // easily exceeds the public tier's 20/min in real, sequential traffic
+  // (228 routes x several data fetches each), and authenticating as a
+  // real user to reach the authenticated tier isn't an option — it would
+  // bake a specific logged-in header state into HTML a crawler must see
+  // as anonymous. Only requests presenting the exact
+  // PRERENDER_INTERNAL_TOKEN secret AND originating from the loopback
+  // interface (rateLimiter.js's isLoopbackRequest — req.ip is never
+  // derived from a spoofable header here, this app never sets `trust
+  // proxy`) use this tier; every other request, including one that only
+  // guesses the token from off-host, still hits the normal public tier.
+  // Empty by default: the tier is unreachable until an operator opts in.
+  RATE_LIMIT_INTERNAL_BUILD_PER_MINUTE: num({ default: 1000 }),
+  PRERENDER_INTERNAL_TOKEN: str({ default: '' }),
 
   // CORS (BACKEND_ARCHITECTURE.md §47)
   CORS_ALLOWED_ORIGINS: str({ default: 'http://localhost:5173' }),
@@ -137,7 +152,10 @@ const config = Object.freeze({
     authenticatedPerMinute: env.RATE_LIMIT_AUTHENTICATED_PER_MINUTE,
     publicPerMinute: env.RATE_LIMIT_PUBLIC_PER_MINUTE,
     sensitivePerMinute: env.RATE_LIMIT_SENSITIVE_PER_MINUTE,
+    internalBuildPerMinute: env.RATE_LIMIT_INTERNAL_BUILD_PER_MINUTE,
   }),
+
+  prerenderInternalToken: env.PRERENDER_INTERNAL_TOKEN,
 
   cors: Object.freeze({
     allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').map((origin) =>

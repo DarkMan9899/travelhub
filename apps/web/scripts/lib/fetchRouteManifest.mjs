@@ -24,8 +24,20 @@ const STATIC_PATHS = [
   'blog',
 ];
 
-async function fetchJson(apiBaseUrl, path) {
-  const res = await fetch(`${apiBaseUrl}${path}`);
+// Matches rateLimiter.js's `isTrustedInternalBuildRequest` — presenting
+// this header (only ever set from PRERENDER_INTERNAL_TOKEN, a local/CI
+// build secret) moves this script's own manifest fetches onto the
+// internal-build rate-limit tier instead of the public one, the same way
+// prerender.mjs's Playwright crawl does for the pages it renders. Empty
+// by default, which sends no header and changes nothing.
+function internalBuildHeaders(internalToken) {
+  return internalToken ? { 'X-Internal-Build-Token': internalToken } : {};
+}
+
+async function fetchJson(apiBaseUrl, path, internalToken) {
+  const res = await fetch(`${apiBaseUrl}${path}`, {
+    headers: internalBuildHeaders(internalToken),
+  });
   if (!res.ok) {
     throw new Error(`fetchRouteManifest: ${path} responded ${res.status}`);
   }
@@ -34,7 +46,12 @@ async function fetchJson(apiBaseUrl, path) {
 }
 
 /** Pages through a cursor-paginated `GET` endpoint, collecting every row. */
-async function fetchAllPages(apiBaseUrl, basePath, extraParams = '') {
+async function fetchAllPages(
+  apiBaseUrl,
+  basePath,
+  internalToken,
+  extraParams = '',
+) {
   const rows = [];
   let cursor = null;
   for (;;) {
@@ -42,7 +59,9 @@ async function fetchAllPages(apiBaseUrl, basePath, extraParams = '') {
     params.set('limit', '100');
     if (cursor) params.set('cursor', cursor);
     // eslint-disable-next-line no-await-in-loop -- pages must be fetched sequentially, each one's cursor depends on the previous response
-    const res = await fetch(`${apiBaseUrl}${basePath}?${params.toString()}`);
+    const res = await fetch(`${apiBaseUrl}${basePath}?${params.toString()}`, {
+      headers: internalBuildHeaders(internalToken),
+    });
     if (!res.ok) {
       throw new Error(
         `fetchRouteManifest: ${basePath} responded ${res.status}`,
@@ -62,6 +81,9 @@ async function fetchAllPages(apiBaseUrl, basePath, extraParams = '') {
  * @param {object} params
  * @param {string} params.apiBaseUrl - e.g. `http://localhost:4000/api/v1`.
  * @param {string[]} params.locales - e.g. `['hy', 'ru', 'en']`.
+ * @param {string} [params.internalToken] - matches PRERENDER_INTERNAL_TOKEN
+ *   on the API, moving these requests onto the internal-build rate-limit
+ *   tier. Omitted/empty sends no header and behaves exactly as before.
  * @returns {Promise<{path: string, localeFreePath: string, lastmod: string|null}[]>}
  *   every locale-prefixed path to prerender/sitemap, e.g.
  *   `{path: 'en/categories/hotels', localeFreePath: 'categories/hotels',
@@ -70,16 +92,23 @@ async function fetchAllPages(apiBaseUrl, basePath, extraParams = '') {
  *   fake changefreq/priority/lastmod for appearance" rule means every
  *   other route type carries `lastmod: null` rather than an invented date.
  */
-export async function fetchRouteManifest({ apiBaseUrl, locales }) {
+export async function fetchRouteManifest({
+  apiBaseUrl,
+  locales,
+  internalToken,
+}) {
   const [categories, destinations, companies, listings] = await Promise.all([
-    fetchJson(apiBaseUrl, '/search/categories'),
-    fetchJson(apiBaseUrl, '/search/destinations'),
-    fetchAllPages(apiBaseUrl, '/partners'),
-    fetchAllPages(apiBaseUrl, '/search'),
+    fetchJson(apiBaseUrl, '/search/categories', internalToken),
+    fetchJson(apiBaseUrl, '/search/destinations', internalToken),
+    fetchAllPages(apiBaseUrl, '/partners', internalToken),
+    fetchAllPages(apiBaseUrl, '/search', internalToken),
   ]);
 
   const localeFreeEntries = [
-    ...STATIC_PATHS.map((localeFreePath) => ({ localeFreePath, lastmod: null })),
+    ...STATIC_PATHS.map((localeFreePath) => ({
+      localeFreePath,
+      lastmod: null,
+    })),
     ...categories.map((category) => ({
       localeFreePath: `categories/${category.slug}`,
       lastmod: null,

@@ -83,6 +83,14 @@ dotenv.config({ path: path.join(ROOT, '.env') });
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const PUBLIC_SITE_URL = process.env.VITE_PUBLIC_SITE_URL ?? '';
 const PRERENDER_PORT = Number(process.env.PRERENDER_PORT ?? 5175);
+// Matches the API's own PRERENDER_INTERNAL_TOKEN (rateLimiter.js's
+// isTrustedInternalBuildRequest) — moves both this script's manifest
+// fetches and the crawl's own in-page API calls onto the internal-build
+// rate-limit tier instead of the public tier a real crawl (228 routes x
+// several data fetches each, sequential by design) would otherwise
+// exhaust in minutes. Unset by default: no header is sent, and the crawl
+// falls back to the ordinary public tier exactly as before this existed.
+const INTERNAL_BUILD_TOKEN = process.env.PRERENDER_INTERNAL_TOKEN ?? '';
 const LOCALES = ['hy', 'ru', 'en'];
 const NAV_TIMEOUT_MS = 20_000;
 const READY_TIMEOUT_MS = 15_000;
@@ -192,6 +200,7 @@ async function main() {
   const manifest = await fetchRouteManifest({
     apiBaseUrl: API_BASE_URL,
     locales: LOCALES,
+    internalToken: INTERNAL_BUILD_TOKEN,
   });
   log(`${manifest.length} routes to prerender (${LOCALES.length} locales).`);
 
@@ -205,6 +214,15 @@ async function main() {
 
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  if (INTERNAL_BUILD_TOKEN) {
+    // Applies to every request the page issues, including the app's own
+    // cross-origin fetches to API_BASE_URL — same rate-limit-tier
+    // reasoning as the manifest fetch above, just for the requests React
+    // itself makes while rendering each crawled route.
+    await page.setExtraHTTPHeaders({
+      'X-Internal-Build-Token': INTERNAL_BUILD_TOKEN,
+    });
+  }
 
   let succeeded = 0;
   const failures = [];
