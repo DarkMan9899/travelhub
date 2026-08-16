@@ -11,8 +11,14 @@
  * (see `Stack.jsx`'s file header), needed here for consumers building a
  * combobox/autocomplete on top of this field without re-implementing its
  * label/error/icon chrome.
+ *
+ * Wrapped in `forwardRef` so React Hook Form's `Controller` (which passes
+ * a `ref` callback down for its own focus-on-error/native-validation
+ * integration) attaches to the real `<input>` instead of silently no-op'ing
+ * — a bare function component drops any `ref` prop before it reaches here.
  */
 
+import { forwardRef } from 'react';
 import PropTypes from 'prop-types';
 import FieldWrapper from '../internal/FieldWrapper.jsx';
 import styles from './Input.module.scss';
@@ -20,25 +26,28 @@ import styles from './Input.module.scss';
 const SIZES = ['sm', 'md', 'lg'];
 const TYPES = ['text', 'email', 'password', 'number', 'tel'];
 
-export default function Input({
-  value,
-  onChange,
-  onBlur = undefined,
-  onFocus = undefined,
-  label = undefined,
-  placeholder = undefined,
-  helperText = undefined,
-  error = undefined,
-  size = 'md',
-  disabled = false,
-  iconLeft = undefined,
-  iconRight = undefined,
-  type = 'text',
-  id = undefined,
-  name = undefined,
-  required = false,
-  ...rest
-}) {
+const Input = forwardRef(function Input(
+  {
+    value,
+    onChange,
+    onBlur = undefined,
+    onFocus = undefined,
+    label = undefined,
+    placeholder = undefined,
+    helperText = undefined,
+    error = undefined,
+    size = 'md',
+    disabled = false,
+    iconLeft = undefined,
+    iconRight = undefined,
+    type = 'text',
+    id = undefined,
+    name = undefined,
+    required = false,
+    ...rest
+  },
+  ref,
+) {
   return (
     <FieldWrapper
       id={id}
@@ -66,6 +75,7 @@ export default function Input({
             </span>
           )}
           <input
+            ref={ref}
             id={fieldId}
             name={name}
             type={type}
@@ -92,8 +102,13 @@ export default function Input({
       )}
     </FieldWrapper>
   );
-}
+});
 
+/* eslint-disable react/require-default-props -- every optional prop below
+   already has an ES6 default in the destructured params on the
+   forwardRef-wrapped function above; eslint-plugin-react's default-props
+   check doesn't associate propTypes on a forwardRef object with defaults
+   declared on its inner render function. */
 Input.propTypes = {
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   onChange: PropTypes.func.isRequired,
@@ -112,4 +127,7 @@ Input.propTypes = {
   name: PropTypes.string,
   required: PropTypes.bool,
 };
+/* eslint-enable react/require-default-props */
+
+export default Input;
 export { SIZES as INPUT_SIZES, TYPES as INPUT_TYPES };
