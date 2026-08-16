@@ -11,7 +11,7 @@ const ROOM_OPTIONS = [
   { value: 'suite', label: 'Suite' },
 ];
 
-function ControlledSelect({ initialValue, options, ...rest }) {
+function ControlledSelect({ initialValue = undefined, options, ...rest }) {
   const [value, setValue] = useState(initialValue);
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading -- test helper forwards arbitrary Select props
@@ -26,10 +26,6 @@ ControlledSelect.propTypes = {
   options: PropTypes.array.isRequired,
 };
 
-ControlledSelect.defaultProps = {
-  initialValue: undefined,
-};
-
 describe('Select / Dropdown (COMPONENT_LIBRARY.md Part II §2)', () => {
   test('is closed by default and opens on trigger click, showing options via role="listbox"', async () => {
     const user = userEvent.setup();
@@ -37,7 +33,7 @@ describe('Select / Dropdown (COMPONENT_LIBRARY.md Part II §2)', () => {
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /select/i }));
+    await user.click(screen.getByRole('button', { name: 'Room type' }));
 
     const listbox = screen.getByRole('listbox');
     expect(within(listbox).getAllByRole('option')).toHaveLength(3);
@@ -47,12 +43,14 @@ describe('Select / Dropdown (COMPONENT_LIBRARY.md Part II §2)', () => {
     const user = userEvent.setup();
     render(<ControlledSelect options={ROOM_OPTIONS} label="Room type" />);
 
-    await user.click(screen.getByRole('button', { name: /select/i }));
+    await user.click(screen.getByRole('button', { name: 'Room type' }));
     await user.click(screen.getByRole('option', { name: 'Deluxe room' }));
 
-    expect(
-      screen.getByRole('button', { name: 'Deluxe room' }),
-    ).toBeInTheDocument();
+    // The trigger's accessible name stays the field label (Phase 8 fix —
+    // matches a native <select>'s own pattern); the current selection is
+    // communicated via its visible text content instead.
+    const trigger = screen.getByRole('button', { name: 'Room type' });
+    expect(within(trigger).getByText('Deluxe room')).toBeInTheDocument();
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
@@ -61,19 +59,18 @@ describe('Select / Dropdown (COMPONENT_LIBRARY.md Part II §2)', () => {
     render(<ControlledSelect options={ROOM_OPTIONS} label="Room type" />);
 
     await user.tab();
-    expect(screen.getByRole('button', { name: /select/i })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Room type' })).toHaveFocus();
 
     await user.keyboard('{ArrowDown}');
     expect(screen.getByRole('listbox')).toBeInTheDocument();
 
     await user.keyboard('{ArrowDown}{Enter}');
-    expect(
-      screen.getByRole('button', { name: 'Standard room' }),
-    ).toBeInTheDocument();
+    const trigger = screen.getByRole('button', { name: 'Room type' });
+    expect(within(trigger).getByText('Standard room')).toBeInTheDocument();
 
     await user.keyboard('{ArrowDown}{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(screen.getByRole('button')).toHaveFocus();
+    expect(trigger).toHaveFocus();
   });
 
   test('multi-select renders removable chips and toggles values without closing the panel', async () => {
@@ -87,7 +84,7 @@ describe('Select / Dropdown (COMPONENT_LIBRARY.md Part II §2)', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: /select/i }));
+    await user.click(screen.getByRole('button', { name: 'Amenities' }));
     await user.click(screen.getByRole('option', { name: 'Standard room' }));
     await user.click(screen.getByRole('option', { name: 'Suite' }));
 
@@ -111,7 +108,7 @@ describe('Select / Dropdown (COMPONENT_LIBRARY.md Part II §2)', () => {
       <ControlledSelect options={ROOM_OPTIONS} label="Room type" searchable />,
     );
 
-    await user.click(screen.getByRole('button', { name: /select/i }));
+    await user.click(screen.getByRole('button', { name: 'Room type' }));
     await user.type(screen.getByRole('textbox', { name: /search/i }), 'suite');
 
     const listbox = screen.getByRole('listbox');
@@ -129,7 +126,7 @@ describe('Select / Dropdown (COMPONENT_LIBRARY.md Part II §2)', () => {
     const user = userEvent.setup();
     render(<ControlledSelect options={manyOptions} label="Country" />);
 
-    await user.click(screen.getByRole('button', { name: /select/i }));
+    await user.click(screen.getByRole('button', { name: 'Country' }));
     expect(
       screen.getByRole('textbox', { name: /search/i }),
     ).toBeInTheDocument();
@@ -150,13 +147,27 @@ describe('Select / Dropdown (COMPONENT_LIBRARY.md Part II §2)', () => {
     );
   });
 
+  test('the trigger\'s accessible name is the visible label, not its placeholder content (Phase 8 fix — `htmlFor` alone does not label a non-labellable `<div role="button">`)', () => {
+    render(<ControlledSelect options={ROOM_OPTIONS} label="Room type" />);
+    const trigger = screen.getByTestId('select-trigger');
+    expect(trigger).toHaveAccessibleName('Room type');
+  });
+
+  test('falls back to ariaLabel when no visible label is given', () => {
+    render(
+      <ControlledSelect options={ROOM_OPTIONS} ariaLabel="Sort results" />,
+    );
+    const trigger = screen.getByTestId('select-trigger');
+    expect(trigger).toHaveAccessibleName('Sort results');
+  });
+
   test('disabled select cannot be opened', async () => {
     const user = userEvent.setup();
     render(
       <ControlledSelect options={ROOM_OPTIONS} label="Room type" disabled />,
     );
 
-    await user.click(screen.getByRole('button', { name: /select/i }));
+    await user.click(screen.getByRole('button', { name: 'Room type' }));
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 });

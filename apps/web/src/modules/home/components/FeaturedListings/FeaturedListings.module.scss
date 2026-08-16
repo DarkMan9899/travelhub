@@ -1,0 +1,39 @@
+// FeaturedListings — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+// ListingCard's media is a fixed 4:3 aspect ratio plus a content-driven
+// text body — a moderate bump over the original basis (was 30%) reads
+// as noticeably larger without the card's height ballooning; the
+// center-focus scale/opacity emphasis (Showcase.jsx) carries most of
+// the "dominant active card" read.
+.slide {
+  flex: 0 0 82%;
+
+  @include respond.respond(mobile-large) {
+    flex: 0 0 60%;
+  }
+
+  @include respond.respond(tablet) {
+    flex: 0 0 46%;
+  }
+
+  @include respond.respond(laptop) {
+    flex: 0 0 34%;
+  }
+}
+
+// The pending-state skeleton row mirrors the eventual carousel's slide
+// widths so the loading state doesn't visibly jump in size once real
+// content arrives.
+.skeletonRow {
+  display: flex;
+  gap: tokens.$space-3;
+  overflow: hidden;
+  padding-block: tokens.$space-4;
+
+  @include respond.respond(laptop) {
+    gap: tokens.$space-4;
+  }
+}

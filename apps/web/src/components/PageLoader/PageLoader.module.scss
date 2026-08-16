@@ -1,0 +1,11 @@
+// PageLoader — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+
+.pageLoader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: tokens.$space-16 tokens.$space-4;
+}

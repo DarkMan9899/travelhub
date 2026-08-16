@@ -61,6 +61,7 @@ describe('Global RBAC (role_user / permission_role)', () => {
       [
         'listing.moderate',
         'media.moderate',
+        'messaging.moderate',
         'partner.moderate',
         'promotion.approve',
         'review.moderate',
@@ -73,6 +74,23 @@ describe('Global RBAC (role_user / permission_role)', () => {
   test('CUSTOMER has zero RBAC permissions (ownership checks apply instead)', async () => {
     const keys = await permissionKeysForRole('CUSTOMER');
     expect(keys).toHaveLength(0);
+  });
+
+  test('SUPPORT (Phase 11, extended Phase 16/17) is limited to a read-only lookup subset', async () => {
+    const keys = await permissionKeysForRole('SUPPORT');
+    expect(keys.sort()).toEqual(
+      [
+        'audit.view',
+        'booking.view_all',
+        'inventory.view_all',
+        'messaging.view_all',
+        'payment.view',
+        'user.list',
+        'user.view',
+      ].sort(),
+    );
+    expect(keys).not.toContain('user.suspend');
+    expect(keys).not.toContain('listing.moderate');
   });
 
   test('application code never needs to check a role by name to resolve a permission — the join is data-driven', async () => {

@@ -1,19 +1,33 @@
 /**
- * Development-only full reset: drop + recreate the configured database,
- * migrate from empty, then seed.
+ * Library-only module: drop + recreate `config.database.name` (whatever
+ * that currently resolves to — see `src/config/index.js`'s NODE_ENV
+ * switch). Exports `recreateDatabase()` only; it has **no CLI entry
+ * point of its own** on purpose.
  *
- * Never runs when `NODE_ENV=production` — this is a destructive operation
- * with no confirmation prompt, so the guard is a hard failure, not a
- * warning (`db:reset` is a local-dev convenience script, never part of a
- * deployment pipeline).
+ * This file used to also run as a script (`node reset.js` / the old bare
+ * `npm run db:reset`), which meant its destructive DROP DATABASE ran
+ * against whatever `config.database.name` happened to resolve to for
+ * the *ambient* NODE_ENV — almost always `development`, since nothing
+ * about running this file directly ever set NODE_ENV=test. That is
+ * precisely how a `db:reset` invocation ended up dropping the local
+ * development database instead of the disposable test one. The CLI
+ * entry points now live in `cli/resetTest.js` (always test, no
+ * confirmation needed) and `cli/resetDev.js` (always dev, refuses to
+ * run without an explicit `--confirm` flag) — each explicitly resolves
+ * its own target rather than trusting ambient environment state. The
+ * bare `db:reset` script now points at `cli/resetGuard.js`, which never
+ * touches a database at all.
+ *
+ * `recreateDatabase()` itself is unchanged and still relied on directly
+ * by `tests/integration/database/migrations.test.js`, which asserts
+ * `config.database.name === 'travelhub_test'` (via Jest's own
+ * NODE_ENV=test default) before calling it — that usage is safe and
+ * intentionally untouched by this file's cleanup.
  */
 
-import { fileURLToPath } from 'node:url';
 import mysql from 'mysql2/promise';
 import config from '../../config/index.js';
 import { getModuleLogger } from '../../logging/logger.js';
-import { up } from './migrate.js';
-import { seedAll } from './seeds/index.js';
 
 const log = getModuleLogger('infrastructure:db-reset');
 const IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
@@ -45,28 +59,4 @@ export async function recreateDatabase() {
   } finally {
     await connection.end();
   }
-}
-
-async function main() {
-  if (config.isProduction) {
-    log.error('db:reset refuses to run when NODE_ENV=production.');
-    process.exitCode = 1;
-    return;
-  }
-
-  await recreateDatabase();
-  await up();
-  await seedAll();
-  log.info('db:reset complete');
-}
-
-// Guards against running as a side effect of import (e.g. a test file
-// importing `recreateDatabase` from this module) — only runs when
-// invoked directly, matching migrate.js/seeds/index.js's own guard.
-const isMain = process.argv[1] === fileURLToPath(import.meta.url);
-if (isMain) {
-  main().catch((err) => {
-    log.error({ err }, 'db:reset failed');
-    process.exitCode = 1;
-  });
 }

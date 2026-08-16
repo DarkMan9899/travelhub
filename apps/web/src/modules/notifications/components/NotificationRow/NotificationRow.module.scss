@@ -1,0 +1,65 @@
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: tokens.$space-3;
+  padding: tokens.$space-3 tokens.$space-4;
+  border-bottom: 1px solid tokens.$color-gray-200;
+  position: relative;
+
+  &--unread {
+    background-color: rgba(29, 95, 214, 0.05);
+  }
+}
+
+.iconWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: tokens.$radius-full;
+  background-color: tokens.$color-gray-100;
+  color: tokens.$color-navy;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.message {
+  margin: 0;
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-900;
+  line-height: 1.4;
+}
+
+.timestamp {
+  display: block;
+  margin-top: tokens.$space-1;
+  font-size: tokens.$font-size-micro;
+  color: tokens.$color-gray-600;
+}
+
+.unreadDot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: tokens.$space-1;
+  border-radius: tokens.$radius-full;
+  background-color: tokens.$color-royal-blue;
+}
+
+.actions {
+  display: none;
+  flex-shrink: 0;
+  gap: tokens.$space-1;
+
+  @include respond.respond(tablet) {
+    display: flex;
+  }
+}

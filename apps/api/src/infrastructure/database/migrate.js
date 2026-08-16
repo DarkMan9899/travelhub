@@ -201,6 +201,16 @@ async function main() {
   const [, , command, arg] = process.argv;
   const steps = arg ? Number(arg) : undefined;
 
+  // Every CLI invocation announces its resolved target up front — this
+  // never runs during tests (`up`/`down`/`status` are imported directly
+  // by ~25 integration test files, which never trigger this `isMain`
+  // block), so it adds visibility for humans running `db:migrate*`
+  // directly without changing any tested behavior.
+  log.info(
+    { database: config.database.name, host: config.database.host, command },
+    'db:migrate target',
+  );
+
   switch (command) {
     case 'up':
       await up(steps);

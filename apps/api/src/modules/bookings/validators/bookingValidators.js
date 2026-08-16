@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import { BOOKING_STATUSES } from '../../../core/domain/bookingStatusTransitions.js';
 
 const passthroughQuery = z.object({}).passthrough();
 const passthroughParams = z.object({}).passthrough();
@@ -69,6 +70,14 @@ export const listBookingsQuerySchema = z.object({
   params: passthroughParams,
   query: z.object({
     partnerId: z.coerce.number().int().positive().optional(),
+    // Phase 11 Admin Platform: an admin looking up one specific
+    // customer's booking history (e.g. from the User Management detail
+    // page) — requires `booking.view_all`, same as the platform-wide
+    // `viewAll` flag (see `BookingService.listBookings`). Query param is
+    // `customerId`, matching this file's existing `partnerId` naming
+    // convention (short form, not `*UserId`) — mapped to the internal
+    // `customerUserId` filter key in the controller.
+    customerId: z.coerce.number().int().positive().optional(),
     // `z.coerce.boolean()` would coerce the literal string "false" to
     // `true` (any non-empty string is truthy) — an explicit string
     // comparison is required for a query-string boolean.
@@ -76,6 +85,10 @@ export const listBookingsQuerySchema = z.object({
       .string()
       .optional()
       .transform((value) => value === 'true'),
+    // Phase 9 (Partner Dashboard): lets a partner's booking-management
+    // workspace narrow server-side (e.g. PENDING_VENDOR to find bookings
+    // needing action) — mirrors `GET /listings`'s existing `status` param.
+    status: z.enum(BOOKING_STATUSES).optional(),
     cursor: z.string().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
   }),

@@ -72,16 +72,19 @@
   background-color: colors.$color-royal-blue;
 }
 
+// gold/success/warning use their "-strong" pairing (see _colors.scss) —
+// the base tone doesn't clear WCAG AA's 4.5:1 minimum for the white
+// `.fallback` initials text these variants render underneath.
 .avatar--bg-gold {
-  background-color: colors.$color-gold;
+  background-color: colors.$color-gold-strong;
 }
 
 .avatar--bg-success {
-  background-color: colors.$color-success;
+  background-color: colors.$color-success-strong;
 }
 
 .avatar--bg-warning {
-  background-color: colors.$color-warning;
+  background-color: colors.$color-warning-strong;
 }
 
 .avatar--bg-danger {

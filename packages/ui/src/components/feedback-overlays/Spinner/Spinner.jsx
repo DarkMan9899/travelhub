@@ -12,7 +12,12 @@ import styles from './Spinner.module.scss';
 
 const SIZES = ['sm', 'md', 'lg'];
 
-export default function Spinner({ size, label, decorative, className }) {
+export default function Spinner({
+  size = 'md',
+  label = 'Loading',
+  decorative = false,
+  className = undefined,
+}) {
   return (
     <span
       // `decorative`: for the "inline within a Button" variant
@@ -53,12 +58,4 @@ Spinner.propTypes = {
   decorative: PropTypes.bool,
   className: PropTypes.string,
 };
-
-Spinner.defaultProps = {
-  size: 'md',
-  label: 'Loading',
-  decorative: false,
-  className: undefined,
-};
-
 export { SIZES as SPINNER_SIZES };

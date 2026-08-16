@@ -8,6 +8,7 @@
 import {
   toBookingResponse,
   toBookingSummaryResponse,
+  toBookingStatusHistoryResponse,
 } from '../dto/bookingDto.js';
 
 export function createBookingController(bookingService) {
@@ -44,12 +45,31 @@ export function createBookingController(bookingService) {
       }
     },
 
+    async getStatusHistory(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const history = await bookingService.getStatusHistory(
+          req.principal,
+          id,
+        );
+        res.status(200).json({
+          success: true,
+          data: history.map(toBookingStatusHistoryResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
     async list(req, res, next) {
       try {
-        const { partnerId, viewAll, cursor, limit } = req.validated.query;
+        const { partnerId, viewAll, status, customerId, cursor, limit } =
+          req.validated.query;
         const { rows, meta } = await bookingService.listBookings(
           req.principal,
-          { partnerId, viewAll },
+          { partnerId, viewAll, status, customerUserId: customerId },
           { cursor, limit },
         );
         res.status(200).json({

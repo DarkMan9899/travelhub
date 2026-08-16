@@ -1,0 +1,52 @@
+@use 'tokens' as tokens;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  max-height: 480px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-2;
+  padding: tokens.$space-3 tokens.$space-4;
+  border-bottom: 1px solid tokens.$color-gray-200;
+}
+
+.title {
+  margin: 0;
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding: tokens.$space-3 tokens.$space-4;
+}
+
+.viewAll {
+  display: block;
+  padding: tokens.$space-3 tokens.$space-4;
+  text-align: center;
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+  color: tokens.$color-royal-blue;
+  text-decoration: none;
+  border-top: 1px solid tokens.$color-gray-200;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

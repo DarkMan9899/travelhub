@@ -212,6 +212,56 @@ describe('POST /booking-holds — grants capacity under lock', () => {
     expect(res.body.error.code).toBe('BLACKOUT_DATE');
   });
 
+  /**
+   * Phase 17 §Checkout Revalidation (CRITICAL) — the exact scenario
+   * described in the brief: a customer sees "1 room available" from a
+   * page that's now stale, a receptionist records a phone/walk-in
+   * reservation for the same room via `POST /availability/blocks` (the
+   * real mechanism `PartnerCalendarPageContent`'s Quick Block UI uses),
+   * and the customer's checkout attempt (`POST /booking-holds`) must be
+   * rejected cleanly — never silently succeed into a double-booking.
+   */
+  test('a stale customer checkout is rejected once a partner records a phone reservation for the last unit', async () => {
+    const listingId = await createListing(
+      `Hold Stale Checkout Test ${Date.now()}`,
+    );
+    const unitId = await registerUnit(listingId, 1);
+    const dateFrom = '2026-12-01';
+    const dateTo = '2026-12-03';
+
+    // The receptionist's phone/walk-in reservation, recorded before the
+    // customer's stale-page checkout click reaches the server.
+    const blockRes = await request(app)
+      .post('/api/v1/availability/blocks')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        unitId,
+        dateFrom,
+        dateTo,
+        quantity: 1,
+        reasonCode: 'OTHER',
+      });
+    expect(blockRes.status).toBe(201);
+
+    const res = await request(app)
+      .post('/api/v1/booking-holds')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ bookableUnitId: unitId, dateFrom, dateTo, quantity: 1 }],
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('AVAILABILITY_CONFLICT');
+
+    // No hold, no ledger row, no booking was created for the customer —
+    // this must be a clean rejection, not a partial/corrupted write.
+    const listRes = await request(app)
+      .get('/api/v1/availability/blocks')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .query({ listingId });
+    expect(listRes.body.data).toHaveLength(1);
+  });
+
   test('a nonexistent bookableUnitId 404s', async () => {
     const res = await request(app)
       .post('/api/v1/booking-holds')

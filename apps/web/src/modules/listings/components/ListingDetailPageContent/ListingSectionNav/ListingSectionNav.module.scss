@@ -1,0 +1,37 @@
+// ListingSectionNav — Phase 18 (Premium Listing Detail). Tokens only.
+
+@use 'tokens' as tokens;
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: tokens.$color-white;
+  border-bottom: 1px solid tokens.$color-gray-100;
+}
+
+.list {
+  display: flex;
+  gap: tokens.$space-4;
+  margin: 0;
+  padding: tokens.$space-3 0;
+  list-style: none;
+  overflow-x: auto;
+}
+
+.link {
+  display: inline-block;
+  white-space: nowrap;
+  padding: tokens.$space-1 0;
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+
+  &:hover,
+  &:focus-visible {
+    color: tokens.$color-royal-blue;
+    border-bottom-color: tokens.$color-royal-blue;
+  }
+}

@@ -1,0 +1,67 @@
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.layout {
+  display: flex;
+  height: calc(100vh - 220px);
+  min-height: 480px;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-lg;
+  overflow: hidden;
+  background-color: tokens.$color-white;
+}
+
+.listPane {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  border-right: 1px solid tokens.$color-gray-200;
+
+  &--hiddenOnMobile {
+    display: none;
+  }
+
+  // `laptop` (1024px), not `tablet` (768px) — this page lives inside the
+  // account/partner/admin layout's persistent sidebar (~240px), so at
+  // exactly the `tablet` breakpoint (a real device width — iPad portrait)
+  // a fixed 340px list pane left almost no room for the chat pane. Single
+  // -pane (list-then-thread) all the way through the tablet range instead.
+  @include respond.respond(laptop) {
+    display: flex;
+    width: 340px;
+    flex-shrink: 0;
+  }
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding: tokens.$space-3;
+  border-bottom: 1px solid tokens.$color-gray-200;
+}
+
+.chatPane {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+
+  &--hiddenOnMobile {
+    display: none;
+  }
+
+  @include respond.respond(laptop) {
+    display: flex;
+  }
+}
+
+.selectPrompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+}

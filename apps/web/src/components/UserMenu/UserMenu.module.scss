@@ -1,0 +1,75 @@
+// UserMenu — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+.guestActions {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-4;
+}
+
+.loginLink {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+  text-decoration: none;
+  white-space: nowrap;
+  @include focus.focus-ring;
+
+  &:hover {
+    color: tokens.$color-royal-blue;
+  }
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: tokens.$radius-full;
+  @include focus.focus-ring;
+}
+
+// Supplemental to Popover's own `.panel` (position/elevation/z-index) —
+// just the min-width this menu wants.
+.menu {
+  min-width: 220px;
+}
+
+.sectionLabel {
+  padding: tokens.$space-2 tokens.$space-3 tokens.$space-1;
+  margin: 0;
+  color: tokens.$color-gray-600;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: tokens.$space-2 tokens.$space-3;
+  border: none;
+  background: none;
+  border-radius: tokens.$radius-sm;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: tokens.$color-gray-900;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  @include focus.focus-ring;
+
+  &:hover {
+    background-color: tokens.$color-gray-100;
+  }
+
+  &[aria-current] {
+    color: tokens.$color-royal-blue;
+    font-weight: 600;
+  }
+}

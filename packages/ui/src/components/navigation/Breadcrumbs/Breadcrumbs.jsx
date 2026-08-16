@@ -52,9 +52,9 @@ function collapseItems(items, maxItems) {
 
 export default function Breadcrumbs({
   items,
-  maxItems,
-  linkComponent: Link,
-  className,
+  maxItems = 4,
+  linkComponent: Link = 'a',
+  className = undefined,
 }) {
   const visibleItems = collapseItems(items, maxItems);
 
@@ -110,10 +110,4 @@ Breadcrumbs.propTypes = {
   maxItems: PropTypes.number,
   linkComponent: PropTypes.elementType,
   className: PropTypes.string,
-};
-
-Breadcrumbs.defaultProps = {
-  maxItems: 4,
-  linkComponent: 'a',
-  className: undefined,
 };

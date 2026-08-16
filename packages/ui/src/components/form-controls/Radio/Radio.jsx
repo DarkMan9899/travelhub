@@ -16,8 +16,8 @@ export default function Radio({
   checked,
   onChange,
   label,
-  disabled,
-  error,
+  disabled = false,
+  error = undefined,
   name,
   value,
 }) {
@@ -65,9 +65,4 @@ Radio.propTypes = {
   error: PropTypes.string,
   name: PropTypes.string.isRequired,
   value: PropTypes.string.isRequired,
-};
-
-Radio.defaultProps = {
-  disabled: false,
-  error: undefined,
 };

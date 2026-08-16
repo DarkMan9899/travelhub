@@ -47,4 +47,31 @@ export async function isPartnerOwner(
   return rows.length > 0;
 }
 
+/**
+ * The caller's `partner_employee_roles.code` for one partner (`OWNER`,
+ * `MANAGER`, `EDITOR`, `BOOKING_MANAGER`, `ANALYTICS_VIEWER`), or `null`
+ * if they aren't an active employee of that partner at all — feeds
+ * `core/domain/partnerCapabilities.js#roleHasCapability` (Phase 17 §14).
+ *
+ * @param {number} userId
+ * @param {number} partnerId
+ * @param {import('mysql2/promise').Pool} [pool]
+ * @returns {Promise<string|null>}
+ */
+export async function getPartnerEmployeeRoleCode(
+  userId,
+  partnerId,
+  pool = getMysqlPool(),
+) {
+  const [rows] = await pool.query(
+    `SELECT per.code
+     FROM partner_employees pe
+     JOIN partner_employee_roles per ON per.id = pe.role_id
+     WHERE pe.user_id = ? AND pe.partner_id = ? AND pe.deleted_at IS NULL
+     LIMIT 1`,
+    [userId, partnerId],
+  );
+  return rows[0]?.code ?? null;
+}
+
 export default isPartnerOwner;

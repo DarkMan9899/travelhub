@@ -16,6 +16,36 @@ import {
 const userIdParams = z.object({ id: z.coerce.number().int().positive() });
 const passthroughQuery = z.object({}).passthrough();
 
+// Phase 11 Admin Platform: PENDING_DELETION is deliberately excluded —
+// that is a self-service account-deletion state (Sprint 6), never an
+// admin-initiated one.
+export const ADMIN_SETTABLE_USER_STATUSES = ['ACTIVE', 'SUSPENDED', 'BANNED'];
+
+export const listUsersQuerySchema = z.object({
+  params: z.object({}).passthrough(),
+  query: z.object({
+    keyword: z.string().trim().min(1).max(255).optional(),
+    status: z.enum(ADMIN_SETTABLE_USER_STATUSES).optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+  }),
+  body: z.any(),
+});
+
+export const userIdParamsSchema = z.object({
+  params: userIdParams,
+  query: passthroughQuery,
+  body: z.any(),
+});
+
+export const updateUserStatusSchema = z.object({
+  params: userIdParams,
+  query: passthroughQuery,
+  body: z.object({
+    status: z.enum(ADMIN_SETTABLE_USER_STATUSES),
+  }),
+});
+
 export const updateProfileSchema = z.object({
   params: userIdParams,
   query: passthroughQuery,

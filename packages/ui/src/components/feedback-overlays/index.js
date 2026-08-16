@@ -7,3 +7,5 @@ export { default as EmptyState } from './EmptyState/EmptyState.jsx';
 export { default as Alert, ALERT_VARIANTS } from './Alert/Alert.jsx';
 export { default as Modal, MODAL_SIZES } from './Modal/Modal.jsx';
 export { default as Drawer, DRAWER_ANCHORS } from './Drawer/Drawer.jsx';
+export { default as Toast, TOAST_VARIANTS } from './Toast/Toast.jsx';
+export { default as ErrorState } from './ErrorState/ErrorState.jsx';

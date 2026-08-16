@@ -23,17 +23,17 @@ const VARIANTS = ['primary', 'secondary', 'ghost', 'destructive'];
 const SIZES = ['sm', 'md', 'lg'];
 
 export default function Button({
-  children,
-  variant,
-  size,
-  disabled,
-  loading,
-  iconLeft,
-  iconRight,
-  fullWidth,
-  type,
-  onClick,
-  ariaLabel,
+  children = undefined,
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  loading = false,
+  iconLeft = undefined,
+  iconRight = undefined,
+  fullWidth = false,
+  type = 'button',
+  onClick = undefined,
+  ariaLabel = undefined,
 }) {
   const iconOnly = !children && (iconLeft || iconRight);
 
@@ -91,20 +91,6 @@ Button.propTypes = {
   type: PropTypes.oneOf(['button', 'submit']),
   onClick: PropTypes.func,
   ariaLabel: PropTypes.string,
-};
-
-Button.defaultProps = {
-  children: undefined,
-  variant: 'primary',
-  size: 'md',
-  disabled: false,
-  loading: false,
-  iconLeft: undefined,
-  iconRight: undefined,
-  fullWidth: false,
-  type: 'button',
-  onClick: undefined,
-  ariaLabel: undefined,
 };
 
 export { VARIANTS as BUTTON_VARIANTS, SIZES as BUTTON_SIZES };

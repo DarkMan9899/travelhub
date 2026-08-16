@@ -20,7 +20,13 @@ import styles from './Skeleton.module.scss';
 
 const VARIANTS = ['text', 'circle', 'rect'];
 
-export default function Skeleton({ variant, width, height, count, className }) {
+export default function Skeleton({
+  variant = 'text',
+  width = undefined,
+  height = undefined,
+  count = 1,
+  className = undefined,
+}) {
   return (
     <span className={styles.container} aria-busy="true">
       {Array.from({ length: count }, (_, index) => (
@@ -51,13 +57,4 @@ Skeleton.propTypes = {
   count: PropTypes.number,
   className: PropTypes.string,
 };
-
-Skeleton.defaultProps = {
-  variant: 'text',
-  width: undefined,
-  height: undefined,
-  count: 1,
-  className: undefined,
-};
-
 export { VARIANTS as SKELETON_VARIANTS };

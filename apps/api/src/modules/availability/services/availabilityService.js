@@ -56,7 +56,10 @@ import {
   ValidationError,
   NotFoundError,
 } from '../../../errors/AppError.js';
-import { isPartnerOwner } from '../../../infrastructure/database/repositories/partnerEmployeeRepository.js';
+import {
+  isPartnerOwner,
+  getPartnerEmployeeRoleCode,
+} from '../../../infrastructure/database/repositories/partnerEmployeeRepository.js';
 import { findCurrencyByCode } from '../../../infrastructure/database/repositories/currencyRepository.js';
 import { withTransaction } from '../../../infrastructure/database/transaction.js';
 import {
@@ -64,12 +67,55 @@ import {
   expandCalendarDays,
   isVetoedByBlackout,
 } from '../../../core/domain/calendarExpansion.js';
+import {
+  roleHasCapability,
+  PARTNER_CAPABILITIES,
+} from '../../../core/domain/partnerCapabilities.js';
+import { resolveConsumedRange } from '../../../core/domain/accommodationDateSemantics.js';
+import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
+import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
+import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
 
 const MANAGE_PERMISSION = 'listing.update';
 const ADMIN_PERMISSION = 'listing.moderate';
 const WRITABLE_STATUSES = Object.freeze(['AVAILABLE', 'BLOCKED']);
 const PUBLIC_RANGES_LIMIT = 100;
 const EXPIRY_SWEEP_BATCH_SIZE = 200;
+
+// Phase 17 §29 — the fixed vocabulary `inventory_ledger.source_type` uses.
+export const LEDGER_SOURCE_TYPES = Object.freeze({
+  TRAVELHUB_HOLD: 'TRAVELHUB_HOLD',
+  TRAVELHUB_BOOKING: 'TRAVELHUB_BOOKING',
+  MANUAL_BLOCK: 'MANUAL_BLOCK',
+  EXTERNAL_RESERVATION: 'EXTERNAL_RESERVATION',
+  CONNECTOR_SYNC: 'CONNECTOR_SYNC',
+  ADJUSTMENT: 'ADJUSTMENT',
+});
+
+// Phase 17 §11 — closed vocabulary `inventory_blocks.reason_code` uses.
+export const BLOCK_REASON_CODES = Object.freeze([
+  'MAINTENANCE',
+  'OWNER_USE',
+  'OPERATIONAL',
+  'PRIVATE_EVENT',
+  'STAFF_UNAVAILABLE',
+  'VEHICLE_UNAVAILABLE',
+  'WEATHER',
+  'OTHER',
+]);
+
+// Phase 17 §10 — closed vocabulary `external_reservations.source_code` uses.
+export const EXTERNAL_RESERVATION_SOURCE_CODES = Object.freeze([
+  'PHONE',
+  'WALK_IN',
+  'PARTNER_WEBSITE',
+  'BOOKING_COM',
+  'EXPEDIA',
+  'AIRBNB',
+  'TRAVEL_AGENCY',
+  'CONNECTOR',
+  'OTHER',
+]);
 
 function assertWritableStatus(status) {
   if (!WRITABLE_STATUSES.includes(status)) {
@@ -113,6 +159,16 @@ export class AvailabilityService {
 
   #permissionResolver;
 
+  #auditLogger;
+
+  #inventoryLedgerRepository;
+
+  #inventoryBlockRepository;
+
+  #externalReservationRepository;
+
+  #eventBus;
+
   constructor({
     availabilityCalendarRepository,
     reservationHoldRepository,
@@ -120,6 +176,11 @@ export class AvailabilityService {
     blackoutService,
     listingService,
     permissionResolver,
+    auditLogger,
+    inventoryLedgerRepository,
+    inventoryBlockRepository,
+    externalReservationRepository,
+    eventBus = createNoOpEventBus(),
   }) {
     this.#availabilityCalendarRepository = availabilityCalendarRepository;
     this.#reservationHoldRepository = reservationHoldRepository;
@@ -127,6 +188,11 @@ export class AvailabilityService {
     this.#blackoutService = blackoutService;
     this.#listingService = listingService;
     this.#permissionResolver = permissionResolver;
+    this.#auditLogger = auditLogger;
+    this.#inventoryLedgerRepository = inventoryLedgerRepository;
+    this.#inventoryBlockRepository = inventoryBlockRepository;
+    this.#externalReservationRepository = externalReservationRepository;
+    this.#eventBus = eventBus;
   }
 
   async #isOwnerOrHasPermission(principal, partnerId, permissionKey) {
@@ -158,6 +224,88 @@ export class AvailabilityService {
       MANAGE_PERMISSION,
     );
     return listing;
+  }
+
+  /**
+   * Phase 17 §14 capability gate: OWNER always passes; any other partner
+   * employee passes only if their `partner_employee_roles` code grants
+   * `capability` (`core/domain/partnerCapabilities.js`); a global-RBAC
+   * `adminPermission` (e.g. `inventory.view_all`) is an Admin/Support
+   * bypass, same "owner-or-global-permission" shape every other guard in
+   * this file already uses — never rely on hiding a nav item alone.
+   */
+  async #assertPartnerCapability(
+    principal,
+    partnerId,
+    capability,
+    adminPermission,
+  ) {
+    if (!principal) throw new AuthenticationError();
+    if (await isPartnerOwner(principal.userId, partnerId)) return;
+    const roleCode = await getPartnerEmployeeRoleCode(
+      principal.userId,
+      partnerId,
+    );
+    if (roleHasCapability(roleCode, capability)) return;
+    if (
+      adminPermission &&
+      (await this.#permissionResolver.hasPermission(
+        principal.roles,
+        adminPermission,
+      ))
+    ) {
+      return;
+    }
+    throw new AuthorizationError();
+  }
+
+  /** Loads the unit's listing and asserts `capability` (Phase 17 methods use this instead of `#loadListingForManagement`'s owner/global-permission-only check). */
+  async #loadUnitForCapability(principal, unitId, capability, adminPermission) {
+    const unit = await this.#bookableUnitService.findById(unitId);
+    if (!unit) throw new NotFoundError('Bookable unit not found.');
+    const listing = await this.#listingService.getListing(
+      principal,
+      unit.listingId,
+    );
+    await this.#assertPartnerCapability(
+      principal,
+      listing.partnerId,
+      capability,
+      adminPermission,
+    );
+    return { unit, listing };
+  }
+
+  /** Records one `inventory_ledger` row for a single (unit, date) capacity change. Never throws on its own logging failure path — callers already run inside a transaction that would roll the write back anyway. */
+  async #writeLedger(
+    {
+      bookableUnitId,
+      date,
+      sourceType,
+      sourceId,
+      delta,
+      quantityBefore,
+      quantityAfter,
+      actorUserId,
+      reason,
+    },
+    connection,
+  ) {
+    if (!this.#inventoryLedgerRepository) return;
+    await this.#inventoryLedgerRepository.record(
+      {
+        bookableUnitId,
+        date,
+        sourceType,
+        sourceId,
+        delta,
+        quantityBefore,
+        quantityAfter,
+        actorUserId,
+        reason,
+      },
+      connection,
+    );
   }
 
   async #assertListVisibility(principal, { listingId, partnerId }) {
@@ -201,12 +349,23 @@ export class AvailabilityService {
       principal,
       input.listingId,
     );
-    return this.#bookableUnitService.registerUnit({
+    const unit = await this.#bookableUnitService.registerUnit({
       listingId: listing.id,
       bookableUnitTypeCode: input.bookableUnitType,
       capacity: input.capacity,
+      timeSlotStart: input.timeSlotStart,
+      timeSlotEnd: input.timeSlotEnd,
+      unitLabel: input.unitLabel,
       createdBy: principal.userId,
     });
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'bookable_unit.registered',
+      targetType: 'bookable_unit',
+      targetId: unit.id,
+      afterSnapshot: { listingId: listing.id, capacity: input.capacity },
+    });
+    return unit;
   }
 
   async retireUnit(principal, id) {
@@ -215,6 +374,12 @@ export class AvailabilityService {
     if (!unit) throw new NotFoundError('Bookable unit not found.');
     await this.#loadListingForManagement(principal, unit.listingId);
     await this.#bookableUnitService.retireUnit(id, principal.userId);
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'bookable_unit.retired',
+      targetType: 'bookable_unit',
+      targetId: id,
+    });
   }
 
   /**
@@ -235,6 +400,21 @@ export class AvailabilityService {
   async listUnits(principal, listingId) {
     await this.#loadListingForManagement(principal, listingId);
     return this.#bookableUnitService.listUnitsForListing(listingId);
+  }
+
+  /**
+   * Internal, unauthorized existence check — same precedent as
+   * `getUnitById` above. Phase 5's `ListingService.publishListing` calls
+   * this (via a late-bound checker set in `routes/v1.js`, never a direct
+   * import) to require at least one bookable unit before publish;
+   * `ListingService` cannot depend on this module directly since
+   * `AvailabilityService` already depends on `ListingService`
+   * (BACKEND_ARCHITECTURE.md §4 forbids the reverse import).
+   */
+  async hasBookableUnit(listingId) {
+    const units =
+      await this.#bookableUnitService.listUnitsForListing(listingId);
+    return units.length > 0;
   }
 
   // --- availability_calendar (the primary engine) ---
@@ -269,7 +449,7 @@ export class AvailabilityService {
       priceOverrideCurrency,
     );
 
-    return this.#availabilityCalendarRepository.upsertRange({
+    const result = await this.#availabilityCalendarRepository.upsertRange({
       bookableUnitId: unit.id,
       dates,
       statusId,
@@ -277,6 +457,16 @@ export class AvailabilityService {
       priceOverrideAmount,
       priceOverrideCurrencyId,
     });
+    // Targets the unit, not any single calendar row — this write spans a
+    // whole date range, so there is no one row id to attribute it to.
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'availability_calendar.set',
+      targetType: 'bookable_unit',
+      targetId: unit.id,
+      afterSnapshot: { dateFrom, dateTo, status, quantityAvailable },
+    });
+    return result;
   }
 
   /** Resolves a client-supplied currency code to its id, or `undefined` when none was supplied. */
@@ -312,12 +502,19 @@ export class AvailabilityService {
       fields.priceOverrideCurrency,
     );
 
-    return this.#availabilityCalendarRepository.update(id, {
+    const result = await this.#availabilityCalendarRepository.update(id, {
       statusId,
       quantityAvailable: fields.quantityAvailable,
       priceOverrideAmount: fields.priceOverrideAmount,
       priceOverrideCurrencyId,
     });
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'availability_calendar.updated',
+      targetType: 'availability_calendar',
+      targetId: id,
+    });
+    return result;
   }
 
   async removeCalendarEntry(principal, id) {
@@ -331,6 +528,12 @@ export class AvailabilityService {
     await this.#loadListingForManagement(principal, unit.listingId);
 
     await this.#availabilityCalendarRepository.remove(id);
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'availability_calendar.removed',
+      targetType: 'availability_calendar',
+      targetId: id,
+    });
   }
 
   async listCalendarEntries(principal, filters = {}, paginationOpts = {}) {
@@ -346,13 +549,21 @@ export class AvailabilityService {
       principal,
       input.listingId,
     );
-    return this.#blackoutService.createRange({
+    const blackout = await this.#blackoutService.createRange({
       listingId: listing.id,
       dateFrom: input.dateFrom,
       dateTo: input.dateTo,
       reason: input.reason,
       createdBy: principal.userId,
     });
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'blackout.created',
+      targetType: 'blackout_date',
+      targetId: blackout.id,
+      afterSnapshot: { dateFrom: input.dateFrom, dateTo: input.dateTo },
+    });
+    return blackout;
   }
 
   async updateBlackout(principal, id, fields) {
@@ -360,7 +571,18 @@ export class AvailabilityService {
     const existing = await this.#blackoutService.findById(id);
     if (!existing) throw new NotFoundError('Blocked date range not found.');
     await this.#loadListingForManagement(principal, existing.listingId);
-    return this.#blackoutService.updateRange(id, fields, principal.userId);
+    const result = await this.#blackoutService.updateRange(
+      id,
+      fields,
+      principal.userId,
+    );
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'blackout.updated',
+      targetType: 'blackout_date',
+      targetId: id,
+    });
+    return result;
   }
 
   async deleteBlackout(principal, id) {
@@ -369,6 +591,12 @@ export class AvailabilityService {
     if (!existing) throw new NotFoundError('Blocked date range not found.');
     await this.#loadListingForManagement(principal, existing.listingId);
     await this.#blackoutService.deleteRange(id);
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'blackout.deleted',
+      targetType: 'blackout_date',
+      targetId: id,
+    });
   }
 
   async listBlackouts(principal, filters = {}, paginationOpts = {}) {
@@ -385,6 +613,18 @@ export class AvailabilityService {
       listingId,
       PUBLIC_RANGES_LIMIT,
     );
+  }
+
+  /**
+   * Public: a listing's bookable units (id/type/capacity only — no
+   * ownership check, same precedent as `getPublicRanges` above). Phase 7's
+   * Booking Flow uses this to resolve which unit(s) a customer can select
+   * before requesting a hold; `toPublicBookableUnitResponse` (the DTO,
+   * not this method) is what strips owner-facing fields.
+   */
+  async getPublicUnits(principal, listingId) {
+    await this.#listingService.getListing(principal, listingId);
+    return this.#bookableUnitService.listUnitsForListing(listingId);
   }
 
   /**
@@ -420,16 +660,26 @@ export class AvailabilityService {
     }
 
     let calendarByDate = {};
+    let priceByDate = {};
     if (resolvedUnitId !== undefined) {
-      const rows = await this.#availabilityCalendarRepository.listForUnit(
-        resolvedUnitId,
-        {
+      const [rows, priceRows] = await Promise.all([
+        this.#availabilityCalendarRepository.listForUnit(resolvedUnitId, {
           from,
           to,
-        },
-      );
+        }),
+        this.#availabilityCalendarRepository.listPricesForUnit(resolvedUnitId, {
+          from,
+          to,
+        }),
+      ]);
       calendarByDate = Object.fromEntries(
         rows.map((row) => [row.date, row.statusCode]),
+      );
+      priceByDate = Object.fromEntries(
+        priceRows.map((row) => [
+          row.date,
+          { amount: row.amount, currencyCode: row.currencyCode },
+        ]),
       );
     }
 
@@ -441,7 +691,168 @@ export class AvailabilityService {
       },
     );
 
-    return expandCalendarDays(from, to, { calendarByDate, blockedRanges });
+    return expandCalendarDays(from, to, { calendarByDate, blockedRanges }).map(
+      (day) => ({
+        ...day,
+        priceAmount: priceByDate[day.date]?.amount ?? null,
+        priceCurrencyCode: priceByDate[day.date]?.currencyCode ?? null,
+      }),
+    );
+  }
+
+  /**
+   * Phase 17 §Listing Detail — a customer-safe availability summary, one
+   * entry per bookable unit (or a single entry when `unitId` narrows to
+   * one), never exposing raw internal numbers beyond the bounded
+   * `LOW_STOCK_THRESHOLD` (applied downstream by
+   * `toPublicAvailabilitySummaryResponse`). Reuses exactly the same
+   * `quantity_available` COALESCE convention `getAvailabilityBreakdown`
+   * already established (`availableByDate[date] ?? unit.capacity` — a
+   * missing row means the unit's full static capacity, per
+   * `availability_calendar`'s documented semantics) plus the blackout veto
+   * `getCalendar` already applies, so this can never disagree with what
+   * the authoritative engine would actually decide at hold-creation time.
+   *
+   * Phase 18 (availability-state-contradiction fix): `remaining` used to be
+   * the MIN across *every* day in the window, including fully sold-out
+   * ones — so a unit open for 28 of the next 30 days, with just 2 days
+   * completely booked, collapsed to `remaining = 0` and reported itself as
+   * flatly SOLD_OUT, directly contradicting the correct, same-pipeline
+   * day-status count (`getPublicDailyAvailabilityStatus`) shown right next
+   * to it on the page. The fix: `remaining` is now the MIN across only the
+   * days that actually have stock (`> 0`); a unit is SOLD_OUT strictly
+   * when *no* day in the window has any stock at all, not when merely one
+   * does. This still lets a genuinely constrained unit (open every day,
+   * but down to a handful of units per day) correctly bucket to LOW via
+   * the existing `LOW_STOCK_THRESHOLD` rule — only the "one bad day
+   * poisons the whole month" bug is fixed, not the real scarcity signal.
+   */
+  async getPublicAvailabilitySummary(
+    principal,
+    listingId,
+    { from, to, unitId },
+  ) {
+    await this.#listingService.getListing(principal, listingId);
+
+    let units;
+    if (unitId !== undefined) {
+      const unit = await this.#bookableUnitService.findById(unitId);
+      if (!unit || unit.listingId !== listingId) {
+        throw new NotFoundError('Bookable unit not found for this listing.');
+      }
+      units = [unit];
+    } else {
+      units = await this.#bookableUnitService.listUnitsForListing(listingId);
+    }
+
+    const blockedRanges = await this.#blackoutService.getActiveRangesForListing(
+      listingId,
+      { from, to },
+    );
+    const dates = enumerateDates(from, to);
+
+    const summaries = await Promise.all(
+      units.map(async (unit) => {
+        const calendarRows =
+          await this.#availabilityCalendarRepository.listForUnit(unit.id, {
+            from,
+            to,
+          });
+        const availableByDate = Object.fromEntries(
+          calendarRows.map((row) => [row.date, row.quantityAvailable]),
+        );
+        const perDayRemaining = dates.map((date) =>
+          isVetoedByBlackout(date, blockedRanges)
+            ? 0
+            : Math.max(0, availableByDate[date] ?? unit.capacity),
+        );
+        const bookableDays = perDayRemaining.filter(
+          (dayRemaining) => dayRemaining > 0,
+        );
+        const remaining =
+          bookableDays.length === 0 ? 0 : Math.min(...bookableDays);
+
+        return {
+          unitId: unit.id,
+          bookableUnitTypeCode: unit.bookableUnitTypeCode,
+          remaining,
+        };
+      }),
+    );
+
+    return summaries;
+  }
+
+  /**
+   * Phase 18 (Premium Listing Detail — Availability UX fix). Phase 17's
+   * `getPublicAvailabilitySummary` above collapses a whole date range to
+   * ONE min-based status, which is right for a scarcity badge but wrong
+   * for a date picker — the customer-facing `DatePicker` needs to know
+   * WHICH individual days are sold out, not just "the worst day in this
+   * range is sold out." This closes the exact gap Phase 17 documented:
+   * the calendar's `disabledDates` were derived only from
+   * `availability_calendar.statusCode`, structurally blind to manual
+   * blocks/external reservations tracked purely through
+   * `quantity_available`. Reuses the identical per-day remaining-quantity
+   * computation `getPublicAvailabilitySummary` already established
+   * (`availableByDate[date] ?? unit.capacity`, blackout veto) — just
+   * returns one bucketed status per day instead of collapsing the range.
+   * Same single-unit resolution convention `getCalendar` uses (unitId
+   * required only when the listing has more than one unit).
+   */
+  async getPublicDailyAvailabilityStatus(
+    principal,
+    listingId,
+    { from, to, unitId },
+  ) {
+    await this.#listingService.getListing(principal, listingId);
+
+    let resolvedUnitId = unitId;
+    let capacity;
+    if (resolvedUnitId === undefined) {
+      const units =
+        await this.#bookableUnitService.listUnitsForListing(listingId);
+      if (units.length > 1) {
+        throw new ValidationError(
+          'This listing has more than one bookable unit; specify unitId.',
+          [{ field: 'unitId', issue: 'AMBIGUOUS_UNIT' }],
+        );
+      }
+      resolvedUnitId = units[0]?.id;
+      capacity = units[0]?.capacity ?? 1;
+    } else {
+      const unit = await this.#bookableUnitService.findById(resolvedUnitId);
+      if (!unit || unit.listingId !== listingId) {
+        throw new NotFoundError('Bookable unit not found for this listing.');
+      }
+      capacity = unit.capacity;
+    }
+
+    const dates = enumerateDates(from, to);
+    if (resolvedUnitId === undefined) {
+      return dates.map((date) => ({ date, remaining: 1 }));
+    }
+
+    const [calendarRows, blockedRanges] = await Promise.all([
+      this.#availabilityCalendarRepository.listForUnit(resolvedUnitId, {
+        from,
+        to,
+      }),
+      this.#blackoutService.getActiveRangesForListing(listingId, {
+        from,
+        to,
+      }),
+    ]);
+    const availableByDate = Object.fromEntries(
+      calendarRows.map((row) => [row.date, row.quantityAvailable]),
+    );
+
+    return dates.map((date) => {
+      const remaining = isVetoedByBlackout(date, blockedRanges)
+        ? 0
+        : (availableByDate[date] ?? capacity);
+      return { date, remaining: Math.max(0, remaining) };
+    });
   }
 
   // --- Sprint 10: capacity reservation (reservation_holds +
@@ -452,7 +863,16 @@ export class AvailabilityService {
   // above (AVAILABLE/BLOCKED only) is untouched. ---
 
   async #restoreCapacityForRange(
-    { bookableUnitId, dateFrom, dateTo, restoreAmount },
+    {
+      bookableUnitId,
+      dateFrom,
+      dateTo,
+      restoreAmount,
+      sourceType = LEDGER_SOURCE_TYPES.ADJUSTMENT,
+      sourceId = null,
+      actorUserId = null,
+      reason = null,
+    },
     connection,
   ) {
     const unit = await this.#bookableUnitService.findById(bookableUnitId);
@@ -461,7 +881,12 @@ export class AvailabilityService {
         'AVAILABLE',
         connection,
       );
-    const dates = enumerateDates(dateFrom, dateTo);
+    const consumedRange = resolveConsumedRange(
+      unit?.bookableUnitTypeCode,
+      dateFrom,
+      dateTo,
+    );
+    const dates = enumerateDates(consumedRange.dateFrom, consumedRange.dateTo);
     for (const date of dates) {
       // eslint-disable-next-line no-await-in-loop -- each date's lock+write must be sequential within one transaction.
       const row = await this.#availabilityCalendarRepository.lockForCapacity(
@@ -473,10 +898,26 @@ export class AvailabilityService {
         },
         connection,
       );
+      const quantityAfter = row.quantityAvailable + restoreAmount;
       // eslint-disable-next-line no-await-in-loop
       await this.#availabilityCalendarRepository.update(
         row.id,
-        { quantityAvailable: row.quantityAvailable + restoreAmount },
+        { quantityAvailable: quantityAfter },
+        connection,
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await this.#writeLedger(
+        {
+          bookableUnitId,
+          date,
+          sourceType,
+          sourceId,
+          delta: restoreAmount,
+          quantityBefore: row.quantityAvailable,
+          quantityAfter,
+          actorUserId,
+          reason,
+        },
         connection,
       );
     }
@@ -499,7 +940,12 @@ export class AvailabilityService {
     const unit = await this.#bookableUnitService.findById(unitId);
     if (!unit) throw new NotFoundError('Bookable unit not found.');
 
-    const dates = enumerateDates(dateFrom, dateTo);
+    const consumedRange = resolveConsumedRange(
+      unit.bookableUnitTypeCode,
+      dateFrom,
+      dateTo,
+    );
+    const dates = enumerateDates(consumedRange.dateFrom, consumedRange.dateTo);
     const blockedRanges = await this.#blackoutService.getActiveRangesForListing(
       unit.listingId,
       { from: dateFrom, to: dateTo },
@@ -541,10 +987,26 @@ export class AvailabilityService {
           'AVAILABILITY_CONFLICT',
         );
       }
+      const quantityAfter = row.quantityAvailable - quantity;
       // eslint-disable-next-line no-await-in-loop
       await this.#availabilityCalendarRepository.update(
         row.id,
-        { quantityAvailable: row.quantityAvailable - quantity },
+        { quantityAvailable: quantityAfter },
+        connection,
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await this.#writeLedger(
+        {
+          bookableUnitId: unit.id,
+          date,
+          sourceType: LEDGER_SOURCE_TYPES.TRAVELHUB_HOLD,
+          sourceId: null,
+          delta: -quantity,
+          quantityBefore: row.quantityAvailable,
+          quantityAfter,
+          actorUserId: userId,
+          reason: 'Reservation hold created',
+        },
         connection,
       );
     }
@@ -583,7 +1045,13 @@ export class AvailabilityService {
     for (const group of groups) {
       // eslint-disable-next-line no-await-in-loop
       await this.#restoreCapacityForRange(
-        { ...group, restoreAmount: group.count },
+        {
+          ...group,
+          restoreAmount: group.count,
+          sourceType: LEDGER_SOURCE_TYPES.TRAVELHUB_HOLD,
+          actorUserId: userId,
+          reason: 'Reservation hold released by customer',
+        },
         connection,
       );
     }
@@ -626,11 +1094,27 @@ export class AvailabilityService {
    * restoration it's told to). Must run inside the caller's transaction.
    */
   async releaseBookedCapacity(
-    { unitId, dateFrom, dateTo, quantity },
+    {
+      unitId,
+      dateFrom,
+      dateTo,
+      quantity,
+      bookingId = null,
+      actorUserId = null,
+    },
     connection,
   ) {
     await this.#restoreCapacityForRange(
-      { bookableUnitId: unitId, dateFrom, dateTo, restoreAmount: quantity },
+      {
+        bookableUnitId: unitId,
+        dateFrom,
+        dateTo,
+        restoreAmount: quantity,
+        sourceType: LEDGER_SOURCE_TYPES.TRAVELHUB_BOOKING,
+        sourceId: bookingId,
+        actorUserId,
+        reason: 'Booking cancelled/rejected — capacity released',
+      },
       connection,
     );
   }
@@ -655,7 +1139,12 @@ export class AvailabilityService {
       for (const group of groups) {
         // eslint-disable-next-line no-await-in-loop
         await this.#restoreCapacityForRange(
-          { ...group, restoreAmount: group.count },
+          {
+            ...group,
+            restoreAmount: group.count,
+            sourceType: LEDGER_SOURCE_TYPES.TRAVELHUB_HOLD,
+            reason: 'Reservation hold expired',
+          },
           connection,
         );
       }
@@ -681,6 +1170,719 @@ export class AvailabilityService {
       { from: dateFrom, to: dateTo },
       connection,
     );
+  }
+
+  // --- Phase 17: manual blocks + external reservations. Both are a
+  // "quantity-aware" consumption layer distinct from the coarse,
+  // whole-day `blackout_dates` veto and from the simple AVAILABLE/
+  // BLOCKED `setAvailability` write path — neither checks the blackout
+  // veto nor the calendar row's own status (a manual block is itself a
+  // reason capacity might be reduced; requiring it to also respect an
+  // unrelated coarse veto would only make the two layers fight each
+  // other). Both share this one all-or-nothing decrement loop, the same
+  // ascending-date-order/single-lock-per-date shape `reserveCapacity`
+  // already established, just without the blackout pre-check. ---
+
+  async #consumeCapacityForRange(
+    {
+      bookableUnitId,
+      dateFrom,
+      dateTo,
+      quantity,
+      sourceType,
+      sourceId,
+      actorUserId,
+      reason,
+    },
+    connection,
+  ) {
+    const unit = await this.#bookableUnitService.findById(bookableUnitId);
+    if (!unit) throw new NotFoundError('Bookable unit not found.');
+    const consumedRange = resolveConsumedRange(
+      unit.bookableUnitTypeCode,
+      dateFrom,
+      dateTo,
+    );
+    const dates = enumerateDates(consumedRange.dateFrom, consumedRange.dateTo);
+    const availableStatusId =
+      await this.#availabilityCalendarRepository.findStatusIdByCode(
+        'AVAILABLE',
+        connection,
+      );
+    for (const date of dates) {
+      // eslint-disable-next-line no-await-in-loop -- sequential lock+check+write per date, within one transaction (mirrors reserveCapacity).
+      const row = await this.#availabilityCalendarRepository.lockForCapacity(
+        {
+          bookableUnitId,
+          date,
+          availableStatusId,
+          defaultCapacity: unit.capacity,
+        },
+        connection,
+      );
+      if (row.quantityAvailable < quantity) {
+        throw new ConflictError(
+          'The requested quantity is not available for one or more requested dates.',
+          'AVAILABILITY_CONFLICT',
+        );
+      }
+      const quantityAfter = row.quantityAvailable - quantity;
+      // eslint-disable-next-line no-await-in-loop
+      await this.#availabilityCalendarRepository.update(
+        row.id,
+        { quantityAvailable: quantityAfter },
+        connection,
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await this.#writeLedger(
+        {
+          bookableUnitId,
+          date,
+          sourceType,
+          sourceId,
+          delta: -quantity,
+          quantityBefore: row.quantityAvailable,
+          quantityAfter,
+          actorUserId,
+          reason,
+        },
+        connection,
+      );
+    }
+    return unit;
+  }
+
+  /** Manual, quantity-aware capacity block — NOT a booking (Phase 17 §11). */
+  async createManualBlock(principal, input) {
+    const { unitId, dateFrom, dateTo, quantity, reasonCode, notes } = input;
+    if (!BLOCK_REASON_CODES.includes(reasonCode)) {
+      throw new ValidationError('Unknown block reason code.', [
+        { field: 'reasonCode', issue: 'UNKNOWN_REASON_CODE' },
+      ]);
+    }
+    const { unit, listing } = await this.#loadUnitForCapability(
+      principal,
+      unitId,
+      PARTNER_CAPABILITIES.MANAGE_MANUAL_BLOCKS,
+      'inventory.manage_all',
+    );
+
+    const block = await withTransaction(async (connection) => {
+      const created = await this.#inventoryBlockRepository.create(
+        {
+          bookableUnitId: unit.id,
+          dateFrom,
+          dateTo,
+          quantity,
+          reasonCode,
+          notes,
+          createdBy: principal.userId,
+        },
+        connection,
+      );
+      await this.#consumeCapacityForRange(
+        {
+          bookableUnitId: unit.id,
+          dateFrom,
+          dateTo,
+          quantity,
+          sourceType: LEDGER_SOURCE_TYPES.MANUAL_BLOCK,
+          sourceId: created.id,
+          actorUserId: principal.userId,
+          reason: `Manual block: ${reasonCode}`,
+        },
+        connection,
+      );
+      await this.#auditLogger.record(
+        {
+          actorId: principal.userId,
+          action: 'inventory_block.created',
+          targetType: 'inventory_block',
+          targetId: created.id,
+          afterSnapshot: {
+            unitId: unit.id,
+            dateFrom,
+            dateTo,
+            quantity,
+            reasonCode,
+          },
+        },
+        connection,
+      );
+      return created;
+    });
+
+    await this.#eventBus.publish(
+      createDomainEvent({
+        eventType: EVENT_TYPES.INVENTORY_BLOCKED,
+        actorId: principal.userId,
+        resourceType: 'inventory_block',
+        resourceId: block.id,
+        payload: {
+          bookableUnitId: unit.id,
+          listingId: listing.id,
+          partnerId: listing.partnerId,
+          dateFrom,
+          dateTo,
+          quantity,
+          reasonCode,
+        },
+      }),
+    );
+    return block;
+  }
+
+  async releaseManualBlock(principal, id) {
+    const block = await this.#inventoryBlockRepository.findById(id);
+    if (!block) throw new NotFoundError('Inventory block not found.');
+    if (block.releasedAt) {
+      throw new ConflictError(
+        'This block has already been released.',
+        'ALREADY_RELEASED',
+      );
+    }
+    const { unit, listing } = await this.#loadUnitForCapability(
+      principal,
+      block.bookableUnitId,
+      PARTNER_CAPABILITIES.MANAGE_MANUAL_BLOCKS,
+      'inventory.manage_all',
+    );
+
+    await withTransaction(async (connection) => {
+      await this.#restoreCapacityForRange(
+        {
+          bookableUnitId: unit.id,
+          dateFrom: block.dateFrom,
+          dateTo: block.dateTo,
+          restoreAmount: block.quantity,
+          sourceType: LEDGER_SOURCE_TYPES.MANUAL_BLOCK,
+          sourceId: block.id,
+          actorUserId: principal.userId,
+          reason: 'Manual block released',
+        },
+        connection,
+      );
+      await this.#inventoryBlockRepository.release(
+        id,
+        principal.userId,
+        connection,
+      );
+      await this.#auditLogger.record(
+        {
+          actorId: principal.userId,
+          action: 'inventory_block.released',
+          targetType: 'inventory_block',
+          targetId: id,
+        },
+        connection,
+      );
+    });
+
+    await this.#eventBus.publish(
+      createDomainEvent({
+        eventType: EVENT_TYPES.INVENTORY_UNBLOCKED,
+        actorId: principal.userId,
+        resourceType: 'inventory_block',
+        resourceId: id,
+        payload: {
+          bookableUnitId: unit.id,
+          listingId: listing.id,
+          partnerId: listing.partnerId,
+        },
+      }),
+    );
+  }
+
+  async listManualBlocks(principal, listingId) {
+    const listing = await this.#listingService.getListing(principal, listingId);
+    await this.#assertPartnerCapability(
+      principal,
+      listing.partnerId,
+      PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
+      'inventory.view_all',
+    );
+    const units =
+      await this.#bookableUnitService.listUnitsForListing(listingId);
+    return this.#inventoryBlockRepository.listForUnits(units.map((u) => u.id));
+  }
+
+  /**
+   * A phone/walk-in/OTA reservation recorded by a human (spec §10). Keeps
+   * required fields to the minimum that actually protects inventory —
+   * unit + date range/slot + quantity — everything else (guest details,
+   * external reference, notes) is optional, so a manager can secure the
+   * inventory first and fill in details later or not at all.
+   */
+  async createExternalReservation(principal, input) {
+    const {
+      unitId,
+      dateFrom,
+      dateTo,
+      quantity = 1,
+      sourceCode,
+      externalReference,
+      guestName,
+      guestPhone,
+      guestEmail,
+      notes,
+    } = input;
+    if (!EXTERNAL_RESERVATION_SOURCE_CODES.includes(sourceCode)) {
+      throw new ValidationError('Unknown external reservation source code.', [
+        { field: 'sourceCode', issue: 'UNKNOWN_SOURCE_CODE' },
+      ]);
+    }
+    const { unit, listing } = await this.#loadUnitForCapability(
+      principal,
+      unitId,
+      PARTNER_CAPABILITIES.MANAGE_EXTERNAL_RESERVATIONS,
+      'inventory.manage_all',
+    );
+
+    const reservation = await withTransaction(async (connection) => {
+      const created = await this.#externalReservationRepository.create(
+        {
+          bookableUnitId: unit.id,
+          dateFrom,
+          dateTo,
+          quantity,
+          sourceCode,
+          externalReference,
+          guestName,
+          guestPhone,
+          guestEmail,
+          notes,
+          createdBy: principal.userId,
+        },
+        connection,
+      );
+      await this.#consumeCapacityForRange(
+        {
+          bookableUnitId: unit.id,
+          dateFrom,
+          dateTo,
+          quantity,
+          sourceType: LEDGER_SOURCE_TYPES.EXTERNAL_RESERVATION,
+          sourceId: created.id,
+          actorUserId: principal.userId,
+          reason: `External reservation: ${sourceCode}`,
+        },
+        connection,
+      );
+      await this.#auditLogger.record(
+        {
+          actorId: principal.userId,
+          action: 'external_reservation.created',
+          targetType: 'external_reservation',
+          targetId: created.id,
+          afterSnapshot: {
+            unitId: unit.id,
+            dateFrom,
+            dateTo,
+            quantity,
+            sourceCode,
+          },
+        },
+        connection,
+      );
+      return created;
+    });
+
+    await this.#eventBus.publish(
+      createDomainEvent({
+        eventType: EVENT_TYPES.EXTERNAL_RESERVATION_CREATED,
+        actorId: principal.userId,
+        resourceType: 'external_reservation',
+        resourceId: reservation.id,
+        payload: {
+          bookableUnitId: unit.id,
+          listingId: listing.id,
+          partnerId: listing.partnerId,
+          dateFrom,
+          dateTo,
+          quantity,
+          sourceCode,
+        },
+      }),
+    );
+    return reservation;
+  }
+
+  /**
+   * CSV import's confirm step (Phase 17 §21) — the frontend has already
+   * parsed/previewed/validated rows client-side; this is the one point
+   * where they're actually written, each row re-validated and applied
+   * through the exact same capacity path `createExternalReservation`
+   * uses (never a shortcut around `#consumeCapacityForRange`). Rows are
+   * independent — one row's `AVAILABILITY_CONFLICT` doesn't roll back
+   * the others, since a partner importing 50 historical bookings wants
+   * to know exactly which ones failed, not lose the whole batch.
+   * Idempotent within a batch and across re-uploads via `externalReference`
+   * (a CSV-supplied stable id): a row whose `(unitId, externalReference)`
+   * already exists as an active reservation is skipped, not duplicated.
+   */
+  async bulkCreateExternalReservations(
+    principal,
+    { unitId, sourceCode, rows },
+  ) {
+    if (!EXTERNAL_RESERVATION_SOURCE_CODES.includes(sourceCode)) {
+      throw new ValidationError('Unknown external reservation source code.', [
+        { field: 'sourceCode', issue: 'UNKNOWN_SOURCE_CODE' },
+      ]);
+    }
+    const { unit, listing } = await this.#loadUnitForCapability(
+      principal,
+      unitId,
+      PARTNER_CAPABILITIES.MANAGE_EXTERNAL_RESERVATIONS,
+      'inventory.manage_all',
+    );
+
+    const results = [];
+    for (const [index, row] of rows.entries()) {
+      // eslint-disable-next-line no-await-in-loop -- rows are applied one at a time so a later row's failure never rolls back an earlier row's real capacity write.
+      const result = await withTransaction(async (connection) => {
+        if (row.externalReference) {
+          const existing = await this.#externalReservationRepository
+            .listActiveForUnit(
+              unit.id,
+              { from: row.dateFrom, to: row.dateTo },
+              connection,
+            )
+            .then((rows_) =>
+              rows_.find((r) => r.externalReference === row.externalReference),
+            );
+          if (existing) {
+            return {
+              index,
+              status: 'SKIPPED_DUPLICATE',
+              reservationId: existing.id,
+            };
+          }
+        }
+        try {
+          const created = await this.#externalReservationRepository.create(
+            {
+              bookableUnitId: unit.id,
+              dateFrom: row.dateFrom,
+              dateTo: row.dateTo,
+              quantity: row.quantity ?? 1,
+              sourceCode,
+              externalReference: row.externalReference,
+              guestName: row.guestName,
+              guestPhone: row.guestPhone,
+              guestEmail: row.guestEmail,
+              notes: row.notes,
+              createdBy: principal.userId,
+            },
+            connection,
+          );
+          await this.#consumeCapacityForRange(
+            {
+              bookableUnitId: unit.id,
+              dateFrom: row.dateFrom,
+              dateTo: row.dateTo,
+              quantity: row.quantity ?? 1,
+              sourceType: LEDGER_SOURCE_TYPES.EXTERNAL_RESERVATION,
+              sourceId: created.id,
+              actorUserId: principal.userId,
+              reason: `CSV import: ${sourceCode}`,
+            },
+            connection,
+          );
+          return { index, status: 'CREATED', reservationId: created.id };
+        } catch (err) {
+          if (err instanceof ConflictError) {
+            return { index, status: 'FAILED', error: err.message };
+          }
+          throw err;
+        }
+      });
+      results.push(result);
+    }
+
+    const createdCount = results.filter((r) => r.status === 'CREATED').length;
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'external_reservation.bulk_imported',
+      targetType: 'bookable_unit',
+      targetId: unit.id,
+      afterSnapshot: { rowCount: rows.length, createdCount },
+    });
+    if (createdCount > 0) {
+      await this.#eventBus.publish(
+        createDomainEvent({
+          eventType: EVENT_TYPES.EXTERNAL_RESERVATION_CREATED,
+          actorId: principal.userId,
+          resourceType: 'bookable_unit',
+          resourceId: unit.id,
+          payload: {
+            listingId: listing.id,
+            partnerId: listing.partnerId,
+            bulkImport: true,
+            createdCount,
+            rowCount: rows.length,
+          },
+        }),
+      );
+    }
+    return results;
+  }
+
+  async cancelExternalReservation(principal, id) {
+    const reservation = await this.#externalReservationRepository.findById(id);
+    if (!reservation)
+      throw new NotFoundError('External reservation not found.');
+    if (reservation.cancelledAt) {
+      throw new ConflictError(
+        'This reservation is already cancelled.',
+        'ALREADY_CANCELLED',
+      );
+    }
+    const { unit, listing } = await this.#loadUnitForCapability(
+      principal,
+      reservation.bookableUnitId,
+      PARTNER_CAPABILITIES.MANAGE_EXTERNAL_RESERVATIONS,
+      'inventory.manage_all',
+    );
+
+    await withTransaction(async (connection) => {
+      await this.#restoreCapacityForRange(
+        {
+          bookableUnitId: unit.id,
+          dateFrom: reservation.dateFrom,
+          dateTo: reservation.dateTo,
+          restoreAmount: reservation.quantity,
+          sourceType: LEDGER_SOURCE_TYPES.EXTERNAL_RESERVATION,
+          sourceId: reservation.id,
+          actorUserId: principal.userId,
+          reason: 'External reservation cancelled',
+        },
+        connection,
+      );
+      await this.#externalReservationRepository.cancel(id, connection);
+      await this.#auditLogger.record(
+        {
+          actorId: principal.userId,
+          action: 'external_reservation.cancelled',
+          targetType: 'external_reservation',
+          targetId: id,
+        },
+        connection,
+      );
+    });
+
+    await this.#eventBus.publish(
+      createDomainEvent({
+        eventType: EVENT_TYPES.EXTERNAL_RESERVATION_CANCELLED,
+        actorId: principal.userId,
+        resourceType: 'external_reservation',
+        resourceId: id,
+        payload: {
+          bookableUnitId: unit.id,
+          listingId: listing.id,
+          partnerId: listing.partnerId,
+        },
+      }),
+    );
+  }
+
+  async listExternalReservations(principal, listingId) {
+    const listing = await this.#listingService.getListing(principal, listingId);
+    await this.#assertPartnerCapability(
+      principal,
+      listing.partnerId,
+      PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
+      'inventory.view_all',
+    );
+    const units =
+      await this.#bookableUnitService.listUnitsForListing(listingId);
+    return this.#externalReservationRepository.listForUnits(
+      units.map((u) => u.id),
+    );
+  }
+
+  // --- Phase 17: system-level (no `principal`) capacity application for
+  // connector syncs. Trusted-caller-only (`InventoryConnectionService`),
+  // never exposed as an HTTP route — the connection itself is what was
+  // already authenticated/authorized when a partner created/configured
+  // it; each individual synced event is not a fresh user request. ---
+
+  /**
+   * Applies one connector-synced external event as occupancy, idempotent
+   * via `(connectionId, externalEventUid)` — returns the existing row
+   * unchanged (`created: false`) if this exact event was already
+   * imported, so a re-run of the same feed never double-consumes
+   * capacity (Phase 17 §25).
+   */
+  async applySystemExternalReservation(
+    {
+      unitId,
+      dateFrom,
+      dateTo,
+      quantity = 1,
+      connectionId,
+      externalEventUid,
+      externalReference,
+      notes,
+    },
+    connection,
+  ) {
+    const existing =
+      await this.#externalReservationRepository.findByConnectionAndUid(
+        connectionId,
+        externalEventUid,
+        connection,
+      );
+    if (existing) return { reservation: existing, created: false };
+
+    const created = await this.#externalReservationRepository.create(
+      {
+        bookableUnitId: unitId,
+        dateFrom,
+        dateTo,
+        quantity,
+        sourceCode: 'CONNECTOR',
+        externalReference,
+        notes,
+        connectionId,
+        externalEventUid,
+        createdBy: null,
+      },
+      connection,
+    );
+    await this.#consumeCapacityForRange(
+      {
+        bookableUnitId: unitId,
+        dateFrom,
+        dateTo,
+        quantity,
+        sourceType: LEDGER_SOURCE_TYPES.CONNECTOR_SYNC,
+        sourceId: created.id,
+        reason: `Connector sync: ${externalEventUid}`,
+      },
+      connection,
+    );
+    return { reservation: created, created: true };
+  }
+
+  /** The connector-sync counterpart to `cancelExternalReservation` — releases capacity for an external event the source feed no longer reports. */
+  async cancelSystemExternalReservation(reservationId, connection) {
+    const reservation =
+      await this.#externalReservationRepository.findById(reservationId);
+    if (!reservation || reservation.cancelledAt) return;
+    await this.#restoreCapacityForRange(
+      {
+        bookableUnitId: reservation.bookableUnitId,
+        dateFrom: reservation.dateFrom,
+        dateTo: reservation.dateTo,
+        restoreAmount: reservation.quantity,
+        sourceType: LEDGER_SOURCE_TYPES.CONNECTOR_SYNC,
+        sourceId: reservation.id,
+        reason: 'Connector sync — event removed from source feed',
+      },
+      connection,
+    );
+    await this.#externalReservationRepository.cancel(reservationId, connection);
+  }
+
+  /** The append-only "why is this unavailable" trail for one unit (Phase 17 §29). */
+  /**
+   * Phase 17 §Admin Inventory — the raw active-hold rows for one unit
+   * overlapping a date span (id/dateFrom/dateTo/expiresAt/userId), the
+   * same source `getAvailabilityBreakdown`'s `held` column already
+   * counts but never lists individually. Same owner-or-`inventory.view_all`
+   * gate as every other diagnostic read on this unit.
+   */
+  async listActiveHoldsForUnit(principal, unitId, { from, to }) {
+    const { unit } = await this.#loadUnitForCapability(
+      principal,
+      unitId,
+      PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
+      'inventory.view_all',
+    );
+    return this.#reservationHoldRepository.listActiveForUnit(unit.id, {
+      from,
+      to,
+    });
+  }
+
+  async getInventoryLedger(principal, unitId, { from, to }) {
+    const { unit } = await this.#loadUnitForCapability(
+      principal,
+      unitId,
+      PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
+      'inventory.view_all',
+    );
+    return this.#inventoryLedgerRepository.listForUnit(unit.id, { from, to });
+  }
+
+  /**
+   * Per-day capacity breakdown for one unit (Phase 17 §13's grid-cell
+   * detail: total/confirmed/holds/external/manual/available). "Confirmed
+   * TravelHub bookings" is deliberately computed as the REMAINDER
+   * (`total - available - held - external - manual`) rather than by
+   * querying `bookings`/`booking_items` directly — Availability may not
+   * own a second Repository over another module's tables
+   * (BACKEND_ARCHITECTURE.md §4), and `quantity_available` already nets
+   * out every source exactly, so the remainder is exact by construction,
+   * not an approximation.
+   */
+  async getAvailabilityBreakdown(principal, unitId, { from, to }) {
+    const { unit } = await this.#loadUnitForCapability(
+      principal,
+      unitId,
+      PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
+      'inventory.view_all',
+    );
+    const dates = enumerateDates(from, to);
+    const [calendarRows, blockRows, externalRows, holds] = await Promise.all([
+      this.#availabilityCalendarRepository.listForUnit(unit.id, { from, to }),
+      this.#inventoryBlockRepository.listActiveForUnit(unit.id, { from, to }),
+      this.#externalReservationRepository.listActiveForUnit(unit.id, {
+        from,
+        to,
+      }),
+      this.#reservationHoldRepository.listActiveForUnit(unit.id, { from, to }),
+    ]);
+    const availableByDate = Object.fromEntries(
+      calendarRows.map((row) => [row.date, row.quantityAvailable]),
+    );
+
+    // A hold/block/external-reservation row's `dateFrom`/`dateTo` is the
+    // guest-facing request range (e.g. "check-in Aug 10, check-out Aug
+    // 12") — display-only. Which days actually had capacity decremented
+    // is the checkout-exclusive-adjusted range for accommodation units
+    // (see `accommodationDateSemantics.js`), the SAME range
+    // `reserveCapacity`/`#consumeCapacityForRange` actually locked and
+    // wrote to `availability_calendar`. Re-deriving it here keeps this
+    // breakdown honest against `available` (read straight off that same
+    // table) instead of re-counting the raw stored range.
+    const overlapsConsumedRange = (row, date) => {
+      const consumed = resolveConsumedRange(
+        unit.bookableUnitTypeCode,
+        row.dateFrom,
+        row.dateTo,
+      );
+      return consumed.dateFrom <= date && consumed.dateTo >= date;
+    };
+    const sumOverlapping = (rows, date, quantityField = 'quantity') =>
+      rows
+        .filter((row) => overlapsConsumedRange(row, date))
+        .reduce((sum, row) => sum + row[quantityField], 0);
+
+    return dates.map((date) => {
+      const total = unit.capacity;
+      const available = availableByDate[date] ?? total;
+      const manual = sumOverlapping(blockRows, date);
+      const external = sumOverlapping(externalRows, date);
+      const held = holds.filter((hold) =>
+        overlapsConsumedRange(hold, date),
+      ).length;
+      const confirmed = Math.max(
+        0,
+        total - available - manual - external - held,
+      );
+      return { date, total, available, confirmed, held, external, manual };
+    });
   }
 }
 

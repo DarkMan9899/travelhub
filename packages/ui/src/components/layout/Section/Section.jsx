@@ -21,10 +21,10 @@ import styles from './Section.module.scss';
 const SPACING_VALUES = ['default', 'none'];
 
 export default function Section({
-  as: Component,
-  spacing,
-  className,
-  children,
+  as: Component = 'section',
+  spacing = 'default',
+  className = undefined,
+  children = undefined,
   ...rest
 }) {
   const classNames = [styles.section, styles[`spacing-${spacing}`], className]
@@ -47,13 +47,6 @@ Section.propTypes = {
   spacing: PropTypes.oneOf(SPACING_VALUES),
   className: PropTypes.string,
   children: PropTypes.node,
-};
-
-Section.defaultProps = {
-  as: 'section',
-  spacing: 'default',
-  className: undefined,
-  children: undefined,
 };
 
 export { SPACING_VALUES as SECTION_SPACING_VALUES };

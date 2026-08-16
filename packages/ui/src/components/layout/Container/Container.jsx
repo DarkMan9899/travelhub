@@ -11,10 +11,10 @@ import styles from './Container.module.scss';
 const SIZES = ['content', 'wide', 'narrow', 'full'];
 
 export default function Container({
-  as: Component,
-  size,
-  className,
-  children,
+  as: Component = 'div',
+  size = 'content',
+  className = undefined,
+  children = undefined,
   ...rest
 }) {
   const classNames = [styles.container, styles[`container--${size}`], className]
@@ -36,13 +36,6 @@ Container.propTypes = {
   size: PropTypes.oneOf(SIZES),
   className: PropTypes.string,
   children: PropTypes.node,
-};
-
-Container.defaultProps = {
-  as: 'div',
-  size: 'content',
-  className: undefined,
-  children: undefined,
 };
 
 export { SIZES as CONTAINER_SIZES };

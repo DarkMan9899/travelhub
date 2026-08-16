@@ -27,13 +27,19 @@
 
 // --- Variant colors, filled (solid) vs. unfilled (12%-opacity
 // background, UI_UX_GUIDELINES.md §9.5) --------------------------------
+//
+// success/warning/danger use their "-strong" pairing (see _colors.scss)
+// for both the filled background (white text needs 4.5:1) and the
+// unfilled text (needs 4.5:1 against its own 12%-tint background) — the
+// base tone doesn't clear that bar in either role. neutral/info's base
+// tones already do, so they're unchanged.
 
 @each $name,
   $color
     in (
-      success: colors.$color-success,
-      warning: colors.$color-warning,
-      danger: colors.$color-danger,
+      success: colors.$color-success-strong,
+      warning: colors.$color-warning-strong,
+      danger: colors.$color-danger-strong,
       neutral: colors.$color-gray-600,
       info: colors.$color-royal-blue
     )

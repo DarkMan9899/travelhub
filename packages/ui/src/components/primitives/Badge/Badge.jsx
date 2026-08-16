@@ -18,7 +18,12 @@ import styles from './Badge.module.scss';
 const VARIANTS = ['success', 'warning', 'danger', 'neutral', 'info'];
 const SIZES = ['sm', 'md'];
 
-export default function Badge({ variant, label, size, filled }) {
+export default function Badge({
+  variant = 'neutral',
+  label,
+  size = 'md',
+  filled = false,
+}) {
   const className = [
     styles.badge,
     styles[`badge--${variant}`],
@@ -36,12 +41,6 @@ Badge.propTypes = {
   label: PropTypes.string.isRequired,
   size: PropTypes.oneOf(SIZES),
   filled: PropTypes.bool,
-};
-
-Badge.defaultProps = {
-  variant: 'neutral',
-  size: 'md',
-  filled: false,
 };
 
 export { VARIANTS as BADGE_VARIANTS, SIZES as BADGE_SIZES };

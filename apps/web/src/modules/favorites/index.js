@@ -1,8 +1,9 @@
 /**
- * Public export surface for the "favorites" module.
- * Sprint 1: intentionally empty — no components/hooks/queries exist yet.
- * See README.md for this module's scope and FRONTEND_ARCHITECTURE.md
- * Chapter 6 for the cross-module dependency rules this file's exports
- * are governed by.
+ * `favorites` module public export surface (FRONTEND_ARCHITECTURE.md
+ * §6.2) — the ONLY entry point another module/page may import from
+ * (§6.3). Consumed by `listings`/`search` (`FavoriteButton` on cards)
+ * and `routes` (`FavoritesPageContent`).
  */
-export {};
+
+export { default as FavoriteButton } from './components/FavoriteButton/FavoriteButton.jsx';
+export { default as FavoritesPageContent } from './components/FavoritesPageContent/FavoritesPageContent.jsx';

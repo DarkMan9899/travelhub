@@ -55,12 +55,12 @@ ChevronIcon.propTypes = { collapsed: PropTypes.bool.isRequired };
 
 export default function Sidebar({
   items,
-  collapsed,
-  onToggleCollapse,
-  activeItemId,
-  linkComponent: Link,
-  ariaLabel,
-  className,
+  collapsed = false,
+  onToggleCollapse = undefined,
+  activeItemId = undefined,
+  linkComponent: Link = 'a',
+  ariaLabel = 'Dashboard navigation',
+  className = undefined,
 }) {
   const classNames = [
     styles.sidebar,
@@ -157,13 +157,4 @@ Sidebar.propTypes = {
   linkComponent: PropTypes.elementType,
   ariaLabel: PropTypes.string,
   className: PropTypes.string,
-};
-
-Sidebar.defaultProps = {
-  collapsed: false,
-  onToggleCollapse: undefined,
-  activeItemId: undefined,
-  linkComponent: 'a',
-  ariaLabel: 'Dashboard navigation',
-  className: undefined,
 };

@@ -88,6 +88,30 @@ All UI must:
 
 ---
 
+# Asset Policy
+
+For all current development phases, AI-generated placeholder images may
+be used as temporary visual assets.
+
+Always:
+
+- store all images locally inside the frontend project (e.g.
+  `/assets/images`)
+- keep images organized by feature/page
+- optimize images where appropriate
+- design every component so images can later be replaced without
+  changing the code
+
+Never:
+
+- hotlink external images
+- introduce CDN dependencies
+
+Treat all generated images as temporary placeholders until final
+branded photography is provided.
+
+---
+
 # Frontend Rules
 
 React Best Practices.

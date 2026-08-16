@@ -60,11 +60,11 @@ const ICONS = {
 };
 
 export default function Alert({
-  variant,
-  title,
-  children,
-  dismissible,
-  onDismiss,
+  variant = 'info',
+  title = undefined,
+  children = undefined,
+  dismissible = false,
+  onDismiss = undefined,
 }) {
   const isUrgent = variant === 'danger';
 
@@ -115,13 +115,4 @@ Alert.propTypes = {
   dismissible: PropTypes.bool,
   onDismiss: PropTypes.func,
 };
-
-Alert.defaultProps = {
-  variant: 'info',
-  title: undefined,
-  children: undefined,
-  dismissible: false,
-  onDismiss: undefined,
-};
-
 export { VARIANTS as ALERT_VARIANTS };

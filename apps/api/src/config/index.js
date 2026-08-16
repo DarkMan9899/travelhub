@@ -64,6 +64,38 @@ const env = cleanEnv(process.env, {
     choices: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
     default: 'info',
   }),
+
+  // AI Platform (Phase 15) — every var below defaults to empty/safe, so
+  // the app always boots without any of these set (matches this file's
+  // established all-defaults pattern). Selecting a non-'local' provider
+  // with no matching key is a runtime AiService error, never a boot
+  // crash — see providers/providerRegistry.js.
+  AI_DEFAULT_PROVIDER: str({ default: 'local' }),
+  AI_CACHE_TTL_SECONDS: num({ default: 3600 }),
+  AI_MAX_RETRIES: num({ default: 2 }),
+  OPENAI_API_KEY: str({ default: '' }),
+  OPENAI_MODEL: str({ default: 'gpt-4o-mini' }),
+  ANTHROPIC_API_KEY: str({ default: '' }),
+  ANTHROPIC_MODEL: str({ default: 'claude-sonnet-5' }),
+  GEMINI_API_KEY: str({ default: '' }),
+  GEMINI_MODEL: str({ default: 'gemini-2.0-flash' }),
+  AZURE_OPENAI_API_KEY: str({ default: '' }),
+  AZURE_OPENAI_ENDPOINT: str({ default: '' }),
+  AZURE_OPENAI_DEPLOYMENT: str({ default: '' }),
+  AZURE_OPENAI_API_VERSION: str({ default: '2024-06-01' }),
+  OLLAMA_BASE_URL: str({ default: 'http://localhost:11434' }),
+  OLLAMA_MODEL: str({ default: 'llama3.1' }),
+
+  // Payment Infrastructure (Phase 16) — every var below defaults to
+  // empty/safe, matching this file's established all-defaults pattern.
+  // `local` (never touches real money) is the default and only enabled
+  // provider until real credentials exist; selecting `stripe` without a
+  // secret key is a runtime PaymentService error, never a boot crash —
+  // see modules/payments/providers/paymentProviderRegistry.js.
+  PAYMENT_DEFAULT_PROVIDER: str({ default: 'local' }),
+  STRIPE_SECRET_KEY: str({ default: '' }),
+  STRIPE_WEBHOOK_SECRET: str({ default: '' }),
+  STRIPE_API_VERSION: str({ default: '2024-06-20' }),
 });
 
 /**
@@ -115,6 +147,43 @@ const config = Object.freeze({
 
   logging: Object.freeze({
     level: env.LOG_LEVEL,
+  }),
+
+  ai: Object.freeze({
+    defaultProvider: env.AI_DEFAULT_PROVIDER,
+    cacheTtlSeconds: env.AI_CACHE_TTL_SECONDS,
+    maxRetries: env.AI_MAX_RETRIES,
+    openai: Object.freeze({
+      apiKey: env.OPENAI_API_KEY,
+      model: env.OPENAI_MODEL,
+    }),
+    anthropic: Object.freeze({
+      apiKey: env.ANTHROPIC_API_KEY,
+      model: env.ANTHROPIC_MODEL,
+    }),
+    gemini: Object.freeze({
+      apiKey: env.GEMINI_API_KEY,
+      model: env.GEMINI_MODEL,
+    }),
+    azureOpenai: Object.freeze({
+      apiKey: env.AZURE_OPENAI_API_KEY,
+      endpoint: env.AZURE_OPENAI_ENDPOINT,
+      deployment: env.AZURE_OPENAI_DEPLOYMENT,
+      apiVersion: env.AZURE_OPENAI_API_VERSION,
+    }),
+    ollama: Object.freeze({
+      baseUrl: env.OLLAMA_BASE_URL,
+      model: env.OLLAMA_MODEL,
+    }),
+  }),
+
+  payments: Object.freeze({
+    defaultProvider: env.PAYMENT_DEFAULT_PROVIDER,
+    stripe: Object.freeze({
+      secretKey: env.STRIPE_SECRET_KEY,
+      webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+      apiVersion: env.STRIPE_API_VERSION,
+    }),
   }),
 });
 

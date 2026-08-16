@@ -4,7 +4,7 @@ import { describe, test, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import useFocusTrap from './useFocusTrap.js';
 
-function Harness({ initialOpen, preventClose }) {
+function Harness({ initialOpen = true, preventClose = false }) {
   const [isOpen, setIsOpen] = useState(initialOpen);
   const containerRef = useRef(null);
   useFocusTrap({
@@ -30,11 +30,6 @@ function Harness({ initialOpen, preventClose }) {
 Harness.propTypes = {
   initialOpen: PropTypes.bool,
   preventClose: PropTypes.bool,
-};
-
-Harness.defaultProps = {
-  initialOpen: true,
-  preventClose: false,
 };
 
 describe('useFocusTrap', () => {

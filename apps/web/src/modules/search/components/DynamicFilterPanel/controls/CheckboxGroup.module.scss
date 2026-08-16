@@ -1,0 +1,19 @@
+@use 'tokens' as tokens;
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding-block: tokens.$space-2;
+}
+
+.label {
+  font-size: tokens.$font-size-body;
+  color: tokens.$color-gray-900;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: tokens.$space-2;
+}

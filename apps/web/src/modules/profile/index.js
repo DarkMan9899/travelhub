@@ -1,8 +1,9 @@
 /**
- * Public export surface for the "profile" module.
- * Sprint 1: intentionally empty — no components/hooks/queries exist yet.
- * See README.md for this module's scope and FRONTEND_ARCHITECTURE.md
- * Chapter 6 for the cross-module dependency rules this file's exports
- * are governed by.
+ * `profile` module public export surface (FRONTEND_ARCHITECTURE.md
+ * §6.2) — the ONLY entry point other modules/pages may import from
+ * (§6.3).
  */
-export {};
+
+export { default as ProfilePageContent } from './components/ProfilePageContent/ProfilePageContent.jsx';
+export { default as SettingsPageContent } from './components/SettingsPageContent/SettingsPageContent.jsx';
+export { default as DashboardOverviewContent } from './components/DashboardOverviewContent/DashboardOverviewContent.jsx';

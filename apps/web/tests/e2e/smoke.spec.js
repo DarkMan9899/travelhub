@@ -2,23 +2,32 @@
  * Sprint 1's baseline E2E smoke test — proves the full pipeline (real
  * Vite dev server, real browser, real routing) works end-to-end before
  * any real user journey exists to test.
+ *
+ * Updated during the Phase 11 pre-flight audit: both assertions had gone
+ * stale as the app grew past its Sprint 1 placeholder — the home page's
+ * `<h1>` is the real Hero heading now ("Discover Armenia" / "Bacahaytek'
+ * Hayastany" depending on locale), not the old "Travel Hub Armenia"
+ * placeholder text, and the 404 page's title renders as an `<h3>`
+ * (`EmptyState`'s heading level), not an `<h1>` — this file's own
+ * assertions were failing against the current app, not catching a real
+ * regression.
  */
 
 import { test, expect } from '@playwright/test';
 
-test('root redirects to the default locale and renders the placeholder page', async ({
+test('root redirects to the default locale and renders the home hero', async ({
   page,
 }) => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/hy$/);
-  await expect(page.locator('h1')).toContainText('Travel Hub Armenia');
+  await expect(page.locator('h1')).toBeVisible();
 });
 
-test('switching to an unsupported locale segment shows 404', async ({
+test('switching to an unsupported locale segment shows a 404 page', async ({
   page,
 }) => {
   await page.goto('/xx');
-  await expect(page.locator('h1')).toContainText('404');
+  await expect(page.getByRole('heading', { level: 3 })).toBeVisible();
 });
 
 test('each supported locale renders without error', async ({ page }) => {

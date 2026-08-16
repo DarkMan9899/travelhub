@@ -16,9 +16,18 @@ import {
   createListingSchema,
   updateListingSchema,
   listingIdParamsSchema,
+  listingIdOrSlugParamsSchema,
   listingMediaIdParamsSchema,
   updateListingMediaSchema,
   listListingsQuerySchema,
+  listingMetadataQuerySchema,
+  listListingsAdminQuerySchema,
+  updateListingModerationStatusSchema,
+  replaceHighlightsSchema,
+  replaceItineraryStepsSchema,
+  replaceIncludedItemsSchema,
+  replaceFaqsSchema,
+  listingCompletenessSchema,
 } from './validators/listingValidators.js';
 import {
   ALLOWED_IMAGE_MIME_TYPES,
@@ -32,7 +41,7 @@ const ALLOWED_LISTING_MEDIA_MIME_TYPES = [
 
 export default function createListingRoutes({ listingController, guards }) {
   const router = Router();
-  const { requireAuth } = guards;
+  const { requireAuth, requirePermission } = guards;
 
   router.post(
     '/',
@@ -43,7 +52,52 @@ export default function createListingRoutes({ listingController, guards }) {
 
   router.get('/', validate(listListingsQuerySchema), listingController.list);
 
-  router.get('/:id', validate(listingIdParamsSchema), listingController.get);
+  // Registered before `/:id` — otherwise Express would match `/metadata`
+  // as `:id = "metadata"`. Public, category-scoped catalog data (same
+  // visibility rule as `GET /search/filters`), no auth required.
+  router.get(
+    '/metadata',
+    validate(listingMetadataQuerySchema),
+    listingController.getMetadata,
+  );
+
+  // Stage 11.3 (Admin Platform — Listing Moderation) — `/admin*`,
+  // registered before `/:id` for the same collision-avoidance reason
+  // `/metadata` is (single path segment, would otherwise be matched as
+  // `:id = "admin"`). Each route's permission is enforced again inside
+  // `ListingService` (defense in depth, matching every other admin route
+  // in this codebase) — the guard here is the fast-fail layer.
+  router.get(
+    '/admin',
+    requireAuth,
+    requirePermission('listing.moderate'),
+    validate(listListingsAdminQuerySchema),
+    listingController.listAdmin,
+  );
+  router.get(
+    '/admin/:id',
+    requireAuth,
+    requirePermission('listing.moderate'),
+    validate(listingIdParamsSchema),
+    listingController.getAdminDetail,
+  );
+  router.patch(
+    '/admin/:id/moderation-status',
+    requireAuth,
+    requirePermission('listing.moderate'),
+    validate(updateListingModerationStatusSchema),
+    listingController.updateModerationStatus,
+  );
+
+  // Phase 20 (SEO): accepts either the numeric id (legacy/still-shared
+  // links) or the listing's slug (the canonical, indexable URL form) —
+  // see `listingIdOrSlugParamsSchema`'s own comment for why this is the
+  // one route scoped to accept a slug.
+  router.get(
+    '/:id',
+    validate(listingIdOrSlugParamsSchema),
+    listingController.get,
+  );
 
   router.patch(
     '/:id',
@@ -71,6 +125,17 @@ export default function createListingRoutes({ listingController, guards }) {
     requireAuth,
     validate(listingIdParamsSchema),
     listingController.unpublish,
+  );
+
+  // Phase 9 (Partner Dashboard): exercises the pre-existing
+  // PUBLISHED|UNPUBLISHED -> ARCHIVED transition (listingStatusTransitions.js)
+  // that no endpoint reached until now. Deliberately no `/unarchive` —
+  // ARCHIVED is terminal in the domain state machine.
+  router.post(
+    '/:id/archive',
+    requireAuth,
+    validate(listingIdParamsSchema),
+    listingController.archive,
   );
 
   router.get(
@@ -101,6 +166,44 @@ export default function createListingRoutes({ listingController, guards }) {
     requireAuth,
     validate(listingMediaIdParamsSchema),
     listingController.removeMedia,
+  );
+
+  // --- Phase 18 (Premium Listing Detail): highlights / itinerary /
+  // included-items / FAQs — full-replace PATCH, owner-or-`listing.update`
+  // gated inside ListingService, same as every other listing write route.
+  router.patch(
+    '/:id/highlights',
+    requireAuth,
+    validate(replaceHighlightsSchema),
+    listingController.replaceHighlights,
+  );
+
+  router.patch(
+    '/:id/itinerary',
+    requireAuth,
+    validate(replaceItineraryStepsSchema),
+    listingController.replaceItinerarySteps,
+  );
+
+  router.patch(
+    '/:id/included-items',
+    requireAuth,
+    validate(replaceIncludedItemsSchema),
+    listingController.replaceIncludedItems,
+  );
+
+  router.patch(
+    '/:id/faqs',
+    requireAuth,
+    validate(replaceFaqsSchema),
+    listingController.replaceFaqs,
+  );
+
+  router.get(
+    '/:id/completeness',
+    requireAuth,
+    validate(listingCompletenessSchema),
+    listingController.getCompleteness,
   );
 
   return router;

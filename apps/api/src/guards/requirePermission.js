@@ -11,23 +11,30 @@
  * file itself never imports infrastructure directly (crosscutting may
  * depend only on core + crosscutting); the resolver is injected as a
  * plain parameter, not imported.
+ *
+ * Stage 11.2 (Partner Management): `requirePermission` accepts more than
+ * one key (`requirePermission('partner.verify', 'partner.moderate')`) —
+ * granted if the principal has ANY of them. Every pre-existing call site
+ * passes exactly one key, so this is purely additive; a single-key call
+ * behaves exactly as before.
  */
 
 import { AuthenticationError, AuthorizationError } from '../errors/AppError.js';
 
 export function createRequirePermissionGuard(permissionResolver) {
-  return function requirePermission(permissionKey) {
+  return function requirePermission(...permissionKeys) {
     return async (req, res, next) => {
       if (!req.principal) {
         next(new AuthenticationError());
         return;
       }
       try {
-        const granted = await permissionResolver.hasPermission(
-          req.principal.roles,
-          permissionKey,
+        const grants = await Promise.all(
+          permissionKeys.map((key) =>
+            permissionResolver.hasPermission(req.principal.roles, key),
+          ),
         );
-        if (!granted) {
+        if (!grants.some(Boolean)) {
           next(new AuthorizationError());
           return;
         }

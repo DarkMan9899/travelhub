@@ -23,15 +23,37 @@ import createSearchContainer from '../modules/search/module.container.js';
 import createSearchRoutes from '../modules/search/module.routes.js';
 import createAvailabilityContainer from '../modules/availability/module.container.js';
 import createAvailabilityRoutes from '../modules/availability/module.routes.js';
+import createInventoryConnectionRoutes from '../modules/availability/module.connectionRoutes.js';
 import createBookingHoldsContainer from '../modules/booking-holds/module.container.js';
 import createBookingHoldRoutes from '../modules/booking-holds/module.routes.js';
 import createBookingsContainer from '../modules/bookings/module.container.js';
 import createBookingRoutes from '../modules/bookings/module.routes.js';
+import createPartnersContainer from '../modules/partners/module.container.js';
+import createPartnerRoutes from '../modules/partners/module.routes.js';
+import createAdminContainer from '../modules/admin/module.container.js';
+import createAdminRoutes from '../modules/admin/module.routes.js';
+import createCmsContainer from '../modules/cms/module.container.js';
+import createCmsRoutes from '../modules/cms/module.routes.js';
+import createReviewsContainer from '../modules/reviews/module.container.js';
+import createReviewRoutes from '../modules/reviews/module.routes.js';
+import createFavoritesContainer from '../modules/favorites/module.container.js';
+import createFavoriteRoutes from '../modules/favorites/module.routes.js';
+import createNotificationsContainer from '../modules/notifications/module.container.js';
+import createNotificationRoutes from '../modules/notifications/module.routes.js';
+import { registerNotificationListeners } from '../modules/notifications/events/notificationListener.js';
+import createMessagingContainer from '../modules/messaging/module.container.js';
+import createMessagingRoutes from '../modules/messaging/module.routes.js';
+import createAiContainer from '../modules/ai/module.container.js';
+import createAiRoutes from '../modules/ai/module.routes.js';
+import { registerAiListeners } from '../modules/ai/events/aiListener.js';
+import createPaymentsContainer from '../modules/payments/module.container.js';
+import createPaymentRoutes from '../modules/payments/module.routes.js';
 
 export default function createV1Router({
   guards,
   auditLogger,
   permissionResolver,
+  eventBus,
 }) {
   const router = Router();
 
@@ -49,6 +71,7 @@ export default function createV1Router({
   const listingsContainer = createListingsContainer({
     auditLogger,
     permissionResolver,
+    eventBus,
   });
   const searchContainer = createSearchContainer({ permissionResolver });
   // Availability depends on Listings' public Service interface, never its
@@ -56,7 +79,16 @@ export default function createV1Router({
   const availabilityContainer = createAvailabilityContainer({
     listingService: listingsContainer.listingService,
     permissionResolver,
+    auditLogger,
+    eventBus,
   });
+  // Phase 5 publish-gating needs "does this listing have >=1 bookable
+  // unit" — late-bound (not a constructor dependency) because
+  // AvailabilityService already depends on ListingService above; the
+  // reverse import would be circular (BACKEND_ARCHITECTURE.md §4).
+  listingsContainer.listingService.setBookableUnitChecker((listingId) =>
+    availabilityContainer.availabilityService.hasBookableUnit(listingId),
+  );
   // Sprint 10: Booking-Holds/Bookings depend on Availability's (and,
   // for Bookings, Listings') public Service interfaces only — never a
   // second Repository over bookable_units/availability_calendar/
@@ -64,11 +96,93 @@ export default function createV1Router({
   const bookingHoldsContainer = createBookingHoldsContainer({
     availabilityService: availabilityContainer.availabilityService,
   });
+  // Moved ahead of Bookings (Partners has no dependency on any other
+  // module's Service, so this ordering is free) — Bookings needs
+  // Partners' public `getOwnerUserId` to resolve who a customer can
+  // message about a booking (Phase 14.9's "message the partner about
+  // this booking" entry point).
+  const partnersContainer = createPartnersContainer({
+    permissionResolver,
+    auditLogger,
+    eventBus,
+  });
   const bookingsContainer = createBookingsContainer({
     availabilityService: availabilityContainer.availabilityService,
     listingService: listingsContainer.listingService,
+    partnerService: partnersContainer.partnerService,
     permissionResolver,
+    auditLogger,
+    eventBus,
   });
+  // Phase 12 (Product Polish): Reviews/Favorites depend on Bookings'/
+  // Listings' public Service interfaces only — never a second Repository
+  // over `bookings`/`listings` (BACKEND_ARCHITECTURE.md §4).
+  const reviewsContainer = createReviewsContainer({
+    bookingService: bookingsContainer.bookingService,
+    auditLogger,
+    eventBus,
+  });
+  const favoritesContainer = createFavoritesContainer({
+    listingService: listingsContainer.listingService,
+    eventBus,
+  });
+  // Phase 13 (Notifications): depends on Users' public Service interface
+  // only (announcement audience resolution) — never a second Repository
+  // over `users` (BACKEND_ARCHITECTURE.md §4).
+  const notificationsContainer = createNotificationsContainer({
+    userService: usersContainer.userService,
+    auditLogger,
+  });
+  // Phase 14 (Messaging): no dependency on any other module's Service —
+  // participants are just user ids, resolved from the request body.
+  const messagingContainer = createMessagingContainer({
+    permissionResolver,
+    auditLogger,
+    eventBus,
+  });
+  // Phase 13 (Notifications): the ONLY place this module subscribes to
+  // another module's domain events — business services above publish,
+  // they never call `notificationService` directly.
+  registerNotificationListeners({
+    eventBus,
+    notificationService: notificationsContainer.notificationService,
+    partnerService: partnersContainer.partnerService,
+    conversationService: messagingContainer.conversationService,
+  });
+  // Phase 15 (AI Platform): depends on Bookings'/Listings' public Service
+  // interfaces only (memory-affinity resolution in aiListener.js) — never
+  // a second Repository over `bookings`/`listings`.
+  const aiContainer = createAiContainer({
+    permissionResolver,
+    auditLogger,
+    searchService: searchContainer.searchService,
+    listingService: listingsContainer.listingService,
+    bookingService: bookingsContainer.bookingService,
+  });
+  // Phase 15: the second place this module subscribes to another
+  // module's domain events (after Notifications) — AI is a subscriber
+  // only, it never publishes.
+  registerAiListeners({
+    eventBus,
+    aiMemoryService: aiContainer.aiMemoryService,
+    bookingService: bookingsContainer.bookingService,
+    listingService: listingsContainer.listingService,
+  });
+  // Phase 16 (Payment Infrastructure): depends on Bookings' public
+  // Service interface only (`recordPaymentOutcome`, `getBooking`) — never
+  // a second Repository over `bookings`, same cross-module rule every
+  // other module above already follows.
+  const paymentsContainer = createPaymentsContainer({
+    bookingService: bookingsContainer.bookingService,
+    permissionResolver,
+    auditLogger,
+    eventBus,
+  });
+  const adminContainer = createAdminContainer({
+    permissionResolver,
+    auditLogger,
+  });
+  const cmsContainer = createCmsContainer({ permissionResolver, auditLogger });
 
   router.use(
     '/auth',
@@ -97,6 +211,14 @@ export default function createV1Router({
     }),
   );
   router.use(
+    '/inventory-connections',
+    createInventoryConnectionRoutes({
+      inventoryConnectionController:
+        availabilityContainer.inventoryConnectionController,
+      guards,
+    }),
+  );
+  router.use(
     '/booking-holds',
     createBookingHoldRoutes({
       bookingHoldController: bookingHoldsContainer.bookingHoldController,
@@ -110,6 +232,80 @@ export default function createV1Router({
       guards,
     }),
   );
+  router.use(
+    '/partners',
+    createPartnerRoutes({
+      partnerController: partnersContainer.partnerController,
+      guards,
+    }),
+  );
+  router.use(
+    '/admin',
+    createAdminRoutes({
+      adminController: adminContainer.adminController,
+      marketplaceConfigController: adminContainer.marketplaceConfigController,
+      auditLogController: adminContainer.auditLogController,
+      systemHealthController: adminContainer.systemHealthController,
+      settingsController: adminContainer.settingsController,
+      guards,
+    }),
+  );
+  router.use(
+    '/cms',
+    createCmsRoutes({ cmsController: cmsContainer.cmsController, guards }),
+  );
+  router.use(
+    '/reviews',
+    createReviewRoutes({
+      reviewController: reviewsContainer.reviewController,
+      guards,
+    }),
+  );
+  router.use(
+    '/favorites',
+    createFavoriteRoutes({
+      favoriteController: favoritesContainer.favoriteController,
+      guards,
+    }),
+  );
+  router.use(
+    '/notifications',
+    createNotificationRoutes({
+      notificationController: notificationsContainer.notificationController,
+      guards,
+    }),
+  );
+  router.use(
+    '/messaging',
+    createMessagingRoutes({
+      conversationController: messagingContainer.conversationController,
+      messageController: messagingContainer.messageController,
+      typingController: messagingContainer.typingController,
+      guards,
+    }),
+  );
+  router.use(
+    '/payments',
+    createPaymentRoutes({
+      paymentController: paymentsContainer.paymentController,
+      ledgerController: paymentsContainer.ledgerController,
+      guards,
+    }),
+  );
+  router.use(
+    '/ai',
+    createAiRoutes({
+      aiMemoryController: aiContainer.aiMemoryController,
+      tripPlannerController: aiContainer.tripPlannerController,
+      aiSearchController: aiContainer.aiSearchController,
+      assistantController: aiContainer.assistantController,
+      recommendationController: aiContainer.recommendationController,
+      partnerAiController: aiContainer.partnerAiController,
+      moderationController: aiContainer.moderationController,
+      aiUsageController: aiContainer.aiUsageController,
+      guards,
+    }),
+  );
 
   return {
     router,
@@ -118,6 +314,20 @@ export default function createV1Router({
     // hold-expiry/pending-vendor-SLA scheduled jobs — app.js/tests never
     // read this, they only use `router`.
     availabilityService: availabilityContainer.availabilityService,
+    // Phase 17: server.js needs this to register the scheduled inventory
+    // reconciliation sweep — same "app.js/tests never read this" rule.
+    inventoryConnectionService:
+      availabilityContainer.inventoryConnectionService,
     bookingService: bookingsContainer.bookingService,
+    // Phase 13: server.js needs these to register the notification
+    // delivery worker (and close its Queue/Worker on shutdown) — same
+    // "app.js/tests never read this" rule as the two above.
+    notificationDeliveryService:
+      notificationsContainer.notificationDeliveryService,
+    notificationDeliveryQueue: notificationsContainer.notificationDeliveryQueue,
+    // Phase 16: server.js needs this to register the local-provider
+    // settlement worker (and close its Queue/Worker on shutdown) — same
+    // "app.js/tests never read this" rule as the others above.
+    paymentService: paymentsContainer.paymentService,
   };
 }

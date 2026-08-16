@@ -19,13 +19,13 @@ import styles from './Overlay.module.scss';
 
 export default function Overlay({
   isOpen,
-  onClose,
-  closeOnBackdropClick,
-  preventClose,
-  ariaLabel,
-  labelledBy,
-  className,
-  backdropClassName,
+  onClose = undefined,
+  closeOnBackdropClick = true,
+  preventClose = false,
+  ariaLabel = undefined,
+  labelledBy = undefined,
+  className = undefined,
+  backdropClassName = undefined,
   children,
 }) {
   const containerRef = useRef(null);
@@ -73,14 +73,4 @@ Overlay.propTypes = {
   className: PropTypes.string,
   backdropClassName: PropTypes.string,
   children: PropTypes.node.isRequired,
-};
-
-Overlay.defaultProps = {
-  onClose: undefined,
-  closeOnBackdropClick: true,
-  preventClose: false,
-  ariaLabel: undefined,
-  labelledBy: undefined,
-  className: undefined,
-  backdropClassName: undefined,
 };

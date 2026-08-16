@@ -45,7 +45,12 @@ function getInitials(name) {
   return (first + last).toUpperCase();
 }
 
-export default function Avatar({ src, name, userId, size }) {
+export default function Avatar({
+  src = undefined,
+  name,
+  userId = undefined,
+  size = 'md',
+}) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -106,12 +111,6 @@ Avatar.propTypes = {
   name: PropTypes.string.isRequired,
   userId: PropTypes.string,
   size: PropTypes.oneOf(SIZES),
-};
-
-Avatar.defaultProps = {
-  src: undefined,
-  userId: undefined,
-  size: 'md',
 };
 
 export { SIZES as AVATAR_SIZES };

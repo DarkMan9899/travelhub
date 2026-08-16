@@ -1,12 +1,14 @@
 /**
  * Sprint 9 (final architecture): "Public availability lookup, calendar
  * queries." Exercises `GET /availability/:listingId` (public blackout-
- * range view, no `reason`/`id`) and `GET /availability/:listingId/calendar`
- * (merged `availability_calendar` + `blackout_dates` day-by-day view),
- * including the 404-masking a draft listing gets from reusing
- * `ListingService.getListing` (Sprint 7), and the "ambiguous unit"
- * rejection once a listing has more than one bookable unit — Availability
- * never guesses which one the caller means.
+ * range view, no `reason`/`id`), `GET /availability/:listingId/units`
+ * (Phase 7 Booking Flow's public bookable-units view), and
+ * `GET /availability/:listingId/calendar` (merged `availability_calendar`
+ * + `blackout_dates` day-by-day view, plus Phase 7's additive per-day
+ * price fields), including the 404-masking a draft listing gets from
+ * reusing `ListingService.getListing` (Sprint 7), and the "ambiguous
+ * unit" rejection once a listing has more than one bookable unit —
+ * Availability never guesses which one the caller means.
  */
 
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
@@ -116,8 +118,10 @@ beforeAll(async () => {
   listingId = await createListing(
     `Availability Calendar Test ${Date.now()}-${Math.floor(Math.random() * 100000)}`,
   );
-  await publishListing(listingId);
+  // Unit must exist BEFORE publish — Phase 5's publish-readiness gate now
+  // requires >=1 bookable unit (ListingService#checkPublishReadiness).
   const listingUnitId = await registerUnit(listingId, 'HOTEL_ROOM');
+  await publishListing(listingId);
 
   // A calendar-level block (availability_calendar), independent of blackout.
   await request(app)
@@ -141,6 +145,19 @@ beforeAll(async () => {
       reason: 'Owner personal use',
     });
 
+  // A priced day (Phase 7 Booking Flow's public calendar price fields).
+  await request(app)
+    .post('/api/v1/availability')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({
+      unitId: listingUnitId,
+      dateFrom: '2026-07-13',
+      dateTo: '2026-07-13',
+      status: 'AVAILABLE',
+      priceOverrideAmount: 42000,
+      priceOverrideCurrency: 'AMD',
+    });
+
   draftListingId = await createListing(
     `Draft Availability Test ${Date.now()}-${Math.floor(Math.random() * 100000)}`,
   );
@@ -148,9 +165,9 @@ beforeAll(async () => {
   multiUnitListingId = await createListing(
     `Multi Unit Availability Test ${Date.now()}-${Math.floor(Math.random() * 100000)}`,
   );
-  await publishListing(multiUnitListingId);
   await registerUnit(multiUnitListingId, 'HOTEL_ROOM');
   await registerUnit(multiUnitListingId, 'RESTAURANT_TABLE');
+  await publishListing(multiUnitListingId);
 }, 60_000);
 
 afterAll(async () => {
@@ -187,6 +204,50 @@ describe('GET /availability/:listingId — public blackout range view', () => {
   });
 });
 
+describe('GET /availability/:listingId/units — public bookable units view (Phase 7)', () => {
+  test('returns id/bookable_unit_type/capacity/time-slot fields, never listing_id or timestamps', async () => {
+    const res = await request(app).get(
+      `/api/v1/availability/${listingId}/units`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBe(1);
+    expect(res.body.data[0]).toEqual({
+      id: expect.any(Number),
+      bookable_unit_type: 'HOTEL_ROOM',
+      capacity: expect.any(Number),
+      time_slot_start: null,
+      time_slot_end: null,
+      unit_label: null,
+    });
+    expect(res.body.data[0]).not.toHaveProperty('listing_id');
+    expect(res.body.data[0]).not.toHaveProperty('created_at');
+  });
+
+  test('a multi-unit listing returns every registered unit', async () => {
+    const res = await request(app).get(
+      `/api/v1/availability/${multiUnitListingId}/units`,
+    );
+    expect(res.status).toBe(200);
+    const types = res.body.data.map((unit) => unit.bookable_unit_type).sort();
+    expect(types).toEqual(['HOTEL_ROOM', 'RESTAURANT_TABLE']);
+  });
+
+  test('a draft listing 404s for a stranger (existence not leaked)', async () => {
+    const res = await request(app)
+      .get(`/api/v1/availability/${draftListingId}/units`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(res.status).toBe(404);
+  });
+
+  test("the owner can view their own draft listing's units (empty — none registered)", async () => {
+    const res = await request(app)
+      .get(`/api/v1/availability/${draftListingId}/units`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([]);
+  });
+});
+
 describe('GET /availability/:listingId/calendar — merged day expansion', () => {
   test('reflects both the availability_calendar block and the blackout veto', async () => {
     const res = await request(app).get(
@@ -201,6 +262,18 @@ describe('GET /availability/:listingId/calendar — merged day expansion', () =>
     expect(byDate['2026-07-11']).toBe('AVAILABLE');
     expect(byDate['2026-07-12']).toBe('BLOCKED'); // blackout veto
     expect(byDate['2026-07-13']).toBe('AVAILABLE');
+  });
+
+  test('exposes price_amount/price_currency for a priced day, and null for an unpriced day (Phase 7)', async () => {
+    const res = await request(app).get(
+      `/api/v1/availability/${listingId}/calendar?from=2026-07-09&to=2026-07-13`,
+    );
+    expect(res.status).toBe(200);
+    const byDate = Object.fromEntries(res.body.data.map((d) => [d.date, d]));
+    expect(byDate['2026-07-13'].price_amount).toBe('42000.00');
+    expect(byDate['2026-07-13'].price_currency).toBe('AMD');
+    expect(byDate['2026-07-09'].price_amount).toBeNull();
+    expect(byDate['2026-07-09'].price_currency).toBeNull();
   });
 
   test("a draft listing's calendar 404s for a stranger", async () => {

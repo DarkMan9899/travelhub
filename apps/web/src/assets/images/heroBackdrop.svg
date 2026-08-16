@@ -1,0 +1,36 @@
+<svg viewBox="0 0 1440 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="">
+  <defs>
+    <linearGradient id="heroSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f2a4a" />
+      <stop offset="100%" stop-color="#1d5fd6" />
+    </linearGradient>
+    <linearGradient id="heroRange1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1d5fd6" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#1d5fd6" stop-opacity="0.15" />
+    </linearGradient>
+    <linearGradient id="heroRange2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b1a2b" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#0b1a2b" stop-opacity="0.35" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1440" height="720" fill="url(#heroSky)" />
+
+  <circle cx="1180" cy="180" r="90" fill="#c9a24b" opacity="0.9" />
+  <circle cx="1180" cy="180" r="150" fill="#c9a24b" opacity="0.12" />
+
+  <path
+    d="M0 520 L220 320 L360 460 L520 240 L700 470 L860 300 L1040 480 L1220 280 L1440 500 L1440 720 L0 720 Z"
+    fill="url(#heroRange2)"
+  />
+  <path
+    d="M0 620 L180 460 L340 560 L520 400 L680 580 L900 420 L1080 590 L1260 440 L1440 600 L1440 720 L0 720 Z"
+    fill="url(#heroRange1)"
+  />
+
+  <path
+    d="M0 660 C 240 610, 480 700, 720 650 C 960 600, 1200 690, 1440 640 L1440 720 L0 720 Z"
+    fill="#0b1a2b"
+    opacity="0.35"
+  />
+</svg>

@@ -1,0 +1,2739 @@
+{
+  "app": {
+    "name": "desavii"
+  },
+  "seo": {
+    "listingDetail": {
+      "titleWithLocation": "{{title}} в {{location}} | desavii",
+      "titleNoLocation": "{{title}} | desavii"
+    },
+    "home": {
+      "title": "Путешествия по Армении | desavii",
+      "description": "Откройте отели, туры, апартаменты, аренду автомобилей и впечатления по всей Армении. Бронируйте у проверенных местных партнёров на desavii."
+    },
+    "search": {
+      "title": "Результаты поиска | desavii"
+    },
+    "category": {
+      "title": "{{category}} в Армении | desavii",
+      "description": "Просмотрите {{category}} по всей Армении и бронируйте у проверенных местных партнёров на desavii."
+    },
+    "destination": {
+      "title": "Путеводитель по {{city}} | desavii",
+      "description": "Откройте отели, туры и впечатления в {{city}}, Армения. Бронируйте у проверенных местных партнёров на desavii."
+    },
+    "companies": {
+      "title": "Туристические партнёры в Армении | desavii",
+      "description": "Просмотрите проверенных отельеров, туроператоров и поставщиков впечатлений на desavii."
+    }
+  },
+  "discovery": {
+    "category": {
+      "loading": "Загрузка категории",
+      "errorTitle": "Что-то пошло не так",
+      "retry": "Повторить",
+      "emptyTitle": "Пока нет объявлений",
+      "emptyDescription": "В этой категории пока нет опубликованных объявлений — загляните позже."
+    },
+    "destination": {
+      "loading": "Загрузка направления",
+      "errorTitle": "Что-то пошло не так",
+      "retry": "Повторить",
+      "emptyTitle": "Пока нет объявлений",
+      "emptyDescription": "В этом направлении пока нет опубликованных объявлений — загляните позже."
+    }
+  },
+  "common": {
+    "cancel": "Отмена",
+    "confirm": "Подтвердить",
+    "save": "Сохранить"
+  },
+  "nav": {
+    "home": "Главная",
+    "search": "Поиск",
+    "explore": "Разделы",
+    "companies": "Компании",
+    "becomePartner": "Стать партнёром",
+    "account": "Личный кабинет",
+    "partner": "Партнёр",
+    "partnerDashboard": "Панель партнёра",
+    "admin": "Администратор",
+    "customerAccount": "Личный кабинет клиента",
+    "login": "Войти",
+    "register": "Регистрация",
+    "logout": "Выйти",
+    "workspace": "Рабочее пространство"
+  },
+  "status": {
+    "loading": "Загрузка...",
+    "comingSoon": "Скоро"
+  },
+  "a11y": {
+    "skipToContent": "Перейти к содержимому",
+    "openMenu": "Открыть меню",
+    "closeMenu": "Закрыть меню",
+    "userMenu": "Меню аккаунта",
+    "switchLanguage": "Сменить язык",
+    "notifications": "Уведомления"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Премиальные путешествия по Армении",
+      "title": "Откройте Армению",
+      "subtitle": "Отели, туры, рестораны и впечатления — забронируйте следующую поездку по Армении.",
+      "ctaPrimary": "Начать поиск",
+      "ctaSecondary": "Стать партнёром"
+    },
+    "search": {
+      "destinationLabel": "Направление",
+      "destinationPlaceholder": "Куда вы едете?",
+      "checkInLabel": "Заезд",
+      "checkOutLabel": "Выезд",
+      "datePlaceholder": "Выбрать дату",
+      "guestsLabel": "Гости",
+      "guestsPlaceholder": "Добавить гостей",
+      "guestsCount": "{{count}} гостей",
+      "categoryLabel": "Категория",
+      "categoryAll": "Все категории",
+      "submit": "Искать"
+    },
+    "destinations": {
+      "eyebrow": "Исследовать",
+      "title": "Популярные направления",
+      "subtitle": "Подборка мест по всей Армении — от старинных монастырей до горных озёр.",
+      "items": {
+        "yerevan": {
+          "name": "Ереван",
+          "description": "Оживлённая столица Армении — музеи, кафе и розовый туф."
+        },
+        "dilijan": {
+          "name": "Дилижан",
+          "description": "Лесистые холмы и горный воздух — армянскую Швейцарию."
+        },
+        "tatev": {
+          "name": "Татев",
+          "description": "Монастырь на скале, до которого добираются на самой длинной в мире реверсивной канатной дороге."
+        },
+        "sevan": {
+          "name": "Озеро Севан",
+          "description": "Одно из крупнейших высокогорных озёр мира, окружённое пляжами и монастырями."
+        },
+        "gyumri": {
+          "name": "Гюмри",
+          "description": "Второй по величине город Армении, известный архитектурой XIX века."
+        },
+        "jermuk": {
+          "name": "Джермук",
+          "description": "Горный курортный город, известный минеральными источниками и водопадами."
+        }
+      }
+    },
+    "featured": {
+      "eyebrow": "Отобрано",
+      "title": "Рекомендуемые предложения",
+      "subtitle": "Подборка опубликованных мест для проживания и отдыха.",
+      "empty": {
+        "title": "Пока нет объявлений",
+        "description": "Загляните позже — новые места и впечатления добавляются регулярно."
+      },
+      "error": {
+        "title": "Не удалось загрузить объявления",
+        "description": "Что-то пошло не так при загрузке объявлений. Пожалуйста, попробуйте снова."
+      }
+    },
+    "experiences": {
+      "eyebrow": "Чем заняться",
+      "title": "Популярные впечатления",
+      "subtitle": "Туры и достопримечательности, любимые путешественниками по Армении.",
+      "durationHours": "{{count}} часов",
+      "priceSuffix": "/ с человека",
+      "items": {
+        "dilijan-hiking": {
+          "name": "Пеший поход по лесам Дилижана",
+          "location": "Дилижан"
+        },
+        "yerevan-food-walk": {
+          "name": "Гастрономическая прогулка по Еревану",
+          "location": "Ереван"
+        },
+        "sevan-boat-trip": {
+          "name": "Прогулка на лодке по озеру Севан",
+          "location": "Озеро Севан"
+        },
+        "tatev-tramway": {
+          "name": "Экскурсия на канатной дороге в Татев",
+          "location": "Татев"
+        },
+        "gyumri-walking-tour": {
+          "name": "Пешая экскурсия по старому Гюмри",
+          "location": "Гюмри"
+        },
+        "jermuk-spa-day": {
+          "name": "Водопады и спа-день в Джермуке",
+          "location": "Джермук"
+        }
+      }
+    },
+    "categories": {
+      "eyebrow": "Просмотр",
+      "title": "Категории",
+      "listingCount": "{{count}} объявлений",
+      "empty": {
+        "title": "Пока нет категорий",
+        "description": "Загляните позже — категории добавляются по мере публикации новых мест."
+      },
+      "error": {
+        "title": "Не удалось загрузить категории",
+        "description": "Что-то пошло не так при загрузке категорий. Пожалуйста, попробуйте снова.",
+        "retry": "Повторить"
+      }
+    },
+    "whyTravelHub": {
+      "eyebrow": "Почему desavii",
+      "title": "Путешествуйте с уверенностью",
+      "subtitle": "Всё необходимое для комфортной поездки по Армении в одном месте.",
+      "items": {
+        "verifiedPartners": {
+          "title": "Проверенные партнёры",
+          "description": "Каждый хозяин и оператор проходит проверку перед публикацией на desavii."
+        },
+        "securePayments": {
+          "title": "Безопасное бронирование",
+          "description": "Ваши платёжные данные защищены на каждом этапе оформления."
+        },
+        "localExpertise": {
+          "title": "Местная экспертиза",
+          "description": "Подборка от людей, хорошо знающих Армению."
+        },
+        "multilingualSupport": {
+          "title": "Многоязычная поддержка",
+          "description": "Получайте помощь на армянском, русском или английском языке."
+        }
+      }
+    },
+    "partnerCta": {
+      "title": "Разместите объект на desavii",
+      "description": "Привлекайте путешественников со всего мира и управляйте бронированиями в одной панели.",
+      "cta": "Стать партнёром"
+    },
+    "testimonials": {
+      "eyebrow": "Отзывы",
+      "title": "Что говорят путешественники",
+      "items": {
+        "testimonial-1": {
+          "quote": "Бронирование всей поездки в Дилижан заняло всего пару минут.",
+          "name": "Анна К.",
+          "role": "Путешествие с семьёй"
+        },
+        "testimonial-2": {
+          "quote": "Экскурсия в Татев стала главным впечатлением поездки.",
+          "name": "Майкл Р.",
+          "role": "Путешествие в одиночку"
+        },
+        "testimonial-3": {
+          "quote": "Мы нашли уютный гостевой дом в Гюмри, который иначе бы не нашли.",
+          "name": "София Л.",
+          "role": "Путешествие вдвоём"
+        }
+      },
+      "disclosure": "Иллюстративные цитаты на основе типичных отзывов путешественников."
+    },
+    "newsletter": {
+      "title": "Будьте в курсе",
+      "subtitle": "Получайте новые направления, объявления и советы по путешествиям по Армении.",
+      "emailLabel": "Электронная почта",
+      "emailPlaceholder": "you@example.com",
+      "emailRequired": "Введите адрес электронной почты.",
+      "emailInvalid": "Введите действительный адрес электронной почты.",
+      "submit": "Подписаться",
+      "successMessage": "Спасибо за подписку! Мы свяжемся с вами."
+    },
+    "showcase": {
+      "previous": "Назад",
+      "next": "Вперёд",
+      "goToSlide": "Перейти к слайду {{index}}",
+      "viewAll": "Смотреть все"
+    }
+  },
+  "listings": {
+    "type": {
+      "HOTEL": "Отель",
+      "PROPERTY": "Недвижимость",
+      "RESTAURANT": "Ресторан",
+      "TOUR": "Тур",
+      "CAR_RENTAL": "Аренда авто",
+      "ATTRACTION": "Достопримечательность"
+    },
+    "status": {
+      "DRAFT": "Черновик",
+      "PUBLISHED": "Опубликовано",
+      "UNPUBLISHED": "Снято с публикации",
+      "ARCHIVED": "В архиве"
+    }
+  },
+  "bookings": {
+    "status": {
+      "DRAFT": "Черновик",
+      "PENDING_VENDOR": "Ожидает подтверждения",
+      "CONFIRMED": "Подтверждено",
+      "REJECTED": "Отклонено",
+      "CANCELLED_BY_CUSTOMER": "Отменено вами",
+      "CANCELLED_BY_VENDOR": "Отменено хозяином",
+      "COMPLETED": "Завершено",
+      "NO_SHOW": "Неявка",
+      "EXPIRED": "Истекло",
+      "partner": {
+        "CANCELLED_BY_CUSTOMER": "Отменено клиентом"
+      }
+    },
+    "list": {
+      "heading": "Мои бронирования",
+      "loading": "Загружаем ваши бронирования…",
+      "empty": {
+        "title": "Пока нет бронирований",
+        "description": "Как только вы отправите запрос на бронирование, он появится здесь."
+      },
+      "error": {
+        "title": "Не удалось загрузить ваши бронирования.",
+        "retry": "Повторить"
+      },
+      "loadMore": "Показать ещё",
+      "viewDetails": "Открыть бронирование {{reference}}",
+      "total": "Итого",
+      "requestedOn": "Запрос отправлен {{date}}"
+    },
+    "detail": {
+      "heading": "Бронирование {{reference}}",
+      "loading": "Бронирование загружается…",
+      "error": {
+        "title": "Не удалось загрузить это бронирование.",
+        "retry": "Повторить"
+      },
+      "reference": "Номер",
+      "status": "Статус",
+      "dates": "Даты",
+      "quantity": "Количество",
+      "notes": "Комментарий хозяину",
+      "contactName": "Контактное имя",
+      "contactEmail": "Эл. почта",
+      "contactPhone": "Телефон",
+      "total": "Итого",
+      "messagePartnerAction": "Написать хозяину",
+      "messagePartnerError": "Не удалось начать переписку с хозяином. Пожалуйста, попробуйте ещё раз.",
+      "cancelAction": "Отменить бронирование",
+      "cancelConfirmTitle": "Отменить это бронирование?",
+      "cancelConfirmDescription": "Это действие необратимо. Хозяин будет уведомлён.",
+      "cancelConfirmAction": "Да, отменить",
+      "cancelConfirmDismiss": "Оставить бронирование",
+      "cancelSuccess": "Ваше бронирование отменено.",
+      "cancelError": "Не удалось отменить это бронирование. Пожалуйста, попробуйте ещё раз.",
+      "review": {
+        "heading": "Ваш отзыв",
+        "alreadySubmitted": "Вы уже оставили отзыв об этом бронировании. Спасибо!"
+      }
+    },
+    "checkout": {
+      "heading": "Подтвердите запрос",
+      "holdExpiresIn": "Ваши даты удержаны ещё {{minutes}}:{{seconds}}",
+      "holdExpired": "Срок удержания ваших дат истёк. Пожалуйста, выберите даты заново.",
+      "conflictError": "Эти даты больше недоступны — возможно, их только что забронировал кто-то другой. Отмените и выберите другие даты.",
+      "noActiveHold": {
+        "title": "Нет активного бронирования",
+        "description": "Начните с выбора дат на странице объявления.",
+        "action": "Смотреть объявления"
+      },
+      "guestContact": {
+        "heading": "Контактные данные",
+        "fullNameLabel": "Полное имя",
+        "fullNameRequired": "Укажите полное имя.",
+        "emailLabel": "Эл. почта",
+        "emailRequired": "Укажите адрес электронной почты.",
+        "emailInvalid": "Введите корректный адрес электронной почты.",
+        "phoneLabel": "Телефон (необязательно)"
+      },
+      "notesLabel": "Комментарий хозяину (необязательно)",
+      "estimatedTotal": "Примерная сумма",
+      "confirmAction": "Подтвердить запрос на бронирование",
+      "cancelHoldAction": "Отменить и освободить эти даты",
+      "submitError": "Не удалось отправить запрос на бронирование. Пожалуйста, попробуйте ещё раз.",
+      "successToast": "Ваш запрос на бронирование отправлен хозяину.",
+      "summary": {
+        "heading": "Сводка заказа",
+        "dates": "Даты",
+        "nights": "Ночи",
+        "quantity": "Количество",
+        "total": "Примерная сумма",
+        "estimateSuffix": "(примерно)",
+        "unavailable": "Будет рассчитано при бронировании"
+      }
+    }
+  },
+  "payments": {
+    "status": {
+      "CREATED": "Создан",
+      "REQUIRES_ACTION": "Требуется действие",
+      "PROCESSING": "Обрабатывается",
+      "AUTHORIZED": "Авторизован",
+      "SUCCEEDED": "Оплачен",
+      "FAILED": "Отклонён",
+      "CANCELLED": "Отменён",
+      "PARTIALLY_REFUNDED": "Частично возвращён",
+      "REFUNDED": "Возвращён"
+    },
+    "provider": {
+      "local": "Тестовый / демонстрационный платёж",
+      "stripe": "Stripe"
+    },
+    "simulated": {
+      "title": "Тестовый / демонстрационный платёж",
+      "description": "Реальные деньги не списываются. Этот платёж симулирован исключительно для тестирования и демонстрации."
+    },
+    "summary": {
+      "total": "Итого",
+      "reference": "Номер",
+      "provider": "Провайдер",
+      "paidAt": "Оплачено",
+      "notYet": "Ещё нет",
+      "refundsHeading": "Возвраты",
+      "refundableRemaining": "Доступно для возврата"
+    },
+    "payNow": {
+      "heading": "Оплатить это бронирование",
+      "scenarioLabel": "Смоделировать результат",
+      "scenario": {
+        "SUCCESS": "Успешный платёж",
+        "DECLINE": "Отклонённый платёж",
+        "PROCESSING": "В обработке (разрешится вскоре)"
+      },
+      "action": "Оплатить сейчас",
+      "successToast": "Платёж прошёл успешно.",
+      "declinedToast": "Смоделированный платёж был отклонён.",
+      "processingToast": "Ваш платёж обрабатывается — это разрешится в ближайшее время.",
+      "errorToast": "Не удалось обработать этот платёж. Попробуйте ещё раз."
+    },
+    "list": {
+      "heading": "Мои платежи",
+      "empty": {
+        "title": "Платежей пока нет",
+        "description": "После оплаты бронирования оно появится здесь."
+      },
+      "error": {
+        "title": "Не удалось загрузить ваши платежи.",
+        "retry": "Повторить"
+      },
+      "loadMore": "Показать ещё",
+      "viewBooking": "Посмотреть бронирование"
+    },
+    "partnerBalance": {
+      "heading": "Сумма к выплате",
+      "payableLabel": "Причитается вам",
+      "empty": "Пока нет суммы к выплате.",
+      "error": "Не удалось загрузить сумму к выплате."
+    }
+  },
+  "search": {
+    "filters": {
+      "keywordLabel": "Поиск",
+      "keywordPlaceholder": "Направления, жильё, впечатления...",
+      "categoryLabel": "Категория",
+      "categoryAll": "Все категории",
+      "sortLabel": "Сортировать по",
+      "sort": {
+        "newest": "Сначала новые",
+        "oldest": "Сначала старые",
+        "alphabetical": "А–Я",
+        "relevance": "Лучшее совпадение"
+      },
+      "activeFilters": "Активные фильтры",
+      "removeFilter": "Убрать фильтр «{{label}}»",
+      "clearAll": "Сбросить фильтры"
+    },
+    "aiSearch": {
+      "ariaLabel": "Поиск с помощью ИИ",
+      "inputLabel": "Опишите, что вы ищете",
+      "placeholder": "например: недорогие отели с бассейном в Ереване",
+      "submit": "Искать с ИИ",
+      "submitting": "Поиск...",
+      "error": "Не удалось обработать запрос — попробуйте ещё раз."
+    },
+    "dynamicFilters": {
+      "triggerLabel": "Фильтры",
+      "drawerTitle": "Фильтры",
+      "applyLabel": "Показать результаты",
+      "activeFilters": "Активные фильтры",
+      "anyValue": "Любое",
+      "decrease": "Уменьшить {{label}}",
+      "increase": "Увеличить {{label}}",
+      "minValue": "Минимум: {{label}}",
+      "maxValue": "Максимум: {{label}}",
+      "groups": {
+        "ROOMS": "Комнаты и кровати",
+        "RATING": "Рейтинг",
+        "DINING": "Кухня",
+        "EXPERIENCE": "Впечатление",
+        "VEHICLE": "Транспорт",
+        "AMENITIES": "Удобства"
+      },
+      "definitions": {
+        "bedrooms": "Спальни",
+        "bathrooms": "Ванные комнаты",
+        "beds": "Кровати",
+        "max_guests": "Макс. гостей",
+        "star_rating": "Звёздность",
+        "price_tier": "Цена",
+        "cuisine": "Кухня",
+        "duration_minutes": "Длительность",
+        "difficulty": "Сложность",
+        "max_group_size": "Макс. размер группы",
+        "transmission": "Коробка передач",
+        "seats": "Места",
+        "amenity_ids": "Удобства"
+      },
+      "options": {
+        "1": "1 звезда",
+        "2": "2 звезды",
+        "3": "3 звезды",
+        "4": "4 звезды",
+        "5": "5 звёзд",
+        "$": "$",
+        "$$": "$$",
+        "$$$": "$$$",
+        "$$$$": "$$$$",
+        "ARMENIAN": "Армянская",
+        "GEORGIAN": "Грузинская",
+        "ITALIAN": "Итальянская",
+        "MEDITERRANEAN": "Средиземноморская",
+        "EUROPEAN": "Европейская",
+        "ASIAN": "Азиатская",
+        "EASY": "Лёгкий",
+        "MODERATE": "Средний",
+        "CHALLENGING": "Сложный",
+        "MANUAL": "Механическая",
+        "AUTOMATIC": "Автоматическая"
+      }
+    },
+    "results": {
+      "loadMore": "Показать ещё",
+      "empty": {
+        "title": "Ничего не найдено",
+        "description": "Попробуйте изменить поиск или фильтры."
+      },
+      "error": {
+        "title": "Не удалось загрузить результаты",
+        "description": "Что-то пошло не так во время поиска. Попробуйте ещё раз.",
+        "retry": "Повторить"
+      }
+    },
+    "card": {
+      "viewDetails": "Смотреть {{title}}"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Страница не найдена",
+      "description": "Страница, которую вы ищете, не существует или была перемещена.",
+      "action": "На главную"
+    },
+    "forbidden": {
+      "title": "Доступ ограничен",
+      "description": "У вас нет прав для просмотра этой страницы.",
+      "action": "На главную"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Вход",
+      "email": "Эл. почта",
+      "password": "Пароль",
+      "submit": "Войти",
+      "noAccount": "Нет аккаунта?",
+      "registerLink": "Зарегистрироваться",
+      "genericError": "Не удалось войти. Проверьте данные и попробуйте снова."
+    },
+    "register": {
+      "title": "Создать аккаунт",
+      "firstName": "Имя",
+      "lastName": "Фамилия",
+      "email": "Эл. почта",
+      "phone": "Телефон (необязательно)",
+      "password": "Пароль",
+      "submit": "Создать аккаунт",
+      "haveAccount": "Уже есть аккаунт?",
+      "loginLink": "Войти",
+      "genericError": "Не удалось создать аккаунт. Проверьте данные и попробуйте снова."
+    },
+    "validation": {
+      "emailRequired": "Введите адрес эл. почты.",
+      "emailInvalid": "Введите корректный адрес эл. почты.",
+      "passwordRequired": "Введите пароль.",
+      "passwordWeak": "Используйте не менее 10 символов, минимум 3 из: строчные, заглавные буквы, цифра, символ.",
+      "firstNameRequired": "Введите имя.",
+      "lastNameRequired": "Введите фамилию."
+    }
+  },
+  "account": {
+    "nav": {
+      "dashboard": "Обзор",
+      "bookings": "Бронирования",
+      "payments": "Платежи",
+      "profile": "Профиль",
+      "settings": "Настройки",
+      "favorites": "Избранное",
+      "tripPlanner": "Планировщик поездок",
+      "messages": "Сообщения",
+      "notifications": "Уведомления"
+    }
+  },
+  "dashboard": {
+    "greeting": "С возвращением, {{name}}",
+    "error": {
+      "title": "Не удалось загрузить панель управления.",
+      "retry": "Попробовать снова"
+    },
+    "stats": {
+      "upcoming": "Предстоящие поездки",
+      "pending": "Ожидают подтверждения",
+      "recent": "Недавние бронирования"
+    },
+    "upcoming": {
+      "heading": "Предстоящие поездки",
+      "emptyTitle": "Нет предстоящих поездок",
+      "emptyDescription": "Забронированные, но ещё не состоявшиеся поездки появятся здесь."
+    },
+    "recent": {
+      "heading": "Недавние бронирования",
+      "viewAll": "Показать все бронирования",
+      "emptyTitle": "Пока нет бронирований",
+      "emptyDescription": "Когда вы забронируете проживание или впечатление, оно появится здесь.",
+      "emptyAction": "Смотреть предложения"
+    }
+  },
+  "profile": {
+    "sections": {
+      "photo": "Фото",
+      "personalInfo": "Личные данные"
+    },
+    "form": {
+      "firstName": "Имя",
+      "lastName": "Фамилия",
+      "phone": "Телефон",
+      "preferredLanguage": "Предпочитаемый язык",
+      "preferredCurrency": "Предпочитаемая валюта",
+      "selectPlaceholder": "Выберите…",
+      "emailUnverified": "Ваш адрес эл. почты ещё не подтверждён.",
+      "save": "Сохранить изменения",
+      "saveSuccess": "Ваш профиль обновлён.",
+      "saveError": "Не удалось сохранить изменения. Попробуйте снова.",
+      "languageOptions": {
+        "en": "Английский",
+        "hy": "Армянский",
+        "ru": "Русский"
+      },
+      "currencyOptions": {
+        "AMD": "Армянский драм (AMD)",
+        "USD": "Доллар США (USD)",
+        "EUR": "Евро (EUR)"
+      }
+    },
+    "avatar": {
+      "changeAction": "Изменить фото профиля",
+      "hint": "JPEG, PNG или WebP, до 10 МБ.",
+      "errorType": "Пожалуйста, выберите изображение JPEG, PNG или WebP.",
+      "errorSize": "Пожалуйста, выберите изображение размером до 10 МБ.",
+      "uploadSuccess": "Ваше фото профиля обновлено.",
+      "uploadError": "Не удалось загрузить это фото. Попробуйте снова."
+    },
+    "settings": {
+      "password": {
+        "heading": "Пароль",
+        "current": "Текущий пароль",
+        "currentRequired": "Введите текущий пароль.",
+        "new": "Новый пароль",
+        "confirm": "Подтвердите новый пароль",
+        "confirmRequired": "Подтвердите новый пароль.",
+        "confirmMismatch": "Пароли не совпадают.",
+        "submit": "Изменить пароль",
+        "success": "Ваш пароль изменён.",
+        "wrongCurrent": "Текущий пароль неверен.",
+        "genericError": "Не удалось изменить пароль. Попробуйте снова."
+      },
+      "dangerZone": {
+        "heading": "Опасная зона",
+        "deleteAccountUnavailable": "Самостоятельное удаление аккаунта пока недоступно. Если вы хотите удалить аккаунт, обратитесь в службу поддержки."
+      }
+    }
+  },
+  "partner": {
+    "nav": {
+      "dashboard": "Обзор",
+      "listings": "Объявления",
+      "bookings": "Бронирования",
+      "calendar": "Календарь",
+      "connections": "Подключения",
+      "messages": "Сообщения",
+      "notifications": "Уведомления",
+      "aiUsage": "Использование ИИ"
+    },
+    "aiUsage": {
+      "heading": "Использование ИИ"
+    },
+    "dashboard": {
+      "greeting": "С возвращением, {{name}}",
+      "stats": {
+        "activeListings": "Активные объявления",
+        "draftListings": "Черновики объявлений",
+        "upcomingBookings": "Предстоящие бронирования",
+        "pendingConfirmations": "Бронирования, ожидающие подтверждения"
+      },
+      "listings": {
+        "heading": "Ваши объявления",
+        "viewAll": "Управлять всеми объявлениями",
+        "emptyTitle": "Пока нет объявлений",
+        "emptyDescription": "Создайте своё первое объявление, чтобы начать принимать бронирования.",
+        "emptyAction": "Создать объявление",
+        "listedOn": "Опубликовано {{date}}"
+      },
+      "bookings": {
+        "heading": "Последние бронирования",
+        "viewAll": "Показать все бронирования",
+        "emptyTitle": "Пока нет бронирований",
+        "emptyDescription": "Бронирования ваших объявлений будут отображаться здесь."
+      },
+      "error": {
+        "title": "Не удалось загрузить панель управления.",
+        "retry": "Повторить"
+      }
+    },
+    "bookings": {
+      "heading": "Бронирования",
+      "filters": {
+        "statusLabel": "Статус",
+        "statusAll": "Все статусы"
+      },
+      "empty": {
+        "title": "Нет бронирований, соответствующих фильтрам",
+        "description": "Бронирования ваших объявлений будут отображаться здесь."
+      },
+      "error": {
+        "title": "Не удалось загрузить ваши бронирования.",
+        "retry": "Повторить"
+      },
+      "loadMore": "Показать ещё",
+      "detail": {
+        "heading": "Бронирование {{reference}}",
+        "loading": "Загрузка бронирования…",
+        "error": {
+          "title": "Не удалось загрузить это бронирование.",
+          "retry": "Повторить"
+        },
+        "notes": "Заметки клиента",
+        "timeline": {
+          "heading": "Хронология",
+          "requested": "Запрос отправлен",
+          "confirmed": "Подтверждено",
+          "rejected": "Отклонено",
+          "cancelled": "Отменено",
+          "completed": "Завершено"
+        },
+        "messageCustomerAction": "Написать клиенту",
+        "messageCustomerError": "Не удалось начать переписку с клиентом. Пожалуйста, попробуйте ещё раз.",
+        "confirmAction": "Подтвердить бронирование",
+        "confirmSuccess": "Бронирование подтверждено.",
+        "confirmError": "Что-то пошло не так. Попробуйте ещё раз.",
+        "rejectAction": "Отклонить бронирование",
+        "rejectConfirmTitle": "Отклонить это бронирование?",
+        "rejectConfirmDescription": "Клиент получит уведомление, а зарезервированные места будут освобождены. Это действие нельзя отменить.",
+        "rejectConfirmAction": "Да, отклонить",
+        "rejectConfirmDismiss": "Оставить бронирование",
+        "rejectSuccess": "Бронирование отклонено.",
+        "rejectError": "Что-то пошло не так. Попробуйте ещё раз.",
+        "cancelAction": "Отменить бронирование",
+        "cancelConfirmTitle": "Отменить это бронирование?",
+        "cancelConfirmDescription": "Клиент получит уведомление. Это действие нельзя отменить.",
+        "cancelConfirmAction": "Да, отменить",
+        "cancelConfirmDismiss": "Оставить бронирование",
+        "cancelSuccess": "Бронирование отменено.",
+        "cancelError": "Что-то пошло не так. Попробуйте ещё раз."
+      }
+    },
+    "calendar": {
+      "heading": "Календарь",
+      "listingLabel": "Объявление",
+      "unitLabel": "Бронируемая единица",
+      "noListings": {
+        "title": "Пока нет объявлений",
+        "description": "Создайте объявление, чтобы управлять его календарём доступности."
+      },
+      "noUnits": {
+        "title": "У этого объявления нет бронируемых единиц",
+        "description": "Добавьте бронируемую единицу в мастере объявления, чтобы управлять его календарём."
+      },
+      "legend": {
+        "available": "Доступно",
+        "blocked": "Заблокировано"
+      },
+      "selection": "Выбрано: {{start}} – {{end}}",
+      "form": {
+        "statusLabel": "Установить статус для выбранных дат",
+        "statusOptions": {
+          "AVAILABLE": "Доступно",
+          "BLOCKED": "Заблокировано"
+        },
+        "apply": "Применить"
+      },
+      "applySuccess": "Доступность обновлена.",
+      "applyError": "Что-то пошло не так. Попробуйте ещё раз.",
+      "resourceLabel": "Ресурс",
+      "actionsLabel": "Действия для выбранных дат",
+      "listsLabel": "Списки инвентаря",
+      "breakdown": {
+        "total": "{{count}} всего",
+        "available": "{{count}} доступно",
+        "confirmed": "{{count}} подтверждено",
+        "held": "{{count}} удержано",
+        "external": "{{count}} внешних",
+        "manual": "{{count}} заблокировано"
+      },
+      "blocks": {
+        "tabLabel": "Заблокировать даты",
+        "quantityLabel": "Количество для блокировки",
+        "reasonLabel": "Причина",
+        "notesLabel": "Примечания (необязательно)",
+        "blockAction": "Заблокировать",
+        "unblockAction": "Разблокировать",
+        "createSuccess": "Даты заблокированы.",
+        "createError": "Не удалось заблокировать эти даты. Попробуйте ещё раз.",
+        "releaseSuccess": "Блокировка снята.",
+        "releaseError": "Не удалось снять блокировку. Попробуйте ещё раз.",
+        "listTitle": "Активные блокировки ({{count}})",
+        "emptyTitle": "Нет активных ручных блокировок.",
+        "reasonCodes": {
+          "MAINTENANCE": "Техобслуживание",
+          "OWNER_USE": "Использование владельцем",
+          "OPERATIONAL": "Операционное",
+          "PRIVATE_EVENT": "Закрытое мероприятие",
+          "STAFF_UNAVAILABLE": "Персонал недоступен",
+          "VEHICLE_UNAVAILABLE": "Транспорт недоступен",
+          "WEATHER": "Погода",
+          "OTHER": "Другое"
+        },
+        "columns": {
+          "range": "Даты",
+          "quantity": "Количество",
+          "reason": "Причина"
+        }
+      },
+      "external": {
+        "tabLabel": "Внешнее бронирование",
+        "sourceLabel": "Источник",
+        "quantityLabel": "Количество",
+        "guestNameLabel": "Имя гостя (необязательно)",
+        "guestPhoneLabel": "Телефон гостя (необязательно)",
+        "referenceLabel": "Номер брони (необязательно)",
+        "recordAction": "Записать бронирование",
+        "cancelAction": "Отменить",
+        "createSuccess": "Внешнее бронирование записано.",
+        "createError": "Не удалось записать бронирование. Попробуйте ещё раз.",
+        "cancelSuccess": "Бронирование отменено.",
+        "cancelError": "Не удалось отменить бронирование. Попробуйте ещё раз.",
+        "listTitle": "Внешние бронирования ({{count}})",
+        "emptyTitle": "Внешние бронирования не записаны.",
+        "sourceCodes": {
+          "PHONE": "Телефон",
+          "WALK_IN": "Личное посещение",
+          "PARTNER_WEBSITE": "Сайт партнёра",
+          "BOOKING_COM": "Booking.com",
+          "EXPEDIA": "Expedia",
+          "AIRBNB": "Airbnb",
+          "TRAVEL_AGENCY": "Турагентство",
+          "OTHER": "Другое"
+        },
+        "columns": {
+          "range": "Даты",
+          "source": "Источник",
+          "guest": "Гость"
+        }
+      },
+      "csvImport": {
+        "openAction": "Импорт из CSV",
+        "title": "Импорт бронирований из CSV",
+        "uploadInstructions": "Загрузите CSV-файл со столбцами dateFrom, dateTo, quantity, externalReference, guestName, guestPhone, guestEmail и notes (обязательны только dateFrom и dateTo).",
+        "uploadLabel": "CSV-файл",
+        "fileTypeError": "Пожалуйста, выберите файл .csv.",
+        "emptyFileError": "В этом файле нет строк для импорта.",
+        "readError": "Не удалось прочитать файл. Попробуйте ещё раз.",
+        "importError": "Не удалось импортировать эти строки. Попробуйте ещё раз.",
+        "previewSummary": "Найдено строк: {{total}} — валидных: {{valid}}, невалидных: {{invalid}}.",
+        "resultSummary": "Создано {{created}} из {{total}} строк.",
+        "rowValid": "Валидна",
+        "cancelAction": "Отмена",
+        "confirmAction": "Импортировать {{count}} строк",
+        "doneAction": "Готово",
+        "columns": {
+          "range": "Даты",
+          "quantity": "Количество",
+          "guest": "Гость",
+          "status": "Статус",
+          "error": "Ошибка"
+        },
+        "rowErrors": {
+          "INVALID_DATE_FROM": "Неверный dateFrom",
+          "INVALID_DATE_TO": "Неверный dateTo",
+          "DATE_TO_BEFORE_DATE_FROM": "dateTo раньше dateFrom",
+          "INVALID_QUANTITY": "Неверное количество"
+        },
+        "resultStatuses": {
+          "CREATED": "Создано",
+          "SKIPPED_DUPLICATE": "Пропущено (дубликат)",
+          "FAILED": "Ошибка"
+        }
+      }
+    },
+    "connections": {
+      "heading": "Подключения",
+      "description": "Настройте синхронизацию доступности этого объявления с внешними календарями и каналами.",
+      "addAction": "Добавить подключение",
+      "detailsAction": "Подробнее",
+      "testAction": "Проверить",
+      "syncAction": "Синхронизировать сейчас",
+      "disconnectAction": "Отключить",
+      "closeDetailsAction": "Закрыть",
+      "cancelAction": "Отмена",
+      "resolveAction": "Разрешить",
+      "createSuccess": "Подключение создано.",
+      "createError": "Не удалось создать подключение. Попробуйте ещё раз.",
+      "testSuccess": "Проверка подключения прошла успешно: {{message}}",
+      "testFailure": "Проверка подключения не удалась: {{message}}",
+      "testError": "Не удалось проверить подключение. Попробуйте ещё раз.",
+      "syncSuccess": "Синхронизация завершена: {{status}}.",
+      "syncError": "Не удалось синхронизировать подключение. Попробуйте ещё раз.",
+      "disconnectConfirmTitle": "Отключить «{{name}}»?",
+      "disconnectConfirmDescription": "Это подключение перестанет синхронизироваться. Это действие необратимо.",
+      "disconnectConfirmAction": "Да, отключить",
+      "disconnectSuccess": "Подключение отключено.",
+      "disconnectError": "Не удалось отключить подключение. Попробуйте ещё раз.",
+      "mappingSuccess": "Сопоставление сохранено.",
+      "mappingError": "Не удалось сохранить сопоставление. Попробуйте ещё раз.",
+      "resolveConfirmTitle": "Разрешить этот конфликт?",
+      "resolveConfirmDescription": "Конфликт будет отмечен как рассмотренный. Это не отменит никакие действия синхронизации.",
+      "resolveConfirmAction": "Да, разрешить",
+      "resolveSuccess": "Конфликт разрешён.",
+      "resolveError": "Не удалось разрешить конфликт. Попробуйте ещё раз.",
+      "errorTitle": "Не удалось загрузить ваши подключения.",
+      "errorRetry": "Повторить",
+      "emptyTitle": "Подключения ещё не настроены.",
+      "emptyDescription": "Добавьте подключение, чтобы синхронизировать доступность с внешним календарём или каналом.",
+      "neverSynced": "Ещё не синхронизировалось",
+      "detailTabsLabel": "Подробности подключения",
+      "columns": {
+        "name": "Название",
+        "type": "Тип",
+        "direction": "Направление",
+        "status": "Статус",
+        "lastSync": "Последняя успешная синхронизация"
+      },
+      "connectorTypes": {
+        "MANUAL": "Ручной ввод",
+        "ICAL": "Лента iCal",
+        "CSV": "Импорт CSV",
+        "GENERIC_API": "API",
+        "GENERIC_WEBHOOK": "Webhook"
+      },
+      "directions": {
+        "IMPORT": "Импорт",
+        "EXPORT": "Экспорт",
+        "BOTH": "Импорт и экспорт"
+      },
+      "statuses": {
+        "ACTIVE": "Активно",
+        "ERROR": "Ошибка",
+        "PAUSED": "Приостановлено",
+        "DISCONNECTED": "Отключено"
+      },
+      "syncStatuses": {
+        "SUCCESS": "Успешно",
+        "PARTIAL": "Частично",
+        "FAILED": "Неудачно"
+      },
+      "syncTriggers": {
+        "MANUAL": "Вручную",
+        "SCHEDULED": "По расписанию"
+      },
+      "conflictTypes": {
+        "AMBIGUOUS_MAPPING": "Не сопоставлен блок"
+      },
+      "exportFeed": {
+        "label": "URL ленты экспорта iCal"
+      },
+      "syncRuns": {
+        "tabLabel": "История синхронизации",
+        "emptyTitle": "Синхронизаций пока не было.",
+        "recordsSummary": "создано: {{created}}, пропущено: {{skipped}}",
+        "columns": {
+          "startedAt": "Начало",
+          "trigger": "Триггер",
+          "status": "Статус",
+          "records": "Записи",
+          "error": "Ошибка"
+        }
+      },
+      "conflicts": {
+        "tabLabel": "Конфликты ({{count}})",
+        "emptyTitle": "Нет неразрешённых конфликтов.",
+        "columns": {
+          "event": "Событие",
+          "type": "Тип",
+          "createdAt": "Обнаружено"
+        }
+      },
+      "mapping": {
+        "tabLabel": "Сопоставление",
+        "noListingTitle": "У этого подключения нет объявления для сопоставления блоков.",
+        "externalResourceIdLabel": "ID внешнего ресурса",
+        "unitLabel": "Бронируемый блок",
+        "saveAction": "Сохранить сопоставление"
+      },
+      "form": {
+        "title": "Добавить подключение",
+        "nameLabel": "Название",
+        "connectorTypeLabel": "Тип коннектора",
+        "directionLabel": "Направление",
+        "listingLabel": "Объявление",
+        "feedUrlLabel": "URL ленты iCal",
+        "saveAction": "Создать подключение"
+      }
+    },
+    "listings": {
+      "heading": "Мои объявления",
+      "create": "Создать объявление",
+      "filters": {
+        "keywordLabel": "Поиск по вашим объявлениям",
+        "keywordPlaceholder": "Поиск по названию...",
+        "statusLabel": "Статус",
+        "statusAll": "Все статусы",
+        "sortLabel": "Сортировать по"
+      },
+      "empty": {
+        "title": "Нет объявлений, соответствующих фильтрам",
+        "description": "Попробуйте другой поиск или фильтр статуса, либо создайте новое объявление."
+      },
+      "error": {
+        "title": "Не удалось загрузить ваши объявления.",
+        "retry": "Повторить"
+      },
+      "loadMore": "Показать ещё",
+      "actions": {
+        "view": "Просмотр",
+        "edit": "Редактировать",
+        "publish": "Опубликовать",
+        "unpublish": "Снять с публикации",
+        "archive": "В архив",
+        "delete": "Удалить"
+      },
+      "publishSuccess": "Ваше объявление опубликовано.",
+      "publishError": "Это объявление ещё не готово к публикации.",
+      "unpublishSuccess": "Ваше объявление снято с публикации.",
+      "unpublishError": "Что-то пошло не так. Попробуйте ещё раз.",
+      "archiveConfirmTitle": "Отправить объявление в архив?",
+      "archiveConfirmDescription": "Архивные объявления скрыты от клиентов и не могут быть опубликованы повторно. Это действие нельзя отменить.",
+      "archiveConfirmAction": "Да, в архив",
+      "archiveConfirmDismiss": "Отмена",
+      "archiveSuccess": "Объявление отправлено в архив.",
+      "archiveError": "Что-то пошло не так. Попробуйте ещё раз.",
+      "deleteConfirmTitle": "Удалить это объявление?",
+      "deleteConfirmDescription": "Это навсегда удалит объявление из вашего аккаунта. Это действие нельзя отменить.",
+      "deleteConfirmAction": "Да, удалить",
+      "deleteConfirmDismiss": "Отмена",
+      "deleteSuccess": "Объявление удалено.",
+      "deleteError": "Что-то пошло не так. Попробуйте ещё раз."
+    },
+    "listingWizard": {
+      "back": "Назад",
+      "continue": "Продолжить",
+      "publish": "Опубликовать",
+      "retry": "Повторить",
+      "selectPlaceholder": "Выбрать…",
+      "progressLabel": "Ход создания объявления",
+      "progressSummary": "Шаг {{current}} из {{total}}: {{label}}",
+      "goToStep": "Перейти к {{label}}",
+      "publishSuccess": "Ваше объявление опубликовано.",
+      "decrease": "Уменьшить {{label}}",
+      "increase": "Увеличить {{label}}",
+      "datePicker": {
+        "previousMonth": "Предыдущий месяц",
+        "nextMonth": "Следующий месяц",
+        "selectDate": "Выберите дату…"
+      },
+      "steps": {
+        "category": "Категория",
+        "basicInfo": "Основная информация",
+        "location": "Местоположение",
+        "attributes": "Характеристики",
+        "amenities": "Удобства",
+        "media": "Галерея",
+        "pricing": "Цены",
+        "availability": "Доступность",
+        "policies": "Правила",
+        "content": "Контент",
+        "review": "Проверка и публикация"
+      },
+      "validation": {
+        "required": "Это поле обязательно.",
+        "latitudeRange": "Широта должна быть от -90 до 90.",
+        "longitudeRange": "Долгота должна быть от -180 до 180."
+      },
+      "content": {
+        "intro": "Всё здесь необязательно, но более насыщенное объявление публикуется с более высоким показателем полноты и лучше конвертируется.",
+        "highlightsTitle": "Особенности",
+        "highlightsHint": "Краткие ключевые моменты, отображаемые вверху объявления (до 12).",
+        "iconLabel": "Значок",
+        "highlightTextLabel": "Текст особенности",
+        "addHighlight": "Добавить особенность",
+        "itineraryTitle": "Маршрут",
+        "itineraryHint": "Пошаговый план для туров, мероприятий и экскурсий с гидом (до 30 шагов).",
+        "stepTitleLabel": "Название шага",
+        "stepDescriptionLabel": "Описание",
+        "stepDurationLabel": "Продолжительность (минут)",
+        "addStep": "Добавить шаг",
+        "includedTitle": "Что включено / не включено",
+        "includedHint": "Укажите, что гость получает — и не получает — с этим объявлением (до 40 пунктов).",
+        "included": "Включено",
+        "notIncluded": "Не включено",
+        "itemTextLabel": "Пункт",
+        "addItem": "Добавить пункт",
+        "faqsTitle": "Часто задаваемые вопросы",
+        "faqsHint": "Ответьте на самые частые вопросы гостей (до 20).",
+        "questionLabel": "Вопрос",
+        "answerLabel": "Ответ",
+        "addFaq": "Добавить вопрос",
+        "removeRow": "Удалить",
+        "highlightIcons": {
+          "wifi": "Wi-Fi",
+          "pool": "Бассейн",
+          "beach": "Пляж",
+          "parking": "Парковка",
+          "breakfast": "Завтрак",
+          "coffee": "Кофе",
+          "view": "Вид",
+          "pets": "Можно с животными",
+          "ac": "Кондиционер",
+          "wind": "Вентиляция",
+          "sun": "Солнечно",
+          "moon": "Ночь",
+          "heart": "Избранное",
+          "award": "Отмечено наградой",
+          "verified": "Проверено",
+          "shield": "Безопасность",
+          "clock": "Быстро",
+          "fast": "Быстрое обслуживание",
+          "group": "Группы",
+          "users": "Гости",
+          "location": "Местоположение",
+          "map-pin": "Достопримечательность",
+          "camera": "Место для фото",
+          "photo": "Фотогенично",
+          "food": "Еда",
+          "restaurant": "Ресторан",
+          "car": "Транспорт",
+          "pickup": "Трансфер включён",
+          "transfer": "Трансфер",
+          "snow": "Снег",
+          "winter": "Зима",
+          "mountain": "Горы",
+          "hiking": "Пеший поход",
+          "flight": "Перелёт",
+          "airport": "Аэропорт",
+          "gift": "Подарок",
+          "star": "Высокий рейтинг"
+        }
+      },
+      "completeness": {
+        "title": "Полнота объявления",
+        "loading": "Проверка полноты объявления…",
+        "requiredTitle": "Ещё нужно для публикации",
+        "recommendedTitle": "Рекомендуется для более сильного объявления",
+        "allDone": "Ваше объявление готово к публикации.",
+        "fields": {
+          "translations": "Название и описание",
+          "location": "Местоположение на карте",
+          "media": "Хотя бы одна фотография",
+          "bookableUnits": "Хотя бы один бронируемый юнит",
+          "highlights": "Несколько особенностей",
+          "media.moreImages": "Хотя бы 5 фотографий",
+          "faqs": "Часто задаваемый вопрос",
+          "pricing": "Цена",
+          "translations.description": "Более полное описание (200+ символов)"
+        }
+      },
+      "category": {
+        "loading": "Загрузка категорий…",
+        "errorTitle": "Не удалось загрузить категории."
+      },
+      "basicInfo": {
+        "partner": "Партнёрская организация",
+        "listingType": "Тип объявления",
+        "title": "Название",
+        "summary": "Краткое описание",
+        "description": "Описание"
+      },
+      "listingTypes": {
+        "HOTEL": "Отель",
+        "PROPERTY": "Недвижимость",
+        "RESTAURANT": "Ресторан",
+        "TOUR": "Тур",
+        "CAR_RENTAL": "Аренда автомобиля",
+        "ATTRACTION": "Достопримечательность"
+      },
+      "location": {
+        "latitude": "Широта",
+        "longitude": "Долгота"
+      },
+      "attributes": {
+        "loading": "Загрузка характеристик…",
+        "errorTitle": "Не удалось загрузить характеристики этой категории.",
+        "empty": "В этой категории нет дополнительных характеристик.",
+        "bedrooms": "Спальни",
+        "bathrooms": "Ванные комнаты",
+        "beds": "Кровати",
+        "max_guests": "Макс. гостей",
+        "star_rating": "Звёздность",
+        "price_tier": "Цена",
+        "cuisine": "Кухня",
+        "duration_minutes": "Длительность",
+        "difficulty": "Сложность",
+        "max_group_size": "Макс. размер группы",
+        "languages_offered": "Предлагаемые языки",
+        "transmission": "Коробка передач",
+        "seats": "Места"
+      },
+      "units": {
+        "rooms": "комнат",
+        "rooms_one": "комната",
+        "rooms_few": "комнаты",
+        "rooms_many": "комнат",
+        "rooms_other": "комнаты",
+        "beds": "кроватей",
+        "beds_one": "кровать",
+        "beds_few": "кровати",
+        "beds_many": "кроватей",
+        "beds_other": "кровати",
+        "minutes": "минут",
+        "minutes_one": "минута",
+        "minutes_few": "минуты",
+        "minutes_many": "минут",
+        "minutes_other": "минуты",
+        "people": "человек",
+        "people_one": "человек",
+        "people_few": "человека",
+        "people_many": "человек",
+        "people_other": "человека",
+        "guests": "гостей",
+        "guests_one": "гость",
+        "guests_few": "гостя",
+        "guests_many": "гостей",
+        "guests_other": "гостя",
+        "seats": "мест",
+        "seats_one": "место",
+        "seats_few": "места",
+        "seats_many": "мест",
+        "seats_other": "места"
+      },
+      "amenities": {
+        "loading": "Загрузка удобств…",
+        "errorTitle": "Не удалось загрузить удобства.",
+        "empty": "В этой категории нет удобств для настройки.",
+        "search": "Поиск удобств"
+      },
+      "amenityGroups": {
+        "GENERAL": "Общие",
+        "OUTDOOR": "На открытом воздухе",
+        "OTHER": "Прочее",
+        "WELLNESS": "Оздоровление",
+        "KITCHEN_LAUNDRY": "Кухня и прачечная",
+        "CONNECTIVITY": "Интернет и связь",
+        "ACCESSIBILITY_SAFETY": "Доступность и безопасность",
+        "FAMILY_PETS": "Семья и питомцы",
+        "FOOD_SERVICE": "Питание и обслуживание",
+        "DINING": "Кухня"
+      },
+      "media": {
+        "atLeastOneRequired": "Добавьте хотя бы одну фотографию, чтобы продолжить.",
+        "dropzoneLabel": "Фото и видео",
+        "dropzoneEmphasis": "Нажмите, чтобы загрузить",
+        "dropzoneInstructions": "или перетащите файлы",
+        "uploadFailed": "Загрузка не удалась",
+        "uploading": "Загрузка…",
+        "cover": "Обложка",
+        "setCover": "Сделать обложкой",
+        "moveUp": "Переместить вверх",
+        "moveDown": "Переместить вниз",
+        "remove": "Удалить",
+        "altTextLabel": "Альтернативный текст (для доступности)",
+        "captionLabel": "Подпись (необязательно)"
+      },
+      "pricing": {
+        "loading": "Загрузка моделей ценообразования…",
+        "errorTitle": "Не удалось загрузить модели ценообразования.",
+        "empty": "В этой категории нет модели ценообразования.",
+        "model": "Модель ценообразования",
+        "amount": "Сумма",
+        "currency": "Валюта"
+      },
+      "pricingModels": {
+        "PER_NIGHT": "За ночь",
+        "PER_PERSON": "За человека",
+        "PER_DAY": "За день",
+        "PER_HOUR": "За час"
+      },
+      "availability": {
+        "units": "Бронируемые единицы",
+        "unitsRegistered": "Зарегистрировано единиц: {{count}}",
+        "unitType": "Тип единицы",
+        "registerUnit": "Зарегистрировать единицу",
+        "blackoutDates": "Заблокированные даты",
+        "removeBlackout": "Удалить",
+        "addBlackoutRange": "Заблокированный период",
+        "addBlackout": "Добавить блокировку",
+        "bookingRules": "Правила бронирования",
+        "minimumStayNights": "Минимальный срок проживания (ночей)",
+        "maximumStayNights": "Максимальный срок проживания (ночей)",
+        "advanceBookingMinHours": "Минимальный срок предварительного бронирования (часов)",
+        "advanceBookingMaxDays": "Максимальный срок предварительного бронирования (дней)"
+      },
+      "bookableUnitTypes": {
+        "HOTEL_ROOM": "Номер отеля",
+        "PROPERTY_UNIT": "Объект недвижимости",
+        "RESTAURANT_TABLE": "Столик в ресторане",
+        "TOUR_DEPARTURE": "Отправление тура",
+        "VEHICLE": "Автомобиль"
+      },
+      "policies": {
+        "loading": "Загрузка правил…",
+        "errorTitle": "Не удалось загрузить правила.",
+        "empty": "В этой категории нет правил для настройки.",
+        "pets_allowed": "Разрешены животные",
+        "smoking_allowed": "Курение разрешено",
+        "children_allowed": "Разрешены дети",
+        "cancellation_policy": "Политика отмены",
+        "check_in_time": "Время заезда",
+        "check_out_time": "Время выезда"
+      },
+      "options": {
+        "cancellation_policy": {
+          "FLEXIBLE": "Гибкая",
+          "MODERATE": "Умеренная",
+          "STRICT": "Строгая"
+        },
+        "difficulty": {
+          "EASY": "Лёгкий",
+          "MODERATE": "Средний",
+          "CHALLENGING": "Сложный"
+        },
+        "cuisine": {
+          "ARMENIAN": "Армянская",
+          "ASIAN": "Азиатская",
+          "EUROPEAN": "Европейская",
+          "GEORGIAN": "Грузинская",
+          "ITALIAN": "Итальянская",
+          "MEDITERRANEAN": "Средиземноморская"
+        },
+        "transmission": {
+          "AUTOMATIC": "Автоматическая",
+          "MANUAL": "Механическая"
+        },
+        "languages_offered": {
+          "EN": "Английский",
+          "HY": "Армянский",
+          "RU": "Русский"
+        }
+      },
+      "publishIssues": {
+        "AT_LEAST_ONE_TRANSLATION_REQUIRED": "Добавьте название перед публикацией.",
+        "AT_LEAST_ONE_IMAGE_REQUIRED": "Добавьте хотя бы одну фотографию перед публикацией.",
+        "COMPLETE_LOCATION_REQUIRED": "Укажите местоположение объявления перед публикацией.",
+        "REQUIRED_ATTRIBUTE_MISSING": "Отсутствует обязательная характеристика: {{field}}",
+        "REQUIRED_POLICY_MISSING": "Отсутствует обязательное правило: {{field}}",
+        "AT_LEAST_ONE_BOOKABLE_UNIT_REQUIRED": "Зарегистрируйте хотя бы одну бронируемую единицу перед публикацией."
+      },
+      "review": {
+        "title": "Название",
+        "location": "Местоположение",
+        "notSet": "Не указано",
+        "media": "Фото и видео",
+        "mediaCount": "Файлов: {{count}}",
+        "amenities": "Удобства",
+        "amenitiesCount": "Выбрано: {{count}}",
+        "pricing": "Цены"
+      }
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "Панель управления",
+      "users": "Пользователи",
+      "partners": "Партнёры",
+      "listings": "Объявления",
+      "bookings": "Бронирования",
+      "payments": "Платежи",
+      "marketplaceConfig": "Настройки",
+      "cms": "Контент",
+      "auditLogs": "Журнал аудита",
+      "systemHealth": "Состояние системы",
+      "settings": "Настройки",
+      "messages": "Сообщения",
+      "notifications": "Уведомления",
+      "aiModeration": "ИИ-модерация",
+      "aiUsage": "Использование ИИ",
+      "inventory": "Инвентарь"
+    },
+    "dashboard": {
+      "heading": "Обзор маркетплейса",
+      "stats": {
+        "users": "Пользователи",
+        "partners": "Партнёры",
+        "listings": "Объявления",
+        "publishedListings": "Опубликованные объявления",
+        "bookings": "Бронирования",
+        "completedBookings": "Завершённые бронирования"
+      },
+      "pendingActions": {
+        "heading": "Ожидающие действия",
+        "partners": "Партнёры, ожидающие проверки",
+        "listings": "Объявления, ожидающие модерации",
+        "bookings": "Бронирования, ожидающие ответа поставщика"
+      },
+      "bookingValue": {
+        "heading": "Стоимость бронирований",
+        "note": "Заявленная стоимость подтверждённых и завершённых бронирований — не то же самое, что общая сумма полученных платежей, поскольку не все бронирования ещё оплачены онлайн."
+      },
+      "chart": {
+        "heading": "Бронирования за последние 14 дней"
+      },
+      "recentActivity": {
+        "heading": "Последние действия",
+        "empty": "Пока нет активности.",
+        "systemActor": "Система"
+      },
+      "error": {
+        "title": "Не удалось загрузить панель управления.",
+        "retry": "Повторить"
+      }
+    },
+    "users": {
+      "heading": "Пользователи",
+      "loadMore": "Показать ещё",
+      "filters": {
+        "keywordLabel": "Поиск пользователей",
+        "keywordPlaceholder": "Поиск по имени или email",
+        "statusLabel": "Статус",
+        "statusAll": "Все статусы"
+      },
+      "table": {
+        "name": "Имя",
+        "email": "Email",
+        "status": "Статус",
+        "roles": "Роли"
+      },
+      "status": {
+        "ACTIVE": "Активен",
+        "SUSPENDED": "Приостановлен",
+        "BANNED": "Заблокирован",
+        "PENDING_DELETION": "Ожидает удаления"
+      },
+      "empty": {
+        "title": "Пользователи не найдены",
+        "description": "Попробуйте другой поиск или фильтр."
+      },
+      "error": {
+        "title": "Не удалось загрузить пользователей.",
+        "retry": "Повторить"
+      },
+      "suspendConfirmTitle": "Приостановить {{name}}?",
+      "suspendConfirmDescription": "Этот пользователь не сможет войти в систему до повторной активации.",
+      "suspendConfirmAction": "Приостановить",
+      "activateConfirmTitle": "Повторно активировать {{name}}?",
+      "activateConfirmDescription": "Этот пользователь немедленно восстановит полный доступ.",
+      "activateConfirmAction": "Активировать",
+      "suspendSuccess": "Пользователь приостановлен.",
+      "activateSuccess": "Пользователь повторно активирован.",
+      "statusError": "Что-то пошло не так. Пожалуйста, попробуйте снова."
+    },
+    "userDetail": {
+      "loading": "Загрузка…",
+      "roles": "Роли",
+      "error": {
+        "title": "Не удалось загрузить этого пользователя.",
+        "retry": "Повторить"
+      },
+      "bookings": {
+        "heading": "История бронирований",
+        "empty": "Бронирований пока нет."
+      },
+      "partnerships": {
+        "heading": "Членство в партнёрских организациях",
+        "empty": "Не является членом ни одной партнёрской организации."
+      }
+    },
+    "partners": {
+      "heading": "Партнёры",
+      "loadMore": "Показать ещё",
+      "filters": {
+        "keywordLabel": "Поиск партнёров",
+        "keywordPlaceholder": "Поиск по названию, email или slug",
+        "verificationLabel": "Проверка",
+        "verificationAll": "Все статусы проверки",
+        "moderationLabel": "Видимость",
+        "moderationAll": "Все статусы видимости"
+      },
+      "table": {
+        "name": "Название",
+        "email": "Email",
+        "verification": "Проверка",
+        "moderation": "Видимость",
+        "listings": "Объявления"
+      },
+      "verificationStatus": {
+        "PENDING": "Ожидает",
+        "APPROVED": "Проверен",
+        "REJECTED": "Отклонён"
+      },
+      "moderationStatus": {
+        "APPROVED": "Виден",
+        "FLAGGED": "Приостановлен"
+      },
+      "empty": {
+        "title": "Партнёры не найдены",
+        "description": "Попробуйте другой поиск или фильтр."
+      },
+      "error": {
+        "title": "Не удалось загрузить партнёров.",
+        "retry": "Повторить"
+      },
+      "suspendConfirmTitle": "Приостановить {{name}}?",
+      "suspendConfirmDescription": "Этот партнёр будет скрыт из публичного каталога компаний до восстановления.",
+      "suspendConfirmAction": "Приостановить",
+      "restoreConfirmTitle": "Восстановить {{name}}?",
+      "restoreConfirmDescription": "Этот партнёр снова будет виден в публичном каталоге компаний.",
+      "restoreConfirmAction": "Восстановить",
+      "suspendSuccess": "Партнёр приостановлен.",
+      "restoreSuccess": "Партнёр восстановлен.",
+      "statusError": "Что-то пошло не так. Пожалуйста, попробуйте снова."
+    },
+    "partnerDetail": {
+      "loading": "Загрузка…",
+      "owner": "Владелец",
+      "noOwner": "Владелец не указан",
+      "error": {
+        "title": "Не удалось загрузить этого партнёра.",
+        "retry": "Повторить"
+      },
+      "stats": {
+        "totalListings": "Всего объявлений",
+        "publishedListings": "Опубликованные объявления"
+      },
+      "verification": {
+        "heading": "Проверка",
+        "approveAction": "Одобрить",
+        "rejectAction": "Отклонить",
+        "approveConfirmTitle": "Одобрить {{name}}?",
+        "approveConfirmDescription": "Этот партнёр будет отмечен как проверенный и публично получит значок «Проверено».",
+        "rejectConfirmTitle": "Отклонить {{name}}?",
+        "rejectConfirmDescription": "Заявка этого партнёра на проверку будет отмечена как отклонённая.",
+        "approveSuccess": "Проверка партнёра одобрена.",
+        "rejectSuccess": "Проверка партнёра отклонена."
+      },
+      "moderation": {
+        "heading": "Видимость",
+        "suspendAction": "Приостановить",
+        "restoreAction": "Восстановить"
+      },
+      "bookings": {
+        "heading": "Последние бронирования",
+        "empty": "Бронирований пока нет."
+      }
+    },
+    "listingModeration": {
+      "heading": "Модерация объявлений",
+      "loadMore": "Показать ещё",
+      "filters": {
+        "keywordLabel": "Поиск объявлений",
+        "keywordPlaceholder": "Поиск по названию или партнёру",
+        "moderationLabel": "Модерация",
+        "moderationAll": "Все статусы модерации",
+        "statusLabel": "Статус",
+        "statusAll": "Все статусы"
+      },
+      "table": {
+        "title": "Название",
+        "partner": "Партнёр",
+        "status": "Статус",
+        "moderation": "Модерация"
+      },
+      "moderationStatus": {
+        "PENDING": "Ожидает",
+        "APPROVED": "Одобрено",
+        "REJECTED": "Отклонено",
+        "FLAGGED": "Отмечено"
+      },
+      "status": {
+        "DRAFT": "Черновик",
+        "PENDING_REVIEW": "Ожидает проверки",
+        "PUBLISHED": "Опубликовано",
+        "UNPUBLISHED": "Снято с публикации",
+        "ARCHIVED": "В архиве"
+      },
+      "empty": {
+        "title": "Объявления не найдены",
+        "description": "Попробуйте другой поиск или фильтр."
+      },
+      "error": {
+        "title": "Не удалось загрузить объявления.",
+        "retry": "Повторить"
+      },
+      "approveAction": "Одобрить",
+      "rejectAction": "Отклонить",
+      "approveConfirmTitle": "Одобрить «{{title}}»?",
+      "approveConfirmDescription": "Это объявление будет отмечено как одобренное модерацией.",
+      "approveSuccess": "Объявление одобрено.",
+      "rejectDialogTitle": "Отклонить «{{title}}»?",
+      "rejectDialogDescription": "Это объявление будет отмечено как отклонённое модерацией. Вы можете добавить необязательное примечание с объяснением причины — оно сохранится вместе с объявлением.",
+      "notesLabel": "Примечание (необязательно)",
+      "notesPlaceholder": "напр., Не хватает обязательных фотографий.",
+      "rejectSuccess": "Объявление отклонено.",
+      "statusError": "Что-то пошло не так. Пожалуйста, попробуйте снова."
+    },
+    "bookings": {
+      "heading": "Бронирования",
+      "loadMore": "Загрузить ещё",
+      "filters": {
+        "statusLabel": "Статус",
+        "statusAll": "Все статусы"
+      },
+      "table": {
+        "reference": "Номер",
+        "customer": "Клиент",
+        "customerLink": "Клиент №{{id}}",
+        "partner": "Партнёр",
+        "partnerLink": "Партнёр №{{id}}",
+        "status": "Статус",
+        "total": "Итого"
+      },
+      "empty": {
+        "title": "Бронирования не найдены",
+        "description": "Попробуйте другой фильтр статуса."
+      },
+      "error": {
+        "title": "Не удалось загрузить бронирования.",
+        "retry": "Повторить"
+      }
+    },
+    "bookingDetail": {
+      "loading": "Загрузка…",
+      "heading": "Бронирование {{reference}}",
+      "customer": "Клиент",
+      "partner": "Партнёр",
+      "listing": "Объявление",
+      "listingId": "Объявление №{{id}}",
+      "notes": "Примечания клиента",
+      "error": {
+        "title": "Не удалось загрузить это бронирование.",
+        "retry": "Повторить"
+      },
+      "history": {
+        "heading": "История статусов",
+        "loading": "Загрузка…",
+        "empty": "Изменений статуса пока нет.",
+        "created": "Создано"
+      },
+      "confirmAction": "Подтвердить",
+      "confirmSuccess": "Бронирование подтверждено.",
+      "rejectAction": "Отклонить",
+      "rejectConfirmTitle": "Отклонить это бронирование?",
+      "rejectConfirmDescription": "Клиент будет уведомлён, а зарезервированная вместимость будет освобождена.",
+      "rejectSuccess": "Бронирование отклонено.",
+      "cancelAction": "Отменить",
+      "cancelConfirmTitle": "Отменить это бронирование?",
+      "cancelConfirmDescription": "Это отменит бронирование от имени партнёра. Действие необратимо.",
+      "cancelSuccess": "Бронирование отменено.",
+      "completeAction": "Отметить завершённым",
+      "completeConfirmTitle": "Отметить это бронирование как завершённое?",
+      "completeConfirmDescription": "Это подтверждает, что поездка состоялась согласно бронированию.",
+      "completeSuccess": "Бронирование отмечено завершённым.",
+      "noShowAction": "Отметить неявку",
+      "noShowConfirmTitle": "Отметить это бронирование как неявку?",
+      "noShowConfirmDescription": "Это подтверждает, что клиент не явился на бронирование.",
+      "noShowSuccess": "Бронирование отмечено как неявка.",
+      "actionError": "Что-то пошло не так. Пожалуйста, попробуйте снова."
+    },
+    "payments": {
+      "heading": "Платежи",
+      "loadMore": "Показать ещё",
+      "filters": {
+        "statusLabel": "Статус",
+        "statusAll": "Все статусы"
+      },
+      "table": {
+        "reference": "Номер",
+        "booking": "Бронирование",
+        "bookingLink": "Бронирование №{{id}}",
+        "status": "Статус",
+        "provider": "Провайдер",
+        "total": "Итого"
+      },
+      "empty": {
+        "title": "Платежи не найдены",
+        "description": "Попробуйте другой фильтр по статусу."
+      },
+      "error": {
+        "title": "Не удалось загрузить платежи.",
+        "retry": "Повторить"
+      },
+      "detail": {
+        "heading": "Платёж {{reference}}",
+        "error": {
+          "title": "Не удалось загрузить этот платёж.",
+          "retry": "Повторить"
+        },
+        "refundAction": "Оформить возврат",
+        "refundSuccess": "Возврат оформлен.",
+        "refundError": "Не удалось оформить этот возврат. Попробуйте ещё раз.",
+        "refundDialogTitle": "Оформить возврат",
+        "refundDialogDescription": "Это смоделированный возврат — реальные деньги не перемещаются. Он обновляет реальное состояние платежа и статус оплаты бронирования.",
+        "refundAmountLabel": "Сумма возврата",
+        "refundReasonLabel": "Причина (необязательно)",
+        "refundReasonPlaceholder": "Почему этот платёж возвращается?",
+        "refundConfirmAction": "Оформить возврат"
+      }
+    },
+    "auditLogs": {
+      "heading": "Журнал аудита",
+      "loadMore": "Загрузить ещё",
+      "filters": {
+        "actionLabel": "Поиск действий",
+        "actionPlaceholder": "например, user.suspended",
+        "targetTypeLabel": "Тип объекта",
+        "targetTypeAll": "Все типы объектов"
+      },
+      "table": {
+        "timestamp": "Время",
+        "actor": "Инициатор",
+        "action": "Действие",
+        "target": "Объект"
+      },
+      "targetType": {
+        "user": "Пользователь",
+        "partner": "Партнёр",
+        "listing": "Объявление",
+        "booking": "Бронирование",
+        "cms_page": "Страница контента",
+        "bookable_unit": "Бронируемая единица",
+        "availability_calendar": "Доступность",
+        "blackout_date": "Заблокированная дата",
+        "listing_category": "Категория",
+        "listing_amenity": "Удобство",
+        "pricing_model": "Модель ценообразования",
+        "country": "Страна",
+        "region": "Регион",
+        "city": "Город"
+      },
+      "systemActor": "Система",
+      "empty": {
+        "title": "Записи журнала аудита не найдены",
+        "description": "Попробуйте другой поиск или фильтр."
+      },
+      "error": {
+        "title": "Что-то пошло не так при загрузке журнала аудита.",
+        "retry": "Повторить"
+      }
+    },
+    "systemHealth": {
+      "heading": "Состояние системы",
+      "tiles": {
+        "database": "База данных",
+        "cache": "Кэш",
+        "environment": "Окружение",
+        "version": "Версия"
+      },
+      "status": {
+        "up": "Работает",
+        "down": "Недоступно"
+      },
+      "queues": {
+        "heading": "Фоновые очереди задач",
+        "empty": "Очереди не найдены",
+        "table": {
+          "name": "Очередь",
+          "status": "Статус",
+          "waiting": "Ожидание",
+          "active": "Активно",
+          "delayed": "Отложено",
+          "failed": "Неудачно"
+        },
+        "name": {
+          "booking-holds.expiry-sweep": "Проверка истечения удержаний",
+          "bookings.pending-vendor-sla-sweep": "Проверка сроков ответа партнёра",
+          "notifications.delivery": "Доставка уведомлений"
+        }
+      },
+      "error": {
+        "title": "Что-то пошло не так при загрузке состояния системы.",
+        "retry": "Повторить"
+      }
+    },
+    "aiModeration": {
+      "heading": "ИИ-модерация",
+      "scoreAction": "Оценить",
+      "scoring": "Оценивается…",
+      "table": {
+        "title": "Объявление",
+        "partner": "Партнёр",
+        "score": "Оценка",
+        "signals": "Сигналы"
+      },
+      "signals": {
+        "TITLE_ALL_CAPS": "Заголовок заглавными буквами",
+        "EXCESSIVE_PUNCTUATION": "Избыточная пунктуация",
+        "DESCRIPTION_TOO_SHORT": "Слишком короткое описание",
+        "POSSIBLE_DUPLICATE_TITLE": "Возможный дублирующийся заголовок"
+      },
+      "result": {
+        "heading": "Оценка объявления",
+        "heuristicScoreLabel": "Эвристическая оценка:",
+        "signalsLabel": "Сигналы:",
+        "aiNoteLabel": "Примечание ИИ:"
+      },
+      "empty": {
+        "title": "Сейчас нет объявлений, требующих проверки",
+        "description": "Очередь модерации пуста."
+      },
+      "error": {
+        "title": "Что-то пошло не так при загрузке очереди модерации.",
+        "retry": "Повторить",
+        "score": "Что-то пошло не так при оценке этого объявления."
+      }
+    },
+    "aiUsage": {
+      "heading": "Использование ИИ"
+    },
+    "settings": {
+      "heading": "Настройки",
+      "editAction": "Изменить",
+      "deleteAction": "Удалить",
+      "errorRetry": "Повторить",
+      "saveError": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+      "deleteError": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+      "tabs": {
+        "systemSettings": "Системные настройки",
+        "featureFlags": "Флаги функций"
+      },
+      "systemSettings": {
+        "heading": "Системные настройки",
+        "addLabel": "Добавить настройку",
+        "table": {
+          "key": "Ключ",
+          "value": "Значение",
+          "description": "Описание",
+          "updatedAt": "Обновлено"
+        },
+        "fields": {
+          "key": "Ключ",
+          "value": "Значение (JSON)",
+          "description": "Описание"
+        },
+        "valueHelperText": "Введите корректное значение JSON, например \"текст\", 123, true или {\"a\":1}.",
+        "invalidValueError": "Это не является корректным JSON.",
+        "formCreateTitle": "Добавить настройку",
+        "formEditTitle": "Изменить настройку",
+        "deleteConfirmTitle": "Удалить «{{key}}»?",
+        "deleteConfirmDescription": "Эта настройка будет удалена без возможности восстановления.",
+        "emptyTitle": "Настройки не найдены",
+        "emptyDescription": "Добавьте настройку, чтобы начать.",
+        "errorTitle": "Что-то пошло не так при загрузке настроек.",
+        "createSuccess": "Настройка создана.",
+        "updateSuccess": "Настройка обновлена.",
+        "deleteSuccess": "Настройка удалена."
+      },
+      "featureFlags": {
+        "heading": "Флаги функций",
+        "addLabel": "Добавить флаг",
+        "table": {
+          "code": "Код",
+          "name": "Название",
+          "description": "Описание",
+          "enabled": "Включено"
+        },
+        "fields": {
+          "code": "Код",
+          "name": "Название",
+          "description": "Описание"
+        },
+        "enabledSwitchLabel": "Переключить {{name}}",
+        "formCreateTitle": "Добавить флаг функции",
+        "deleteConfirmTitle": "Удалить «{{name}}»?",
+        "deleteConfirmDescription": "Этот флаг будет удалён без возможности восстановления.",
+        "emptyTitle": "Флаги не найдены",
+        "emptyDescription": "Добавьте флаг, чтобы начать.",
+        "errorTitle": "Что-то пошло не так при загрузке флагов.",
+        "createSuccess": "Флаг создан.",
+        "deleteSuccess": "Флаг удалён."
+      }
+    },
+    "marketplaceConfig": {
+      "heading": "Настройки маркетплейса",
+      "none": "Нет",
+      "editAction": "Изменить",
+      "deleteAction": "Удалить",
+      "emptyDescription": "Здесь пока пусто — добавьте первую запись.",
+      "errorTitle": "Не удалось загрузить эти данные.",
+      "errorRetry": "Повторить",
+      "saveError": "Не удалось сохранить. Пожалуйста, попробуйте снова.",
+      "deleteError": "Не удалось удалить. Пожалуйста, попробуйте снова.",
+      "tabs": {
+        "categories": "Категории",
+        "amenities": "Удобства",
+        "pricingModels": "Модели цен",
+        "countries": "Страны",
+        "regions": "Регионы",
+        "cities": "Города"
+      },
+      "table": {
+        "name": "Название",
+        "slug": "Слаг",
+        "code": "Код",
+        "isoCode": "Код ISO"
+      },
+      "categories": {
+        "heading": "Категории",
+        "addAction": "Добавить категорию",
+        "parent": "Родительская категория",
+        "formCreateTitle": "Добавить категорию",
+        "formEditTitle": "Изменить «{{name}}»",
+        "deleteConfirmTitle": "Удалить «{{name}}»?",
+        "deleteConfirmDescription": "Это необратимо. Категорию, на которую ссылаются объявления, удалить нельзя.",
+        "emptyTitle": "Категорий пока нет",
+        "createSuccess": "Категория создана.",
+        "updateSuccess": "Категория обновлена.",
+        "deleteSuccess": "Категория удалена."
+      },
+      "amenities": {
+        "heading": "Удобства",
+        "addAction": "Добавить удобство",
+        "group": "Группа",
+        "formCreateTitle": "Добавить удобство",
+        "formEditTitle": "Изменить «{{name}}»",
+        "deleteConfirmTitle": "Удалить «{{name}}»?",
+        "deleteConfirmDescription": "Это необратимо.",
+        "emptyTitle": "Удобств пока нет",
+        "createSuccess": "Удобство создано.",
+        "updateSuccess": "Удобство обновлено.",
+        "deleteSuccess": "Удобство удалено."
+      },
+      "pricingModels": {
+        "heading": "Модели цен",
+        "addAction": "Добавить модель",
+        "formCreateTitle": "Добавить модель",
+        "formEditTitle": "Изменить «{{name}}»",
+        "deleteConfirmTitle": "Удалить «{{name}}»?",
+        "deleteConfirmDescription": "Это необратимо.",
+        "emptyTitle": "Моделей цен пока нет",
+        "createSuccess": "Модель создана.",
+        "updateSuccess": "Модель обновлена.",
+        "deleteSuccess": "Модель удалена."
+      },
+      "countries": {
+        "heading": "Страны",
+        "addAction": "Добавить страну",
+        "formCreateTitle": "Добавить страну",
+        "formEditTitle": "Изменить «{{name}}»",
+        "deleteConfirmTitle": "Удалить «{{name}}»?",
+        "deleteConfirmDescription": "Это необратимо. Страну с регионами удалить нельзя.",
+        "emptyTitle": "Стран пока нет",
+        "createSuccess": "Страна создана.",
+        "updateSuccess": "Страна обновлена.",
+        "deleteSuccess": "Страна удалена."
+      },
+      "regions": {
+        "heading": "Регионы",
+        "addAction": "Добавить регион",
+        "country": "Страна",
+        "formCreateTitle": "Добавить регион",
+        "formEditTitle": "Изменить «{{name}}»",
+        "deleteConfirmTitle": "Удалить «{{name}}»?",
+        "deleteConfirmDescription": "Это необратимо. Регион с городами удалить нельзя.",
+        "emptyTitle": "Регионов пока нет",
+        "createSuccess": "Регион создан.",
+        "updateSuccess": "Регион обновлён.",
+        "deleteSuccess": "Регион удалён."
+      },
+      "cities": {
+        "heading": "Города",
+        "addAction": "Добавить город",
+        "region": "Регион",
+        "latitude": "Широта",
+        "longitude": "Долгота",
+        "formCreateTitle": "Добавить город",
+        "formEditTitle": "Изменить «{{name}}»",
+        "deleteConfirmTitle": "Удалить «{{name}}»?",
+        "deleteConfirmDescription": "Это необратимо.",
+        "emptyTitle": "Городов пока нет",
+        "createSuccess": "Город создан.",
+        "updateSuccess": "Город обновлён.",
+        "deleteSuccess": "Город удалён."
+      }
+    },
+    "cms": {
+      "heading": "Страницы контента",
+      "addAction": "Добавить страницу",
+      "deleteAction": "Удалить",
+      "published": "Опубликовано",
+      "unpublished": "Не опубликовано",
+      "loading": "Загрузка…",
+      "errorTitle": "Не удалось загрузить эти данные.",
+      "errorRetry": "Повторить",
+      "saveError": "Не удалось сохранить. Пожалуйста, попробуйте снова.",
+      "deleteError": "Не удалось удалить. Пожалуйста, попробуйте снова.",
+      "emptyTitle": "Страниц пока нет",
+      "emptyDescription": "Добавьте первую страницу контента.",
+      "table": {
+        "slug": "Слаг",
+        "status": "Статус"
+      },
+      "formCreateTitle": "Добавить страницу",
+      "createSuccess": "Страница создана.",
+      "deleteConfirmTitle": "Удалить «{{slug}}»?",
+      "deleteConfirmDescription": "Это необратимо, включая содержимое на всех языках.",
+      "deleteSuccess": "Страница удалена.",
+      "detailHeading": "Страница: {{slug}}",
+      "settingsHeading": "Настройки",
+      "settingsSaveSuccess": "Настройки страницы сохранены.",
+      "translationsHeading": "Содержимое по языкам",
+      "translationSaveSuccess": "Содержимое сохранено.",
+      "titleLabel": "Заголовок",
+      "contentLabel": "Содержимое"
+    },
+    "notifications": {
+      "announcement": {
+        "heading": "Отправить объявление",
+        "description": "Отправляет уведомление в приложении (и, если включено, по эл. почте) всем пользователям или пользователям с определённой ролью.",
+        "audienceLabel": "Получатели",
+        "audienceAll": "Все",
+        "audienceRoles": "Определённые роли",
+        "roles": {
+          "CUSTOMER": "Клиент",
+          "MODERATOR": "Модератор",
+          "ADMIN": "Админ",
+          "SUPER_ADMIN": "Главный админ",
+          "SUPPORT": "Поддержка"
+        },
+        "priorityLabel": "Приоритет",
+        "priority": {
+          "LOW": "Низкий",
+          "NORMAL": "Обычный",
+          "HIGH": "Высокий",
+          "URGENT": "Срочный"
+        },
+        "titleLabel": "Заголовок",
+        "bodyLabel": "Сообщение (необязательно)",
+        "submitAction": "Отправить объявление",
+        "success": "Объявление отправлено.",
+        "error": "Не удалось отправить объявление. Пожалуйста, попробуйте ещё раз."
+      }
+    },
+    "inventory": {
+      "heading": "Надзор за инвентарём",
+      "description": "Найдите объявление любого партнёра, чтобы увидеть, почему дата недоступна — та же разбивка, журнал и списки, которые партнёр видит на своей странице календаря, только для просмотра.",
+      "lookup": {
+        "label": "ID объявления",
+        "placeholder": "например, 42",
+        "action": "Найти"
+      },
+      "noLookup": {
+        "title": "Введите ID объявления, чтобы начать",
+        "description": "Найдите любое опубликованное объявление по его числовому ID."
+      },
+      "notFound": {
+        "title": "Объявление не найдено",
+        "description": "Опубликованного объявления с этим ID не существует."
+      },
+      "noUnits": {
+        "title": "Нет бронируемых ресурсов",
+        "description": "Для этого объявления пока не зарегистрировано бронируемых ресурсов."
+      },
+      "detailTabsLabel": "Детали инвентаря",
+      "breakdown": {
+        "tabLabel": "Разбивка",
+        "emptyTitle": "Нет данных за этот период.",
+        "columns": {
+          "date": "Дата",
+          "total": "Всего",
+          "available": "Доступно",
+          "confirmed": "Подтверждено",
+          "held": "Удержано",
+          "external": "Внешних",
+          "manual": "Заблокировано"
+        }
+      },
+      "ledger": {
+        "tabLabel": "Журнал",
+        "emptyTitle": "Нет записей журнала за этот период.",
+        "columns": {
+          "date": "Дата",
+          "source": "Источник",
+          "delta": "Изменение",
+          "quantity": "Количество",
+          "reason": "Причина",
+          "createdAt": "Записано"
+        },
+        "sourceTypes": {
+          "TRAVELHUB_HOLD": "Удержание",
+          "TRAVELHUB_BOOKING": "Бронирование",
+          "MANUAL_BLOCK": "Ручная блокировка",
+          "EXTERNAL_RESERVATION": "Внешнее бронирование",
+          "CONNECTOR_SYNC": "Синхронизация коннектора",
+          "ADJUSTMENT": "Корректировка"
+        }
+      },
+      "blocks": {
+        "tabLabel": "Блокировки ({{count}})",
+        "emptyTitle": "Нет активных ручных блокировок.",
+        "columns": {
+          "range": "Даты",
+          "quantity": "Количество",
+          "reason": "Причина"
+        }
+      },
+      "external": {
+        "tabLabel": "Внешние ({{count}})",
+        "emptyTitle": "Внешние бронирования не записаны.",
+        "columns": {
+          "range": "Даты",
+          "source": "Источник",
+          "guest": "Гость"
+        }
+      },
+      "connections": {
+        "tabLabel": "Подключения",
+        "emptyTitle": "Для этого партнёра подключения не настроены.",
+        "neverSynced": "Никогда не синхронизировалось",
+        "detailsAction": "Подробнее",
+        "columns": {
+          "name": "Название",
+          "type": "Тип",
+          "status": "Статус",
+          "lastSync": "Последняя успешная синхронизация"
+        },
+        "statuses": {
+          "ACTIVE": "Активно",
+          "ERROR": "Ошибка",
+          "PAUSED": "Приостановлено",
+          "DISCONNECTED": "Отключено"
+        }
+      },
+      "holds": {
+        "tabLabel": "Удержания ({{count}})",
+        "emptyTitle": "Нет активных удержаний за этот период.",
+        "columns": {
+          "range": "Даты",
+          "user": "ID пользователя",
+          "expiresAt": "Истекает"
+        }
+      },
+      "syncRuns": {
+        "tabLabel": "История синхронизации",
+        "emptyTitle": "Запусков синхронизации пока нет.",
+        "noSelectionTitle": "Выберите подключение",
+        "noSelectionDescription": "Выберите подключение на вкладке «Подключения», чтобы увидеть его историю синхронизации.",
+        "columns": {
+          "startedAt": "Начало",
+          "trigger": "Триггер",
+          "status": "Статус",
+          "records": "Записи",
+          "error": "Ошибка"
+        },
+        "recordsSummary": "{{created}} создано, {{skipped}} пропущено"
+      },
+      "conflicts": {
+        "tabLabel": "Конфликты",
+        "emptyTitle": "Нерешённых конфликтов нет.",
+        "noSelectionTitle": "Выберите подключение",
+        "noSelectionDescription": "Выберите подключение на вкладке «Подключения», чтобы увидеть его конфликты синхронизации.",
+        "columns": {
+          "event": "Событие",
+          "type": "Тип",
+          "createdAt": "Обнаружено"
+        }
+      }
+    }
+  },
+  "pages": {
+    "search": {
+      "title": "Поиск"
+    },
+    "listing": {
+      "title": "Объявление"
+    },
+    "dashboard": {
+      "title": "Обзор"
+    },
+    "bookings": {
+      "title": "Бронирования"
+    },
+    "profile": {
+      "title": "Профиль"
+    },
+    "settings": {
+      "title": "Настройки"
+    },
+    "listingDetail": {
+      "yes": "Да",
+      "no": "Нет",
+      "loading": "Загрузка объявления…",
+      "errorTitle": "Не удалось загрузить это объявление.",
+      "retry": "Повторить",
+      "hero": {
+        "reviewsLink": "{{count}} отзывов",
+        "noReviews": "Пока нет отзывов",
+        "overview": "Обзор"
+      },
+      "share": {
+        "button": "Поделиться",
+        "copied": "Ссылка скопирована",
+        "copyError": "Не удалось скопировать ссылку"
+      },
+      "sectionNav": {
+        "ariaLabel": "Перейти к разделу"
+      },
+      "about": {
+        "heading": "Об этом объявлении",
+        "showMore": "Показать больше",
+        "showLess": "Показать меньше"
+      },
+      "attributes": {
+        "heading": "Характеристики"
+      },
+      "policies": {
+        "heading": "Правила"
+      },
+      "amenities": {
+        "heading": "Удобства",
+        "showAll": "Показать все удобства",
+        "showLess": "Показать меньше"
+      },
+      "itinerary": {
+        "heading": "Маршрут",
+        "minutesUnit": "мин"
+      },
+      "included": {
+        "heading": "Что включено",
+        "includedHeading": "Включено",
+        "excludedHeading": "Не включено"
+      },
+      "faq": {
+        "heading": "Часто задаваемые вопросы"
+      },
+      "host": {
+        "heading": "О хозяине",
+        "verified": "Проверенный партнёр",
+        "memberSince": "На платформе с {{year}} года",
+        "listingCount": "{{count}} объявлений",
+        "contact": "Написать хозяину"
+      },
+      "availability": {
+        "heading": "Доступность",
+        "loading": "Загрузка доступности…",
+        "errorTitle": "Не удалось загрузить доступность этого объявления.",
+        "availableDays": "Доступно {{count}} из следующих 30 дней",
+        "blockedRanges": "Недоступные периоды",
+        "noData": "Данные о доступности для этого объявления пока отсутствуют.",
+        "status": {
+          "available": "Доступно",
+          "soldOut": "Мест нет",
+          "lowGeneric": "Осталось всего {{count}}",
+          "lowByType": {
+            "HOTEL_ROOM_one": "Остался всего {{count}} номер",
+            "HOTEL_ROOM_few": "Осталось всего {{count}} номера",
+            "HOTEL_ROOM_many": "Осталось всего {{count}} номеров",
+            "HOTEL_ROOM_other": "Осталось всего {{count}} номера",
+            "PROPERTY_UNIT_one": "Остался всего {{count}} объект",
+            "PROPERTY_UNIT_few": "Осталось всего {{count}} объекта",
+            "PROPERTY_UNIT_many": "Осталось всего {{count}} объектов",
+            "PROPERTY_UNIT_other": "Осталось всего {{count}} объекта",
+            "RESTAURANT_TABLE_one": "Остался всего {{count}} столик",
+            "RESTAURANT_TABLE_few": "Осталось всего {{count}} столика",
+            "RESTAURANT_TABLE_many": "Осталось всего {{count}} столиков",
+            "RESTAURANT_TABLE_other": "Осталось всего {{count}} столика",
+            "TOUR_DEPARTURE_one": "Доступно {{count}} место",
+            "TOUR_DEPARTURE_few": "Доступно {{count}} места",
+            "TOUR_DEPARTURE_many": "Доступно {{count}} мест",
+            "TOUR_DEPARTURE_other": "Доступно {{count}} места",
+            "VEHICLE_one": "Остался всего {{count}} автомобиль",
+            "VEHICLE_few": "Осталось всего {{count}} автомобиля",
+            "VEHICLE_many": "Осталось всего {{count}} автомобилей",
+            "VEHICLE_other": "Осталось всего {{count}} автомобиля"
+          }
+        }
+      },
+      "location": {
+        "heading": "Местоположение"
+      },
+      "gallery": {
+        "heading": "Галерея",
+        "viewImage": "Посмотреть фото {{index}} из {{count}}",
+        "viewPhoto": "Посмотреть фото",
+        "morePhotos": "+{{count}} фото",
+        "closeLightbox": "Закрыть галерею",
+        "previousImage": "Предыдущее фото",
+        "nextImage": "Следующее фото",
+        "imageCounter": "{{current}} из {{total}}",
+        "imageAltFallback": "{{title}} — фото {{index}} из {{total}}"
+      },
+      "reservation": {
+        "unitLabel": "Единица",
+        "unitPlaceholder": "Выберите единицу",
+        "datesLabel": "Даты",
+        "quantityLabel": "Количество",
+        "estimatedTotal": "примерная сумма",
+        "requestToBook": "Отправить запрос на бронирование",
+        "requestToBookByGroup": {
+          "ACCOMMODATION": "Проверить наличие",
+          "EXPERIENCE": "Забронировать место",
+          "TRANSPORT": "Забронировать автомобиль",
+          "GENERIC": "Отправить запрос на бронирование"
+        },
+        "noUnitsAvailable": "Это объявление пока недоступно для онлайн-бронирования.",
+        "holdError": "Не удалось удержать эти даты. Пожалуйста, попробуйте ещё раз.",
+        "availabilityConflict": "Эти даты больше недоступны. Пожалуйста, выберите другие даты."
+      },
+      "relatedListings": {
+        "heading": "Вам также может понравиться"
+      },
+      "reviews": {
+        "heading": "Отзывы"
+      }
+    }
+  },
+  "footer": {
+    "explore": "Разделы",
+    "company": "Компания",
+    "support": "Поддержка",
+    "account": "Аккаунт",
+    "links": {
+      "home": "Главная",
+      "search": "Поиск",
+      "companies": "Компании",
+      "login": "Войти",
+      "register": "Регистрация",
+      "partner": "Кабинет партнёра",
+      "about": "О нас",
+      "contact": "Контакты",
+      "becomePartner": "Стать партнёром",
+      "blog": "Блог",
+      "faq": "Частые вопросы",
+      "helpCenter": "Центр помощи",
+      "support": "Поддержка"
+    }
+  },
+  "companies": {
+    "directory": {
+      "title": "Компании",
+      "loadMore": "Загрузить ещё",
+      "empty": {
+        "title": "Пока нет компаний",
+        "description": "Загляните позже — новые партнёрские компании присоединяются регулярно."
+      },
+      "error": {
+        "title": "Не удалось загрузить компании",
+        "description": "Что-то пошло не так при загрузке каталога.",
+        "retry": "Попробовать снова"
+      }
+    },
+    "card": {
+      "viewProfile": "Посмотреть профиль {{name}}",
+      "verified": "Проверено",
+      "listingCount": "{{count}} объявлений"
+    },
+    "profile": {
+      "loading": "Загрузка профиля компании...",
+      "errorTitle": "Не удалось загрузить эту компанию",
+      "retry": "Попробовать снова",
+      "listingsHeading": "Объявления"
+    }
+  },
+  "cms": {
+    "about": {
+      "title": "О desavii",
+      "lead": "desavii объединяет путешественников с проверенными местными партнёрами — отелями, туроператорами, владельцами апартаментов и организаторами впечатлений — во всех направлениях, которые мы обслуживаем.",
+      "values": {
+        "trust": {
+          "title": "Доверие",
+          "description": "Каждый партнёр на desavii проходит проверку до публикации своих объявлений, поэтому вы всегда знаете, с кем бронируете."
+        },
+        "variety": {
+          "title": "Разнообразие",
+          "description": "От отелей в центре города до туров за городом — наш маркетплейс охватывает поездки любого типа во всех направлениях, которые мы обслуживаем."
+        },
+        "support": {
+          "title": "Поддержка",
+          "description": "Наша команда поддержки готова помочь до, во время и после поездки — свяжитесь с нами через Центр помощи в любое время."
+        }
+      }
+    },
+    "contact": {
+      "title": "Связаться с нами",
+      "lead": "Есть вопрос по бронированию или объявлению? Свяжитесь напрямую с нашей командой поддержки.",
+      "hours": "Понедельник–пятница, 9:00–18:00 (по времени Еревана)"
+    },
+    "faq": {
+      "title": "Часто задаваемые вопросы",
+      "description": "Ответы на частые вопросы о бронировании, оплате, отмене и партнёрстве с desavii.",
+      "questions": {
+        "booking": {
+          "question": "Как забронировать объявление?",
+          "answer": "Откройте страницу любого объявления и используйте панель бронирования, чтобы проверить доступность и цену на нужные даты."
+        },
+        "payment": {
+          "question": "Какие способы оплаты поддерживаются?",
+          "answer": "Онлайн-оплата пока недоступна — это известное ограничение, над которым мы работаем. Пока свяжитесь с партнёром напрямую."
+        },
+        "cancellation": {
+          "question": "Какова политика отмены?",
+          "answer": "Условия отмены устанавливаются каждым партнёром и отображаются в разделе политик объявления перед бронированием."
+        },
+        "becomePartner": {
+          "question": "Как разместить моё жильё или бизнес?",
+          "answer": "Создайте аккаунт, затем подайте заявку на партнёрство из личного кабинета. Подробности — на странице «Стать партнёром»."
+        },
+        "contactSupport": {
+          "question": "Как связаться с поддержкой?",
+          "answer": "Посетите страницу «Контакты», чтобы узнать email, телефон и часы работы поддержки."
+        }
+      }
+    },
+    "help": {
+      "title": "Центр помощи",
+      "lead": "Найдите ответы на частые вопросы или свяжитесь с нашей командой поддержки.",
+      "links": {
+        "faq": {
+          "title": "Часто задаваемые вопросы",
+          "description": "Ответы на самые популярные вопросы."
+        },
+        "contact": {
+          "title": "Связаться с поддержкой",
+          "description": "Свяжитесь с нашей командой напрямую по email или телефону."
+        }
+      }
+    },
+    "becomePartner": {
+      "title": "Стать партнёром",
+      "lead": "Развивайте свой бизнес, разместив отель, туры, апартаменты или впечатления на desavii — и охватите путешественников, активно планирующих следующую поездку.",
+      "benefits": {
+        "reach": {
+          "title": "Больший охват",
+          "description": "Станьте заметны для путешественников, которые ищут и бронируют на нашем маркетплейсе."
+        },
+        "audience": {
+          "title": "Заинтересованные путешественники",
+          "description": "Общайтесь с путешественниками, которые активно планируют поездку и готовы бронировать."
+        },
+        "trust": {
+          "title": "Значок проверки",
+          "description": "Проверенные партнёры выделяются значком доверия, отображаемым по всему маркетплейсу."
+        }
+      },
+      "cta": "Начать"
+    },
+    "blog": {
+      "title": "Блог",
+      "description": "Мы работаем над путеводителями, историями партнёров и вдохновением для путешествий. Загляните позже."
+    }
+  },
+  "reviews": {
+    "form": {
+      "ratingLabel": "Оценка",
+      "ratingOptions": {
+        "1": "1 – Плохо",
+        "2": "2 – Удовлетворительно",
+        "3": "3 – Хорошо",
+        "4": "4 – Очень хорошо",
+        "5": "5 – Отлично"
+      },
+      "titleLabel": "Заголовок (необязательно)",
+      "contentLabel": "Ваш отзыв (необязательно)",
+      "submitAction": "Оставить отзыв",
+      "submitSuccess": "Спасибо за ваш отзыв!",
+      "submitError": "Не удалось отправить отзыв. Попробуйте ещё раз."
+    },
+    "list": {
+      "emptyTitle": "Пока нет отзывов",
+      "emptyDescription": "Будьте первым, кто оставит отзыв об этом объекте.",
+      "errorTitle": "Не удалось загрузить отзывы.",
+      "errorRetry": "Повторить",
+      "loadMore": "Показать ещё отзывы"
+    }
+  },
+  "ai": {
+    "tripPlanner": {
+      "heading": "ИИ-планировщик поездок",
+      "description": "Опишите свою поездку, и мы составим реальный маршрут из опубликованных объявлений, соответствующих вашему направлению, бюджету и интересам.",
+      "form": {
+        "ariaLabel": "Спланировать поездку",
+        "destinationLabel": "Направление",
+        "destinationPlaceholder": "например, Ереван",
+        "daysLabel": "Дни",
+        "budgetLabel": "Бюджет",
+        "currencyLabel": "Валюта",
+        "interestsLabel": "Интересы (через запятую)",
+        "interestsPlaceholder": "например, природа, семья",
+        "submit": "Спланировать поездку",
+        "submitting": "Планирование..."
+      },
+      "result": {
+        "heading": "{{days}}-дневная поездка в {{destination}}",
+        "unknownDestination": "ваше направление",
+        "estimatedTotalSuffix": "примерный итог",
+        "dayHeading": "День {{day}}",
+        "perNightSuffix": "/ ночь",
+        "emptyDayTitle": "Объявления пока не назначены",
+        "emptyDayDescription": "Не удалось подобрать опубликованное объявление на этот день в рамках бюджета."
+      },
+      "error": {
+        "title": "Не удалось спланировать поездку.",
+        "description": "Что-то пошло не так. Попробуйте ещё раз.",
+        "retry": "Попробовать снова"
+      }
+    },
+    "assistant": {
+      "triggerLabel": "Спросить ИИ-ассистента",
+      "title": "ИИ-Ассистент",
+      "empty": "Задайте вопрос о поездке, объявлении или бронировании.",
+      "inputLabel": "Ваше сообщение",
+      "placeholder": "Введите ваш вопрос...",
+      "send": "Отправить",
+      "sending": "Отправка...",
+      "error": "Не удалось получить ответ — попробуйте ещё раз."
+    },
+    "recommendations": {
+      "heading": "Рекомендовано для вас",
+      "basedOnPrefix": "На основе:",
+      "basedOnCategory": "{{category}}",
+      "basedOnCity": "в {{city}}",
+      "basedOnBudget": "около {{amount}} {{currency}} за бронирование"
+    },
+    "partnerTools": {
+      "heading": "ИИ-инструменты для текста",
+      "description": "Создавайте контент на основе реальных данных этого объявления, затем скопируйте то, что вам подходит, в поля выше — ничего не применяется автоматически.",
+      "generate": "Сгенерировать",
+      "generating": "Генерация...",
+      "error": "Не удалось сгенерировать — попробуйте ещё раз.",
+      "resultLabel": "Сгенерированный текст",
+      "tools": {
+        "description": "Описание",
+        "seo": "SEO-заголовок и описание",
+        "title": "Название объявления",
+        "amenities": "Предложения удобств",
+        "translate": "Перевести описание",
+        "faqs": "Часто задаваемые вопросы"
+      },
+      "keyFeatureLabel": "Ключевая особенность (необязательно)",
+      "keyFeaturePlaceholder": "например: терраса на крыше",
+      "targetLanguageLabel": "Целевой язык"
+    },
+    "contextButtons": {
+      "askAboutListing": "Спросить AI об этом объявлении",
+      "askAboutBooking": "Спросить AI об этом бронировании",
+      "improveListing": "Попросить AI улучшить это объявление",
+      "optimizeDashboard": "Попросить AI дать рекомендации по оптимизации",
+      "listingInitialMessage": "Какова политика отмены для этого объявления и какие удобства включены?",
+      "bookingInitialMessage": "Какова общая стоимость этого бронирования?",
+      "improveListingInitialMessage": "Посмотри на текущий заголовок, описание и политики этого объявления и предложи конкретные улучшения.",
+      "optimizeDashboardInitialMessage": "Основываясь на моих объявлениях и бронированиях, что я могу сделать, чтобы улучшить свои показатели как партнёра?"
+    },
+    "usageDashboard": {
+      "tiles": {
+        "callCount": "Всего запросов",
+        "totalTokens": "Всего токенов",
+        "failureCount": "Ошибки"
+      },
+      "statsTable": {
+        "heading": "По функциям",
+        "empty": "Использование ИИ пока не зафиксировано",
+        "feature": "Функция",
+        "provider": "Провайдер",
+        "callCount": "Запросы",
+        "totalTokens": "Токены",
+        "cacheHits": "Попадания в кэш",
+        "failureCount": "Ошибки",
+        "avgLatencyMs": "Ср. задержка (мс)"
+      },
+      "recentTable": {
+        "heading": "Последние запросы",
+        "empty": "Использование ИИ пока не зафиксировано",
+        "timestamp": "Время",
+        "feature": "Функция",
+        "provider": "Провайдер",
+        "totalTokens": "Токены",
+        "latencyMs": "Задержка (мс)",
+        "succeeded": "Результат",
+        "succeededYes": "Успешно",
+        "succeededNo": "Ошибка"
+      },
+      "error": {
+        "title": "Что-то пошло не так при загрузке использования ИИ.",
+        "retry": "Повторить"
+      }
+    }
+  },
+  "favorites": {
+    "button": {
+      "add": "Добавить в избранное",
+      "remove": "Убрать из избранного"
+    },
+    "page": {
+      "heading": "Избранное",
+      "emptyTitle": "Пока нет избранного",
+      "emptyDescription": "Сохраняйте понравившиеся объекты, чтобы легко найти их позже.",
+      "emptyAction": "Смотреть объекты",
+      "errorTitle": "Не удалось загрузить избранное.",
+      "errorRetry": "Повторить",
+      "loadMore": "Показать ещё"
+    }
+  },
+  "notifications": {
+    "bell": {
+      "label": "Уведомления",
+      "labelWithCount": "Уведомления ({{count}} непрочитанных)"
+    },
+    "a11y": {
+      "unread": "Непрочитано"
+    },
+    "dropdown": {
+      "title": "Уведомления",
+      "errorTitle": "Не удалось загрузить уведомления",
+      "errorRetry": "Повторить",
+      "emptyTitle": "Пока нет уведомлений",
+      "emptyDescription": "Мы сообщим вам, когда что-то произойдёт.",
+      "viewAll": "Показать все уведомления"
+    },
+    "actions": {
+      "markAsRead": "Отметить как прочитанное",
+      "markAllAsRead": "Отметить всё как прочитанное",
+      "archive": "В архив",
+      "delete": "Удалить"
+    },
+    "page": {
+      "heading": "Уведомления",
+      "tabs": {
+        "all": "Все",
+        "unread": "Непрочитанные",
+        "archived": "В архиве",
+        "ariaLabel": "Фильтр уведомлений по статусу"
+      },
+      "searchPlaceholder": "Поиск по уведомлениям",
+      "categoryFilterLabel": "Фильтр по категории",
+      "allCategories": "Все",
+      "errorTitle": "Не удалось загрузить ваши уведомления",
+      "errorRetry": "Повторить",
+      "emptyTitle": "Нет уведомлений",
+      "emptyDescription": "Под эти фильтры пока ничего не подходит.",
+      "loadMore": "Загрузить ещё"
+    },
+    "categories": {
+      "BOOKING": "Бронирования",
+      "REVIEW": "Отзывы",
+      "FAVORITE": "Избранное",
+      "PARTNER": "Партнёр",
+      "LISTING": "Объявления",
+      "ADMIN": "Объявления (админ)"
+    },
+    "preferences": {
+      "heading": "Настройки уведомлений",
+      "description": "Выберите, как вы хотите получать уведомления по каждой категории.",
+      "errorTitle": "Не удалось загрузить настройки",
+      "errorRetry": "Повторить",
+      "inApp": "В приложении",
+      "email": "Эл. почта"
+    },
+    "copy": {
+      "bookingCreated": "Получено новое бронирование {{reference}}",
+      "bookingConfirmed": "Ваше бронирование {{reference}} подтверждено",
+      "bookingRejected": "Ваше бронирование {{reference}} отклонено",
+      "bookingCancelled": "Бронирование {{reference}} отменено",
+      "bookingCompleted": "Ваша поездка ({{reference}}) завершена — оставить отзыв?",
+      "reviewSubmitted": "Вы получили новый отзыв на {{rating}} звёзд",
+      "favoriteAdded": "Путешественник добавил ваше объявление в избранное",
+      "partnerApproved": "{{partnerName}} одобрен(о)",
+      "listingApproved": "Ваше объявление одобрено",
+      "listingRejected": "Ваше объявление отклонено",
+      "generic": "Уведомление: {{eventType}}"
+    }
+  },
+  "messaging": {
+    "bell": {
+      "label": "Сообщения",
+      "labelWithCount": "Сообщения ({{count}} непрочитанных)"
+    },
+    "dropdown": {
+      "title": "Сообщения",
+      "errorTitle": "Не удалось загрузить беседы",
+      "errorRetry": "Повторить",
+      "emptyTitle": "Пока нет бесед",
+      "emptyDescription": "Начните беседу, чтобы увидеть её здесь.",
+      "viewAll": "Показать все сообщения"
+    },
+    "list": {
+      "errorTitle": "Не удалось загрузить беседы",
+      "errorRetry": "Повторить",
+      "emptyTitle": "Пока нет бесед",
+      "emptyDescription": "Начните беседу, чтобы увидеть её здесь.",
+      "loadMore": "Загрузить ещё",
+      "noMessagesYet": "Пока нет сообщений",
+      "searchPlaceholder": "Поиск по беседам",
+      "tabsAll": "Все",
+      "tabsArchived": "В архиве",
+      "tabsAriaLabel": "Фильтр бесед по статусу"
+    },
+    "search": {
+      "heading": "Сообщения",
+      "emptyTitle": "Сообщения не найдены",
+      "emptyDescription": "Попробуйте другой поисковый запрос.",
+      "unknownConversation": "Беседа"
+    },
+    "participant": {
+      "unknown": "Неизвестно",
+      "fallback": "Пользователь #{{id}}"
+    },
+    "thread": {
+      "composerPlaceholder": "Напишите сообщение…",
+      "send": "Отправить",
+      "attach": "Прикрепить файл",
+      "loadEarlier": "Загрузить более ранние сообщения",
+      "attachmentAlt": "Вложение",
+      "errorTitle": "Не удалось загрузить эту беседу",
+      "errorRetry": "Повторить",
+      "emptyTitle": "Пока нет сообщений",
+      "emptyDescription": "Отправьте первое сообщение, чтобы начать беседу.",
+      "selectPrompt": "Выберите беседу, чтобы начать чтение",
+      "typingOne": "{{name}} печатает…",
+      "typingMany": "Несколько человек печатают…",
+      "edited": "изменено",
+      "you": "Вы"
+    },
+    "actions": {
+      "archive": "В архив",
+      "unarchive": "Убрать из архива",
+      "delete": "Удалить сообщение",
+      "react": "Реакция"
+    },
+    "reactions": {
+      "👍": "Класс",
+      "❤️": "Сердце",
+      "😂": "Смех",
+      "😮": "Удивление",
+      "😢": "Грусть",
+      "👏": "Аплодисменты"
+    },
+    "page": {
+      "heading": "Сообщения"
+    }
+  }
+}

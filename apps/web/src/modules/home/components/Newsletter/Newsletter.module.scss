@@ -1,0 +1,122 @@
+// Newsletter — tokens only, consumed from @travelhub/ui.
+// A bold, centered CTA banner on a dark gradient panel — echoes Hero's
+// premium dark treatment (gold + royal-blue glows) instead of a light
+// two-column card, so the page's final section reads as a confident
+// closing statement rather than a quiet form tucked at the bottom.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.panel {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: tokens.$space-4;
+  padding: tokens.$space-12 tokens.$space-6;
+  border-radius: tokens.$radius-xl;
+  background: linear-gradient(
+    135deg,
+    tokens.$color-navy 0%,
+    tokens.$color-ink 100%
+  );
+  @include tokens.elevation-3;
+
+  @include respond.respond(laptop) {
+    padding: tokens.$space-16;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(
+        50% 70% at 12% 10%,
+        rgba(tokens.$color-gold, 0.22) 0%,
+        rgba(tokens.$color-gold, 0) 100%
+      ),
+      radial-gradient(
+        55% 75% at 88% 100%,
+        rgba(tokens.$color-royal-blue, 0.3) 0%,
+        rgba(tokens.$color-royal-blue, 0) 100%
+      );
+  }
+}
+
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: tokens.$space-16;
+  height: tokens.$space-16;
+  border-radius: tokens.$radius-full;
+  background-color: rgba(tokens.$color-gold, 0.16);
+  color: tokens.$color-gold;
+}
+
+.title {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  font-size: tokens.$font-size-h2;
+  line-height: tokens.$line-height-h2;
+  color: tokens.$color-white;
+
+  @include respond.respond(laptop) {
+    font-size: tokens.$font-size-h1;
+    line-height: tokens.$line-height-h1;
+  }
+}
+
+.subtitle {
+  margin: 0;
+  font-size: tokens.$font-size-body-large;
+  line-height: tokens.$line-height-body-large;
+  color: tokens.$color-gray-100;
+  max-width: 460px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: tokens.$space-3;
+  width: 100%;
+  max-width: 440px;
+  margin-block-start: tokens.$space-2;
+
+  @include respond.respond(mobile-large) {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.field {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  @include respond.respond(mobile-large) {
+    min-width: 240px;
+  }
+
+  // FieldWrapper's error text defaults to a red tuned for light
+  // backgrounds; overridden to white so it stays legible against this
+  // section's dark panel — the error icon + `role="alert"` already
+  // carry the "this is an error" meaning without relying on the red hue
+  // alone (WCAG 1.4.1, don't rely on color as the only cue).
+  :global([role='alert']) {
+    color: tokens.$color-white;
+  }
+}
+
+.success {
+  margin: 0;
+  font-size: tokens.$font-size-body-large;
+  font-weight: 600;
+  color: tokens.$color-white;
+}

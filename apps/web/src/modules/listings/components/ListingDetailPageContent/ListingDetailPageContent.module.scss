@@ -1,0 +1,60 @@
+// ListingDetailPageContent — tokens only, consumed from @travelhub/ui.
+//
+// Phase 12 (Product Polish): two-column layout with a pinned reservation
+// sidebar — the single highest-impact fix the Phase 12 audit found (every
+// reference product keeps the price/book widget visible while scrolling
+// a long detail page; this page previously stacked everything in one
+// full-width column). Single column below `laptop`, matching how
+// `PartnerLayout`/`AdminLayout` collapse their own persistent side panel
+// at the same breakpoint.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-6;
+
+  @include respond.respond(laptop) {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-6;
+  min-width: 0;
+
+  @include respond.respond(laptop) {
+    flex: 1 1 auto;
+  }
+}
+
+.sidebar {
+  // Phase 18.11: below `laptop`, `MobileBookingBar` (a real fixed bottom
+  // bar + Drawer, not this panel squeezed narrower) is the booking
+  // entry point instead — this panel would otherwise just fall to the
+  // bottom of the document flow, duplicating the mobile bar.
+  display: none;
+
+  @include respond.respond(laptop) {
+    display: block;
+    flex: 0 0 360px;
+    position: sticky;
+    // Below the app header so the widget never hides under it while pinned.
+    top: tokens.$space-6;
+  }
+}
+
+// Phase 18.11: reserves room below `laptop` so `MobileBookingBar`'s fixed
+// bar never overlaps the page's final content (RelatedListings).
+.mobileBarSpacer {
+  height: 88px;
+
+  @include respond.respond(laptop) {
+    display: none;
+  }
+}

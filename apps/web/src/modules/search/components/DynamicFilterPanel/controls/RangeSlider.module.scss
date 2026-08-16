@@ -1,0 +1,91 @@
+@use 'tokens' as tokens;
+
+.rangeSlider {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding-block: tokens.$space-2;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-2;
+}
+
+.label {
+  font-size: tokens.$font-size-body;
+  color: tokens.$color-gray-900;
+}
+
+.values {
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+  color: tokens.$color-gray-600;
+  white-space: nowrap;
+}
+
+.track {
+  position: relative;
+  height: 20px;
+}
+
+.fill {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  background: tokens.$color-royal-blue;
+  border-radius: tokens.$radius-full;
+}
+
+// Dual-thumb technique: both inputs share the same box, the track itself
+// ignores pointer events, and only each browser's own thumb pseudo-element
+// re-enables them — so whichever thumb the pointer lands nearest to is the
+// one that actually drags.
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  pointer-events: none;
+
+  &::-webkit-slider-runnable-track {
+    height: 4px;
+    background: tokens.$color-gray-200;
+    border-radius: tokens.$radius-full;
+  }
+
+  &::-moz-range-track {
+    height: 4px;
+    background: tokens.$color-gray-200;
+    border-radius: tokens.$radius-full;
+  }
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    pointer-events: auto;
+    width: 18px;
+    height: 18px;
+    margin-top: -7px;
+    border-radius: tokens.$radius-full;
+    background: tokens.$color-white;
+    border: 2px solid tokens.$color-royal-blue;
+    @include tokens.elevation-1;
+    cursor: pointer;
+  }
+
+  &::-moz-range-thumb {
+    pointer-events: auto;
+    width: 18px;
+    height: 18px;
+    border-radius: tokens.$radius-full;
+    background: tokens.$color-white;
+    border: 2px solid tokens.$color-royal-blue;
+    @include tokens.elevation-1;
+    cursor: pointer;
+  }
+}

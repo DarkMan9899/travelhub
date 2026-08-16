@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Checkbox from './Checkbox.jsx';
 
-function ControlledCheckbox({ initialChecked, ...rest }) {
+function ControlledCheckbox({ initialChecked = false, ...rest }) {
   const [checked, setChecked] = useState(initialChecked);
   return (
     <Checkbox
@@ -20,11 +20,6 @@ function ControlledCheckbox({ initialChecked, ...rest }) {
 ControlledCheckbox.propTypes = {
   initialChecked: PropTypes.bool,
 };
-
-ControlledCheckbox.defaultProps = {
-  initialChecked: false,
-};
-
 describe('Checkbox (COMPONENT_LIBRARY.md Part II §2)', () => {
   test('renders the native checkbox role, unchecked by default', () => {
     render(<ControlledCheckbox label="Accept terms" />);

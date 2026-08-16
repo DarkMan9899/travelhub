@@ -1,17 +1,27 @@
 /**
- * Minimal 404 fallback (an invalid/missing locale segment, or an
- * unmatched path — FRONTEND_ARCHITECTURE.md §4.5/§4.1). The full,
- * designed 404 experience (COMPONENT_LIBRARY.md's "404 Page" component
- * — search bar, illustration, localized copy) is built in a future
- * sprint; this is the structural fallback proving the router's
- * not-found path is wired.
+ * 404 page (FRONTEND_ARCHITECTURE.md §4.5/§27) — rendered both by the
+ * router's catch-all route and by an invalid locale segment
+ * (`routes/index.jsx`'s `LocaleValidator`). Composed with `ErrorLayout`
+ * at the route level, not here, so this stays the pure content piece.
  */
+
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
+import { EmptyState } from '@travelhub/ui/components/feedback-overlays';
+import useNoIndex from '../seo/useNoIndex.js';
+
 export default function NotFoundPage() {
+  const { t } = useTranslation();
+  const { locale } = useParams();
+  const navigate = useNavigate();
+  useNoIndex();
+
   return (
-    <div style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-      <h1>404</h1>
-      <p>Page not found.</p>
-      <a href="/hy">Back to home</a>
-    </div>
+    <EmptyState
+      title={t('errors.notFound.title')}
+      description={t('errors.notFound.description')}
+      actionLabel={t('errors.notFound.action')}
+      onAction={() => navigate(locale ? `/${locale}` : '/')}
+    />
   );
 }

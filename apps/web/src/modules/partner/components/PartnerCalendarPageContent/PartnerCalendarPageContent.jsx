@@ -1,0 +1,796 @@
+/**
+ * PartnerCalendarPageContent — `/:locale/partner/calendar` (Partner
+ * Dashboard: Availability & Inventory Manager, Phase 17).
+ *
+ * Listing selector -> bookable-unit ("resource") selector (a horizontal
+ * pill row, so a hotel with several room types or a tour with several
+ * daily departures — each department gets its own `bookable_unit` row,
+ * see `time_slot_start`/`unit_label` — reads as a simple switcher, not a
+ * database table) -> `PartnerCalendarEditor` (packages/ui/dashboard,
+ * reused as-is, already fully keyboard-accessible) for the selected
+ * resource's calendar.
+ *
+ * Selecting a date range surfaces one action panel with three tabs —
+ * Set availability (Phase 9, unchanged), Quick Block (Phase 17 §8-9,
+ * quantity-aware, reason-coded), External reservation (Phase 17 §10,
+ * minimal required fields) — so a receptionist never needs to
+ * understand which backend table a given action touches, only "what do
+ * I want to do with this date range." Below that, a day's source
+ * breakdown (total/available/confirmed/held/external/manual, §13) and
+ * two management lists (active blocks / external reservations, each
+ * with a one-click release/cancel action) complete the "operate without
+ * ever needing the database" requirement.
+ */
+
+import { useMemo, useState } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom';
+import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
+import {
+  Select,
+  Input,
+  Textarea,
+} from '@travelhub/ui/components/form-controls';
+import { Button, Card, Badge } from '@travelhub/ui/components/primitives';
+import {
+  Spinner,
+  EmptyState,
+  ErrorState,
+} from '@travelhub/ui/components/feedback-overlays';
+import { PartnerCalendarEditor } from '@travelhub/ui/components/dashboard';
+import { Tabs } from '@travelhub/ui/components/navigation';
+import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import { useToast } from '../../../../contexts/ToastContext.jsx';
+import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';
+import CsvImportWizard from './CsvImportWizard/CsvImportWizard.jsx';
+import {
+  useMyListingsQuery,
+  useListingCalendarQuery,
+  useSetAvailabilityMutation,
+} from '../../../listings/index.js';
+import {
+  useBookableUnitsQuery,
+  BOOKABLE_UNIT_TYPES,
+  useUnitBreakdownQuery,
+  useInventoryBlocksQuery,
+  useExternalReservationsQuery,
+  useCreateInventoryBlockMutation,
+  useReleaseInventoryBlockMutation,
+  useCreateExternalReservationMutation,
+  useCancelExternalReservationMutation,
+  usePartnerCapability,
+  PARTNER_CAPABILITIES,
+  BLOCK_REASON_CODES,
+  EXTERNAL_RESERVATION_SOURCE_CODES,
+} from '../../../availability/index.js';
+
+const STATUS_VARIANT_BY_CODE = { AVAILABLE: 'available', BLOCKED: 'blocked' };
+const WRITABLE_STATUSES = ['AVAILABLE', 'BLOCKED'];
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function monthRange({ year, month }) {
+  const from = `${year}-${pad2(month + 1)}-01`;
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const to = `${year}-${pad2(month + 1)}-${pad2(lastDay)}`;
+  return { from, to };
+}
+
+function todayViewMonth() {
+  const now = new Date();
+  return { year: now.getFullYear(), month: now.getMonth() };
+}
+
+function unitLabel(unit, t) {
+  if (unit.unit_label) return unit.unit_label;
+  if (unit.time_slot_start) return unit.time_slot_start.slice(0, 5);
+  return BOOKABLE_UNIT_TYPES.includes(unit.bookable_unit_type)
+    ? t(`partner.listingWizard.bookableUnitTypes.${unit.bookable_unit_type}`)
+    : unit.bookable_unit_type;
+}
+
+export default function PartnerCalendarPageContent() {
+  const { t, i18n } = useTranslation();
+  const { locale } = useParams();
+  const { showToast } = useToast();
+  const { activePartnerId } = usePartnerContext();
+
+  const canManageAvailability = usePartnerCapability(
+    PARTNER_CAPABILITIES.MANAGE_AVAILABILITY,
+  );
+  const canManageExternal = usePartnerCapability(
+    PARTNER_CAPABILITIES.MANAGE_EXTERNAL_RESERVATIONS,
+  );
+  const canManageBlocks = usePartnerCapability(
+    PARTNER_CAPABILITIES.MANAGE_MANUAL_BLOCKS,
+  );
+
+  const [listingId, setListingId] = useState(null);
+  const [unitId, setUnitId] = useState(null);
+  const [viewMonth, setViewMonth] = useState(todayViewMonth);
+  const [selection, setSelection] = useState(null);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
+  const [actionTab, setActionTab] = useState('availability');
+  const [pendingStatus, setPendingStatus] = useState('AVAILABLE');
+  const [blockForm, setBlockForm] = useState({
+    quantity: '1',
+    reasonCode: 'MAINTENANCE',
+    notes: '',
+  });
+  const [externalForm, setExternalForm] = useState({
+    quantity: '1',
+    sourceCode: 'PHONE',
+    guestName: '',
+    guestPhone: '',
+    externalReference: '',
+    notes: '',
+  });
+  const [listTab, setListTab] = useState('blocks');
+
+  const listingsQuery = useMyListingsQuery({ partnerId: activePartnerId });
+  const listings = listingsQuery.data?.pages?.[0]?.results ?? [];
+  const effectiveListingId = listingId ?? listings[0]?.id ?? null;
+
+  const unitsQuery = useBookableUnitsQuery(effectiveListingId);
+  const units = unitsQuery.data ?? [];
+  const effectiveUnitId = unitId ?? units[0]?.id ?? null;
+  const selectedUnit = units.find((u) => u.id === effectiveUnitId);
+
+  const { from, to } = monthRange(viewMonth);
+  const calendarQuery = useListingCalendarQuery(
+    effectiveListingId,
+    effectiveUnitId,
+    { from, to },
+  );
+  const setAvailabilityMutation =
+    useSetAvailabilityMutation(effectiveListingId);
+  const createBlockMutation =
+    useCreateInventoryBlockMutation(effectiveListingId);
+  const releaseBlockMutation =
+    useReleaseInventoryBlockMutation(effectiveListingId);
+  const createExternalMutation =
+    useCreateExternalReservationMutation(effectiveListingId);
+  const cancelExternalMutation =
+    useCancelExternalReservationMutation(effectiveListingId);
+
+  const blocksQuery = useInventoryBlocksQuery(effectiveListingId);
+  const externalQuery = useExternalReservationsQuery(effectiveListingId);
+  const breakdownQuery = useUnitBreakdownQuery(
+    effectiveUnitId,
+    selection?.start,
+    selection?.end ?? selection?.start,
+  );
+
+  const statusByDate = useMemo(() => {
+    const entries = calendarQuery.data ?? [];
+    return Object.fromEntries(
+      entries.map((day) => [
+        day.date,
+        STATUS_VARIANT_BY_CODE[day.status] ?? null,
+      ]),
+    );
+  }, [calendarQuery.data]);
+
+  const listingOptions = listings.map((listing) => ({
+    value: String(listing.id),
+    label: listing.title ?? listing.slug,
+  }));
+  const statusFormOptions = WRITABLE_STATUSES.map((code) => ({
+    value: code,
+    label: t(`partner.calendar.form.statusOptions.${code}`),
+  }));
+  const reasonOptions = BLOCK_REASON_CODES.map((code) => ({
+    value: code,
+    label: t(`partner.calendar.blocks.reasonCodes.${code}`),
+  }));
+  const sourceOptions = EXTERNAL_RESERVATION_SOURCE_CODES.map((code) => ({
+    value: code,
+    label: t(`partner.calendar.external.sourceCodes.${code}`),
+  }));
+
+  function resetSelectionForms() {
+    setSelection(null);
+    setBlockForm({ quantity: '1', reasonCode: 'MAINTENANCE', notes: '' });
+    setExternalForm({
+      quantity: '1',
+      sourceCode: 'PHONE',
+      guestName: '',
+      guestPhone: '',
+      externalReference: '',
+      notes: '',
+    });
+  }
+
+  async function handleApplyAvailability() {
+    if (!selection?.start || !effectiveUnitId) return;
+    try {
+      await setAvailabilityMutation.mutateAsync({
+        unitId: effectiveUnitId,
+        dateFrom: selection.start,
+        dateTo: selection.end ?? selection.start,
+        status: pendingStatus,
+      });
+      showToast(t('partner.calendar.applySuccess'), { variant: 'success' });
+      resetSelectionForms();
+    } catch {
+      showToast(t('partner.calendar.applyError'), { variant: 'danger' });
+    }
+  }
+
+  async function handleQuickBlock() {
+    if (!selection?.start || !effectiveUnitId) return;
+    try {
+      await createBlockMutation.mutateAsync({
+        unitId: effectiveUnitId,
+        dateFrom: selection.start,
+        dateTo: selection.end ?? selection.start,
+        quantity: Number(blockForm.quantity) || 1,
+        reasonCode: blockForm.reasonCode,
+        notes: blockForm.notes || undefined,
+      });
+      showToast(t('partner.calendar.blocks.createSuccess'), {
+        variant: 'success',
+      });
+      resetSelectionForms();
+    } catch {
+      showToast(t('partner.calendar.blocks.createError'), {
+        variant: 'danger',
+      });
+    }
+  }
+
+  async function handleUnblock(id) {
+    try {
+      await releaseBlockMutation.mutateAsync({ id });
+      showToast(t('partner.calendar.blocks.releaseSuccess'), {
+        variant: 'success',
+      });
+    } catch {
+      showToast(t('partner.calendar.blocks.releaseError'), {
+        variant: 'danger',
+      });
+    }
+  }
+
+  async function handleCreateExternal() {
+    if (!selection?.start || !effectiveUnitId) return;
+    try {
+      await createExternalMutation.mutateAsync({
+        unitId: effectiveUnitId,
+        dateFrom: selection.start,
+        dateTo: selection.end ?? selection.start,
+        quantity: Number(externalForm.quantity) || 1,
+        sourceCode: externalForm.sourceCode,
+        guestName: externalForm.guestName || undefined,
+        guestPhone: externalForm.guestPhone || undefined,
+        externalReference: externalForm.externalReference || undefined,
+        notes: externalForm.notes || undefined,
+      });
+      showToast(t('partner.calendar.external.createSuccess'), {
+        variant: 'success',
+      });
+      resetSelectionForms();
+    } catch {
+      showToast(t('partner.calendar.external.createError'), {
+        variant: 'danger',
+      });
+    }
+  }
+
+  async function handleCancelExternal(id) {
+    try {
+      await cancelExternalMutation.mutateAsync({ id });
+      showToast(t('partner.calendar.external.cancelSuccess'), {
+        variant: 'success',
+      });
+    } catch {
+      showToast(t('partner.calendar.external.cancelError'), {
+        variant: 'danger',
+      });
+    }
+  }
+
+  const actionTabs = [
+    canManageAvailability && {
+      id: 'availability',
+      label: t('partner.calendar.form.statusLabel'),
+      panel: (
+        <Stack gap="3">
+          <Inline gap="3" align="center" wrap>
+            <Select
+              ariaLabel={t('partner.calendar.form.statusLabel')}
+              options={statusFormOptions}
+              value={pendingStatus}
+              onChange={(value) => setPendingStatus(value)}
+            />
+            <Button
+              variant="primary"
+              onClick={() => handleApplyAvailability()}
+              loading={setAvailabilityMutation.isPending}
+            >
+              {t('partner.calendar.form.apply')}
+            </Button>
+          </Inline>
+        </Stack>
+      ),
+    },
+    canManageBlocks && {
+      id: 'block',
+      label: t('partner.calendar.blocks.tabLabel'),
+      panel: (
+        <Stack gap="3">
+          <Inline gap="3" wrap align="flex-end">
+            <Input
+              label={t('partner.calendar.blocks.quantityLabel')}
+              type="number"
+              value={blockForm.quantity}
+              onChange={(event) =>
+                setBlockForm((prev) => ({
+                  ...prev,
+                  quantity: event.target.value,
+                }))
+              }
+            />
+            <Select
+              ariaLabel={t('partner.calendar.blocks.reasonLabel')}
+              options={reasonOptions}
+              value={blockForm.reasonCode}
+              onChange={(value) =>
+                setBlockForm((prev) => ({ ...prev, reasonCode: value }))
+              }
+            />
+          </Inline>
+          <Textarea
+            label={t('partner.calendar.blocks.notesLabel')}
+            value={blockForm.notes}
+            onChange={(event) =>
+              setBlockForm((prev) => ({ ...prev, notes: event.target.value }))
+            }
+          />
+          <Button
+            variant="primary"
+            onClick={() => handleQuickBlock()}
+            loading={createBlockMutation.isPending}
+          >
+            {t('partner.calendar.blocks.blockAction')}
+          </Button>
+        </Stack>
+      ),
+    },
+    canManageExternal && {
+      id: 'external',
+      label: t('partner.calendar.external.tabLabel'),
+      panel: (
+        <Stack gap="3">
+          <Inline gap="3" wrap align="flex-end">
+            <Select
+              ariaLabel={t('partner.calendar.external.sourceLabel')}
+              options={sourceOptions}
+              value={externalForm.sourceCode}
+              onChange={(value) =>
+                setExternalForm((prev) => ({ ...prev, sourceCode: value }))
+              }
+            />
+            <Input
+              label={t('partner.calendar.external.quantityLabel')}
+              type="number"
+              value={externalForm.quantity}
+              onChange={(event) =>
+                setExternalForm((prev) => ({
+                  ...prev,
+                  quantity: event.target.value,
+                }))
+              }
+            />
+          </Inline>
+          <Inline gap="3" wrap>
+            <Input
+              label={t('partner.calendar.external.guestNameLabel')}
+              value={externalForm.guestName}
+              onChange={(event) =>
+                setExternalForm((prev) => ({
+                  ...prev,
+                  guestName: event.target.value,
+                }))
+              }
+            />
+            <Input
+              label={t('partner.calendar.external.guestPhoneLabel')}
+              value={externalForm.guestPhone}
+              onChange={(event) =>
+                setExternalForm((prev) => ({
+                  ...prev,
+                  guestPhone: event.target.value,
+                }))
+              }
+            />
+            <Input
+              label={t('partner.calendar.external.referenceLabel')}
+              value={externalForm.externalReference}
+              onChange={(event) =>
+                setExternalForm((prev) => ({
+                  ...prev,
+                  externalReference: event.target.value,
+                }))
+              }
+            />
+          </Inline>
+          <Button
+            variant="primary"
+            onClick={() => handleCreateExternal()}
+            loading={createExternalMutation.isPending}
+          >
+            {t('partner.calendar.external.recordAction')}
+          </Button>
+        </Stack>
+      ),
+    },
+  ].filter(Boolean);
+
+  const blockColumns = [
+    {
+      key: 'range',
+      header: t('partner.calendar.blocks.columns.range'),
+      render: (row) => `${row.date_from} – ${row.date_to}`,
+    },
+    {
+      key: 'quantity',
+      header: t('partner.calendar.blocks.columns.quantity'),
+      render: (row) => row.quantity,
+    },
+    {
+      key: 'reason',
+      header: t('partner.calendar.blocks.columns.reason'),
+      render: (row) =>
+        t(`partner.calendar.blocks.reasonCodes.${row.reason_code}`),
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (row) =>
+        canManageBlocks && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleUnblock(row.id)}
+            loading={releaseBlockMutation.isPending}
+          >
+            {t('partner.calendar.blocks.unblockAction')}
+          </Button>
+        ),
+    },
+  ];
+
+  const externalColumns = [
+    {
+      key: 'range',
+      header: t('partner.calendar.external.columns.range'),
+      render: (row) => `${row.date_from} – ${row.date_to}`,
+    },
+    {
+      key: 'source',
+      header: t('partner.calendar.external.columns.source'),
+      render: (row) =>
+        t(`partner.calendar.external.sourceCodes.${row.source_code}`),
+    },
+    {
+      key: 'guest',
+      header: t('partner.calendar.external.columns.guest'),
+      render: (row) => row.guest_name || '—',
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (row) =>
+        canManageExternal && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleCancelExternal(row.id)}
+            loading={cancelExternalMutation.isPending}
+          >
+            {t('partner.calendar.external.cancelAction')}
+          </Button>
+        ),
+    },
+  ];
+
+  const activeBlocksForUnit = (blocksQuery.data ?? []).filter(
+    (b) => b.bookable_unit_id === effectiveUnitId && !b.released_at,
+  );
+  const activeExternalForUnit = (externalQuery.data ?? []).filter(
+    (r) => r.bookable_unit_id === effectiveUnitId && !r.cancelled_at,
+  );
+
+  if (listingsQuery.isPending) {
+    return (
+      <Section aria-label={t('partner.calendar.heading')}>
+        <Spinner label={t('partner.calendar.heading')} />
+      </Section>
+    );
+  }
+
+  return (
+    <Section spacing="default">
+      <PageHeader
+        title={t('partner.calendar.heading')}
+        breadcrumbs={[
+          { label: t('partner.nav.dashboard'), href: `/${locale}/partner` },
+          {
+            label: t('partner.calendar.heading'),
+            href: `/${locale}/partner/calendar`,
+          },
+        ]}
+      />
+
+      {listings.length === 0 ? (
+        <EmptyState
+          title={t('partner.calendar.noListings.title')}
+          description={t('partner.calendar.noListings.description')}
+        />
+      ) : (
+        <Stack gap="4">
+          <Card as="div" padding="lg">
+            <Stack gap="3">
+              <Select
+                ariaLabel={t('partner.calendar.listingLabel')}
+                options={listingOptions}
+                value={String(effectiveListingId ?? '')}
+                onChange={(value) => {
+                  setListingId(Number(value));
+                  setUnitId(null);
+                  resetSelectionForms();
+                }}
+              />
+              {units.length > 1 && (
+                // `aria-pressed` on each button is the "toggle button
+                // group" pattern, not tabs — `role="tablist"` was wrong
+                // here (WAI-ARIA requires a tablist's children to carry
+                // `role="tab"`, which these plain buttons never did,
+                // a real critical axe violation). `role="group"` matches
+                // what this actually is: a set of independent toggles
+                // selecting which resource's calendar is shown below.
+                <Inline
+                  gap="2"
+                  wrap
+                  role="group"
+                  aria-label={t('partner.calendar.resourceLabel')}
+                >
+                  {units.map((unit) => (
+                    <Button
+                      key={unit.id}
+                      variant={
+                        unit.id === effectiveUnitId ? 'primary' : 'secondary'
+                      }
+                      size="sm"
+                      aria-pressed={unit.id === effectiveUnitId}
+                      onClick={() => {
+                        setUnitId(unit.id);
+                        resetSelectionForms();
+                      }}
+                    >
+                      {unitLabel(unit, t)}
+                    </Button>
+                  ))}
+                </Inline>
+              )}
+              {canManageExternal && effectiveUnitId && (
+                <Inline justify="flex-end">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setCsvImportOpen(true)}
+                  >
+                    {t('partner.calendar.csvImport.openAction')}
+                  </Button>
+                </Inline>
+              )}
+            </Stack>
+          </Card>
+
+          {!unitsQuery.isPending && units.length === 0 && (
+            <EmptyState
+              title={t('partner.calendar.noUnits.title')}
+              description={t('partner.calendar.noUnits.description')}
+            />
+          )}
+
+          {units.length > 0 && (
+            <>
+              {calendarQuery.isError ? (
+                <ErrorState
+                  title={t('partner.bookings.error.title')}
+                  retryLabel={t('partner.bookings.error.retry')}
+                  onRetry={calendarQuery.refetch}
+                />
+              ) : (
+                <PartnerCalendarEditor
+                  viewMonth={viewMonth}
+                  onViewMonthChange={setViewMonth}
+                  statusByDate={statusByDate}
+                  statusLabels={{
+                    available: t('partner.calendar.legend.available'),
+                    blocked: t('partner.calendar.legend.blocked'),
+                  }}
+                  selection={selection}
+                  onSelectionChange={setSelection}
+                  locale={i18n.language}
+                  previousMonthLabel={t(
+                    'partner.listingWizard.datePicker.previousMonth',
+                  )}
+                  nextMonthLabel={t(
+                    'partner.listingWizard.datePicker.nextMonth',
+                  )}
+                  disabled={
+                    calendarQuery.isPending || setAvailabilityMutation.isPending
+                  }
+                  isLoading={calendarQuery.isPending}
+                />
+              )}
+
+              {selection?.start && (
+                <Card as="div" padding="lg">
+                  <Stack gap="3">
+                    <p>
+                      {t('partner.calendar.selection', {
+                        start: selection.start,
+                        end: selection.end ?? selection.start,
+                      })}
+                    </p>
+                    {breakdownQuery.data && breakdownQuery.data.length > 0 && (
+                      <Inline gap="2" wrap>
+                        <Badge
+                          variant="neutral"
+                          label={t('partner.calendar.breakdown.total', {
+                            count: selectedUnit?.capacity ?? 0,
+                          })}
+                        />
+                        <Badge
+                          variant="success"
+                          label={t('partner.calendar.breakdown.available', {
+                            count: Math.min(
+                              ...breakdownQuery.data.map((d) => d.available),
+                            ),
+                          })}
+                        />
+                        <Badge
+                          variant="info"
+                          label={t('partner.calendar.breakdown.confirmed', {
+                            count: Math.max(
+                              ...breakdownQuery.data.map((d) => d.confirmed),
+                            ),
+                          })}
+                        />
+                        <Badge
+                          variant="warning"
+                          label={t('partner.calendar.breakdown.held', {
+                            count: Math.max(
+                              ...breakdownQuery.data.map((d) => d.held),
+                            ),
+                          })}
+                        />
+                        <Badge
+                          variant="warning"
+                          label={t('partner.calendar.breakdown.external', {
+                            count: Math.max(
+                              ...breakdownQuery.data.map((d) => d.external),
+                            ),
+                          })}
+                        />
+                        <Badge
+                          variant="danger"
+                          label={t('partner.calendar.breakdown.manual', {
+                            count: Math.max(
+                              ...breakdownQuery.data.map((d) => d.manual),
+                            ),
+                          })}
+                        />
+                      </Inline>
+                    )}
+                    {actionTabs.length > 0 && (
+                      <Tabs
+                        tabs={actionTabs}
+                        activeTabId={actionTab}
+                        onChange={setActionTab}
+                        ariaLabel={t('partner.calendar.actionsLabel')}
+                      />
+                    )}
+                  </Stack>
+                </Card>
+              )}
+
+              <Card as="div" padding="lg">
+                <Tabs
+                  ariaLabel={t('partner.calendar.listsLabel')}
+                  activeTabId={listTab}
+                  onChange={setListTab}
+                  tabs={[
+                    {
+                      id: 'blocks',
+                      label: t('partner.calendar.blocks.listTitle', {
+                        count: activeBlocksForUnit.length,
+                      }),
+                      panel: (
+                        <DataTableOrEmpty
+                          rows={activeBlocksForUnit}
+                          columns={blockColumns}
+                          emptyTitle={t('partner.calendar.blocks.emptyTitle')}
+                        />
+                      ),
+                    },
+                    {
+                      id: 'external',
+                      label: t('partner.calendar.external.listTitle', {
+                        count: activeExternalForUnit.length,
+                      }),
+                      panel: (
+                        <DataTableOrEmpty
+                          rows={activeExternalForUnit}
+                          columns={externalColumns}
+                          emptyTitle={t('partner.calendar.external.emptyTitle')}
+                        />
+                      ),
+                    },
+                  ]}
+                />
+              </Card>
+            </>
+          )}
+        </Stack>
+      )}
+
+      {csvImportOpen && effectiveUnitId && (
+        <CsvImportWizard
+          unitId={effectiveUnitId}
+          listingId={effectiveListingId}
+          onClose={() => setCsvImportOpen(false)}
+          onImported={() => externalQuery.refetch()}
+        />
+      )}
+    </Section>
+  );
+}
+
+function DataTableOrEmpty({ rows, columns, emptyTitle }) {
+  if (rows.length === 0) {
+    return <EmptyState title={emptyTitle} />;
+  }
+  return (
+    <table>
+      <thead>
+        <tr>
+          {columns.map((col) => (
+            <th key={col.key} scope="col">
+              {col.header}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.id}>
+            {columns.map((col) => (
+              <td key={col.key}>{col.render(row)}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+DataTableOrEmpty.propTypes = {
+  // eslint-disable-next-line react/forbid-prop-types -- row shape varies per list (blocks vs. external reservations)
+  rows: PropTypes.arrayOf(PropTypes.object).isRequired,
+  columns: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string.isRequired,
+      header: PropTypes.node,
+      render: PropTypes.func.isRequired,
+    }),
+  ).isRequired,
+  emptyTitle: PropTypes.string.isRequired,
+};

@@ -2,10 +2,18 @@
 
 @use 'tokens' as tokens;
 @use 'mixins/focus-ring' as focus;
+@use 'mixins/respond' as respond;
 
 .header {
   background-color: tokens.$color-white;
   border-bottom: 1px solid tokens.$color-gray-200;
+  transition: box-shadow tokens.$motion-transition tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+}
+
+.header--scrolled {
+  border-bottom-color: transparent;
+  @include tokens.elevation-1;
 }
 
 .bar {
@@ -25,8 +33,12 @@
 }
 
 .nav {
+  display: none;
   min-width: 0;
-  overflow-x: auto;
+
+  @include respond.respond(tablet) {
+    display: block;
+  }
 }
 
 .navList {
@@ -38,12 +50,18 @@
 .navLink {
   display: inline-flex;
   align-items: center;
+  gap: tokens.$space-1;
   min-height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
   color: tokens.$color-gray-900;
   font-size: 0.875rem;
   font-weight: 600;
+  font-family: inherit;
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
   @include focus.focus-ring;
 
   &:hover {
@@ -51,6 +69,57 @@
   }
 }
 
+.dropdownList {
+  min-width: 200px;
+}
+
+.dropdownLink {
+  display: block;
+  padding: tokens.$space-2 tokens.$space-3;
+  border-radius: tokens.$radius-sm;
+  color: tokens.$color-gray-900;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  @include focus.focus-ring;
+
+  &:hover {
+    background-color: tokens.$color-gray-100;
+    color: tokens.$color-royal-blue;
+  }
+}
+
 .actions {
+  display: none;
   flex-shrink: 0;
+
+  @include respond.respond(tablet) {
+    display: flex;
+  }
+}
+
+// Mobile hamburger — the mirror image of .nav/.actions: shown below
+// Tablet, hidden from Tablet up (FRONTEND_ARCHITECTURE.md §5.1).
+.mobileToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: tokens.$color-gray-900;
+  cursor: pointer;
+  flex-shrink: 0;
+  @include focus.focus-ring;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  @include respond.respond(tablet) {
+    display: none;
+  }
 }

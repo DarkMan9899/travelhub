@@ -1,0 +1,80 @@
+// ListingCompletenessWidget — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+
+.widget {
+  padding: tokens.$space-4;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  background-color: tokens.$color-gray-100;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: tokens.$space-2;
+}
+
+.label {
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+}
+
+.percent {
+  font-weight: 700;
+  color: tokens.$color-royal-blue;
+}
+
+.track {
+  height: 8px;
+  border-radius: tokens.$radius-full;
+  background-color: tokens.$color-gray-200;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: tokens.$radius-full;
+  transition: width tokens.$motion-transition tokens.$ease-out;
+}
+
+.fill--pending {
+  background-color: tokens.$color-warning;
+}
+
+.fill--ready {
+  background-color: tokens.$color-success;
+}
+
+.section {
+  margin-top: tokens.$space-3;
+}
+
+.sectionLabel {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: tokens.$color-gray-600;
+  margin-bottom: tokens.$space-1;
+}
+
+.list {
+  margin: 0;
+  padding-left: tokens.$space-4;
+  font-size: 0.875rem;
+}
+
+.requiredItem {
+  color: tokens.$color-danger-strong;
+}
+
+.recommendedItem {
+  color: tokens.$color-gray-600;
+}
+
+.allDone {
+  margin: tokens.$space-3 0 0;
+  color: tokens.$color-success-strong;
+  font-weight: 600;
+}

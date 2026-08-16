@@ -1,0 +1,210 @@
+// Hero — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+@use 'mixins/focus-ring' as focus;
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: tokens.$radius-xl;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  // Content-driven height at every breakpoint — no forced near-viewport
+  // minimum. A premium hero reads as confidently *proportioned*, not as
+  // large as the viewport allows; this section's own copy/CTA/search
+  // stack now sets the height, capped only so a very short content set
+  // never collapses awkwardly thin on a tall laptop screen.
+  @include respond.respond(laptop) {
+    min-height: 480px;
+  }
+
+  // Depth: a directional dark scrim for text contrast, plus two soft
+  // glows (gold bottom-right, royal-blue upper-left) — the "premium
+  // accent, never a button" use of the gold token (UI_UX_GUIDELINES.md).
+  // Lighter than a flat dark wash so the backdrop art still reads
+  // through instead of the whole hero looking like a solid navy block.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        55% 65% at 88% 12%,
+        rgba(29, 95, 214, 0.2) 0%,
+        rgba(29, 95, 214, 0) 100%
+      ),
+      radial-gradient(
+        60% 50% at 85% 100%,
+        rgba(201, 162, 75, 0.24) 0%,
+        rgba(201, 162, 75, 0) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(11, 26, 43, 0.32) 0%,
+        rgba(11, 26, 43, 0.68) 100%
+      );
+    z-index: -1;
+  }
+}
+
+// Slow, continuous ambient zoom — the "Ken Burns" treatment premium
+// travel hero sections use so a static image never reads as inert.
+@keyframes hero-ken-burns {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.08);
+  }
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+  animation: hero-ken-burns 20s tokens.$ease-out infinite alternate;
+  @include tokens.reduced-motion-safe;
+}
+
+// A large, faint compass-rose motif filling the otherwise-empty right
+// side of the hero at laptop+ — decorative, ties into the travel theme,
+// breaks up what would otherwise be a flat dark void beside the copy.
+.compassMotif {
+  display: none;
+
+  @include respond.respond(laptop) {
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: -60px;
+    transform: translateY(-50%);
+    width: 320px;
+    height: 320px;
+    z-index: -1;
+    opacity: 0.12;
+    color: tokens.$color-white;
+    pointer-events: none;
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-6;
+  padding-block: tokens.$space-12;
+
+  @include respond.respond(laptop) {
+    padding-block: tokens.$space-16;
+    gap: tokens.$space-8;
+  }
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
+  max-width: 640px;
+  color: tokens.$color-white;
+  text-align: center;
+  margin-inline: auto;
+
+  @include respond.respond(laptop) {
+    text-align: left;
+    margin-inline: 0;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: tokens.$font-body;
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: tokens.$color-gold;
+}
+
+.title {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  // A restrained scale — the previous laptop-only 1.2x amplification
+  // (67px) is what made the section read as oversized; the token's own
+  // display size, un-inflated, sits in better proportion against a
+  // content-driven (no longer near-viewport) hero height.
+  font-size: tokens.$font-size-display;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: tokens.$font-size-body-large;
+  line-height: tokens.$line-height-body-large;
+  color: tokens.$color-gray-100;
+  max-width: 520px;
+  margin-inline: auto;
+
+  @include respond.respond(laptop) {
+    margin-inline: 0;
+  }
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-3;
+  justify-content: center;
+
+  @include respond.respond(laptop) {
+    justify-content: flex-start;
+  }
+}
+
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: tokens.$button-height-lg;
+  padding-inline: tokens.$space-8;
+  border-radius: tokens.$radius-md;
+  border: 1px solid tokens.$color-white;
+  color: tokens.$color-white;
+  font-family: tokens.$font-body;
+  font-weight: 600;
+  font-size: tokens.$font-size-body-large;
+  text-decoration: none;
+  transition:
+    background-color tokens.$motion-micro tokens.$ease-out,
+    transform tokens.$motion-micro tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+  @include focus.focus-ring;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+  }
+}
+
+.searchWrapper {
+  margin-inline: auto;
+  margin-block-start: tokens.$space-2;
+  width: 100%;
+  // Capped well below the copy column's own width so the search bar
+  // reads as an integrated extension of the Hero's message, not a
+  // second, competing block that spans (and dominates) the section.
+  max-width: 640px;
+
+  @include respond.respond(laptop) {
+    margin-inline: 0;
+    max-width: 620px;
+  }
+}

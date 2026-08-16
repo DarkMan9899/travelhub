@@ -13,7 +13,12 @@ import PropTypes from 'prop-types';
 import Container, { CONTAINER_SIZES } from '../Container/Container.jsx';
 import styles from './Page.module.scss';
 
-export default function Page({ title, containerSize, className, children }) {
+export default function Page({
+  title = undefined,
+  containerSize = 'content',
+  className = undefined,
+  children = undefined,
+}) {
   return (
     <Container
       size={containerSize}
@@ -30,11 +35,4 @@ Page.propTypes = {
   containerSize: PropTypes.oneOf(CONTAINER_SIZES),
   className: PropTypes.string,
   children: PropTypes.node,
-};
-
-Page.defaultProps = {
-  title: undefined,
-  containerSize: 'content',
-  className: undefined,
-  children: undefined,
 };

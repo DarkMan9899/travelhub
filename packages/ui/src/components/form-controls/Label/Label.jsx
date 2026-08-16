@@ -15,7 +15,14 @@ import styles from './Label.module.scss';
 
 const SIZES = ['sm', 'md', 'lg'];
 
-export default function Label({ htmlFor, children, required, disabled, size }) {
+export default function Label({
+  htmlFor = undefined,
+  id = undefined,
+  children,
+  required = false,
+  disabled = false,
+  size = 'md',
+}) {
   const className = [
     styles.label,
     styles[`label--${size}`],
@@ -25,7 +32,7 @@ export default function Label({ htmlFor, children, required, disabled, size }) {
     .join(' ');
 
   return (
-    <label htmlFor={htmlFor} className={className}>
+    <label htmlFor={htmlFor} id={id} className={className}>
       {children}
       {required && (
         <span className={styles.required} aria-hidden="true">
@@ -38,17 +45,16 @@ export default function Label({ htmlFor, children, required, disabled, size }) {
 
 Label.propTypes = {
   htmlFor: PropTypes.string,
+  // Lets a consumer reference this label via `aria-labelledby` — needed
+  // for custom widgets (e.g. Select's `role="button"` trigger) where
+  // `htmlFor`/`for` has no effect, since `for` only establishes an
+  // accessible-name relationship for actual labelable HTML elements
+  // (input/select/textarea/button/...), never a plain `<div>`.
+  id: PropTypes.string,
   children: PropTypes.node.isRequired,
   required: PropTypes.bool,
   disabled: PropTypes.bool,
   size: PropTypes.oneOf(SIZES),
-};
-
-Label.defaultProps = {
-  htmlFor: undefined,
-  required: false,
-  disabled: false,
-  size: 'md',
 };
 
 export { SIZES as LABEL_SIZES };

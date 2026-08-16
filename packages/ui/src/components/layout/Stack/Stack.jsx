@@ -20,11 +20,11 @@ import styles from './Stack.module.scss';
 const ALIGN_VALUES = ['stretch', 'flex-start', 'center', 'flex-end'];
 
 export default function Stack({
-  as: Component,
-  gap,
-  align,
-  className,
-  children,
+  as: Component = 'div',
+  gap = '4',
+  align = 'stretch',
+  className = undefined,
+  children = undefined,
   ...rest
 }) {
   const classNames = [
@@ -52,14 +52,6 @@ Stack.propTypes = {
   align: PropTypes.oneOf(ALIGN_VALUES),
   className: PropTypes.string,
   children: PropTypes.node,
-};
-
-Stack.defaultProps = {
-  as: 'div',
-  gap: '4',
-  align: 'stretch',
-  className: undefined,
-  children: undefined,
 };
 
 export { ALIGN_VALUES as STACK_ALIGN_VALUES };

@@ -70,16 +70,35 @@ async function createDraftListing(overrides = {}) {
   return res;
 }
 
+/**
+ * Phase 5: the `hotels` category has required policies (`cancellation_
+ * policy`/`check_in_time`/`check_out_time`, seeds/007_pricing_and_policies
+ * .js) and every listing now needs >=1 bookable unit to publish
+ * (`ListingService#checkPublishReadiness`) — both satisfied here so this
+ * file's publish assertions keep exercising the pre-existing translation/
+ * image/location gates, not the newer ones.
+ */
 async function makePublishable(listingId) {
   await request(app)
     .patch(`/api/v1/listings/${listingId}`)
     .set('Authorization', `Bearer ${vendor.accessToken}`)
-    .send({ location: { latitude: 40.1772, longitude: 44.5035 } });
+    .send({
+      location: { latitude: 40.1772, longitude: 44.5035 },
+      policyValues: [
+        { code: 'cancellation_policy', value: 'FLEXIBLE' },
+        { code: 'check_in_time', value: '14:00' },
+        { code: 'check_out_time', value: '11:00' },
+      ],
+    });
   await request(app)
     .post(`/api/v1/listings/${listingId}/media`)
     .set('Authorization', `Bearer ${vendor.accessToken}`)
     .set('Content-Type', 'image/png')
     .send(ONE_PX_PNG);
+  await request(app)
+    .post('/api/v1/availability/units')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ listingId, bookableUnitType: 'HOTEL_ROOM' });
 }
 
 beforeAll(async () => {
@@ -232,6 +251,55 @@ describe('GET /listings/:id — visibility', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('PUBLISHED');
   });
+
+  // Phase 20 (SEO): the same public route now also accepts the listing's
+  // slug — regression coverage for a real bug found while wiring it up:
+  // `findBySlug` was a never-finished stub that returned only the bare
+  // row (no translations/media/pricing/etc.), which crashed the DTO
+  // mapper with a 500 the first time anything actually called it.
+  test('the same listing is reachable by slug, with an identical fully-assembled shape to the id lookup', async () => {
+    const created = await createDraftListing();
+    const listingId = created.body.data.id;
+    await makePublishable(listingId);
+    await request(app)
+      .post(`/api/v1/listings/${listingId}/publish`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    const byId = await request(app).get(`/api/v1/listings/${listingId}`);
+    const { slug } = byId.body.data;
+
+    const bySlug = await request(app).get(`/api/v1/listings/${slug}`);
+    expect(bySlug.status).toBe(200);
+    expect(bySlug.body.data).toEqual(byId.body.data);
+  });
+
+  test('an unknown slug 404s rather than erroring', async () => {
+    const res = await request(app).get(
+      '/api/v1/listings/this-slug-does-not-exist',
+    );
+    expect(res.status).toBe(404);
+  });
+
+  // Phase 6 (Listing Details): each translation now carries the language's
+  // own code, and a location with a cityId resolves to human-readable
+  // city/country names — both additive fields the detail page needs.
+  test('translations expose language_code and a located listing resolves city_name/country_name', async () => {
+    const created = await createDraftListing();
+    const listingId = created.body.data.id;
+    await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ location: { cityId: 1, latitude: 40.1772, longitude: 44.5035 } });
+
+    const res = await request(app)
+      .get(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.translations[0].language_code).toBe('en');
+    expect(res.body.data.location.city_name).toBe('Yerevan');
+    expect(res.body.data.location.country_name).toBe('Armenia');
+  });
 });
 
 describe('PATCH /listings/:id — update, slug history', () => {
@@ -340,5 +408,84 @@ describe('POST /listings/:id/unpublish', () => {
 
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('INVALID_STATUS_TRANSITION');
+  });
+});
+
+describe('POST /listings/:id/archive (Phase 9: Partner Dashboard)', () => {
+  test('archives a published listing and sets archived_at', async () => {
+    const created = await createDraftListing();
+    const listingId = created.body.data.id;
+    await makePublishable(listingId);
+    await request(app)
+      .post(`/api/v1/listings/${listingId}/publish`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    const res = await request(app)
+      .post(`/api/v1/listings/${listingId}/archive`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('ARCHIVED');
+    expect(res.body.data.archived_at).toEqual(expect.any(String));
+  });
+
+  test('archives an unpublished listing too (UNPUBLISHED -> ARCHIVED is also legal)', async () => {
+    const created = await createDraftListing();
+    const listingId = created.body.data.id;
+    await makePublishable(listingId);
+    await request(app)
+      .post(`/api/v1/listings/${listingId}/publish`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    await request(app)
+      .post(`/api/v1/listings/${listingId}/unpublish`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    const res = await request(app)
+      .post(`/api/v1/listings/${listingId}/archive`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('ARCHIVED');
+  });
+
+  test('cannot archive a DRAFT listing (409) — ARCHIVED is only reachable from PUBLISHED/UNPUBLISHED', async () => {
+    const created = await createDraftListing();
+    const listingId = created.body.data.id;
+
+    const res = await request(app)
+      .post(`/api/v1/listings/${listingId}/archive`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('INVALID_STATUS_TRANSITION');
+  });
+
+  test('ARCHIVED is terminal — archiving twice fails on the second call (409)', async () => {
+    const created = await createDraftListing();
+    const listingId = created.body.data.id;
+    await makePublishable(listingId);
+    await request(app)
+      .post(`/api/v1/listings/${listingId}/publish`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    await request(app)
+      .post(`/api/v1/listings/${listingId}/archive`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    const res = await request(app)
+      .post(`/api/v1/listings/${listingId}/archive`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('INVALID_STATUS_TRANSITION');
+  });
+
+  test('requires authentication (401)', async () => {
+    const created = await createDraftListing();
+    const listingId = created.body.data.id;
+
+    const res = await request(app).post(
+      `/api/v1/listings/${listingId}/archive`,
+    );
+    expect(res.status).toBe(401);
   });
 });

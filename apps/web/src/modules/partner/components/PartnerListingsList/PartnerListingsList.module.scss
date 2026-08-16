@@ -1,0 +1,15 @@
+// PartnerListingsList — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-2;
+}
+
+.loadMore {
+  display: flex;
+  justify-content: center;
+  margin-block-start: tokens.$space-4;
+}

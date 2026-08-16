@@ -14,11 +14,11 @@ export default function Checkbox({
   checked,
   onChange,
   label,
-  disabled,
-  indeterminate,
-  error,
-  name,
-  value,
+  disabled = false,
+  indeterminate = false,
+  error = undefined,
+  name = undefined,
+  value = undefined,
 }) {
   const inputRef = useRef(null);
   const controlId = useId();
@@ -82,12 +82,4 @@ Checkbox.propTypes = {
   error: PropTypes.string,
   name: PropTypes.string,
   value: PropTypes.string,
-};
-
-Checkbox.defaultProps = {
-  disabled: false,
-  indeterminate: false,
-  error: undefined,
-  name: undefined,
-  value: undefined,
 };

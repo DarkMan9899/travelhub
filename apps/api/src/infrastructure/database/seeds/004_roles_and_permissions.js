@@ -6,14 +6,19 @@
  * DATABASE_ARCHITECTURE.md §9's "permissions are... attached to roles...
  * never checked by role name directly in application code" rule.
  *
- * Only global roles live here (CUSTOMER/MODERATOR/ADMIN/SUPER_ADMIN,
- * matching DATABASE_ARCHITECTURE.md §9's documented global set) —
- * partner-scoped roles (Sprint 5's VENDOR_OWNER/VENDOR_STAFF, mapped onto
- * `partner_employee_roles`) are seeded in 001_lookups.js and assigned
- * per-partner via `partner_employees`, never via this table. CUSTOMER
- * intentionally has zero permission_role rows — a customer's access to
- * their own bookings/reviews/favorites is an ownership check
+ * Only global roles live here (CUSTOMER/MODERATOR/ADMIN/SUPER_ADMIN/
+ * SUPPORT, matching DATABASE_ARCHITECTURE.md §9's documented global set)
+ * — partner-scoped roles (Sprint 5's VENDOR_OWNER/VENDOR_STAFF, mapped
+ * onto `partner_employee_roles`) are seeded in 001_lookups.js and
+ * assigned per-partner via `partner_employees`, never via this table.
+ * CUSTOMER intentionally has zero permission_role rows — a customer's
+ * access to their own bookings/reviews/favorites is an ownership check
  * (BACKEND_ARCHITECTURE.md §13), not an RBAC permission.
+ *
+ * SUPPORT (Phase 11 Admin Platform) is a read-only admin-area role: a
+ * support agent needs to look up users/bookings/audit history to help a
+ * customer, but has none of MODERATOR's moderation rights or ADMIN's
+ * write access — see ROLE_PERMISSIONS.SUPPORT below.
  */
 
 import { upsertByCode, getIdsByCode } from './helpers.js';
@@ -23,6 +28,7 @@ const ROLES = [
   { code: 'MODERATOR', name: 'Moderator' },
   { code: 'ADMIN', name: 'Admin' },
   { code: 'SUPER_ADMIN', name: 'Super Admin' },
+  { code: 'SUPPORT', name: 'Support' },
 ];
 
 const PERMISSIONS = [
@@ -142,6 +148,62 @@ const PERMISSIONS = [
     module: 'admin',
     description: 'Edit platform configuration',
   },
+  {
+    key: 'marketplace.configure',
+    module: 'admin',
+    description:
+      'Create/edit/delete marketplace configuration (categories, amenities, pricing models, geography)',
+  },
+  {
+    key: 'cms.manage',
+    module: 'cms',
+    description: 'Create/edit/delete/publish CMS page content',
+  },
+  {
+    key: 'messaging.view_all',
+    module: 'messaging',
+    description:
+      'View any conversation, not only ones the user participates in',
+  },
+  {
+    key: 'messaging.moderate',
+    module: 'messaging',
+    description: 'Soft-delete any message',
+  },
+  {
+    key: 'ai.admin_tools',
+    module: 'ai',
+    description:
+      'Access AI moderation aids (duplicate/spam/risk scoring) for listings',
+  },
+  {
+    key: 'ai.usage_view',
+    module: 'ai',
+    description: 'View aggregate AI usage/cost statistics',
+  },
+  {
+    key: 'payment.view',
+    module: 'payments',
+    description:
+      'View any payment/refund/ledger entry, not only owned bookings/partnerships',
+  },
+  {
+    key: 'payment.refund',
+    module: 'payments',
+    description: 'Issue a refund for a payment',
+  },
+  {
+    key: 'inventory.view_all',
+    module: 'inventory',
+    description:
+      "View any partner's availability, blocks, external reservations, connections, and sync history — not only owned/employed partnerships (Admin/Support oversight, Phase 17 spec §40)",
+  },
+  {
+    key: 'inventory.manage_all',
+    module: 'inventory',
+    description:
+      "Create/resolve inventory adjustments and sync conflicts on any partner's inventory (Admin intervention, always audit-logged, Phase 17 spec §40)",
+  },
 ];
 
 const ROLE_PERMISSIONS = {
@@ -155,6 +217,23 @@ const ROLE_PERMISSIONS = {
     'media.moderate',
     'partner.moderate',
     'promotion.approve',
+    'messaging.moderate',
+  ],
+  // Read-only admin-area access — enough to look up a user/booking/audit
+  // trail while helping a customer, nothing that mutates state.
+  SUPPORT: [
+    'user.list',
+    'user.view',
+    'booking.view_all',
+    'audit.view',
+    'messaging.view_all',
+    // View-only, matching every other SUPPORT grant — refunds stay
+    // ADMIN/SUPER_ADMIN-only (Phase 16 spec §17: "refund actions only
+    // with explicit permission").
+    'payment.view',
+    // View-only — resolving a sync conflict or adjusting inventory stays
+    // ADMIN/SUPER_ADMIN-only, same boundary as payment.refund above.
+    'inventory.view_all',
   ],
   CUSTOMER: [],
 };

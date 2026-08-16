@@ -26,8 +26,16 @@
     "db:migrate": "npm run db:migrate --workspace apps/api",
     "db:migrate:down": "npm run db:migrate:down --workspace apps/api",
     "db:migrate:status": "npm run db:migrate:status --workspace apps/api",
+    "db:migrate:test": "npm run db:migrate:test --workspace apps/api",
+    "db:migrate:test:down": "npm run db:migrate:test:down --workspace apps/api",
+    "db:migrate:test:status": "npm run db:migrate:test:status --workspace apps/api",
     "db:seed": "npm run db:seed --workspace apps/api",
-    "db:reset": "npm run db:reset --workspace apps/api"
+    "db:seed:test": "npm run db:seed:test --workspace apps/api",
+    "db:reset": "npm run db:reset --workspace apps/api",
+    "db:reset:test": "npm run db:reset:test --workspace apps/api",
+    "db:reset:dev": "npm run db:reset:dev --workspace apps/api --",
+    "db:seed:demo": "npm run db:seed:demo --workspace apps/api",
+    "db:seed:demo:dev": "npm run db:seed:demo:dev --workspace apps/api --"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.3.0",

@@ -11,10 +11,19 @@ import { ValidationError } from '../../../errors/AppError.js';
 import {
   toListingResponse,
   toListingSummaryResponse,
+  toAdminListingSummaryResponse,
   toMediaResponse,
+  toListingMetadataResponse,
+  toHighlightResponse,
+  toItineraryStepResponse,
+  toIncludedItemResponse,
+  toFaqResponse,
 } from '../dto/listingDto.js';
 
-export function createListingController(listingService) {
+export function createListingController(
+  listingService,
+  listingMetadataService,
+) {
   return {
     async create(req, res, next) {
       try {
@@ -61,6 +70,65 @@ export function createListingController(listingService) {
           success: true,
           data: rows.map(toListingSummaryResponse),
           meta,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async listAdmin(req, res, next) {
+      try {
+        const { keyword, moderationStatus, status, cursor, limit } =
+          req.validated.query;
+        const { rows, meta } = await listingService.listListingsAdmin(
+          req.principal,
+          { keyword, moderationStatus, status },
+          { cursor, limit },
+        );
+        res.status(200).json({
+          success: true,
+          data: rows.map(toAdminListingSummaryResponse),
+          meta,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getAdminDetail(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const listing = await listingService.getListingAdminDetail(
+          req.principal,
+          id,
+        );
+        res.status(200).json({
+          success: true,
+          data: toListingResponse(listing),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async updateModerationStatus(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const { status, notes } = req.validated.body;
+        const listing = await listingService.updateModerationStatus(
+          req.principal,
+          id,
+          status,
+          notes,
+        );
+        res.status(200).json({
+          success: true,
+          data: toListingResponse(listing),
+          meta: null,
           error: null,
         });
       } catch (err) {
@@ -124,6 +192,21 @@ export function createListingController(listingService) {
           req.principal,
           id,
         );
+        res.status(200).json({
+          success: true,
+          data: toListingResponse(listing),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async archive(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const listing = await listingService.archiveListing(req.principal, id);
         res.status(200).json({
           success: true,
           data: toListingResponse(listing),
@@ -206,6 +289,123 @@ export function createListingController(listingService) {
         res.status(200).json({
           success: true,
           data: { deleted: true },
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getMetadata(req, res, next) {
+      try {
+        const { categoryId, locale } = req.validated.query;
+        const metadata = await listingMetadataService.getMetadataForCategory(
+          categoryId,
+          locale,
+        );
+        res.status(200).json({
+          success: true,
+          data: toListingMetadataResponse(metadata),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async replaceHighlights(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const highlights = await listingService.replaceHighlights(
+          req.principal,
+          id,
+          req.validated.body.highlights,
+        );
+        res.status(200).json({
+          success: true,
+          data: highlights.map(toHighlightResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async replaceItinerarySteps(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const steps = await listingService.replaceItinerarySteps(
+          req.principal,
+          id,
+          req.validated.body.steps,
+        );
+        res.status(200).json({
+          success: true,
+          data: steps.map(toItineraryStepResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async replaceIncludedItems(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const items = await listingService.replaceIncludedItems(
+          req.principal,
+          id,
+          req.validated.body.items,
+        );
+        res.status(200).json({
+          success: true,
+          data: items.map(toIncludedItemResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async replaceFaqs(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const faqs = await listingService.replaceFaqs(
+          req.principal,
+          id,
+          req.validated.body.faqs,
+        );
+        res.status(200).json({
+          success: true,
+          data: faqs.map(toFaqResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getCompleteness(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const completeness = await listingService.getListingCompleteness(
+          req.principal,
+          id,
+        );
+        res.status(200).json({
+          success: true,
+          data: {
+            is_publish_ready: completeness.isPublishReady,
+            percent_complete: completeness.percentComplete,
+            required_missing: completeness.requiredMissing,
+            recommended_missing: completeness.recommendedMissing,
+          },
           meta: null,
           error: null,
         });

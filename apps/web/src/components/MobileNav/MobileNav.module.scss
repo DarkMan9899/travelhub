@@ -1,0 +1,36 @@
+// MobileNav — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+.navLink {
+  display: block;
+  padding: tokens.$space-3;
+  border-radius: tokens.$radius-sm;
+  font-size: 1rem;
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+  text-decoration: none;
+  @include focus.focus-ring;
+
+  &:hover {
+    background-color: tokens.$color-gray-100;
+  }
+}
+
+.groupLabel {
+  padding: 0 tokens.$space-3;
+  margin: 0;
+  color: tokens.$color-gray-600;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.extra {
+  padding-top: tokens.$space-4;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}

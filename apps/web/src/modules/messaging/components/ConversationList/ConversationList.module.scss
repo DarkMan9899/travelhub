@@ -1,0 +1,28 @@
+@use 'tokens' as tokens;
+
+.wrapper {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding: tokens.$space-3;
+}
+
+.loadMore {
+  display: flex;
+  justify-content: center;
+  padding: tokens.$space-4;
+}

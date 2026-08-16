@@ -75,20 +75,21 @@ function CheckIcon() {
 
 export default function Select({
   options,
-  value,
+  value = undefined,
   onChange,
-  multiple,
-  searchable,
-  label,
-  error,
-  size,
-  disabled,
-  placeholder,
-  required,
-  id,
-  searchPlaceholder,
-  noOptionsMessage,
-  getRemoveChipLabel,
+  multiple = false,
+  searchable = false,
+  label = undefined,
+  ariaLabel = undefined,
+  error = undefined,
+  size = 'md',
+  disabled = false,
+  placeholder = 'Select…',
+  required = false,
+  id = undefined,
+  searchPlaceholder = 'Search…',
+  noOptionsMessage = 'No results',
+  getRemoveChipLabel = (optionLabel) => `Remove ${optionLabel}`,
 }) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -100,6 +101,7 @@ export default function Select({
   const fieldId = id || generatedId;
   const listboxId = `${fieldId}-listbox`;
   const errorId = `${fieldId}-error`;
+  const labelId = `${fieldId}-label`;
 
   const isSearchable = searchable || options.length > SEARCHABLE_THRESHOLD;
   const selectedValues = useMemo(() => {
@@ -249,6 +251,7 @@ export default function Select({
       {label && (
         <Label
           htmlFor={fieldId}
+          id={labelId}
           required={required}
           disabled={disabled}
           size={size}
@@ -273,6 +276,8 @@ export default function Select({
           }
           aria-describedby={error ? errorId : undefined}
           aria-disabled={disabled || undefined}
+          aria-labelledby={label ? labelId : undefined}
+          aria-label={!label ? ariaLabel : undefined}
           className={[
             styles.trigger,
             styles[`trigger--${size}`],
@@ -332,7 +337,10 @@ export default function Select({
             <ul
               id={listboxId}
               role="listbox"
+              tabIndex={0}
               aria-multiselectable={multiple || undefined}
+              aria-labelledby={label ? labelId : undefined}
+              aria-label={!label ? ariaLabel : undefined}
               className={styles.list}
             >
               {filteredOptions.length === 0 && (
@@ -398,6 +406,10 @@ Select.propTypes = {
   multiple: PropTypes.bool,
   searchable: PropTypes.bool,
   label: PropTypes.string,
+  // Used as the trigger's accessible name only when no visible `label`
+  // is rendered — e.g. a compact bar where a separate label line would
+  // waste vertical space, but the trigger still needs a name for AT.
+  ariaLabel: PropTypes.string,
   error: PropTypes.string,
   size: PropTypes.oneOf(SIZES),
   disabled: PropTypes.bool,
@@ -407,22 +419,6 @@ Select.propTypes = {
   searchPlaceholder: PropTypes.string,
   noOptionsMessage: PropTypes.string,
   getRemoveChipLabel: PropTypes.func,
-};
-
-Select.defaultProps = {
-  value: undefined,
-  multiple: false,
-  searchable: false,
-  label: undefined,
-  error: undefined,
-  size: 'md',
-  disabled: false,
-  placeholder: 'Select…',
-  required: false,
-  id: undefined,
-  searchPlaceholder: 'Search…',
-  noOptionsMessage: 'No results',
-  getRemoveChipLabel: (optionLabel) => `Remove ${optionLabel}`,
 };
 
 export { SIZES as SELECT_SIZES };

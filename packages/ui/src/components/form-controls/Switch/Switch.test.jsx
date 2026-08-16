@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Switch from './Switch.jsx';
 
-function ControlledSwitch({ initialChecked, ...rest }) {
+function ControlledSwitch({ initialChecked = false, ...rest }) {
   const [checked, setChecked] = useState(initialChecked);
   return (
     <Switch
@@ -19,10 +19,6 @@ function ControlledSwitch({ initialChecked, ...rest }) {
 
 ControlledSwitch.propTypes = {
   initialChecked: PropTypes.bool,
-};
-
-ControlledSwitch.defaultProps = {
-  initialChecked: false,
 };
 
 describe('Switch (COMPONENT_LIBRARY.md Part II §2)', () => {

@@ -40,6 +40,17 @@ export default function createBookingRoutes({ bookingController, guards }) {
     bookingController.get,
   );
 
+  // Stage 11.4 (Admin Platform — Booking Operations): surfaces the
+  // previously write-only `booking_status_history` table. Same
+  // visibility rule as `GET /:id` (own booking, owning partner, or
+  // `booking.view_all`) — enforced inside `BookingService.getStatusHistory`.
+  router.get(
+    '/:id/history',
+    requireAuth,
+    validate(bookingIdParamsSchema),
+    bookingController.getStatusHistory,
+  );
+
   router.post(
     '/:id/confirm',
     requireAuth,

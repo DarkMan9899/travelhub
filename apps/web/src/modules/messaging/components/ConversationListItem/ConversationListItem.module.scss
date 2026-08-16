@@ -1,0 +1,74 @@
+@use 'tokens' as tokens;
+
+.item {
+  list-style: none;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: tokens.$space-3;
+  padding: tokens.$space-3 tokens.$space-4;
+  border: none;
+  border-bottom: 1px solid tokens.$color-gray-200;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background-color: tokens.$color-gray-100;
+  }
+
+  &--active {
+    background-color: rgba(29, 95, 214, 0.08);
+  }
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: tokens.$space-2;
+}
+
+.title {
+  overflow: hidden;
+  font-size: tokens.$font-size-body;
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.timestamp {
+  flex-shrink: 0;
+  font-size: tokens.$font-size-micro;
+  color: tokens.$color-gray-600;
+}
+
+.previewRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-2;
+  margin-top: tokens.$space-1;
+}
+
+.preview {
+  overflow: hidden;
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  &--unread {
+    color: tokens.$color-gray-900;
+    font-weight: 600;
+  }
+}

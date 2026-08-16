@@ -8,11 +8,11 @@ import Button from '../../primitives/Button/Button.jsx';
 import styles from './EmptyState.module.scss';
 
 export default function EmptyState({
-  illustration,
+  illustration = undefined,
   title,
-  description,
-  actionLabel,
-  onAction,
+  description = undefined,
+  actionLabel = undefined,
+  onAction = undefined,
 }) {
   return (
     <div className={styles.emptyState}>
@@ -40,11 +40,4 @@ EmptyState.propTypes = {
   description: PropTypes.string,
   actionLabel: PropTypes.string,
   onAction: PropTypes.func,
-};
-
-EmptyState.defaultProps = {
-  illustration: undefined,
-  description: undefined,
-  actionLabel: undefined,
-  onAction: undefined,
 };

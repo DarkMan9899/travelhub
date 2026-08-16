@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Input from './Input.jsx';
 
-function ControlledInput({ initialValue, ...rest }) {
+function ControlledInput({ initialValue = '', ...rest }) {
   const [value, setValue] = useState(initialValue);
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading -- test helper forwards arbitrary Input props
@@ -16,11 +16,6 @@ function ControlledInput({ initialValue, ...rest }) {
 ControlledInput.propTypes = {
   initialValue: PropTypes.string,
 };
-
-ControlledInput.defaultProps = {
-  initialValue: '',
-};
-
 describe('Input (COMPONENT_LIBRARY.md Part II §2)', () => {
   test('label is programmatically associated via htmlFor/id', () => {
     render(<ControlledInput label="Email address" />);

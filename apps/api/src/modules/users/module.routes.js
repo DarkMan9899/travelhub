@@ -11,12 +11,43 @@ import {
   updateProfileSchema,
   changePasswordSchema,
   avatarParamsSchema,
+  listUsersQuerySchema,
+  userIdParamsSchema,
+  updateUserStatusSchema,
 } from './validators/userValidators.js';
 import { ALLOWED_IMAGE_MIME_TYPES } from '../media/validators/mediaConstraints.js';
 
 export default function createUserRoutes({ userController, guards }) {
   const router = Router();
-  const { requireAuth } = guards;
+  const { requireAuth, requirePermission } = guards;
+
+  // Phase 11 Admin Platform — registered before `/:id` so Express
+  // doesn't match the literal path segment as an `:id`... actually `/`
+  // (no segment) and `/:id` (one segment) never collide, but kept first
+  // for readability alongside the other admin routes below.
+  router.get(
+    '/',
+    requireAuth,
+    requirePermission('user.list'),
+    validate(listUsersQuerySchema),
+    userController.list,
+  );
+
+  router.get(
+    '/:id',
+    requireAuth,
+    requirePermission('user.view'),
+    validate(userIdParamsSchema),
+    userController.getAdminDetail,
+  );
+
+  router.patch(
+    '/:id/status',
+    requireAuth,
+    requirePermission('user.suspend'),
+    validate(updateUserStatusSchema),
+    userController.updateStatus,
+  );
 
   router.patch(
     '/:id',

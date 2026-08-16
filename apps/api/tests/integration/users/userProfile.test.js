@@ -82,6 +82,17 @@ describe('PATCH /users/:id — ownership enforcement', () => {
       .send({});
     expect(res.status).toBe(422);
   });
+
+  test('preferredLanguageId/preferredCurrencyId round-trip through the response', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/users/${userA.userId}`)
+      .set('Authorization', `Bearer ${userA.accessToken}`)
+      .send({ preferredLanguageId: 2, preferredCurrencyId: 1 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.preferred_language_id).toBe(2);
+    expect(res.body.data.preferred_currency_id).toBe(1);
+  });
 });
 
 describe('POST /users/:id/change-password — owner-only, no permission fallback', () => {
@@ -145,6 +156,10 @@ describe('POST /users/:id/avatar — local storage abstraction end-to-end', () =
 
     expect(res.status).toBe(200);
     expect(res.body.data.avatar_media_id).toEqual(expect.any(Number));
+    // Phase 8: avatar_url is resolved via a media join, additive alongside
+    // the existing avatar_media_id field.
+    expect(res.body.data.avatar_url).toEqual(expect.any(String));
+    expect(res.body.data.avatar_url.length).toBeGreaterThan(0);
   });
 
   test('rejects an unsupported content type', async () => {

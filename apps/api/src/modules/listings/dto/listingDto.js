@@ -10,6 +10,7 @@
 export function toTranslationResponse(translation) {
   return {
     language_id: translation.languageId,
+    language_code: translation.languageCode,
     title: translation.title,
     summary: translation.summary,
     description: translation.description,
@@ -23,6 +24,8 @@ export function toLocationResponse(location) {
   return {
     address_id: location.addressId,
     city_id: location.cityId,
+    city_name: location.cityName,
+    country_name: location.countryName,
     latitude: location.latitude,
     longitude: location.longitude,
   };
@@ -40,6 +43,71 @@ export function toMediaResponse(media) {
     mime_type: media.mimeType,
     file_size_bytes: media.fileSizeBytes,
     created_at: media.createdAt,
+    alt_text: media.altText ?? null,
+    caption: media.caption ?? null,
+  };
+}
+
+function toAttributeValueResponse(entry) {
+  if (entry.optionCodes) {
+    return { code: entry.code, option_codes: entry.optionCodes };
+  }
+  return { code: entry.code, value: entry.value };
+}
+
+function toPolicyValueResponse(entry) {
+  return { code: entry.code, value: entry.value };
+}
+
+function toPricingResponse(pricing) {
+  if (!pricing) return null;
+  return {
+    pricing_model: pricing.pricingModelCode,
+    amount: pricing.amount,
+    currency: pricing.currencyCode,
+  };
+}
+
+function toBookingRulesResponse(bookingRules) {
+  if (!bookingRules) return null;
+  return {
+    minimum_stay_nights: bookingRules.minimumStayNights,
+    maximum_stay_nights: bookingRules.maximumStayNights,
+    advance_booking_min_hours: bookingRules.advanceBookingMinHours,
+    advance_booking_max_days: bookingRules.advanceBookingMaxDays,
+  };
+}
+
+export function toHighlightResponse(highlight) {
+  return {
+    id: highlight.id,
+    icon_code: highlight.iconCode,
+    text: highlight.text,
+  };
+}
+
+export function toItineraryStepResponse(step) {
+  return {
+    id: step.id,
+    title: step.title,
+    description: step.description,
+    duration_minutes: step.durationMinutes,
+  };
+}
+
+export function toIncludedItemResponse(item) {
+  return {
+    id: item.id,
+    item_text: item.itemText,
+    is_included: item.isIncluded,
+  };
+}
+
+export function toFaqResponse(faq) {
+  return {
+    id: faq.id,
+    question: faq.question,
+    answer: faq.answer,
   };
 }
 
@@ -55,6 +123,7 @@ export function toListingResponse(listing) {
     is_featured: listing.isFeatured,
     published_at: listing.publishedAt,
     unpublished_at: listing.unpublishedAt,
+    archived_at: listing.archivedAt,
     canonical_url: listing.canonicalUrl,
     og_image_media_id: listing.ogImageMediaId,
     is_indexable: listing.isIndexable,
@@ -64,6 +133,25 @@ export function toListingResponse(listing) {
     category_ids: listing.categoryIds,
     amenity_ids: listing.amenityIds,
     media: listing.media.map(toMediaResponse),
+    attribute_values: listing.attributeValues.map(toAttributeValueResponse),
+    policy_values: listing.policyValues.map(toPolicyValueResponse),
+    pricing: toPricingResponse(listing.pricing),
+    booking_rules: toBookingRulesResponse(listing.bookingRules),
+    // Phase 12 (Product Polish): read-only aggregate from the Reviews
+    // module — `null`/`0` for a listing with no approved reviews yet,
+    // never omitted (a consistent shape is easier for the frontend to
+    // render than an optional field).
+    rating_average: listing.ratingAverage ?? null,
+    review_count: listing.reviewCount ?? 0,
+    // Phase 18 (Premium Listing Detail): partner-authored structured
+    // content the Generic Attribute Engine can't express (ordered lists
+    // of free text) — see migration 0026_listing_rich_content.
+    highlights: (listing.highlights ?? []).map(toHighlightResponse),
+    itinerary_steps: (listing.itinerarySteps ?? []).map(
+      toItineraryStepResponse,
+    ),
+    included_items: (listing.includedItems ?? []).map(toIncludedItemResponse),
+    faqs: (listing.faqs ?? []).map(toFaqResponse),
     created_at: listing.createdAt,
     updated_at: listing.updatedAt,
   };
@@ -79,5 +167,65 @@ export function toListingSummaryResponse(listing) {
     is_featured: listing.isFeatured,
     created_at: listing.createdAt,
     updated_at: listing.updatedAt,
+  };
+}
+
+/** Stage 11.3 admin queue row — additive to the public summary shape, plus both status dimensions and the fields the moderation table needs. */
+export function toAdminListingSummaryResponse(listing) {
+  return {
+    id: listing.id,
+    partner_id: listing.partnerId,
+    partner_display_name: listing.partnerDisplayName,
+    title: listing.title,
+    listing_type: listing.listingTypeCode,
+    slug: listing.slug,
+    status: listing.statusCode,
+    moderation_status: listing.moderationStatusCode,
+    created_at: listing.createdAt,
+  };
+}
+
+function toMetadataOptionResponse(option) {
+  return { value: option.value, code: option.code };
+}
+
+/**
+ * `GET /listings/metadata` response. Like `search.dynamicFilters.*`'s DTO,
+ * every label-bearing field is a stable `code` — the frontend's own i18n
+ * (`partner.listingWizard.*`) owns display labels, not this response
+ * (Phase 4.2's established convention, reused here).
+ */
+export function toListingMetadataResponse({
+  attributes,
+  amenityGroups,
+  pricingModels,
+  policies,
+}) {
+  return {
+    attributes: attributes.map((attribute) => ({
+      code: attribute.code,
+      data_type: attribute.dataTypeCode,
+      unit: attribute.unit,
+      min: attribute.validationMin,
+      max: attribute.validationMax,
+      is_multi_valued: attribute.isMultiValued,
+      is_required: attribute.isRequired,
+      options: attribute.options.map(toMetadataOptionResponse),
+    })),
+    amenity_groups: amenityGroups.map((group) => ({
+      code: group.code,
+      amenities: group.amenities.map(toMetadataOptionResponse),
+    })),
+    pricing_models: pricingModels.map((model) => ({
+      code: model.code,
+    })),
+    policies: policies.map((policy) => ({
+      code: policy.code,
+      data_type: policy.dataTypeCode,
+      unit: policy.unit,
+      is_multi_valued: policy.isMultiValued,
+      is_required: policy.isRequired,
+      options: policy.options.map(toMetadataOptionResponse),
+    })),
   };
 }

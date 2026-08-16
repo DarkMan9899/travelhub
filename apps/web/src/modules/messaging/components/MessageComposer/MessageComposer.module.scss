@@ -1,0 +1,57 @@
+@use 'tokens' as tokens;
+
+.composer {
+  border-top: 1px solid tokens.$color-gray-200;
+  padding: tokens.$space-3 tokens.$space-4;
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: tokens.$space-2;
+}
+
+.attachButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: tokens.$radius-full;
+  background: transparent;
+  color: tokens.$color-gray-600;
+  cursor: pointer;
+
+  &:hover {
+    background-color: tokens.$color-gray-100;
+  }
+}
+
+.pendingList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: tokens.$space-2;
+  margin: 0 0 tokens.$space-2;
+  padding: 0;
+  list-style: none;
+}
+
+.pendingItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px tokens.$space-2;
+  border-radius: tokens.$radius-full;
+  background-color: tokens.$color-gray-100;
+  font-size: tokens.$font-size-micro;
+
+  button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: tokens.$font-size-small;
+    line-height: 1;
+  }
+}

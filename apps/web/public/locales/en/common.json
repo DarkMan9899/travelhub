@@ -1,0 +1,2717 @@
+{
+  "app": {
+    "name": "desavii"
+  },
+  "seo": {
+    "listingDetail": {
+      "titleWithLocation": "{{title}} in {{location}} | desavii",
+      "titleNoLocation": "{{title}} | desavii"
+    },
+    "home": {
+      "title": "Travel Experiences in Armenia | desavii",
+      "description": "Discover hotels, tours, apartments, car rentals, and experiences across Armenia. Book with verified local partners on desavii."
+    },
+    "search": {
+      "title": "Search Results | desavii"
+    },
+    "category": {
+      "title": "{{category}} in Armenia | desavii",
+      "description": "Browse {{category}} across Armenia and book with verified local partners on desavii."
+    },
+    "destination": {
+      "title": "{{city}} Travel Guide | desavii",
+      "description": "Discover hotels, tours, and experiences in {{city}}, Armenia. Book with verified local partners on desavii."
+    },
+    "companies": {
+      "title": "Travel Partners in Armenia | desavii",
+      "description": "Browse verified hotels, tour operators, and experience providers on desavii."
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save"
+  },
+  "discovery": {
+    "category": {
+      "loading": "Loading category",
+      "errorTitle": "Something went wrong",
+      "retry": "Try again",
+      "emptyTitle": "No listings yet",
+      "emptyDescription": "There are no published listings in this category yet — check back soon."
+    },
+    "destination": {
+      "loading": "Loading destination",
+      "errorTitle": "Something went wrong",
+      "retry": "Try again",
+      "emptyTitle": "No listings yet",
+      "emptyDescription": "There are no published listings in this destination yet — check back soon."
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "explore": "Explore",
+    "companies": "Companies",
+    "becomePartner": "Become a Partner",
+    "account": "My Account",
+    "partner": "Partner",
+    "partnerDashboard": "Partner Dashboard",
+    "admin": "Admin",
+    "customerAccount": "Customer Account",
+    "login": "Log in",
+    "register": "Sign up",
+    "logout": "Log out",
+    "workspace": "Workspace"
+  },
+  "status": {
+    "loading": "Loading...",
+    "comingSoon": "Coming soon"
+  },
+  "a11y": {
+    "skipToContent": "Skip to content",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "userMenu": "Account menu",
+    "switchLanguage": "Switch language",
+    "notifications": "Notifications"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Premium travel across Armenia",
+      "title": "Discover Armenia",
+      "subtitle": "Hotels, tours, restaurants and experiences — book your next trip across Armenia.",
+      "ctaPrimary": "Start exploring",
+      "ctaSecondary": "Become a partner"
+    },
+    "search": {
+      "destinationLabel": "Destination",
+      "destinationPlaceholder": "Where are you going?",
+      "checkInLabel": "Check-in",
+      "checkOutLabel": "Check-out",
+      "datePlaceholder": "Add date",
+      "guestsLabel": "Guests",
+      "guestsPlaceholder": "Add guests",
+      "guestsCount": "{{count}} guests",
+      "categoryLabel": "Category",
+      "categoryAll": "All categories",
+      "submit": "Search"
+    },
+    "destinations": {
+      "eyebrow": "Explore",
+      "title": "Featured destinations",
+      "subtitle": "Curated places across Armenia, from historic monasteries to alpine lakes.",
+      "items": {
+        "yerevan": {
+          "name": "Yerevan",
+          "description": "Armenia's vibrant capital — museums, cafés, and pink-tuff architecture."
+        },
+        "dilijan": {
+          "name": "Dilijan",
+          "description": "Forested hills and mountain air, often called Armenia's little Switzerland."
+        },
+        "tatev": {
+          "name": "Tatev",
+          "description": "A clifftop monastery reached by the world's longest reversible cable car."
+        },
+        "sevan": {
+          "name": "Lake Sevan",
+          "description": "One of the world's largest high-altitude lakes, ringed by beaches and monasteries."
+        },
+        "gyumri": {
+          "name": "Gyumri",
+          "description": "Armenia's second city, known for its 19th-century architecture and arts scene."
+        },
+        "jermuk": {
+          "name": "Jermuk",
+          "description": "A mountain spa town famous for its mineral springs and waterfalls."
+        }
+      }
+    },
+    "featured": {
+      "eyebrow": "Handpicked",
+      "title": "Featured listings",
+      "subtitle": "A selection of published places to stay and things to do.",
+      "empty": {
+        "title": "No listings yet",
+        "description": "Check back soon — new places to stay and things to do are added regularly."
+      },
+      "error": {
+        "title": "Couldn't load listings",
+        "description": "Something went wrong while loading listings. Please try again."
+      }
+    },
+    "experiences": {
+      "eyebrow": "Things to do",
+      "title": "Popular experiences",
+      "subtitle": "Tours and attractions loved by travelers across Armenia.",
+      "durationHours": "{{count}} hours",
+      "priceSuffix": "/ person",
+      "items": {
+        "dilijan-hiking": {
+          "name": "Dilijan Forest Hiking Tour",
+          "location": "Dilijan"
+        },
+        "yerevan-food-walk": {
+          "name": "Yerevan Food & Wine Walk",
+          "location": "Yerevan"
+        },
+        "sevan-boat-trip": {
+          "name": "Lake Sevan Boat Trip",
+          "location": "Lake Sevan"
+        },
+        "tatev-tramway": {
+          "name": "Tatev Aerial Tramway Excursion",
+          "location": "Tatev"
+        },
+        "gyumri-walking-tour": {
+          "name": "Gyumri Old City Walking Tour",
+          "location": "Gyumri"
+        },
+        "jermuk-spa-day": {
+          "name": "Jermuk Waterfalls & Spa Day",
+          "location": "Jermuk"
+        }
+      }
+    },
+    "categories": {
+      "eyebrow": "Browse",
+      "title": "Categories",
+      "listingCount": "{{count}} listings",
+      "empty": {
+        "title": "No categories yet",
+        "description": "Check back soon — categories are added as new places are published."
+      },
+      "error": {
+        "title": "Couldn't load categories",
+        "description": "Something went wrong while loading categories. Please try again.",
+        "retry": "Try again"
+      }
+    },
+    "whyTravelHub": {
+      "eyebrow": "Why desavii",
+      "title": "Travel with confidence",
+      "subtitle": "Everything you need for a smooth trip across Armenia, in one place.",
+      "items": {
+        "verifiedPartners": {
+          "title": "Verified partners",
+          "description": "Every host and operator is reviewed before they can list on desavii."
+        },
+        "securePayments": {
+          "title": "Secure booking",
+          "description": "Your payment details are protected at every step of checkout."
+        },
+        "localExpertise": {
+          "title": "Local expertise",
+          "description": "Curated by people who know Armenia, from hidden trails to hidden menus."
+        },
+        "multilingualSupport": {
+          "title": "Multilingual support",
+          "description": "Get help in Armenian, Russian, or English, whenever you need it."
+        }
+      }
+    },
+    "partnerCta": {
+      "title": "List your place on desavii",
+      "description": "Reach travelers from around the world and manage bookings in one dashboard.",
+      "cta": "Become a partner"
+    },
+    "testimonials": {
+      "eyebrow": "Testimonials",
+      "title": "What travelers say",
+      "items": {
+        "testimonial-1": {
+          "quote": "Booking our whole trip to Dilijan took minutes, and everything matched what we saw online.",
+          "name": "Anna K.",
+          "role": "Family traveler"
+        },
+        "testimonial-2": {
+          "quote": "The Tatev excursion was the highlight of our trip. Easy to book and well organized.",
+          "name": "Michael R.",
+          "role": "Solo traveler"
+        },
+        "testimonial-3": {
+          "quote": "We found a lovely guesthouse in Gyumri we never would have discovered otherwise.",
+          "name": "Sofia L.",
+          "role": "Couple traveler"
+        }
+      },
+      "disclosure": "Illustrative quotes based on typical traveler feedback."
+    },
+    "newsletter": {
+      "title": "Stay in the know",
+      "subtitle": "Get new destinations, listings, and travel tips across Armenia in your inbox.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "Enter a valid email address.",
+      "submit": "Subscribe",
+      "successMessage": "Thanks for subscribing! We'll be in touch."
+    },
+    "showcase": {
+      "previous": "Previous",
+      "next": "Next",
+      "goToSlide": "Go to slide {{index}}",
+      "viewAll": "View all"
+    }
+  },
+  "listings": {
+    "type": {
+      "HOTEL": "Hotel",
+      "PROPERTY": "Property",
+      "RESTAURANT": "Restaurant",
+      "TOUR": "Tour",
+      "CAR_RENTAL": "Car Rental",
+      "ATTRACTION": "Attraction"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "UNPUBLISHED": "Unpublished",
+      "ARCHIVED": "Archived"
+    }
+  },
+  "bookings": {
+    "status": {
+      "DRAFT": "Draft",
+      "PENDING_VENDOR": "Awaiting confirmation",
+      "CONFIRMED": "Confirmed",
+      "REJECTED": "Declined",
+      "CANCELLED_BY_CUSTOMER": "Cancelled by you",
+      "CANCELLED_BY_VENDOR": "Cancelled by host",
+      "COMPLETED": "Completed",
+      "NO_SHOW": "No-show",
+      "EXPIRED": "Expired",
+      "partner": {
+        "CANCELLED_BY_CUSTOMER": "Cancelled by customer"
+      }
+    },
+    "list": {
+      "heading": "My bookings",
+      "loading": "Loading your bookings…",
+      "empty": {
+        "title": "No bookings yet",
+        "description": "Once you request a booking, it will show up here."
+      },
+      "error": {
+        "title": "We couldn't load your bookings.",
+        "retry": "Try again"
+      },
+      "loadMore": "Load more",
+      "viewDetails": "View booking {{reference}}",
+      "total": "Total",
+      "requestedOn": "Requested {{date}}"
+    },
+    "detail": {
+      "heading": "Booking {{reference}}",
+      "loading": "Loading booking…",
+      "error": {
+        "title": "We couldn't load this booking.",
+        "retry": "Try again"
+      },
+      "reference": "Reference",
+      "status": "Status",
+      "dates": "Dates",
+      "quantity": "Quantity",
+      "notes": "Notes to the host",
+      "contactName": "Contact name",
+      "contactEmail": "Email",
+      "contactPhone": "Phone",
+      "total": "Total",
+      "messagePartnerAction": "Message host",
+      "messagePartnerError": "We couldn't open a conversation with the host. Please try again.",
+      "cancelAction": "Cancel booking",
+      "cancelConfirmTitle": "Cancel this booking?",
+      "cancelConfirmDescription": "This can't be undone. The host will be notified.",
+      "cancelConfirmAction": "Yes, cancel",
+      "cancelConfirmDismiss": "Keep booking",
+      "cancelSuccess": "Your booking has been cancelled.",
+      "cancelError": "We couldn't cancel this booking. Please try again.",
+      "review": {
+        "heading": "Your review",
+        "alreadySubmitted": "You've already reviewed this booking. Thank you!"
+      }
+    },
+    "checkout": {
+      "heading": "Confirm your request",
+      "holdExpiresIn": "Your dates are held for {{minutes}}:{{seconds}}",
+      "holdExpired": "Your held dates have expired. Please choose your dates again.",
+      "conflictError": "These dates are no longer available — someone else may have just booked them. Please cancel and choose different dates.",
+      "noActiveHold": {
+        "title": "No active reservation",
+        "description": "Start by selecting dates on a listing page.",
+        "action": "Browse listings"
+      },
+      "guestContact": {
+        "heading": "Contact details",
+        "fullNameLabel": "Full name",
+        "fullNameRequired": "Full name is required.",
+        "emailLabel": "Email",
+        "emailRequired": "Email is required.",
+        "emailInvalid": "Enter a valid email address.",
+        "phoneLabel": "Phone (optional)"
+      },
+      "notesLabel": "Notes for the host (optional)",
+      "estimatedTotal": "Estimated total",
+      "confirmAction": "Confirm booking request",
+      "cancelHoldAction": "Cancel and release these dates",
+      "submitError": "We couldn't submit your booking request. Please try again.",
+      "successToast": "Your booking request has been sent to the host.",
+      "summary": {
+        "heading": "Order summary",
+        "dates": "Dates",
+        "nights": "Nights",
+        "quantity": "Quantity",
+        "total": "Estimated total",
+        "estimateSuffix": "(estimate)",
+        "unavailable": "Calculated at booking"
+      }
+    }
+  },
+  "payments": {
+    "status": {
+      "CREATED": "Created",
+      "REQUIRES_ACTION": "Action required",
+      "PROCESSING": "Processing",
+      "AUTHORIZED": "Authorized",
+      "SUCCEEDED": "Paid",
+      "FAILED": "Declined",
+      "CANCELLED": "Cancelled",
+      "PARTIALLY_REFUNDED": "Partially refunded",
+      "REFUNDED": "Refunded"
+    },
+    "provider": {
+      "local": "Development / Demo Payment",
+      "stripe": "Stripe"
+    },
+    "simulated": {
+      "title": "Development / Demo Payment",
+      "description": "No real money is charged. This payment is simulated for testing and demo purposes only."
+    },
+    "summary": {
+      "total": "Total",
+      "reference": "Reference",
+      "provider": "Provider",
+      "paidAt": "Paid",
+      "notYet": "Not yet",
+      "refundsHeading": "Refunds",
+      "refundableRemaining": "Refundable balance"
+    },
+    "payNow": {
+      "heading": "Pay for this booking",
+      "scenarioLabel": "Simulate outcome",
+      "scenario": {
+        "SUCCESS": "Successful payment",
+        "DECLINE": "Declined payment",
+        "PROCESSING": "Processing (resolves shortly)"
+      },
+      "action": "Pay now",
+      "successToast": "Payment successful.",
+      "declinedToast": "The simulated payment was declined.",
+      "processingToast": "Your payment is processing — this will resolve shortly.",
+      "errorToast": "We couldn't process this payment. Please try again."
+    },
+    "list": {
+      "heading": "My payments",
+      "empty": {
+        "title": "No payments yet",
+        "description": "Once you pay for a booking, it will show up here."
+      },
+      "error": {
+        "title": "We couldn't load your payments.",
+        "retry": "Try again"
+      },
+      "loadMore": "Load more",
+      "viewBooking": "View booking"
+    },
+    "partnerBalance": {
+      "heading": "Payable balance",
+      "payableLabel": "Payable to you",
+      "empty": "No payable balance yet.",
+      "error": "We couldn't load your payable balance."
+    }
+  },
+  "search": {
+    "filters": {
+      "keywordLabel": "Search",
+      "keywordPlaceholder": "Search destinations, stays, things to do...",
+      "categoryLabel": "Category",
+      "categoryAll": "All categories",
+      "sortLabel": "Sort by",
+      "sort": {
+        "newest": "Newest",
+        "oldest": "Oldest",
+        "alphabetical": "A–Z",
+        "relevance": "Best match"
+      },
+      "activeFilters": "Active filters",
+      "removeFilter": "Remove {{label}} filter",
+      "clearAll": "Clear filters"
+    },
+    "aiSearch": {
+      "ariaLabel": "AI-powered search",
+      "inputLabel": "Describe what you're looking for",
+      "placeholder": "e.g. cheap hotels with a pool in Yerevan",
+      "submit": "Search with AI",
+      "submitting": "Searching...",
+      "error": "We couldn't parse that search — please try again."
+    },
+    "dynamicFilters": {
+      "triggerLabel": "Filters",
+      "drawerTitle": "Filters",
+      "applyLabel": "Show results",
+      "activeFilters": "Active filters",
+      "anyValue": "Any",
+      "decrease": "Decrease {{label}}",
+      "increase": "Increase {{label}}",
+      "minValue": "Minimum {{label}}",
+      "maxValue": "Maximum {{label}}",
+      "groups": {
+        "ROOMS": "Rooms & beds",
+        "RATING": "Rating",
+        "DINING": "Dining",
+        "EXPERIENCE": "Experience",
+        "VEHICLE": "Vehicle",
+        "AMENITIES": "Amenities"
+      },
+      "definitions": {
+        "bedrooms": "Bedrooms",
+        "bathrooms": "Bathrooms",
+        "beds": "Beds",
+        "max_guests": "Max guests",
+        "star_rating": "Star rating",
+        "price_tier": "Price",
+        "cuisine": "Cuisine",
+        "duration_minutes": "Duration",
+        "difficulty": "Difficulty",
+        "max_group_size": "Max group size",
+        "transmission": "Transmission",
+        "seats": "Seats",
+        "amenity_ids": "Amenities"
+      },
+      "options": {
+        "1": "1 star",
+        "2": "2 stars",
+        "3": "3 stars",
+        "4": "4 stars",
+        "5": "5 stars",
+        "$": "$",
+        "$$": "$$",
+        "$$$": "$$$",
+        "$$$$": "$$$$",
+        "ARMENIAN": "Armenian",
+        "GEORGIAN": "Georgian",
+        "ITALIAN": "Italian",
+        "MEDITERRANEAN": "Mediterranean",
+        "EUROPEAN": "European",
+        "ASIAN": "Asian",
+        "EASY": "Easy",
+        "MODERATE": "Moderate",
+        "CHALLENGING": "Challenging",
+        "MANUAL": "Manual",
+        "AUTOMATIC": "Automatic"
+      }
+    },
+    "results": {
+      "loadMore": "Load more",
+      "empty": {
+        "title": "No results found",
+        "description": "Try adjusting your search or filters."
+      },
+      "error": {
+        "title": "Couldn't load results",
+        "description": "Something went wrong while searching. Please try again.",
+        "retry": "Try again"
+      }
+    },
+    "card": {
+      "viewDetails": "View {{title}}"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you're looking for doesn't exist or may have moved.",
+      "action": "Back to home"
+    },
+    "forbidden": {
+      "title": "Access restricted",
+      "description": "You don't have permission to view this page.",
+      "action": "Back to home"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Log in",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Sign up",
+      "genericError": "We couldn't log you in. Check your details and try again."
+    },
+    "register": {
+      "title": "Create your account",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "phone": "Phone (optional)",
+      "password": "Password",
+      "submit": "Create account",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Log in",
+      "genericError": "We couldn't create your account. Please check your details and try again."
+    },
+    "validation": {
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "Enter a valid email address.",
+      "passwordRequired": "Enter your password.",
+      "passwordWeak": "Use at least 10 characters, with at least 3 of: lowercase, uppercase, digit, symbol.",
+      "firstNameRequired": "Enter your first name.",
+      "lastNameRequired": "Enter your last name."
+    }
+  },
+  "account": {
+    "nav": {
+      "dashboard": "Overview",
+      "bookings": "Bookings",
+      "payments": "Payments",
+      "profile": "Profile",
+      "settings": "Settings",
+      "favorites": "Favorites",
+      "tripPlanner": "Trip Planner",
+      "messages": "Messages",
+      "notifications": "Notifications"
+    }
+  },
+  "dashboard": {
+    "greeting": "Welcome back, {{name}}",
+    "error": {
+      "title": "We couldn't load your dashboard.",
+      "retry": "Try again"
+    },
+    "stats": {
+      "upcoming": "Upcoming trips",
+      "pending": "Awaiting confirmation",
+      "recent": "Recent bookings"
+    },
+    "upcoming": {
+      "heading": "Upcoming trips",
+      "emptyTitle": "No upcoming trips",
+      "emptyDescription": "Trips you've booked that haven't happened yet will show up here."
+    },
+    "recent": {
+      "heading": "Recent bookings",
+      "viewAll": "View all bookings",
+      "emptyTitle": "No bookings yet",
+      "emptyDescription": "When you book a stay or experience, it will show up here.",
+      "emptyAction": "Browse listings"
+    }
+  },
+  "profile": {
+    "sections": {
+      "photo": "Photo",
+      "personalInfo": "Personal information"
+    },
+    "form": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "phone": "Phone",
+      "preferredLanguage": "Preferred language",
+      "preferredCurrency": "Preferred currency",
+      "selectPlaceholder": "Select…",
+      "emailUnverified": "Your email address is not verified yet.",
+      "save": "Save changes",
+      "saveSuccess": "Your profile has been updated.",
+      "saveError": "We couldn't save your changes. Please try again.",
+      "languageOptions": {
+        "en": "English",
+        "hy": "Armenian",
+        "ru": "Russian"
+      },
+      "currencyOptions": {
+        "AMD": "Armenian Dram (AMD)",
+        "USD": "US Dollar (USD)",
+        "EUR": "Euro (EUR)"
+      }
+    },
+    "avatar": {
+      "changeAction": "Change profile photo",
+      "hint": "JPEG, PNG, or WebP, up to 10 MB.",
+      "errorType": "Please choose a JPEG, PNG, or WebP image.",
+      "errorSize": "Please choose an image under 10 MB.",
+      "uploadSuccess": "Your profile photo has been updated.",
+      "uploadError": "We couldn't upload that photo. Please try again."
+    },
+    "settings": {
+      "password": {
+        "heading": "Password",
+        "current": "Current password",
+        "currentRequired": "Enter your current password.",
+        "new": "New password",
+        "confirm": "Confirm new password",
+        "confirmRequired": "Confirm your new password.",
+        "confirmMismatch": "Passwords don't match.",
+        "submit": "Change password",
+        "success": "Your password has been changed.",
+        "wrongCurrent": "Your current password is incorrect.",
+        "genericError": "We couldn't change your password. Please try again."
+      },
+      "dangerZone": {
+        "heading": "Danger zone",
+        "deleteAccountUnavailable": "Self-service account deletion isn't available yet. Contact support if you'd like to delete your account."
+      }
+    }
+  },
+  "partner": {
+    "nav": {
+      "dashboard": "Overview",
+      "listings": "Listings",
+      "bookings": "Bookings",
+      "calendar": "Calendar",
+      "connections": "Connections",
+      "messages": "Messages",
+      "notifications": "Notifications",
+      "aiUsage": "AI Usage"
+    },
+    "aiUsage": {
+      "heading": "AI Usage"
+    },
+    "dashboard": {
+      "greeting": "Welcome back, {{name}}",
+      "stats": {
+        "activeListings": "Active listings",
+        "draftListings": "Draft listings",
+        "upcomingBookings": "Upcoming bookings",
+        "pendingConfirmations": "Pending confirmations"
+      },
+      "listings": {
+        "heading": "Your listings",
+        "viewAll": "Manage all listings",
+        "emptyTitle": "No listings yet",
+        "emptyDescription": "Create your first listing to start accepting bookings.",
+        "emptyAction": "Create a listing",
+        "listedOn": "Listed {{date}}"
+      },
+      "bookings": {
+        "heading": "Recent bookings",
+        "viewAll": "View all bookings",
+        "emptyTitle": "No bookings yet",
+        "emptyDescription": "Bookings for your listings will show up here."
+      },
+      "error": {
+        "title": "Something went wrong loading your dashboard.",
+        "retry": "Try again"
+      }
+    },
+    "bookings": {
+      "heading": "Bookings",
+      "filters": {
+        "statusLabel": "Status",
+        "statusAll": "All statuses"
+      },
+      "empty": {
+        "title": "No bookings match your filters",
+        "description": "Bookings for your listings will show up here."
+      },
+      "error": {
+        "title": "Something went wrong loading your bookings.",
+        "retry": "Try again"
+      },
+      "loadMore": "Load more",
+      "detail": {
+        "heading": "Booking {{reference}}",
+        "loading": "Loading booking…",
+        "error": {
+          "title": "We couldn't load this booking.",
+          "retry": "Try again"
+        },
+        "notes": "Customer notes",
+        "timeline": {
+          "heading": "Timeline",
+          "requested": "Requested",
+          "confirmed": "Confirmed",
+          "rejected": "Rejected",
+          "cancelled": "Cancelled",
+          "completed": "Completed"
+        },
+        "messageCustomerAction": "Message customer",
+        "messageCustomerError": "We couldn't open a conversation with the customer. Please try again.",
+        "confirmAction": "Confirm booking",
+        "confirmSuccess": "Booking confirmed.",
+        "confirmError": "Something went wrong. Please try again.",
+        "rejectAction": "Reject booking",
+        "rejectConfirmTitle": "Reject this booking?",
+        "rejectConfirmDescription": "The customer will be notified and any held capacity will be released. This can't be undone.",
+        "rejectConfirmAction": "Yes, reject",
+        "rejectConfirmDismiss": "Keep booking",
+        "rejectSuccess": "Booking rejected.",
+        "rejectError": "Something went wrong. Please try again.",
+        "cancelAction": "Cancel booking",
+        "cancelConfirmTitle": "Cancel this booking?",
+        "cancelConfirmDescription": "The customer will be notified. This can't be undone.",
+        "cancelConfirmAction": "Yes, cancel",
+        "cancelConfirmDismiss": "Keep booking",
+        "cancelSuccess": "Booking cancelled.",
+        "cancelError": "Something went wrong. Please try again."
+      }
+    },
+    "calendar": {
+      "heading": "Calendar",
+      "listingLabel": "Listing",
+      "unitLabel": "Bookable unit",
+      "noListings": {
+        "title": "No listings yet",
+        "description": "Create a listing to start managing its availability calendar."
+      },
+      "noUnits": {
+        "title": "This listing has no bookable units",
+        "description": "Add a bookable unit from the listing wizard to manage its calendar."
+      },
+      "legend": {
+        "available": "Available",
+        "blocked": "Blocked"
+      },
+      "selection": "Selected: {{start}} – {{end}}",
+      "form": {
+        "statusLabel": "Set status for the selected dates",
+        "statusOptions": {
+          "AVAILABLE": "Available",
+          "BLOCKED": "Blocked"
+        },
+        "apply": "Apply"
+      },
+      "applySuccess": "Availability updated.",
+      "applyError": "Something went wrong. Please try again.",
+      "resourceLabel": "Resource",
+      "actionsLabel": "Actions for selected dates",
+      "listsLabel": "Inventory lists",
+      "breakdown": {
+        "total": "{{count}} total",
+        "available": "{{count}} available",
+        "confirmed": "{{count}} confirmed",
+        "held": "{{count}} held",
+        "external": "{{count}} external",
+        "manual": "{{count}} blocked"
+      },
+      "blocks": {
+        "tabLabel": "Block dates",
+        "quantityLabel": "Quantity to block",
+        "reasonLabel": "Reason",
+        "notesLabel": "Notes (optional)",
+        "blockAction": "Block",
+        "unblockAction": "Unblock",
+        "createSuccess": "Dates blocked.",
+        "createError": "Could not block these dates. Please try again.",
+        "releaseSuccess": "Block released.",
+        "releaseError": "Could not release this block. Please try again.",
+        "listTitle": "Active blocks ({{count}})",
+        "emptyTitle": "No active manual blocks.",
+        "reasonCodes": {
+          "MAINTENANCE": "Maintenance",
+          "OWNER_USE": "Owner use",
+          "OPERATIONAL": "Operational",
+          "PRIVATE_EVENT": "Private event",
+          "STAFF_UNAVAILABLE": "Staff unavailable",
+          "VEHICLE_UNAVAILABLE": "Vehicle unavailable",
+          "WEATHER": "Weather",
+          "OTHER": "Other"
+        },
+        "columns": {
+          "range": "Dates",
+          "quantity": "Quantity",
+          "reason": "Reason"
+        }
+      },
+      "external": {
+        "tabLabel": "External reservation",
+        "sourceLabel": "Source",
+        "quantityLabel": "Quantity",
+        "guestNameLabel": "Guest name (optional)",
+        "guestPhoneLabel": "Guest phone (optional)",
+        "referenceLabel": "Reference (optional)",
+        "recordAction": "Record reservation",
+        "cancelAction": "Cancel",
+        "createSuccess": "External reservation recorded.",
+        "createError": "Could not record this reservation. Please try again.",
+        "cancelSuccess": "Reservation cancelled.",
+        "cancelError": "Could not cancel this reservation. Please try again.",
+        "listTitle": "External reservations ({{count}})",
+        "emptyTitle": "No external reservations recorded.",
+        "sourceCodes": {
+          "PHONE": "Phone",
+          "WALK_IN": "Walk-in",
+          "PARTNER_WEBSITE": "Partner website",
+          "BOOKING_COM": "Booking.com",
+          "EXPEDIA": "Expedia",
+          "AIRBNB": "Airbnb",
+          "TRAVEL_AGENCY": "Travel agency",
+          "OTHER": "Other"
+        },
+        "columns": {
+          "range": "Dates",
+          "source": "Source",
+          "guest": "Guest"
+        }
+      },
+      "csvImport": {
+        "openAction": "Import from CSV",
+        "title": "Import reservations from CSV",
+        "uploadInstructions": "Upload a CSV file with dateFrom, dateTo, quantity, externalReference, guestName, guestPhone, guestEmail, and notes columns (only dateFrom and dateTo are required).",
+        "uploadLabel": "CSV file",
+        "fileTypeError": "Please choose a .csv file.",
+        "emptyFileError": "This file has no rows to import.",
+        "readError": "Could not read this file. Please try again.",
+        "importError": "Could not import these rows. Please try again.",
+        "previewSummary": "{{total}} row(s) found — {{valid}} valid, {{invalid}} invalid.",
+        "resultSummary": "{{created}} of {{total}} row(s) created.",
+        "rowValid": "Valid",
+        "cancelAction": "Cancel",
+        "confirmAction": "Import {{count}} row(s)",
+        "doneAction": "Done",
+        "columns": {
+          "range": "Dates",
+          "quantity": "Quantity",
+          "guest": "Guest",
+          "status": "Status",
+          "error": "Error"
+        },
+        "rowErrors": {
+          "INVALID_DATE_FROM": "Invalid dateFrom",
+          "INVALID_DATE_TO": "Invalid dateTo",
+          "DATE_TO_BEFORE_DATE_FROM": "dateTo is before dateFrom",
+          "INVALID_QUANTITY": "Invalid quantity"
+        },
+        "resultStatuses": {
+          "CREATED": "Created",
+          "SKIPPED_DUPLICATE": "Skipped (duplicate)",
+          "FAILED": "Failed"
+        }
+      }
+    },
+    "connections": {
+      "heading": "Connections",
+      "description": "Configure how this listing's availability stays in sync with external calendars and channels.",
+      "addAction": "Add connection",
+      "detailsAction": "Details",
+      "testAction": "Test",
+      "syncAction": "Sync now",
+      "disconnectAction": "Disconnect",
+      "closeDetailsAction": "Close",
+      "cancelAction": "Cancel",
+      "resolveAction": "Resolve",
+      "createSuccess": "Connection created.",
+      "createError": "Could not create this connection. Please try again.",
+      "testSuccess": "Connection test succeeded: {{message}}",
+      "testFailure": "Connection test failed: {{message}}",
+      "testError": "Could not test this connection. Please try again.",
+      "syncSuccess": "Sync finished: {{status}}.",
+      "syncError": "Could not sync this connection. Please try again.",
+      "disconnectConfirmTitle": "Disconnect \"{{name}}\"?",
+      "disconnectConfirmDescription": "This connection will stop syncing. This can't be undone.",
+      "disconnectConfirmAction": "Yes, disconnect",
+      "disconnectSuccess": "Connection disconnected.",
+      "disconnectError": "Could not disconnect this connection. Please try again.",
+      "mappingSuccess": "Mapping saved.",
+      "mappingError": "Could not save this mapping. Please try again.",
+      "resolveConfirmTitle": "Resolve this conflict?",
+      "resolveConfirmDescription": "This marks the conflict as reviewed. It won't undo any sync action.",
+      "resolveConfirmAction": "Yes, resolve",
+      "resolveSuccess": "Conflict resolved.",
+      "resolveError": "Could not resolve this conflict. Please try again.",
+      "errorTitle": "Something went wrong loading your connections.",
+      "errorRetry": "Try again",
+      "emptyTitle": "No connections configured yet.",
+      "emptyDescription": "Add a connection to sync availability with an external calendar or channel.",
+      "neverSynced": "Never synced",
+      "detailTabsLabel": "Connection details",
+      "columns": {
+        "name": "Name",
+        "type": "Type",
+        "direction": "Direction",
+        "status": "Status",
+        "lastSync": "Last successful sync"
+      },
+      "connectorTypes": {
+        "MANUAL": "Manual entry",
+        "ICAL": "iCal feed",
+        "CSV": "CSV import",
+        "GENERIC_API": "API",
+        "GENERIC_WEBHOOK": "Webhook"
+      },
+      "directions": {
+        "IMPORT": "Import",
+        "EXPORT": "Export",
+        "BOTH": "Import & export"
+      },
+      "statuses": {
+        "ACTIVE": "Active",
+        "ERROR": "Error",
+        "PAUSED": "Paused",
+        "DISCONNECTED": "Disconnected"
+      },
+      "syncStatuses": {
+        "SUCCESS": "Success",
+        "PARTIAL": "Partial",
+        "FAILED": "Failed"
+      },
+      "syncTriggers": {
+        "MANUAL": "Manual",
+        "SCHEDULED": "Scheduled"
+      },
+      "conflictTypes": {
+        "AMBIGUOUS_MAPPING": "No unit mapped"
+      },
+      "exportFeed": {
+        "label": "iCal export feed URL"
+      },
+      "syncRuns": {
+        "tabLabel": "Sync history",
+        "emptyTitle": "No sync runs yet.",
+        "recordsSummary": "{{created}} created, {{skipped}} skipped",
+        "columns": {
+          "startedAt": "Started",
+          "trigger": "Trigger",
+          "status": "Status",
+          "records": "Records",
+          "error": "Error"
+        }
+      },
+      "conflicts": {
+        "tabLabel": "Conflicts ({{count}})",
+        "emptyTitle": "No unresolved conflicts.",
+        "columns": {
+          "event": "Event",
+          "type": "Type",
+          "createdAt": "Detected"
+        }
+      },
+      "mapping": {
+        "tabLabel": "Mapping",
+        "noListingTitle": "This connection has no listing to map units from.",
+        "externalResourceIdLabel": "External resource id",
+        "unitLabel": "Bookable unit",
+        "saveAction": "Save mapping"
+      },
+      "form": {
+        "title": "Add connection",
+        "nameLabel": "Name",
+        "connectorTypeLabel": "Connector type",
+        "directionLabel": "Direction",
+        "listingLabel": "Listing",
+        "feedUrlLabel": "iCal feed URL",
+        "saveAction": "Create connection"
+      }
+    },
+    "listings": {
+      "heading": "My Listings",
+      "create": "Create listing",
+      "filters": {
+        "keywordLabel": "Search your listings",
+        "keywordPlaceholder": "Search by title...",
+        "statusLabel": "Status",
+        "statusAll": "All statuses",
+        "sortLabel": "Sort by"
+      },
+      "empty": {
+        "title": "No listings match your filters",
+        "description": "Try a different search or status filter, or create a new listing."
+      },
+      "error": {
+        "title": "Something went wrong loading your listings.",
+        "retry": "Try again"
+      },
+      "loadMore": "Load more",
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "publish": "Publish",
+        "unpublish": "Unpublish",
+        "archive": "Archive",
+        "delete": "Delete"
+      },
+      "publishSuccess": "Your listing has been published.",
+      "publishError": "This listing isn't ready to publish yet.",
+      "unpublishSuccess": "Your listing has been unpublished.",
+      "unpublishError": "Something went wrong. Please try again.",
+      "archiveConfirmTitle": "Archive this listing?",
+      "archiveConfirmDescription": "Archived listings are hidden from customers and can't be republished. This can't be undone.",
+      "archiveConfirmAction": "Yes, archive",
+      "archiveConfirmDismiss": "Cancel",
+      "archiveSuccess": "Listing archived.",
+      "archiveError": "Something went wrong. Please try again.",
+      "deleteConfirmTitle": "Delete this listing?",
+      "deleteConfirmDescription": "This permanently removes the listing from your account. This can't be undone.",
+      "deleteConfirmAction": "Yes, delete",
+      "deleteConfirmDismiss": "Cancel",
+      "deleteSuccess": "Listing deleted.",
+      "deleteError": "Something went wrong. Please try again."
+    },
+    "listingWizard": {
+      "back": "Back",
+      "continue": "Continue",
+      "publish": "Publish",
+      "retry": "Retry",
+      "selectPlaceholder": "Select…",
+      "progressLabel": "Listing creation progress",
+      "progressSummary": "Step {{current}} of {{total}}: {{label}}",
+      "goToStep": "Go to {{label}}",
+      "publishSuccess": "Your listing has been published.",
+      "decrease": "Decrease {{label}}",
+      "increase": "Increase {{label}}",
+      "datePicker": {
+        "previousMonth": "Previous month",
+        "nextMonth": "Next month",
+        "selectDate": "Select date…"
+      },
+      "steps": {
+        "category": "Category",
+        "basicInfo": "Basic Information",
+        "location": "Location",
+        "attributes": "Details",
+        "amenities": "Amenities",
+        "media": "Gallery",
+        "pricing": "Pricing",
+        "availability": "Availability",
+        "policies": "Policies",
+        "content": "Content",
+        "review": "Review & Publish"
+      },
+      "validation": {
+        "required": "This field is required.",
+        "latitudeRange": "Latitude must be between -90 and 90.",
+        "longitudeRange": "Longitude must be between -180 and 180."
+      },
+      "content": {
+        "intro": "Everything here is optional, but a richer listing publishes with a higher completeness score and converts better.",
+        "highlightsTitle": "Highlights",
+        "highlightsHint": "The short standout points shown near the top of your listing (up to 12).",
+        "iconLabel": "Icon",
+        "highlightTextLabel": "Highlight text",
+        "addHighlight": "Add highlight",
+        "itineraryTitle": "Itinerary",
+        "itineraryHint": "Step-by-step schedule for tours, activities, and guided experiences (up to 30 steps).",
+        "stepTitleLabel": "Step title",
+        "stepDescriptionLabel": "Description",
+        "stepDurationLabel": "Duration (minutes)",
+        "addStep": "Add step",
+        "includedTitle": "What's included / not included",
+        "includedHint": "List what a guest gets — and doesn't — with this listing (up to 40 items).",
+        "included": "Included",
+        "notIncluded": "Not included",
+        "itemTextLabel": "Item",
+        "addItem": "Add item",
+        "faqsTitle": "Frequently asked questions",
+        "faqsHint": "Answer the questions guests ask most (up to 20).",
+        "questionLabel": "Question",
+        "answerLabel": "Answer",
+        "addFaq": "Add question",
+        "removeRow": "Remove",
+        "highlightIcons": {
+          "wifi": "Wi-Fi",
+          "pool": "Pool",
+          "beach": "Beach",
+          "parking": "Parking",
+          "breakfast": "Breakfast",
+          "coffee": "Coffee",
+          "view": "View",
+          "pets": "Pets allowed",
+          "ac": "Air conditioning",
+          "wind": "Ventilation",
+          "sun": "Sunny",
+          "moon": "Night",
+          "heart": "Favorite",
+          "award": "Award-winning",
+          "verified": "Verified",
+          "shield": "Safety",
+          "clock": "Fast",
+          "fast": "Fast service",
+          "group": "Groups",
+          "users": "Guests",
+          "location": "Location",
+          "map-pin": "Landmark",
+          "camera": "Photo spot",
+          "photo": "Photogenic",
+          "food": "Food",
+          "restaurant": "Restaurant",
+          "car": "Vehicle",
+          "pickup": "Pickup included",
+          "transfer": "Transfer",
+          "snow": "Snow",
+          "winter": "Winter",
+          "mountain": "Mountain",
+          "hiking": "Hiking",
+          "flight": "Flight",
+          "airport": "Airport",
+          "gift": "Gift",
+          "star": "Top rated"
+        }
+      },
+      "completeness": {
+        "title": "Listing completeness",
+        "loading": "Checking listing completeness…",
+        "requiredTitle": "Still needed to publish",
+        "recommendedTitle": "Recommended for a stronger listing",
+        "allDone": "Your listing is ready to publish.",
+        "fields": {
+          "translations": "A title and description",
+          "location": "A location on the map",
+          "media": "At least one photo",
+          "bookableUnits": "At least one bookable unit",
+          "highlights": "A few highlights",
+          "media.moreImages": "At least 5 photos",
+          "faqs": "A frequently asked question",
+          "pricing": "A price",
+          "translations.description": "A fuller description (200+ characters)"
+        }
+      },
+      "category": {
+        "loading": "Loading categories…",
+        "errorTitle": "We couldn't load categories."
+      },
+      "basicInfo": {
+        "partner": "Partner organization",
+        "listingType": "Listing type",
+        "title": "Title",
+        "summary": "Short summary",
+        "description": "Description"
+      },
+      "listingTypes": {
+        "HOTEL": "Hotel",
+        "PROPERTY": "Property",
+        "RESTAURANT": "Restaurant",
+        "TOUR": "Tour",
+        "CAR_RENTAL": "Car rental",
+        "ATTRACTION": "Attraction"
+      },
+      "location": {
+        "latitude": "Latitude",
+        "longitude": "Longitude"
+      },
+      "attributes": {
+        "loading": "Loading details…",
+        "errorTitle": "We couldn't load this category's details.",
+        "empty": "This category has no additional details to configure.",
+        "bedrooms": "Bedrooms",
+        "bathrooms": "Bathrooms",
+        "beds": "Beds",
+        "max_guests": "Max guests",
+        "star_rating": "Star rating",
+        "price_tier": "Price",
+        "cuisine": "Cuisine",
+        "duration_minutes": "Duration",
+        "difficulty": "Difficulty",
+        "max_group_size": "Max group size",
+        "languages_offered": "Languages offered",
+        "transmission": "Transmission",
+        "seats": "Seats"
+      },
+      "units": {
+        "rooms": "rooms",
+        "rooms_one": "room",
+        "rooms_other": "rooms",
+        "beds": "beds",
+        "beds_one": "bed",
+        "beds_other": "beds",
+        "minutes": "minutes",
+        "minutes_one": "minute",
+        "minutes_other": "minutes",
+        "people": "people",
+        "people_one": "person",
+        "people_other": "people",
+        "guests": "guests",
+        "guests_one": "guest",
+        "guests_other": "guests",
+        "seats": "seats",
+        "seats_one": "seat",
+        "seats_other": "seats"
+      },
+      "amenities": {
+        "loading": "Loading amenities…",
+        "errorTitle": "We couldn't load amenities.",
+        "empty": "This category has no amenities to configure.",
+        "search": "Search amenities"
+      },
+      "amenityGroups": {
+        "GENERAL": "General",
+        "OUTDOOR": "Outdoor",
+        "OTHER": "Other",
+        "WELLNESS": "Wellness",
+        "KITCHEN_LAUNDRY": "Kitchen & Laundry",
+        "CONNECTIVITY": "Connectivity",
+        "ACCESSIBILITY_SAFETY": "Accessibility & Safety",
+        "FAMILY_PETS": "Family & Pets",
+        "FOOD_SERVICE": "Food & Service",
+        "DINING": "Dining"
+      },
+      "media": {
+        "atLeastOneRequired": "Add at least one photo before continuing.",
+        "dropzoneLabel": "Photos & videos",
+        "dropzoneEmphasis": "Click to upload",
+        "dropzoneInstructions": "or drag and drop",
+        "uploadFailed": "Upload failed",
+        "uploading": "Uploading…",
+        "cover": "Cover photo",
+        "setCover": "Set as cover",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "remove": "Remove",
+        "altTextLabel": "Alt text (for accessibility)",
+        "captionLabel": "Caption (optional)"
+      },
+      "pricing": {
+        "loading": "Loading pricing models…",
+        "errorTitle": "We couldn't load pricing models.",
+        "empty": "This category has no pricing model to configure.",
+        "model": "Pricing model",
+        "amount": "Amount",
+        "currency": "Currency"
+      },
+      "pricingModels": {
+        "PER_NIGHT": "Per night",
+        "PER_PERSON": "Per person",
+        "PER_DAY": "Per day",
+        "PER_HOUR": "Per hour"
+      },
+      "availability": {
+        "units": "Bookable units",
+        "unitsRegistered": "{{count}} bookable units registered",
+        "unitType": "Unit type",
+        "registerUnit": "Register unit",
+        "blackoutDates": "Blackout dates",
+        "removeBlackout": "Remove",
+        "addBlackoutRange": "Blocked date range",
+        "addBlackout": "Add blackout dates",
+        "bookingRules": "Booking rules",
+        "minimumStayNights": "Minimum stay (nights)",
+        "maximumStayNights": "Maximum stay (nights)",
+        "advanceBookingMinHours": "Minimum advance booking (hours)",
+        "advanceBookingMaxDays": "Maximum advance booking (days)"
+      },
+      "bookableUnitTypes": {
+        "HOTEL_ROOM": "Hotel room",
+        "PROPERTY_UNIT": "Property unit",
+        "RESTAURANT_TABLE": "Restaurant table",
+        "TOUR_DEPARTURE": "Tour departure",
+        "VEHICLE": "Vehicle"
+      },
+      "policies": {
+        "loading": "Loading policies…",
+        "errorTitle": "We couldn't load policies.",
+        "empty": "This category has no policies to configure.",
+        "pets_allowed": "Pets allowed",
+        "smoking_allowed": "Smoking allowed",
+        "children_allowed": "Children allowed",
+        "cancellation_policy": "Cancellation policy",
+        "check_in_time": "Check-in time",
+        "check_out_time": "Check-out time"
+      },
+      "options": {
+        "cancellation_policy": {
+          "FLEXIBLE": "Flexible",
+          "MODERATE": "Moderate",
+          "STRICT": "Strict"
+        },
+        "difficulty": {
+          "EASY": "Easy",
+          "MODERATE": "Moderate",
+          "CHALLENGING": "Challenging"
+        },
+        "cuisine": {
+          "ARMENIAN": "Armenian",
+          "ASIAN": "Asian",
+          "EUROPEAN": "European",
+          "GEORGIAN": "Georgian",
+          "ITALIAN": "Italian",
+          "MEDITERRANEAN": "Mediterranean"
+        },
+        "transmission": {
+          "AUTOMATIC": "Automatic",
+          "MANUAL": "Manual"
+        },
+        "languages_offered": {
+          "EN": "English",
+          "HY": "Armenian",
+          "RU": "Russian"
+        }
+      },
+      "publishIssues": {
+        "AT_LEAST_ONE_TRANSLATION_REQUIRED": "Add a title before publishing.",
+        "AT_LEAST_ONE_IMAGE_REQUIRED": "Add at least one photo before publishing.",
+        "COMPLETE_LOCATION_REQUIRED": "Set the listing's location before publishing.",
+        "REQUIRED_ATTRIBUTE_MISSING": "A required detail is missing: {{field}}",
+        "REQUIRED_POLICY_MISSING": "A required policy is missing: {{field}}",
+        "AT_LEAST_ONE_BOOKABLE_UNIT_REQUIRED": "Register at least one bookable unit before publishing."
+      },
+      "review": {
+        "title": "Title",
+        "location": "Location",
+        "notSet": "Not set",
+        "media": "Photos & videos",
+        "mediaCount": "{{count}} files",
+        "amenities": "Amenities",
+        "amenitiesCount": "{{count}} selected",
+        "pricing": "Pricing"
+      }
+    }
+  },
+  "admin": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "partners": "Partners",
+      "listings": "Listings",
+      "bookings": "Bookings",
+      "payments": "Payments",
+      "marketplaceConfig": "Configuration",
+      "cms": "Content",
+      "auditLogs": "Audit Logs",
+      "systemHealth": "System Health",
+      "settings": "Settings",
+      "messages": "Messages",
+      "notifications": "Notifications",
+      "aiModeration": "AI Moderation",
+      "aiUsage": "AI Usage",
+      "inventory": "Inventory"
+    },
+    "dashboard": {
+      "heading": "Marketplace overview",
+      "stats": {
+        "users": "Users",
+        "partners": "Partners",
+        "listings": "Listings",
+        "publishedListings": "Published listings",
+        "bookings": "Bookings",
+        "completedBookings": "Completed bookings"
+      },
+      "pendingActions": {
+        "heading": "Pending actions",
+        "partners": "Partners awaiting verification",
+        "listings": "Listings awaiting moderation",
+        "bookings": "Bookings awaiting vendor response"
+      },
+      "bookingValue": {
+        "heading": "Booking value",
+        "note": "Listed value of confirmed and completed bookings — not the same as total payments received, since not every booking has been paid online yet."
+      },
+      "chart": {
+        "heading": "Bookings, last 14 days"
+      },
+      "recentActivity": {
+        "heading": "Recent activity",
+        "empty": "No activity yet.",
+        "systemActor": "System"
+      },
+      "error": {
+        "title": "Something went wrong loading the dashboard.",
+        "retry": "Try again"
+      }
+    },
+    "users": {
+      "heading": "Users",
+      "loadMore": "Load more",
+      "filters": {
+        "keywordLabel": "Search users",
+        "keywordPlaceholder": "Search by name or email",
+        "statusLabel": "Status",
+        "statusAll": "All statuses"
+      },
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "status": "Status",
+        "roles": "Roles"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "SUSPENDED": "Suspended",
+        "BANNED": "Banned",
+        "PENDING_DELETION": "Pending deletion"
+      },
+      "empty": {
+        "title": "No users found",
+        "description": "Try a different search or filter."
+      },
+      "error": {
+        "title": "Something went wrong loading users.",
+        "retry": "Try again"
+      },
+      "suspendConfirmTitle": "Suspend {{name}}?",
+      "suspendConfirmDescription": "This user will be unable to log in until reactivated.",
+      "suspendConfirmAction": "Suspend",
+      "activateConfirmTitle": "Reactivate {{name}}?",
+      "activateConfirmDescription": "This user will regain full access immediately.",
+      "activateConfirmAction": "Activate",
+      "suspendSuccess": "User suspended.",
+      "activateSuccess": "User reactivated.",
+      "statusError": "Something went wrong. Please try again."
+    },
+    "userDetail": {
+      "loading": "Loading…",
+      "roles": "Roles",
+      "error": {
+        "title": "We couldn't load this user.",
+        "retry": "Try again"
+      },
+      "bookings": {
+        "heading": "Booking history",
+        "empty": "No bookings yet."
+      },
+      "partnerships": {
+        "heading": "Partner memberships",
+        "empty": "Not a member of any partner organization."
+      }
+    },
+    "partners": {
+      "heading": "Partners",
+      "loadMore": "Load more",
+      "filters": {
+        "keywordLabel": "Search partners",
+        "keywordPlaceholder": "Search by name, email, or slug",
+        "verificationLabel": "Verification",
+        "verificationAll": "All verification statuses",
+        "moderationLabel": "Visibility",
+        "moderationAll": "All visibility statuses"
+      },
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "verification": "Verification",
+        "moderation": "Visibility",
+        "listings": "Listings"
+      },
+      "verificationStatus": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected"
+      },
+      "moderationStatus": {
+        "APPROVED": "Visible",
+        "FLAGGED": "Suspended"
+      },
+      "empty": {
+        "title": "No partners found",
+        "description": "Try a different search or filter."
+      },
+      "error": {
+        "title": "Something went wrong loading partners.",
+        "retry": "Try again"
+      },
+      "suspendConfirmTitle": "Suspend {{name}}?",
+      "suspendConfirmDescription": "This partner will be hidden from the public Companies directory until restored.",
+      "suspendConfirmAction": "Suspend",
+      "restoreConfirmTitle": "Restore {{name}}?",
+      "restoreConfirmDescription": "This partner will be visible in the public Companies directory again.",
+      "restoreConfirmAction": "Restore",
+      "suspendSuccess": "Partner suspended.",
+      "restoreSuccess": "Partner restored.",
+      "statusError": "Something went wrong. Please try again."
+    },
+    "partnerDetail": {
+      "loading": "Loading…",
+      "owner": "Owner",
+      "noOwner": "No owner on record",
+      "error": {
+        "title": "We couldn't load this partner.",
+        "retry": "Try again"
+      },
+      "stats": {
+        "totalListings": "Total listings",
+        "publishedListings": "Published listings"
+      },
+      "verification": {
+        "heading": "Verification",
+        "approveAction": "Approve",
+        "rejectAction": "Reject",
+        "approveConfirmTitle": "Approve {{name}}?",
+        "approveConfirmDescription": "This partner will be marked verified and shown a \"Verified\" badge publicly.",
+        "rejectConfirmTitle": "Reject {{name}}?",
+        "rejectConfirmDescription": "This partner's verification request will be marked rejected.",
+        "approveSuccess": "Partner verification approved.",
+        "rejectSuccess": "Partner verification rejected."
+      },
+      "moderation": {
+        "heading": "Visibility",
+        "suspendAction": "Suspend",
+        "restoreAction": "Restore"
+      },
+      "bookings": {
+        "heading": "Recent bookings",
+        "empty": "No bookings yet."
+      }
+    },
+    "listingModeration": {
+      "heading": "Listing Moderation",
+      "loadMore": "Load more",
+      "filters": {
+        "keywordLabel": "Search listings",
+        "keywordPlaceholder": "Search by title or partner",
+        "moderationLabel": "Moderation",
+        "moderationAll": "All moderation statuses",
+        "statusLabel": "Status",
+        "statusAll": "All statuses"
+      },
+      "table": {
+        "title": "Title",
+        "partner": "Partner",
+        "status": "Status",
+        "moderation": "Moderation"
+      },
+      "moderationStatus": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "FLAGGED": "Flagged"
+      },
+      "status": {
+        "DRAFT": "Draft",
+        "PENDING_REVIEW": "Pending review",
+        "PUBLISHED": "Published",
+        "UNPUBLISHED": "Unpublished",
+        "ARCHIVED": "Archived"
+      },
+      "empty": {
+        "title": "No listings found",
+        "description": "Try a different search or filter."
+      },
+      "error": {
+        "title": "Something went wrong loading listings.",
+        "retry": "Try again"
+      },
+      "approveAction": "Approve",
+      "rejectAction": "Reject",
+      "approveConfirmTitle": "Approve \"{{title}}\"?",
+      "approveConfirmDescription": "This listing will be marked as moderation-approved.",
+      "approveSuccess": "Listing approved.",
+      "rejectDialogTitle": "Reject \"{{title}}\"?",
+      "rejectDialogDescription": "This listing will be marked as moderation-rejected. You can add an optional note explaining why — it is saved with the listing.",
+      "notesLabel": "Notes (optional)",
+      "notesPlaceholder": "e.g. Missing required photos.",
+      "rejectSuccess": "Listing rejected.",
+      "statusError": "Something went wrong. Please try again."
+    },
+    "bookings": {
+      "heading": "Bookings",
+      "loadMore": "Load more",
+      "filters": {
+        "statusLabel": "Status",
+        "statusAll": "All statuses"
+      },
+      "table": {
+        "reference": "Reference",
+        "customer": "Customer",
+        "customerLink": "Customer #{{id}}",
+        "partner": "Partner",
+        "partnerLink": "Partner #{{id}}",
+        "status": "Status",
+        "total": "Total"
+      },
+      "empty": {
+        "title": "No bookings found",
+        "description": "Try a different status filter."
+      },
+      "error": {
+        "title": "Something went wrong loading bookings.",
+        "retry": "Try again"
+      }
+    },
+    "bookingDetail": {
+      "loading": "Loading…",
+      "heading": "Booking {{reference}}",
+      "customer": "Customer",
+      "partner": "Partner",
+      "listing": "Listing",
+      "listingId": "Listing #{{id}}",
+      "notes": "Customer notes",
+      "error": {
+        "title": "We couldn't load this booking.",
+        "retry": "Try again"
+      },
+      "history": {
+        "heading": "Status history",
+        "loading": "Loading…",
+        "empty": "No status changes recorded yet.",
+        "created": "Created"
+      },
+      "confirmAction": "Confirm",
+      "confirmSuccess": "Booking confirmed.",
+      "rejectAction": "Reject",
+      "rejectConfirmTitle": "Reject this booking?",
+      "rejectConfirmDescription": "The customer will be notified and any held capacity will be released.",
+      "rejectSuccess": "Booking rejected.",
+      "cancelAction": "Cancel",
+      "cancelConfirmTitle": "Cancel this booking?",
+      "cancelConfirmDescription": "This cancels the booking on the vendor's behalf. This cannot be undone.",
+      "cancelSuccess": "Booking cancelled.",
+      "completeAction": "Mark completed",
+      "completeConfirmTitle": "Mark this booking as completed?",
+      "completeConfirmDescription": "This confirms the trip took place as booked.",
+      "completeSuccess": "Booking marked completed.",
+      "noShowAction": "Mark no-show",
+      "noShowConfirmTitle": "Mark this booking as a no-show?",
+      "noShowConfirmDescription": "This confirms the customer did not show up for the booking.",
+      "noShowSuccess": "Booking marked as no-show.",
+      "actionError": "Something went wrong. Please try again."
+    },
+    "payments": {
+      "heading": "Payments",
+      "loadMore": "Load more",
+      "filters": {
+        "statusLabel": "Status",
+        "statusAll": "All statuses"
+      },
+      "table": {
+        "reference": "Reference",
+        "booking": "Booking",
+        "bookingLink": "Booking #{{id}}",
+        "status": "Status",
+        "provider": "Provider",
+        "total": "Total"
+      },
+      "empty": {
+        "title": "No payments found",
+        "description": "Try a different status filter."
+      },
+      "error": {
+        "title": "Something went wrong loading payments.",
+        "retry": "Try again"
+      },
+      "detail": {
+        "heading": "Payment {{reference}}",
+        "error": {
+          "title": "We couldn't load this payment.",
+          "retry": "Try again"
+        },
+        "refundAction": "Issue refund",
+        "refundSuccess": "Refund issued.",
+        "refundError": "We couldn't issue this refund. Please try again.",
+        "refundDialogTitle": "Issue a refund",
+        "refundDialogDescription": "This is a simulated refund — no real money moves. It updates the payment's real state and the booking's payment status.",
+        "refundAmountLabel": "Refund amount",
+        "refundReasonLabel": "Reason (optional)",
+        "refundReasonPlaceholder": "Why is this payment being refunded?",
+        "refundConfirmAction": "Issue refund"
+      }
+    },
+    "auditLogs": {
+      "heading": "Audit Logs",
+      "loadMore": "Load more",
+      "filters": {
+        "actionLabel": "Search actions",
+        "actionPlaceholder": "e.g. user.suspended",
+        "targetTypeLabel": "Target type",
+        "targetTypeAll": "All target types"
+      },
+      "table": {
+        "timestamp": "Time",
+        "actor": "Actor",
+        "action": "Action",
+        "target": "Target"
+      },
+      "targetType": {
+        "user": "User",
+        "partner": "Partner",
+        "listing": "Listing",
+        "booking": "Booking",
+        "cms_page": "Content page",
+        "bookable_unit": "Bookable unit",
+        "availability_calendar": "Availability",
+        "blackout_date": "Blackout date",
+        "listing_category": "Category",
+        "listing_amenity": "Amenity",
+        "pricing_model": "Pricing model",
+        "country": "Country",
+        "region": "Region",
+        "city": "City"
+      },
+      "systemActor": "System",
+      "empty": {
+        "title": "No audit log entries found",
+        "description": "Try a different search or filter."
+      },
+      "error": {
+        "title": "Something went wrong loading the audit log.",
+        "retry": "Try again"
+      }
+    },
+    "systemHealth": {
+      "heading": "System Health",
+      "tiles": {
+        "database": "Database",
+        "cache": "Cache",
+        "environment": "Environment",
+        "version": "Version"
+      },
+      "status": {
+        "up": "Up",
+        "down": "Down"
+      },
+      "queues": {
+        "heading": "Background job queues",
+        "empty": "No queues found",
+        "table": {
+          "name": "Queue",
+          "status": "Status",
+          "waiting": "Waiting",
+          "active": "Active",
+          "delayed": "Delayed",
+          "failed": "Failed"
+        },
+        "name": {
+          "booking-holds.expiry-sweep": "Hold expiry sweep",
+          "bookings.pending-vendor-sla-sweep": "Pending-vendor SLA sweep",
+          "notifications.delivery": "Notification delivery"
+        }
+      },
+      "error": {
+        "title": "Something went wrong loading system health.",
+        "retry": "Try again"
+      }
+    },
+    "aiModeration": {
+      "heading": "AI Moderation",
+      "scoreAction": "Score",
+      "scoring": "Scoring…",
+      "table": {
+        "title": "Listing",
+        "partner": "Partner",
+        "score": "Score",
+        "signals": "Signals"
+      },
+      "signals": {
+        "TITLE_ALL_CAPS": "All-caps title",
+        "EXCESSIVE_PUNCTUATION": "Excessive punctuation",
+        "DESCRIPTION_TOO_SHORT": "Description too short",
+        "POSSIBLE_DUPLICATE_TITLE": "Possible duplicate title"
+      },
+      "result": {
+        "heading": "Listing score",
+        "heuristicScoreLabel": "Heuristic score:",
+        "signalsLabel": "Signals:",
+        "aiNoteLabel": "AI note:"
+      },
+      "empty": {
+        "title": "No listings currently need review",
+        "description": "The moderation queue is clear."
+      },
+      "error": {
+        "title": "Something went wrong loading the moderation queue.",
+        "retry": "Try again",
+        "score": "Something went wrong scoring this listing."
+      }
+    },
+    "aiUsage": {
+      "heading": "AI Usage"
+    },
+    "settings": {
+      "heading": "Settings",
+      "editAction": "Edit",
+      "deleteAction": "Delete",
+      "errorRetry": "Try again",
+      "saveError": "Something went wrong. Please try again.",
+      "deleteError": "Something went wrong. Please try again.",
+      "tabs": {
+        "systemSettings": "System Settings",
+        "featureFlags": "Feature Flags"
+      },
+      "systemSettings": {
+        "heading": "System Settings",
+        "addLabel": "Add setting",
+        "table": {
+          "key": "Key",
+          "value": "Value",
+          "description": "Description",
+          "updatedAt": "Updated"
+        },
+        "fields": {
+          "key": "Key",
+          "value": "Value (JSON)",
+          "description": "Description"
+        },
+        "valueHelperText": "Enter a valid JSON value, e.g. \"text\", 123, true, or {\"a\":1}.",
+        "invalidValueError": "This isn't valid JSON.",
+        "formCreateTitle": "Add setting",
+        "formEditTitle": "Edit setting",
+        "deleteConfirmTitle": "Delete \"{{key}}\"?",
+        "deleteConfirmDescription": "This setting will be permanently removed.",
+        "emptyTitle": "No settings found",
+        "emptyDescription": "Add a setting to get started.",
+        "errorTitle": "Something went wrong loading settings.",
+        "createSuccess": "Setting created.",
+        "updateSuccess": "Setting updated.",
+        "deleteSuccess": "Setting deleted."
+      },
+      "featureFlags": {
+        "heading": "Feature Flags",
+        "addLabel": "Add flag",
+        "table": {
+          "code": "Code",
+          "name": "Name",
+          "description": "Description",
+          "enabled": "Enabled"
+        },
+        "fields": {
+          "code": "Code",
+          "name": "Name",
+          "description": "Description"
+        },
+        "enabledSwitchLabel": "Toggle {{name}}",
+        "formCreateTitle": "Add feature flag",
+        "deleteConfirmTitle": "Delete \"{{name}}\"?",
+        "deleteConfirmDescription": "This feature flag will be permanently removed.",
+        "emptyTitle": "No feature flags found",
+        "emptyDescription": "Add a flag to get started.",
+        "errorTitle": "Something went wrong loading feature flags.",
+        "createSuccess": "Feature flag created.",
+        "deleteSuccess": "Feature flag deleted."
+      }
+    },
+    "marketplaceConfig": {
+      "heading": "Marketplace Configuration",
+      "none": "None",
+      "editAction": "Edit",
+      "deleteAction": "Delete",
+      "emptyDescription": "Nothing here yet — add the first one.",
+      "errorTitle": "Something went wrong loading this data.",
+      "errorRetry": "Try again",
+      "saveError": "Something went wrong saving. Please try again.",
+      "deleteError": "Something went wrong deleting. Please try again.",
+      "tabs": {
+        "categories": "Categories",
+        "amenities": "Amenities",
+        "pricingModels": "Pricing models",
+        "countries": "Countries",
+        "regions": "Regions",
+        "cities": "Cities"
+      },
+      "table": {
+        "name": "Name",
+        "slug": "Slug",
+        "code": "Code",
+        "isoCode": "ISO code"
+      },
+      "categories": {
+        "heading": "Categories",
+        "addAction": "Add category",
+        "parent": "Parent category",
+        "formCreateTitle": "Add category",
+        "formEditTitle": "Edit \"{{name}}\"",
+        "deleteConfirmTitle": "Delete \"{{name}}\"?",
+        "deleteConfirmDescription": "This cannot be undone. A category still referenced by listings cannot be deleted.",
+        "emptyTitle": "No categories yet",
+        "createSuccess": "Category created.",
+        "updateSuccess": "Category updated.",
+        "deleteSuccess": "Category deleted."
+      },
+      "amenities": {
+        "heading": "Amenities",
+        "addAction": "Add amenity",
+        "group": "Group",
+        "formCreateTitle": "Add amenity",
+        "formEditTitle": "Edit \"{{name}}\"",
+        "deleteConfirmTitle": "Delete \"{{name}}\"?",
+        "deleteConfirmDescription": "This cannot be undone.",
+        "emptyTitle": "No amenities yet",
+        "createSuccess": "Amenity created.",
+        "updateSuccess": "Amenity updated.",
+        "deleteSuccess": "Amenity deleted."
+      },
+      "pricingModels": {
+        "heading": "Pricing models",
+        "addAction": "Add pricing model",
+        "formCreateTitle": "Add pricing model",
+        "formEditTitle": "Edit \"{{name}}\"",
+        "deleteConfirmTitle": "Delete \"{{name}}\"?",
+        "deleteConfirmDescription": "This cannot be undone.",
+        "emptyTitle": "No pricing models yet",
+        "createSuccess": "Pricing model created.",
+        "updateSuccess": "Pricing model updated.",
+        "deleteSuccess": "Pricing model deleted."
+      },
+      "countries": {
+        "heading": "Countries",
+        "addAction": "Add country",
+        "formCreateTitle": "Add country",
+        "formEditTitle": "Edit \"{{name}}\"",
+        "deleteConfirmTitle": "Delete \"{{name}}\"?",
+        "deleteConfirmDescription": "This cannot be undone. A country with regions cannot be deleted.",
+        "emptyTitle": "No countries yet",
+        "createSuccess": "Country created.",
+        "updateSuccess": "Country updated.",
+        "deleteSuccess": "Country deleted."
+      },
+      "regions": {
+        "heading": "Regions",
+        "addAction": "Add region",
+        "country": "Country",
+        "formCreateTitle": "Add region",
+        "formEditTitle": "Edit \"{{name}}\"",
+        "deleteConfirmTitle": "Delete \"{{name}}\"?",
+        "deleteConfirmDescription": "This cannot be undone. A region with cities cannot be deleted.",
+        "emptyTitle": "No regions yet",
+        "createSuccess": "Region created.",
+        "updateSuccess": "Region updated.",
+        "deleteSuccess": "Region deleted."
+      },
+      "cities": {
+        "heading": "Cities",
+        "addAction": "Add city",
+        "region": "Region",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "formCreateTitle": "Add city",
+        "formEditTitle": "Edit \"{{name}}\"",
+        "deleteConfirmTitle": "Delete \"{{name}}\"?",
+        "deleteConfirmDescription": "This cannot be undone.",
+        "emptyTitle": "No cities yet",
+        "createSuccess": "City created.",
+        "updateSuccess": "City updated.",
+        "deleteSuccess": "City deleted."
+      }
+    },
+    "cms": {
+      "heading": "Content Pages",
+      "addAction": "Add page",
+      "deleteAction": "Delete",
+      "published": "Published",
+      "unpublished": "Unpublished",
+      "loading": "Loading…",
+      "errorTitle": "Something went wrong loading this data.",
+      "errorRetry": "Try again",
+      "saveError": "Something went wrong saving. Please try again.",
+      "deleteError": "Something went wrong deleting. Please try again.",
+      "emptyTitle": "No pages yet",
+      "emptyDescription": "Add the first content page.",
+      "table": {
+        "slug": "Slug",
+        "status": "Status"
+      },
+      "formCreateTitle": "Add page",
+      "createSuccess": "Page created.",
+      "deleteConfirmTitle": "Delete \"{{slug}}\"?",
+      "deleteConfirmDescription": "This cannot be undone, including all of its locale content.",
+      "deleteSuccess": "Page deleted.",
+      "detailHeading": "Page: {{slug}}",
+      "settingsHeading": "Settings",
+      "settingsSaveSuccess": "Page settings saved.",
+      "translationsHeading": "Content by language",
+      "translationSaveSuccess": "Content saved.",
+      "titleLabel": "Title",
+      "contentLabel": "Content"
+    },
+    "notifications": {
+      "announcement": {
+        "heading": "Broadcast an announcement",
+        "description": "Sends an in-app (and, where enabled, email) notification to every user, or to everyone holding a specific role.",
+        "audienceLabel": "Audience",
+        "audienceAll": "Everyone",
+        "audienceRoles": "Specific roles",
+        "roles": {
+          "CUSTOMER": "Customer",
+          "MODERATOR": "Moderator",
+          "ADMIN": "Admin",
+          "SUPER_ADMIN": "Super Admin",
+          "SUPPORT": "Support"
+        },
+        "priorityLabel": "Priority",
+        "priority": {
+          "LOW": "Low",
+          "NORMAL": "Normal",
+          "HIGH": "High",
+          "URGENT": "Urgent"
+        },
+        "titleLabel": "Title",
+        "bodyLabel": "Message (optional)",
+        "submitAction": "Send announcement",
+        "success": "Announcement sent.",
+        "error": "Couldn't send the announcement. Please try again."
+      }
+    },
+    "inventory": {
+      "heading": "Inventory Oversight",
+      "description": "Look up any partner's listing to see why a date is unavailable — the same breakdown, ledger, and lists a partner sees on their own Calendar page, read-only.",
+      "lookup": {
+        "label": "Listing ID",
+        "placeholder": "e.g. 42",
+        "action": "Look up"
+      },
+      "noLookup": {
+        "title": "Enter a listing ID to begin",
+        "description": "Look up any published listing by its numeric id."
+      },
+      "notFound": {
+        "title": "Listing not found",
+        "description": "No published listing exists with that id."
+      },
+      "noUnits": {
+        "title": "No bookable units",
+        "description": "This listing has no bookable resources registered yet."
+      },
+      "detailTabsLabel": "Inventory detail",
+      "breakdown": {
+        "tabLabel": "Breakdown",
+        "emptyTitle": "No breakdown data for this window.",
+        "columns": {
+          "date": "Date",
+          "total": "Total",
+          "available": "Available",
+          "confirmed": "Confirmed",
+          "held": "Held",
+          "external": "External",
+          "manual": "Blocked"
+        }
+      },
+      "ledger": {
+        "tabLabel": "Ledger",
+        "emptyTitle": "No ledger entries for this window.",
+        "columns": {
+          "date": "Date",
+          "source": "Source",
+          "delta": "Change",
+          "quantity": "Quantity",
+          "reason": "Reason",
+          "createdAt": "Recorded"
+        },
+        "sourceTypes": {
+          "TRAVELHUB_HOLD": "Hold",
+          "TRAVELHUB_BOOKING": "Booking",
+          "MANUAL_BLOCK": "Manual block",
+          "EXTERNAL_RESERVATION": "External reservation",
+          "CONNECTOR_SYNC": "Connector sync",
+          "ADJUSTMENT": "Adjustment"
+        }
+      },
+      "blocks": {
+        "tabLabel": "Blocks ({{count}})",
+        "emptyTitle": "No active manual blocks.",
+        "columns": {
+          "range": "Dates",
+          "quantity": "Quantity",
+          "reason": "Reason"
+        }
+      },
+      "external": {
+        "tabLabel": "External ({{count}})",
+        "emptyTitle": "No external reservations recorded.",
+        "columns": {
+          "range": "Dates",
+          "source": "Source",
+          "guest": "Guest"
+        }
+      },
+      "connections": {
+        "tabLabel": "Connections",
+        "emptyTitle": "No connections configured for this partner.",
+        "neverSynced": "Never synced",
+        "detailsAction": "Details",
+        "columns": {
+          "name": "Name",
+          "type": "Type",
+          "status": "Status",
+          "lastSync": "Last successful sync"
+        },
+        "statuses": {
+          "ACTIVE": "Active",
+          "ERROR": "Error",
+          "PAUSED": "Paused",
+          "DISCONNECTED": "Disconnected"
+        }
+      },
+      "holds": {
+        "tabLabel": "Holds ({{count}})",
+        "emptyTitle": "No active holds for this window.",
+        "columns": {
+          "range": "Dates",
+          "user": "User ID",
+          "expiresAt": "Expires"
+        }
+      },
+      "syncRuns": {
+        "tabLabel": "Sync History",
+        "emptyTitle": "No sync runs recorded yet.",
+        "noSelectionTitle": "Select a connection",
+        "noSelectionDescription": "Choose a connection from the Connections tab to see its sync history.",
+        "columns": {
+          "startedAt": "Started",
+          "trigger": "Trigger",
+          "status": "Status",
+          "records": "Records",
+          "error": "Error"
+        },
+        "recordsSummary": "{{created}} created, {{skipped}} skipped"
+      },
+      "conflicts": {
+        "tabLabel": "Conflicts",
+        "emptyTitle": "No unresolved conflicts.",
+        "noSelectionTitle": "Select a connection",
+        "noSelectionDescription": "Choose a connection from the Connections tab to see its sync conflicts.",
+        "columns": {
+          "event": "Event",
+          "type": "Type",
+          "createdAt": "Detected"
+        }
+      }
+    }
+  },
+  "pages": {
+    "search": {
+      "title": "Search"
+    },
+    "listing": {
+      "title": "Listing"
+    },
+    "dashboard": {
+      "title": "Overview"
+    },
+    "bookings": {
+      "title": "Bookings"
+    },
+    "profile": {
+      "title": "Profile"
+    },
+    "settings": {
+      "title": "Settings"
+    },
+    "listingDetail": {
+      "yes": "Yes",
+      "no": "No",
+      "loading": "Loading listing…",
+      "errorTitle": "We couldn't load this listing.",
+      "retry": "Retry",
+      "hero": {
+        "reviewsLink": "{{count}} reviews",
+        "noReviews": "No reviews yet",
+        "overview": "Overview"
+      },
+      "share": {
+        "button": "Share",
+        "copied": "Link copied to clipboard",
+        "copyError": "Couldn't copy the link"
+      },
+      "sectionNav": {
+        "ariaLabel": "Jump to section"
+      },
+      "about": {
+        "heading": "About this listing",
+        "showMore": "Show more",
+        "showLess": "Show less"
+      },
+      "attributes": {
+        "heading": "Details"
+      },
+      "policies": {
+        "heading": "Policies"
+      },
+      "amenities": {
+        "heading": "Amenities",
+        "showAll": "Show all amenities",
+        "showLess": "Show less"
+      },
+      "itinerary": {
+        "heading": "Itinerary",
+        "minutesUnit": "min"
+      },
+      "included": {
+        "heading": "What's included",
+        "includedHeading": "Included",
+        "excludedHeading": "Not included"
+      },
+      "faq": {
+        "heading": "Frequently asked questions"
+      },
+      "host": {
+        "heading": "About the host",
+        "verified": "Verified partner",
+        "memberSince": "Joined {{year}}",
+        "listingCount": "{{count}} listings",
+        "contact": "Message host"
+      },
+      "availability": {
+        "heading": "Availability",
+        "loading": "Loading availability…",
+        "errorTitle": "We couldn't load availability for this listing.",
+        "availableDays": "{{count}} of the next 30 days available",
+        "blockedRanges": "Unavailable date ranges",
+        "noData": "Availability information isn't available for this listing yet.",
+        "status": {
+          "available": "Available",
+          "soldOut": "Sold out",
+          "lowGeneric": "Only {{count}} left",
+          "lowByType": {
+            "HOTEL_ROOM_one": "Only {{count}} room left",
+            "HOTEL_ROOM_other": "Only {{count}} rooms left",
+            "PROPERTY_UNIT_one": "Only {{count}} unit left",
+            "PROPERTY_UNIT_other": "Only {{count}} units left",
+            "RESTAURANT_TABLE_one": "Only {{count}} table left",
+            "RESTAURANT_TABLE_other": "Only {{count}} tables left",
+            "TOUR_DEPARTURE_one": "{{count}} seat available",
+            "TOUR_DEPARTURE_other": "{{count}} seats available",
+            "VEHICLE_one": "Only {{count}} vehicle left",
+            "VEHICLE_other": "Only {{count}} vehicles left"
+          }
+        }
+      },
+      "location": {
+        "heading": "Location"
+      },
+      "gallery": {
+        "heading": "Gallery",
+        "viewImage": "View photo {{index}} of {{count}}",
+        "viewPhoto": "View photo",
+        "morePhotos": "+{{count}} photos",
+        "closeLightbox": "Close gallery",
+        "previousImage": "Previous photo",
+        "nextImage": "Next photo",
+        "imageCounter": "{{current}} of {{total}}",
+        "imageAltFallback": "{{title}} — photo {{index}} of {{total}}"
+      },
+      "reservation": {
+        "unitLabel": "Unit",
+        "unitPlaceholder": "Select a unit",
+        "datesLabel": "Dates",
+        "quantityLabel": "Quantity",
+        "estimatedTotal": "estimated total",
+        "requestToBook": "Request to book",
+        "requestToBookByGroup": {
+          "ACCOMMODATION": "Check availability",
+          "EXPERIENCE": "Reserve your spot",
+          "TRANSPORT": "Reserve this vehicle",
+          "GENERIC": "Request to book"
+        },
+        "noUnitsAvailable": "This listing isn't bookable online yet.",
+        "holdError": "We couldn't hold these dates. Please try again.",
+        "availabilityConflict": "These dates are no longer available. Please choose different dates."
+      },
+      "relatedListings": {
+        "heading": "You might also like"
+      },
+      "reviews": {
+        "heading": "Reviews"
+      }
+    }
+  },
+  "footer": {
+    "explore": "Explore",
+    "company": "Company",
+    "support": "Support",
+    "account": "Account",
+    "links": {
+      "home": "Home",
+      "search": "Search",
+      "companies": "Companies",
+      "login": "Log in",
+      "register": "Sign up",
+      "partner": "Partner with us",
+      "about": "About us",
+      "contact": "Contact",
+      "becomePartner": "Become a Partner",
+      "blog": "Blog",
+      "faq": "FAQ",
+      "helpCenter": "Help Center",
+      "support": "Support"
+    }
+  },
+  "companies": {
+    "directory": {
+      "title": "Companies",
+      "loadMore": "Load more",
+      "empty": {
+        "title": "No companies yet",
+        "description": "Check back soon — new partner companies join regularly."
+      },
+      "error": {
+        "title": "Couldn't load companies",
+        "description": "Something went wrong loading the directory.",
+        "retry": "Try again"
+      }
+    },
+    "card": {
+      "viewProfile": "View {{name}}'s profile",
+      "verified": "Verified",
+      "listingCount": "{{count}} listings"
+    },
+    "profile": {
+      "loading": "Loading company profile...",
+      "errorTitle": "Couldn't load this company",
+      "retry": "Try again",
+      "listingsHeading": "Listings"
+    }
+  },
+  "cms": {
+    "about": {
+      "title": "About desavii",
+      "lead": "desavii connects travelers with trusted local partners — hotels, tour operators, apartment owners, and experience hosts — across every destination we serve.",
+      "values": {
+        "trust": {
+          "title": "Trust",
+          "description": "Every partner on desavii is verified before their listings go live, so you always know who you're booking with."
+        },
+        "variety": {
+          "title": "Variety",
+          "description": "From city-center hotels to countryside tours, our marketplace covers every kind of trip, in every destination we serve."
+        },
+        "support": {
+          "title": "Support",
+          "description": "Our support team is here to help before, during, and after your trip — reach us any time through the Help Center."
+        }
+      }
+    },
+    "contact": {
+      "title": "Contact us",
+      "lead": "Have a question about a booking or a listing? Reach our support team directly.",
+      "hours": "Monday–Friday, 9:00–18:00 (Yerevan time)"
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "description": "Answers to common questions about booking, payment, cancellation, and becoming a desavii partner.",
+      "questions": {
+        "booking": {
+          "question": "How do I book a listing?",
+          "answer": "Open any listing's detail page and use the booking panel to check availability and pricing for your dates."
+        },
+        "payment": {
+          "question": "What payment methods are supported?",
+          "answer": "Online payment is not yet available — this is a known limitation we're working on. Contact the partner directly for now."
+        },
+        "cancellation": {
+          "question": "What is the cancellation policy?",
+          "answer": "Cancellation terms are set by each partner and shown on the listing's policies section before you book."
+        },
+        "becomePartner": {
+          "question": "How do I list my property or business?",
+          "answer": "Create an account, then apply to become a partner from your dashboard. See our Become a Partner page for details."
+        },
+        "contactSupport": {
+          "question": "How do I contact support?",
+          "answer": "Visit our Contact page for our support email, phone number, and hours."
+        }
+      }
+    },
+    "help": {
+      "title": "Help Center",
+      "lead": "Find answers to common questions or get in touch with our support team.",
+      "links": {
+        "faq": {
+          "title": "Frequently asked questions",
+          "description": "Answers to the questions we hear most often."
+        },
+        "contact": {
+          "title": "Contact support",
+          "description": "Reach our team directly by email or phone."
+        }
+      }
+    },
+    "becomePartner": {
+      "title": "Become a Partner",
+      "lead": "Grow your business by listing your hotel, tours, apartments, or experiences on desavii — reaching travelers actively planning their next trip.",
+      "benefits": {
+        "reach": {
+          "title": "Wider reach",
+          "description": "Get discovered by travelers searching and booking across our marketplace."
+        },
+        "audience": {
+          "title": "Engaged travelers",
+          "description": "Connect with travelers who are actively planning and ready to book."
+        },
+        "trust": {
+          "title": "Verified badge",
+          "description": "Verified partners stand out with a trust badge shown across the marketplace."
+        }
+      },
+      "cta": "Get started"
+    },
+    "blog": {
+      "title": "Blog",
+      "description": "We're working on travel guides, partner stories, and destination inspiration. Check back soon."
+    }
+  },
+  "reviews": {
+    "form": {
+      "ratingLabel": "Rating",
+      "ratingOptions": {
+        "1": "1 – Poor",
+        "2": "2 – Fair",
+        "3": "3 – Good",
+        "4": "4 – Very good",
+        "5": "5 – Excellent"
+      },
+      "titleLabel": "Title (optional)",
+      "contentLabel": "Your review (optional)",
+      "submitAction": "Submit review",
+      "submitSuccess": "Thanks for your review!",
+      "submitError": "We couldn't submit your review. Please try again."
+    },
+    "list": {
+      "emptyTitle": "No reviews yet",
+      "emptyDescription": "Be the first to review this listing.",
+      "errorTitle": "We couldn't load reviews.",
+      "errorRetry": "Try again",
+      "loadMore": "Load more reviews"
+    }
+  },
+  "ai": {
+    "tripPlanner": {
+      "heading": "AI Trip Planner",
+      "description": "Describe your trip and we'll build a real itinerary from published listings that match your destination, budget, and interests.",
+      "form": {
+        "ariaLabel": "Plan a trip",
+        "destinationLabel": "Destination",
+        "destinationPlaceholder": "e.g. Yerevan",
+        "daysLabel": "Days",
+        "budgetLabel": "Budget",
+        "currencyLabel": "Currency",
+        "interestsLabel": "Interests (comma-separated)",
+        "interestsPlaceholder": "e.g. nature, family",
+        "submit": "Plan my trip",
+        "submitting": "Planning..."
+      },
+      "result": {
+        "heading": "{{days}}-day trip to {{destination}}",
+        "unknownDestination": "your destination",
+        "estimatedTotalSuffix": "estimated total",
+        "dayHeading": "Day {{day}}",
+        "perNightSuffix": "/ night",
+        "emptyDayTitle": "No listings assigned yet",
+        "emptyDayDescription": "We couldn't fit a published listing into this day within your budget."
+      },
+      "error": {
+        "title": "We couldn't plan your trip.",
+        "description": "Something went wrong. Please try again.",
+        "retry": "Try again"
+      }
+    },
+    "assistant": {
+      "triggerLabel": "Ask AI assistant",
+      "title": "AI Assistant",
+      "empty": "Ask a question about your trip, a listing, or a booking.",
+      "inputLabel": "Your message",
+      "placeholder": "Type your question...",
+      "send": "Send",
+      "sending": "Sending...",
+      "error": "We couldn't get a response — please try again."
+    },
+    "recommendations": {
+      "heading": "Recommended for you",
+      "basedOnPrefix": "Based on:",
+      "basedOnCategory": "{{category}}",
+      "basedOnCity": "in {{city}}",
+      "basedOnBudget": "around {{amount}} {{currency}} per booking"
+    },
+    "partnerTools": {
+      "heading": "AI writing tools",
+      "description": "Generate content grounded in this listing's real details, then copy what you like into the fields above — nothing here is applied automatically.",
+      "generate": "Generate",
+      "generating": "Generating...",
+      "error": "We couldn't generate that — please try again.",
+      "resultLabel": "Generated content",
+      "tools": {
+        "description": "Description",
+        "seo": "SEO meta title & description",
+        "title": "Listing title",
+        "amenities": "Amenity suggestions",
+        "translate": "Translate description",
+        "faqs": "FAQs"
+      },
+      "keyFeatureLabel": "Key feature (optional)",
+      "keyFeaturePlaceholder": "e.g. rooftop pool",
+      "targetLanguageLabel": "Target language"
+    },
+    "contextButtons": {
+      "askAboutListing": "Ask AI about this listing",
+      "askAboutBooking": "Ask AI about this booking",
+      "improveListing": "Ask AI to improve this listing",
+      "optimizeDashboard": "Ask AI for optimization suggestions",
+      "listingInitialMessage": "What's the cancellation policy for this listing, and what amenities are included?",
+      "bookingInitialMessage": "What's the total price of this booking?",
+      "improveListingInitialMessage": "Look at this listing's current title, description, and policies, and suggest concrete improvements.",
+      "optimizeDashboardInitialMessage": "Based on my listings and bookings, what could I do to improve my performance as a partner?"
+    },
+    "usageDashboard": {
+      "tiles": {
+        "callCount": "Total calls",
+        "totalTokens": "Total tokens",
+        "failureCount": "Failures"
+      },
+      "statsTable": {
+        "heading": "By feature",
+        "empty": "No AI usage recorded yet",
+        "feature": "Feature",
+        "provider": "Provider",
+        "callCount": "Calls",
+        "totalTokens": "Tokens",
+        "cacheHits": "Cache hits",
+        "failureCount": "Failures",
+        "avgLatencyMs": "Avg. latency (ms)"
+      },
+      "recentTable": {
+        "heading": "Recent calls",
+        "empty": "No AI usage recorded yet",
+        "timestamp": "Time",
+        "feature": "Feature",
+        "provider": "Provider",
+        "totalTokens": "Tokens",
+        "latencyMs": "Latency (ms)",
+        "succeeded": "Result",
+        "succeededYes": "Succeeded",
+        "succeededNo": "Failed"
+      },
+      "error": {
+        "title": "Something went wrong loading AI usage.",
+        "retry": "Try again"
+      }
+    }
+  },
+  "favorites": {
+    "button": {
+      "add": "Add to favorites",
+      "remove": "Remove from favorites"
+    },
+    "page": {
+      "heading": "Favorites",
+      "emptyTitle": "No favorites yet",
+      "emptyDescription": "Save listings you like to find them here later.",
+      "emptyAction": "Browse listings",
+      "errorTitle": "We couldn't load your favorites.",
+      "errorRetry": "Try again",
+      "loadMore": "Load more"
+    }
+  },
+  "notifications": {
+    "bell": {
+      "label": "Notifications",
+      "labelWithCount": "Notifications ({{count}} unread)"
+    },
+    "a11y": {
+      "unread": "Unread"
+    },
+    "dropdown": {
+      "title": "Notifications",
+      "errorTitle": "Couldn't load notifications",
+      "errorRetry": "Retry",
+      "emptyTitle": "No notifications yet",
+      "emptyDescription": "We'll let you know when something happens.",
+      "viewAll": "View all notifications"
+    },
+    "actions": {
+      "markAsRead": "Mark as read",
+      "markAllAsRead": "Mark all as read",
+      "archive": "Archive",
+      "delete": "Delete"
+    },
+    "page": {
+      "heading": "Notifications",
+      "tabs": {
+        "all": "All",
+        "unread": "Unread",
+        "archived": "Archived",
+        "ariaLabel": "Filter notifications by status"
+      },
+      "searchPlaceholder": "Search notifications",
+      "categoryFilterLabel": "Filter by category",
+      "allCategories": "All",
+      "errorTitle": "Couldn't load your notifications",
+      "errorRetry": "Retry",
+      "emptyTitle": "No notifications",
+      "emptyDescription": "Nothing matches these filters yet.",
+      "loadMore": "Load more"
+    },
+    "categories": {
+      "BOOKING": "Bookings",
+      "REVIEW": "Reviews",
+      "FAVORITE": "Favorites",
+      "PARTNER": "Partner",
+      "LISTING": "Listings",
+      "ADMIN": "Announcements"
+    },
+    "preferences": {
+      "heading": "Notification preferences",
+      "description": "Choose how you want to be notified for each category.",
+      "errorTitle": "Couldn't load your preferences",
+      "errorRetry": "Retry",
+      "inApp": "In-app",
+      "email": "Email"
+    },
+    "copy": {
+      "bookingCreated": "New booking {{reference}} received",
+      "bookingConfirmed": "Your booking {{reference}} was confirmed",
+      "bookingRejected": "Your booking {{reference}} was rejected",
+      "bookingCancelled": "Booking {{reference}} was cancelled",
+      "bookingCompleted": "Your trip ({{reference}}) is complete — leave a review?",
+      "reviewSubmitted": "You received a new {{rating}}-star review",
+      "favoriteAdded": "A traveler favorited your listing",
+      "partnerApproved": "{{partnerName}} was approved",
+      "listingApproved": "Your listing was approved",
+      "listingRejected": "Your listing was rejected",
+      "generic": "Notification: {{eventType}}"
+    }
+  },
+  "messaging": {
+    "bell": {
+      "label": "Messages",
+      "labelWithCount": "Messages ({{count}} unread)"
+    },
+    "dropdown": {
+      "title": "Messages",
+      "errorTitle": "Couldn't load conversations",
+      "errorRetry": "Retry",
+      "emptyTitle": "No conversations yet",
+      "emptyDescription": "Start a conversation to see it here.",
+      "viewAll": "View all messages"
+    },
+    "list": {
+      "errorTitle": "Couldn't load conversations",
+      "errorRetry": "Retry",
+      "emptyTitle": "No conversations yet",
+      "emptyDescription": "Start a conversation to see it here.",
+      "loadMore": "Load more",
+      "noMessagesYet": "No messages yet",
+      "searchPlaceholder": "Search conversations",
+      "tabsAll": "All",
+      "tabsArchived": "Archived",
+      "tabsAriaLabel": "Filter conversations by status"
+    },
+    "search": {
+      "heading": "Messages",
+      "emptyTitle": "No messages found",
+      "emptyDescription": "Try a different search term.",
+      "unknownConversation": "Conversation"
+    },
+    "participant": {
+      "unknown": "Unknown",
+      "fallback": "User #{{id}}"
+    },
+    "thread": {
+      "composerPlaceholder": "Write a message…",
+      "send": "Send",
+      "attach": "Attach a file",
+      "loadEarlier": "Load earlier messages",
+      "attachmentAlt": "Attachment",
+      "errorTitle": "Couldn't load this conversation",
+      "errorRetry": "Retry",
+      "emptyTitle": "No messages yet",
+      "emptyDescription": "Send the first message to start the conversation.",
+      "selectPrompt": "Select a conversation to start reading",
+      "typingOne": "{{name}} is typing…",
+      "typingMany": "Several people are typing…",
+      "edited": "edited",
+      "you": "You"
+    },
+    "actions": {
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "delete": "Delete message",
+      "react": "React"
+    },
+    "reactions": {
+      "👍": "Thumbs up",
+      "❤️": "Heart",
+      "😂": "Laughing",
+      "😮": "Surprised",
+      "😢": "Sad",
+      "👏": "Clapping"
+    },
+    "page": {
+      "heading": "Messages"
+    }
+  }
+}

@@ -16,12 +16,12 @@ import SPACING_SCALE from '../../../utils/spacingScale.js';
 import styles from './Grid.module.scss';
 
 export default function Grid({
-  as: Component,
-  columns,
-  gap,
-  className,
-  style,
-  children,
+  as: Component = 'div',
+  columns = 'auto',
+  gap = '4',
+  className = undefined,
+  style = undefined,
+  children = undefined,
   ...rest
 }) {
   const isFixed = columns !== 'auto';
@@ -56,13 +56,4 @@ Grid.propTypes = {
   // eslint-disable-next-line react/forbid-prop-types
   style: PropTypes.object,
   children: PropTypes.node,
-};
-
-Grid.defaultProps = {
-  as: 'div',
-  columns: 'auto',
-  gap: '4',
-  className: undefined,
-  style: undefined,
-  children: undefined,
 };

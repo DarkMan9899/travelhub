@@ -1,0 +1,297 @@
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import ToastProvider from '../../../../providers/ToastProvider.jsx';
+import ConfirmProvider from '../../../../providers/ConfirmProvider.jsx';
+import BookingDetailPageContent from './BookingDetailPageContent.jsx';
+import { useBookingQuery } from '../../queries/useBookingQuery.js';
+import { useCancelBookingMutation } from '../../mutations/useCancelBookingMutation.js';
+import { useCreateConversationMutation } from '../../../messaging/index.js';
+
+vi.mock('../../queries/useBookingQuery.js', () => ({
+  useBookingQuery: vi.fn(),
+  default: vi.fn(),
+}));
+vi.mock('../../mutations/useCancelBookingMutation.js', () => ({
+  useCancelBookingMutation: vi.fn(),
+  default: vi.fn(),
+}));
+vi.mock('../../../reviews/index.js', () => ({
+  useReviewForBookingQuery: vi.fn(() => ({ data: null, isPending: false })),
+  // eslint-disable-next-line react/prop-types -- trivial test double
+  ReviewForm: ({ bookingId }) => <div>ReviewForm for {bookingId}</div>,
+}));
+vi.mock('../../../messaging/index.js', () => ({
+  useCreateConversationMutation: vi.fn(),
+}));
+vi.mock('../../../ai/index.js', () => ({
+  AskAiButton: () => null,
+}));
+vi.mock('../../../payments/index.js', () => ({
+  BookingPaymentSection: () => null,
+}));
+
+const BASE_BOOKING = {
+  id: 7,
+  booking_reference: 'BK-20260101-ABCDEF23',
+  status: 'CONFIRMED',
+  currency: 'AMD',
+  total_amount: '85000.00',
+  customer_notes: null,
+  partner_owner_user_id: 42,
+  guest_contact_snapshot: {
+    fullName: 'Ana Smith',
+    email: 'ana@example.com',
+    phone: '+37411000000',
+  },
+  items: [
+    {
+      id: 1,
+      date_from: '2026-08-01',
+      date_to: '2026-08-03',
+      quantity: 1,
+      unit_price_amount: '85000.00',
+    },
+  ],
+};
+
+function renderPage() {
+  return render(
+    <MemoryRouter initialEntries={['/en/account/bookings/7']}>
+      <ToastProvider>
+        <ConfirmProvider>
+          <Routes>
+            <Route
+              path="/:locale/account/bookings/:id"
+              element={<BookingDetailPageContent />}
+            />
+            <Route
+              path="/:locale/account/messages/:conversationId"
+              element={<div>Conversation thread page</div>}
+            />
+          </Routes>
+        </ConfirmProvider>
+      </ToastProvider>
+    </MemoryRouter>,
+  );
+}
+
+describe('BookingDetailPageContent (apps/web/src/modules/bookings)', () => {
+  beforeEach(() => {
+    useBookingQuery.mockReset();
+    useCancelBookingMutation.mockReset();
+    useCancelBookingMutation.mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({}),
+      isPending: false,
+    });
+    useCreateConversationMutation.mockReset();
+    useCreateConversationMutation.mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({ data: { id: 99 } }),
+      isPending: false,
+    });
+  });
+
+  test('renders booking reference, status, total, items, and contact snapshot', () => {
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(screen.getByText('Հաստատված')).toBeInTheDocument();
+    expect(screen.getByText(/Ana Smith/)).toBeInTheDocument();
+    expect(screen.getByText(/ana@example.com/)).toBeInTheDocument();
+  });
+
+  test('shows the Cancel action for CONFIRMED, hides it for a terminal status', () => {
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const { rerender } = renderPage();
+    expect(
+      screen.getByRole('button', { name: 'Չեղարկել ամրագրումը' }),
+    ).toBeInTheDocument();
+
+    useBookingQuery.mockReturnValue({
+      data: { ...BASE_BOOKING, status: 'COMPLETED' },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    rerender(
+      <MemoryRouter initialEntries={['/en/account/bookings/7']}>
+        <ToastProvider>
+          <ConfirmProvider>
+            <Routes>
+              <Route
+                path="/:locale/account/bookings/:id"
+                element={<BookingDetailPageContent />}
+              />
+            </Routes>
+          </ConfirmProvider>
+        </ToastProvider>
+      </MemoryRouter>,
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Չեղարկել ամրագրումը' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('hides the Cancel action for PENDING_VENDOR (the backend state machine has no customer-withdrawal transition from it)', () => {
+    useBookingQuery.mockReturnValue({
+      data: { ...BASE_BOOKING, status: 'PENDING_VENDOR' },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.queryByRole('button', { name: 'Չեղարկել ամրագրումը' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('cancelling requires confirmation, then calls the mutation and shows a success toast', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    useCancelBookingMutation.mockReturnValue({ mutateAsync, isPending: false });
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Չեղարկել ամրագրումը' }),
+    );
+    expect(mutateAsync).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Այո, չեղարկել' }));
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+    expect(
+      await screen.findByText('Ձեր ամրագրումը չեղարկվել է։'),
+    ).toBeInTheDocument();
+  });
+
+  test('renders a 404 empty state for a genuine not-found error', () => {
+    useBookingQuery.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: { status: 404 },
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.getByRole('heading', { name: 'Էջը չի գտնվել' }),
+    ).toBeInTheDocument();
+  });
+
+  test('renders a retryable error state for a non-404 error', () => {
+    useBookingQuery.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      error: { status: 500 },
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  test('shows the Message host action when partner_owner_user_id is resolved', () => {
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.getByRole('button', { name: 'Գրել հյուրընկալողին' }),
+    ).toBeInTheDocument();
+  });
+
+  // A rare data gap (a partner with no resolvable owner user) — the
+  // button must never render pointing at a `null` participant id.
+  test('hides the Message host action when partner_owner_user_id is null', () => {
+    useBookingQuery.mockReturnValue({
+      data: { ...BASE_BOOKING, partner_owner_user_id: null },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.queryByRole('button', { name: 'Գրել հյուրընկալողին' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('clicking Message host creates a booking-scoped conversation and navigates to its thread', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ data: { id: 99 } });
+    useCreateConversationMutation.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Գրել հյուրընկալողին' }),
+    );
+    expect(mutateAsync).toHaveBeenCalledWith({
+      participantUserIds: [42],
+      contextType: 'booking',
+      contextId: 7,
+    });
+    expect(
+      await screen.findByText('Conversation thread page'),
+    ).toBeInTheDocument();
+  });
+
+  test('shows an error toast when starting a conversation fails', async () => {
+    useCreateConversationMutation.mockReturnValue({
+      mutateAsync: vi.fn().mockRejectedValue(new Error('network error')),
+      isPending: false,
+    });
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Գրել հյուրընկալողին' }),
+    );
+    expect(
+      await screen.findByText(
+        'Չհաջողվեց սկսել զրույց հյուրընկալողի հետ։ Խնդրում ենք կրկին փորձել։',
+      ),
+    ).toBeInTheDocument();
+  });
+});

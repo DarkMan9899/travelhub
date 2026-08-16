@@ -5,7 +5,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Textarea from './Textarea.jsx';
 
-function ControlledTextarea({ initialValue, ...rest }) {
+function ControlledTextarea({ initialValue = '', ...rest }) {
   const [value, setValue] = useState(initialValue);
   return (
     <Textarea
@@ -19,10 +19,6 @@ function ControlledTextarea({ initialValue, ...rest }) {
 
 ControlledTextarea.propTypes = {
   initialValue: PropTypes.string,
-};
-
-ControlledTextarea.defaultProps = {
-  initialValue: '',
 };
 
 describe('Textarea (COMPONENT_LIBRARY.md Part II §2)', () => {

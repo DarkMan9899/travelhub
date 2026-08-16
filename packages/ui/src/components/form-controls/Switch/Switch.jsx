@@ -10,7 +10,7 @@ import { useId } from 'react';
 import PropTypes from 'prop-types';
 import styles from './Switch.module.scss';
 
-export default function Switch({ checked, onChange, label, disabled }) {
+export default function Switch({ checked, onChange, label, disabled = false }) {
   const controlId = useId();
   const labelId = `${controlId}-label`;
 
@@ -47,8 +47,4 @@ Switch.propTypes = {
   onChange: PropTypes.func.isRequired,
   label: PropTypes.node.isRequired,
   disabled: PropTypes.bool,
-};
-
-Switch.defaultProps = {
-  disabled: false,
 };

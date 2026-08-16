@@ -1,0 +1,151 @@
+// Showcase — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+@use 'mixins/focus-ring' as focus;
+@use 'mixins/glass' as glass;
+
+.showcase {
+  position: relative;
+}
+
+.viewport {
+  overflow: hidden;
+  // Lets a touch drag on the carousel scroll it horizontally while a
+  // vertical swipe still scrolls the page — Embla's own recommended
+  // touch-action for a horizontal-only carousel.
+  touch-action: pan-y pinch-zoom;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.container {
+  display: flex;
+  // A tight gap — cards read as one connected, continuous filmstrip
+  // rather than islands separated by dead space; the center-focus scale
+  // effect (not a wide gap) is what carries the "dominant active card"
+  // read.
+  gap: tokens.$space-3;
+  // Vertical breathing room so a slide scaled *up* to full size at the
+  // viewport edges never gets clipped by .viewport's overflow: hidden.
+  padding-block: tokens.$space-4;
+
+  @include respond.respond(laptop) {
+    gap: tokens.$space-4;
+  }
+}
+
+// Embla's own box — never receives a transform from this app's code.
+// Embla writes its own translate3d directly to this node (for loop
+// repositioning, and ordinary scroll positioning once any scroll has
+// occurred); anything this app sets on the same property would race
+// with and lose to that write. The center-focus scale/opacity emphasis
+// lives on `.slideInner` instead.
+.slide {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.slideInner {
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.navButton {
+  display: none;
+
+  @include respond.respond(laptop) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    z-index: tokens.$z-sticky-header;
+    width: tokens.$space-12;
+    height: tokens.$space-12;
+    border-radius: tokens.$radius-full;
+    border: none;
+    color: tokens.$color-navy;
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition:
+      transform tokens.$motion-micro tokens.$ease-out,
+      box-shadow tokens.$motion-micro tokens.$ease-out;
+    @include glass.glass-surface(0.94, 12px);
+    @include tokens.elevation-2;
+    @include tokens.reduced-motion-safe;
+    @include focus.focus-ring;
+
+    &:hover {
+      color: tokens.$color-royal-blue;
+      @include tokens.elevation-3;
+      transform: translateY(-50%) scale(1.08);
+    }
+
+    &:active {
+      transform: translateY(-50%) scale(0.96);
+    }
+  }
+}
+
+// Overlaid on the row's own edge (a small positive inset, not floated
+// clear outside it) — reads as chrome that belongs to the card row
+// itself, the way premium carousel controls sit right on the content
+// they operate, rather than detached satellite buttons off to the side.
+.navButton--prev {
+  left: tokens.$space-3;
+}
+
+.navButton--next {
+  right: tokens.$space-3;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: tokens.$space-2;
+  margin-block-start: tokens.$space-8;
+}
+
+.dot {
+  // Visible dot stays 9px, but `padding` + `background-clip: content-box`
+  // expand the actual clickable/tappable footprint to ~32px — well
+  // under the 9px hit target a touch user would otherwise have to
+  // aim for, without changing the carousel's visual density.
+  box-sizing: content-box;
+  width: 9px;
+  height: 9px;
+  padding: 11px;
+  border: none;
+  border-radius: tokens.$radius-full;
+  background-color: tokens.$color-gray-200;
+  background-clip: content-box;
+  cursor: pointer;
+  transition:
+    width tokens.$motion-micro tokens.$ease-out,
+    background-color tokens.$motion-micro tokens.$ease-out,
+    box-shadow tokens.$motion-micro tokens.$ease-out,
+    transform tokens.$motion-micro tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+  @include focus.focus-ring;
+
+  &:hover {
+    background-color: tokens.$color-gray-400;
+    transform: scale(1.15);
+  }
+}
+
+.dot--active {
+  width: tokens.$space-6;
+  background-color: tokens.$color-royal-blue;
+  box-shadow: 0 2px 8px rgba(tokens.$color-royal-blue, 0.45);
+
+  &:hover {
+    background-color: tokens.$color-navy;
+    transform: none;
+  }
+}

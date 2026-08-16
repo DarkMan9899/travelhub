@@ -31,6 +31,8 @@ const REDACT_PATHS = [
   '*.cvv',
   'secret',
   '*.secret',
+  'apiKey',
+  '*.apiKey',
 ];
 
 const logger = pino({

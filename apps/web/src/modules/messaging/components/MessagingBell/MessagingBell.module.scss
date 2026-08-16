@@ -1,0 +1,43 @@
+@use 'tokens' as tokens;
+
+.trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: tokens.$radius-full;
+  background: transparent;
+  color: tokens.$color-navy;
+  cursor: pointer;
+
+  &:hover {
+    background-color: tokens.$color-gray-100;
+  }
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: tokens.$radius-full;
+  background-color: tokens.$color-danger;
+  color: tokens.$color-white;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.panel {
+  width: 360px;
+  max-width: 90vw;
+  padding: 0;
+}

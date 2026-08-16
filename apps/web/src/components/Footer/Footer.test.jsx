@@ -47,8 +47,8 @@ describe('Footer (apps/web/src/components)', () => {
   });
 
   test('renders bottomText when provided', () => {
-    renderFooter({ bottomText: '© 2026 Travel Hub Armenia' });
-    expect(screen.getByText('© 2026 Travel Hub Armenia')).toBeInTheDocument();
+    renderFooter({ bottomText: '© 2026 desavii' });
+    expect(screen.getByText('© 2026 desavii')).toBeInTheDocument();
   });
 
   test('renders no columns grid when columns is empty', () => {

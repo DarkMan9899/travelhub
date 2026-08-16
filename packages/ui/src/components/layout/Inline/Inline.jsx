@@ -24,13 +24,13 @@ const JUSTIFY_VALUES = [
 ];
 
 export default function Inline({
-  as: Component,
-  gap,
-  align,
-  justify,
-  wrap,
-  className,
-  children,
+  as: Component = 'div',
+  gap = '4',
+  align = 'center',
+  justify = 'flex-start',
+  wrap = true,
+  className = undefined,
+  children = undefined,
   ...rest
 }) {
   const classNames = [
@@ -62,16 +62,6 @@ Inline.propTypes = {
   wrap: PropTypes.bool,
   className: PropTypes.string,
   children: PropTypes.node,
-};
-
-Inline.defaultProps = {
-  as: 'div',
-  gap: '4',
-  align: 'center',
-  justify: 'flex-start',
-  wrap: true,
-  className: undefined,
-  children: undefined,
 };
 
 export {

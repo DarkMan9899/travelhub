@@ -5,8 +5,10 @@ Module Architecture) for this module's dependency rules, and the
 corresponding `API_SPECIFICATION.md` module for the endpoints it will
 consume.
 
-**Sprint 1 status:** folder scaffold only. No components, hooks, queries,
-mutations, or business logic exist yet.
+**Phase 10 status:** static/info pages built — About, Contact, FAQ, Help
+Center, Become a Partner, and a Blog "coming soon" placeholder. All
+content is static, translated (en/hy/ru) copy; no CMS/database backs
+this module (no queries/mutations exist here, deliberately).
 
 ## Folder contents (per FRONTEND_ARCHITECTURE.md §3.2 / §6.2)
 

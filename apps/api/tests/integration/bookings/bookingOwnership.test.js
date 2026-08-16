@@ -32,6 +32,7 @@ let partnerId;
 let languageId;
 let bookingId;
 let listingId;
+let vendorUserId;
 
 async function login(email, password) {
   const res = await request(app)
@@ -77,6 +78,15 @@ async function createListing(title) {
     .set('Authorization', `Bearer ${vendor.accessToken}`)
     .set('Content-Type', 'image/png')
     .send(ONE_PX_PNG);
+  // Must exist BEFORE publish — Phase 5's publish-readiness gate now
+  // requires >=1 bookable unit (ListingService#checkPublishReadiness).
+  // registerUnit is idempotent per (listingId, bookableUnitTypeCode), so
+  // this file's own later `registerUnit(listingId)` call is a harmless
+  // no-op re-registration, not a duplicate.
+  await request(app)
+    .post('/api/v1/availability/units')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ listingId: id, bookableUnitType: 'HOTEL_ROOM' });
   await request(app)
     .post(`/api/v1/listings/${id}/publish`)
     .set('Authorization', `Bearer ${vendor.accessToken}`);
@@ -136,6 +146,11 @@ beforeAll(async () => {
     "SELECT id FROM languages WHERE code = 'en'",
   );
   languageId = language.id;
+  const [[vendorRow]] = await pool.query(
+    'SELECT id FROM users WHERE email = ?',
+    [DEV_CREDENTIALS.vendor.email],
+  );
+  vendorUserId = vendorRow.id;
 
   listingId = await createListing(`Ownership Test ${Date.now()}`);
   const unitId = await registerUnit(listingId);
@@ -182,6 +197,18 @@ describe('GET /bookings/:id — visibility', () => {
     expect(res.status).toBe(200);
   });
 
+  // Phase 14.9 ("message the partner about this booking"): the single-
+  // booking response resolves the partner's owner user id so a customer
+  // can pass it as `participantUserIds` to `POST /messaging/conversations`
+  // without the frontend ever needing its own partner->user lookup.
+  test('partner_owner_user_id resolves to the vendor account that owns the listing', async () => {
+    const res = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.partner_owner_user_id).toBe(vendorUserId);
+  });
+
   test('an admin with booking.view_all can view it', async () => {
     const res = await request(app)
       .get(`/api/v1/bookings/${bookingId}`)
@@ -211,6 +238,16 @@ describe('GET /bookings — list visibility', () => {
     expect(res.body.data.some((b) => b.id === bookingId)).toBe(true);
   });
 
+  test('Phase 8: summary rows carry the earliest/latest item dates as date_from/date_to', async () => {
+    const res = await request(app)
+      .get('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(res.status).toBe(200);
+    const summary = res.body.data.find((b) => b.id === bookingId);
+    expect(summary.date_from).toBe('2027-07-01');
+    expect(summary.date_to).toBe('2027-07-02');
+  });
+
   test("a customer's own list never includes another customer's booking", async () => {
     const res = await request(app)
       .get('/api/v1/bookings')
@@ -225,6 +262,27 @@ describe('GET /bookings — list visibility', () => {
       .set('Authorization', `Bearer ${vendor.accessToken}`);
     expect(res.status).toBe(200);
     expect(res.body.data.some((b) => b.id === bookingId)).toBe(true);
+  });
+
+  test('Phase 9: ?partnerId=&status= narrows to bookings in that status', async () => {
+    const matching = await request(app)
+      .get(`/api/v1/bookings?partnerId=${partnerId}&status=PENDING_VENDOR`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(matching.status).toBe(200);
+    expect(matching.body.data.some((b) => b.id === bookingId)).toBe(true);
+
+    const nonMatching = await request(app)
+      .get(`/api/v1/bookings?partnerId=${partnerId}&status=COMPLETED`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(nonMatching.status).toBe(200);
+    expect(nonMatching.body.data.some((b) => b.id === bookingId)).toBe(false);
+  });
+
+  test('Phase 9: an invalid status value is rejected with 422', async () => {
+    const res = await request(app)
+      .get(`/api/v1/bookings?partnerId=${partnerId}&status=NOT_A_REAL_STATUS`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(res.status).toBe(422);
   });
 
   test("an unrelated customer cannot list via ?partnerId= for someone else's partner (403)", async () => {

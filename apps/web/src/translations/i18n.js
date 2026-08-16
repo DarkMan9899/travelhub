@@ -33,10 +33,17 @@ i18n
     ns: ['common'],
     defaultNS: 'common',
     backend: {
-      // Namespace files are served as static assets, matched by locale
-      // segment — lazy-loaded per FRONTEND_ARCHITECTURE.md §16.3, never
-      // bundled upfront.
-      loadPath: '/src/translations/{{lng}}/{{ns}}.json',
+      // Namespace files live in `public/locales/` (Vite copies `public/`
+      // verbatim to `dist/` at build time, and serves it as-is in dev) —
+      // lazy-loaded per FRONTEND_ARCHITECTURE.md §16.3, never bundled
+      // upfront. Phase 20 (SEO) fix: this previously pointed at
+      // `/src/translations/{{lng}}/{{ns}}.json`, a dev-server-only path
+      // (Vite serves raw `src/` files in dev, but never copies them to
+      // `dist/`) — every production build silently served raw i18n keys
+      // instead of translated text. `public/locales/` is the one path
+      // that resolves identically in dev, `vite preview`, and a real
+      // production deployment.
+      loadPath: '/locales/{{lng}}/{{ns}}.json',
     },
     detection: {
       // The URL locale segment (FRONTEND_ARCHITECTURE.md §4.1) is the

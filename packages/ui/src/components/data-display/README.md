@@ -1,8 +1,9 @@
 # data-display
 
-**Sprint 1 status:** folder scaffolded, empty. No components implemented.
-
-This group will contain: Table, Chart, Rating, Review Card, Accordion (COMPONENT_LIBRARY.md Part II Section 5).
+**Application Foundation status:** partially implemented — `RatingStars`
+and `PriceTag` (read-only display primitives with no business logic).
+Table, Chart, Review Card, Accordion remain unimplemented, built by the
+sprint that has a real consumer for them.
 
 Each component, when implemented, follows the full specification in
 `COMPONENT_LIBRARY.md` (Purpose, Props, States, Variants, Accessibility,

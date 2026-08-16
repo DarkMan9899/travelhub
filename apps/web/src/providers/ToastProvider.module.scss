@@ -1,0 +1,18 @@
+// ToastProvider viewport — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+
+.viewport {
+  position: fixed;
+  z-index: tokens.$z-toast;
+  bottom: tokens.$space-6;
+  right: tokens.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}

@@ -1,0 +1,119 @@
+import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import ToastProvider from '../../../../../providers/ToastProvider.jsx';
+import CsvImportWizard from './CsvImportWizard.jsx';
+import { useBulkImportExternalReservationsMutation } from '../../../../availability/index.js';
+
+vi.mock('../../../../availability/index.js', async () => {
+  const actual = await vi.importActual('../../../../availability/index.js');
+  return {
+    ...actual,
+    useBulkImportExternalReservationsMutation: vi.fn(),
+  };
+});
+
+function makeCsvFile(content) {
+  return new File([content], 'reservations.csv', { type: 'text/csv' });
+}
+
+function renderWizard() {
+  return render(
+    <ToastProvider>
+      <CsvImportWizard unitId={5} listingId={1} onClose={vi.fn()} />
+    </ToastProvider>,
+  );
+}
+
+function getFileInput() {
+  // FileDropzone's file input is a native, visually-hidden `<input>`
+  // associated to its label via `aria-labelledby` (Phase 17 accessibility
+  // fix) — not a `role="button"` wrapper — so it's resolved directly by
+  // its accessible name. `selector: 'input'` restricts the match to the
+  // input itself, since the modal's own `aria-labelledby` title ("...
+  // CSV-ից") also matches /CSV/i and would otherwise make this ambiguous.
+  return screen.getByLabelText(/CSV/i, { selector: 'input' });
+}
+
+describe('CsvImportWizard (apps/web/src/modules/partner)', () => {
+  let mutateAsync;
+
+  beforeEach(() => {
+    // `apiClient` never unwraps the `{success, data, meta, error}`
+    // envelope — every mutation resolves to that full shape.
+    mutateAsync = vi.fn().mockResolvedValue({
+      data: {
+        results: [
+          { index: 0, status: 'CREATED', reservationId: 11 },
+          { index: 1, status: 'FAILED', error: 'Capacity conflict' },
+        ],
+      },
+    });
+    useBulkImportExternalReservationsMutation.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
+  });
+
+  test('parsing a CSV with one valid and one invalid row shows a per-row preview', async () => {
+    renderWizard();
+    const csv =
+      'dateFrom,dateTo,guestName\n2026-03-10,2026-03-12,Anna\nnot-a-date,2026-03-12,Bad Row';
+    fireEvent.change(getFileInput(), {
+      target: { files: [makeCsvFile(csv)] },
+    });
+
+    expect(
+      await screen.findByText('Գտնվել է 2 տող՝ 1 վավեր, 1 անվավեր։'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Վավեր')).toBeInTheDocument();
+    expect(screen.getByText('Անվավեր dateFrom')).toBeInTheDocument();
+  });
+
+  test('confirming an import sends only the valid rows and shows server results', async () => {
+    const user = userEvent.setup();
+    renderWizard();
+    const csv =
+      'dateFrom,dateTo,guestName\n2026-03-10,2026-03-12,Anna\nnot-a-date,2026-03-12,Bad Row';
+    fireEvent.change(getFileInput(), {
+      target: { files: [makeCsvFile(csv)] },
+    });
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Ներմուծել 1 տող' }),
+    );
+
+    await waitFor(() =>
+      expect(mutateAsync).toHaveBeenCalledWith({
+        unitId: 5,
+        sourceCode: 'OTHER',
+        rows: [
+          {
+            dateFrom: '2026-03-10',
+            dateTo: '2026-03-12',
+            quantity: undefined,
+            externalReference: undefined,
+            guestName: 'Anna',
+            guestPhone: undefined,
+            guestEmail: undefined,
+            notes: undefined,
+          },
+        ],
+      }),
+    );
+    expect(
+      await screen.findByText('2 տողից 1-ը ստեղծվեց։'),
+    ).toBeInTheDocument();
+  });
+
+  test('an empty CSV file shows an error instead of advancing to preview', async () => {
+    renderWizard();
+    fireEvent.change(getFileInput(), {
+      target: { files: [makeCsvFile('')] },
+    });
+
+    expect(
+      await screen.findByText('Այս ֆայլում ներմուծելու տողեր չկան։'),
+    ).toBeInTheDocument();
+  });
+});

@@ -1,9 +1,13 @@
 # form-controls
 
 **Sprint 2 status:** `Label`, `Input`, `Textarea`, `Checkbox`, `Radio`,
-`Switch`, `Select` implemented. `DatePicker`, `TimePicker`, `SearchBar`
+`Switch`, `Select` implemented.
+
+**Phase 5 status:** `DatePicker` implemented (built for
+`PartnerListingWizard`'s Availability step — blackout-date ranges — and
+any other generic date-input need). `TimePicker`, `SearchBar`
 (COMPONENT_LIBRARY.md Part II Section 2) remain scaffolded, not
-implemented — out of this sprint's scope.
+implemented — out of this phase's scope.
 
 `Label` is not a separate COMPONENT_LIBRARY.md catalog entry — it is the
 one shared implementation of the "label always visible, associated via
@@ -60,3 +64,31 @@ import { Input, Textarea, Checkbox, Radio, Switch, Select } from '@travelhub/ui/
 8, per `COMPONENT_LIBRARY.md`'s Select entry. `multiple` renders selected
 values as removable chips inside the trigger and keeps the panel open
 across selections.
+
+```jsx
+import { DatePicker } from '@travelhub/ui/components/form-controls';
+
+<DatePicker
+  label="Check-in date"
+  value={checkIn}
+  onChange={setCheckIn}
+  minDate="2026-01-01"
+/>
+
+<DatePicker
+  mode="range"
+  label="Blackout dates"
+  value={blackoutRange}
+  onChange={setBlackoutRange}
+  disabledDates={alreadyBookedDates}
+/>
+```
+
+`value`/`onChange` use `YYYY-MM-DD` strings (`{ start, end }` in `range`
+mode) — the same convention the Availability module's `dateFrom`/
+`dateTo` API fields already use, so wiring this to a blackout-date range
+never needs reformatting. Full keyboard grid navigation (arrow keys,
+Home/End, Page Up/Down) per `COMPONENT_LIBRARY.md`'s DatePicker entry;
+see `DatePicker.jsx`'s file header for its two documented
+simplifications (single-month grid at every breakpoint; English-only
+month/weekday labels, since this package takes no i18n dependency).

@@ -14,19 +14,19 @@ const SIZES = ['sm', 'md', 'lg'];
 export default function Textarea({
   value,
   onChange,
-  onBlur,
-  onFocus,
-  label,
-  placeholder,
-  helperText,
-  error,
-  size,
-  disabled,
-  rows,
-  autoResize,
-  id,
-  name,
-  required,
+  onBlur = undefined,
+  onFocus = undefined,
+  label = undefined,
+  placeholder = undefined,
+  helperText = undefined,
+  error = undefined,
+  size = 'md',
+  disabled = false,
+  rows = 4,
+  autoResize = false,
+  id = undefined,
+  name = undefined,
+  required = false,
 }) {
   const textareaRef = useRef(null);
 
@@ -92,22 +92,6 @@ Textarea.propTypes = {
   id: PropTypes.string,
   name: PropTypes.string,
   required: PropTypes.bool,
-};
-
-Textarea.defaultProps = {
-  onBlur: undefined,
-  onFocus: undefined,
-  label: undefined,
-  placeholder: undefined,
-  helperText: undefined,
-  error: undefined,
-  size: 'md',
-  disabled: false,
-  rows: 4,
-  autoResize: false,
-  id: undefined,
-  name: undefined,
-  required: false,
 };
 
 export { SIZES as TEXTAREA_SIZES };

@@ -30,12 +30,13 @@ function CloseIcon() {
 export default function Modal({
   isOpen,
   onClose,
-  title,
-  ariaLabel,
-  size,
-  closeOnBackdropClick,
-  preventClose,
-  footer,
+  title = undefined,
+  ariaLabel = 'Dialog',
+  closeLabel = 'Close',
+  size = 'md',
+  closeOnBackdropClick = true,
+  preventClose = false,
+  footer = undefined,
   children,
 }) {
   const titleId = useId();
@@ -63,7 +64,7 @@ export default function Modal({
           <Button
             variant="ghost"
             size="sm"
-            ariaLabel="Close"
+            ariaLabel={closeLabel}
             onClick={onClose}
             iconLeft={<CloseIcon />}
           />
@@ -80,20 +81,11 @@ Modal.propTypes = {
   onClose: PropTypes.func.isRequired,
   title: PropTypes.string,
   ariaLabel: PropTypes.string,
+  closeLabel: PropTypes.string,
   size: PropTypes.oneOf(SIZES),
   closeOnBackdropClick: PropTypes.bool,
   preventClose: PropTypes.bool,
   footer: PropTypes.node,
   children: PropTypes.node.isRequired,
 };
-
-Modal.defaultProps = {
-  title: undefined,
-  ariaLabel: 'Dialog',
-  size: 'md',
-  closeOnBackdropClick: true,
-  preventClose: false,
-  footer: undefined,
-};
-
 export { SIZES as MODAL_SIZES };

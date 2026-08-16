@@ -18,3 +18,24 @@ $color-white: #ffffff;
 $color-success: #1e8e5a;
 $color-warning: #c9761f;
 $color-danger: #c13a3a;
+
+// Darker "strong" pairings of the three colors above, plus gold — for
+// contexts that put white text directly on the color (Avatar fallback
+// initials, Badge's filled variant) or the color as text on the color's
+// own 12%-tint background (Badge's unfilled variant). The base tones
+// don't clear WCAG AA's 4.5:1 text-contrast minimum in either of those
+// two roles (verified: white-on-$color-success is 4.14:1, white-on-
+// $color-warning is 3.45:1, white-on-$color-gold is 2.40:1,
+// $color-danger-on-its-own-tint is 4.47:1) — these do, in both roles at
+// once, so one token serves both call sites per color.
+$color-success-strong: #1a7a4d;
+$color-warning-strong: #9b5b18;
+// Darkened from #bf3939 (Phase 17 accessibility audit): a real axe scan
+// of an unfilled danger Badge in context measured only 4.17:1, below the
+// 4.5:1 this token exists to guarantee — the original manual calculation
+// assumed a pure-white composite, but real page backgrounds aren't
+// always exactly #ffffff. #a83333 clears 4.5:1 (~5.0:1 measured) with
+// margin against a less favorable real background, and only strengthens
+// the filled (white-text) role, which already passed.
+$color-danger-strong: #a83333;
+$color-gold-strong: #8d7135;

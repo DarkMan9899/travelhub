@@ -1,8 +1,14 @@
 # navigation
 
-**Sprint 4 status:** `Breadcrumbs`, `Sidebar` implemented. `Pagination`,
-`Tabs` (COMPONENT_LIBRARY.md Part II Section 3) remain scaffolded, not
-implemented — out of scope so far.
+**Sprint 4 status:** `Breadcrumbs`, `Sidebar` implemented.
+
+**Phase 5 status:** `WizardProgress` implemented — not a
+`COMPONENT_LIBRARY.md` catalog entry (this group's catalog is
+Breadcrumb/Sidebar/Pagination/Tabs), built for `PartnerListingWizard`'s
+step indicator on the same "zero-domain-knowledge structural primitive
+belongs in ui/, just uncataloged" precedent the `layout` group's README
+documents. `Pagination`, `Tabs` (COMPONENT_LIBRARY.md Part II Section 3)
+remain scaffolded, not implemented — out of scope so far.
 
 Each component, when implemented, follows the full specification in
 `COMPONENT_LIBRARY.md` (Purpose, Props, States, Variants, Accessibility,
@@ -111,3 +117,45 @@ indicated by more than color alone (a left-border accent + bold text).
 horizontal, bottom-fixed bar — not a slide-in `Drawer` composition, since
 the documented prop API has no open/close state for a drawer variant
 (see `Sidebar.jsx`'s file header).
+
+## WizardProgress
+
+Step indicator for `PartnerListingWizard`'s multi-step flow. Deliberately
+its own component, not a reuse of `DynamicFilterPanel`'s numeric
+`Stepper` control (`apps/web/src/modules/search/components/
+DynamicFilterPanel/controls/Stepper.jsx`) — that `Stepper` is an
+unrelated +/- number input.
+
+**Props:** `steps` (array of `{ id, label }`, required) · `currentStepId`
+(required) · `completedStepIds` (array, default `[]`) · `onStepClick`
+(function — when given, completed and current steps become clickable;
+omitted entirely otherwise, since a partner shouldn't be able to jump
+ahead of validation via this control alone) · `ariaLabel` (default
+`'Listing creation progress'`) · `className`.
+
+**Usage:**
+
+```jsx
+import { WizardProgress } from '@travelhub/ui/components/navigation';
+
+<WizardProgress
+  steps={[
+    { id: 'category', label: 'Category' },
+    { id: 'basicInfo', label: 'Basic Information' },
+    { id: 'location', label: 'Location' },
+  ]}
+  currentStepId="location"
+  completedStepIds={['category', 'basicInfo']}
+  onStepClick={(stepId) => goToStep(stepId)}
+/>;
+```
+
+**Accessibility notes:** `<nav>` wrapping an `<ol>` of step markers, each
+with `aria-current="step"` on the current one; clickable markers carry
+an explicit `aria-label` ("Go to {label}") since their visible content is
+just a number or checkmark icon. A permanent "Step X of N" caption plus
+`role="progressbar"` renders beneath the step row at every breakpoint —
+unlike `Sidebar`'s CSS-only `display: none` reflow, this summary is never
+the sole accessible copy of an interactive control, so it stays
+supplementary rather than swapping out the step row's buttons behind a
+media query.

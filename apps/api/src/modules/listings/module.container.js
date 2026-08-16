@@ -8,24 +8,42 @@
  */
 
 import { MySqlListingRepository } from './repositories/mysqlListingRepository.js';
+import { MySqlListingMetadataRepository } from './repositories/mysqlListingMetadataRepository.js';
 import { ListingService } from './services/listingService.js';
+import { ListingMetadataService } from './services/listingMetadataService.js';
 import { createListingController } from './controllers/listingController.js';
 import { LocalStorageProvider } from '../../infrastructure/storage/localStorageProvider.js';
 
 export default function createListingsContainer({
   auditLogger,
   permissionResolver,
+  eventBus,
 }) {
   const listingRepository = new MySqlListingRepository();
+  const listingMetadataRepository = new MySqlListingMetadataRepository();
   const storageProvider = new LocalStorageProvider();
 
   const listingService = new ListingService({
     listingRepository,
+    listingMetadataRepository,
     storageProvider,
     auditLogger,
     permissionResolver,
+    eventBus,
   });
-  const listingController = createListingController(listingService);
+  const listingMetadataService = new ListingMetadataService({
+    listingMetadataRepository,
+  });
+  const listingController = createListingController(
+    listingService,
+    listingMetadataService,
+  );
 
-  return { listingRepository, listingService, listingController };
+  return {
+    listingRepository,
+    listingMetadataRepository,
+    listingService,
+    listingMetadataService,
+    listingController,
+  };
 }

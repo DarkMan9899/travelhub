@@ -14,7 +14,9 @@ import { validate } from '../../validation/validate.js';
 import {
   searchListingsQuerySchema,
   searchCategoriesQuerySchema,
+  searchDestinationsQuerySchema,
   searchSuggestionsQuerySchema,
+  searchFiltersQuerySchema,
 } from './validators/searchValidators.js';
 
 export default function createSearchRoutes({ searchController }) {
@@ -36,9 +38,19 @@ export default function createSearchRoutes({ searchController }) {
     searchController.searchCategories,
   );
   router.get(
+    '/destinations',
+    validate(searchDestinationsQuerySchema),
+    searchController.searchDestinations,
+  );
+  router.get(
     '/suggestions',
     validate(searchSuggestionsQuerySchema),
     searchController.suggest,
+  );
+  router.get(
+    '/filters',
+    validate(searchFiltersQuerySchema),
+    searchController.getFilterDefinitions,
   );
 
   return router;

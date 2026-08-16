@@ -43,7 +43,12 @@ function resolvePlacement(wrapperEl, placement) {
   return overflowsEdge[placement] ? OPPOSITE[placement] : placement;
 }
 
-export default function Tooltip({ children, content, placement, delay }) {
+export default function Tooltip({
+  children,
+  content,
+  placement = 'top',
+  delay = 400,
+}) {
   const [visible, setVisible] = useState(false);
   const [resolvedPlacement, setResolvedPlacement] = useState(placement);
   const wrapperRef = useRef(null);
@@ -112,11 +117,6 @@ Tooltip.propTypes = {
   content: PropTypes.node.isRequired,
   placement: PropTypes.oneOf(PLACEMENTS),
   delay: PropTypes.number,
-};
-
-Tooltip.defaultProps = {
-  placement: 'top',
-  delay: 400,
 };
 
 export { PLACEMENTS as TOOLTIP_PLACEMENTS };

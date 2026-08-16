@@ -19,6 +19,17 @@ export function toSearchResultResponse(result) {
     city_name: result.cityName,
     country_id: result.countryId,
     cover_image_url: result.coverImageUrl,
+    // Phase 10 (redesign): additive — `listing_pricing` is a 1:1 table
+    // (PRIMARY KEY(listing_id)) already joined safely; `null` for a
+    // listing with no pricing row set yet, never fabricated.
+    price_amount: result.priceAmount ?? null,
+    price_currency_code: result.priceCurrencyCode ?? null,
+    media_count: result.mediaCount,
+    // Phase 12 (Product Polish): read-only aggregate from the Reviews
+    // module, same "null/0 for none yet, never omitted" convention as
+    // `listingDto.js`'s `toListingResponse`.
+    rating_average: result.ratingAverage ?? null,
+    review_count: result.reviewCount ?? 0,
     created_at: result.createdAt,
   };
 }
@@ -33,10 +44,51 @@ export function toCategoryResultResponse(category) {
   };
 }
 
+/** Phase 20 (SEO) — `GET /search/destinations`, mirrors `toCategoryResultResponse`'s shape for the city equivalent. */
+export function toDestinationResultResponse(destination) {
+  return {
+    id: destination.id,
+    slug: destination.slug,
+    name: destination.name,
+    latitude: destination.latitude,
+    longitude: destination.longitude,
+    listing_count: destination.listingCount,
+  };
+}
+
 export function toSuggestionResponse(suggestion) {
   return {
     id: suggestion.id,
     title: suggestion.title,
     slug: suggestion.slug,
+  };
+}
+
+/**
+ * `GET /search/filters` response. `code` fields (group/filter/option) are
+ * stable, backend-declared identifiers — the frontend resolves display
+ * labels via its own i18n catalog (`search.filters.<code>`), not a DB
+ * translation lookup: `filter_definition_translations`/`attribute_option_
+ * translations` exist in the schema for a future CMS-driven catalog but
+ * carry no seed data yet, so the label authority lives in i18n for now.
+ */
+export function toFilterGroupsResponse(groups) {
+  return {
+    groups: groups.map((group) => ({
+      code: group.code,
+      definitions: group.definitions.map((definition) => ({
+        code: definition.code,
+        input_type: definition.inputType,
+        value_source: definition.valueSource,
+        unit: definition.unit,
+        min: definition.min,
+        max: definition.max,
+        is_multi_valued: definition.isMultiValued,
+        options: definition.options.map((option) => ({
+          value: option.value,
+          code: option.code,
+        })),
+      })),
+    })),
   };
 }

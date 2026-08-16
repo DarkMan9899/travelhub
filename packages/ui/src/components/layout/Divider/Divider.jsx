@@ -16,7 +16,10 @@ import styles from './Divider.module.scss';
 
 const ORIENTATIONS = ['horizontal', 'vertical'];
 
-export default function Divider({ orientation, className }) {
+export default function Divider({
+  orientation = 'horizontal',
+  className = undefined,
+}) {
   return (
     <hr
       aria-orientation={orientation}
@@ -30,11 +33,6 @@ export default function Divider({ orientation, className }) {
 Divider.propTypes = {
   orientation: PropTypes.oneOf(ORIENTATIONS),
   className: PropTypes.string,
-};
-
-Divider.defaultProps = {
-  orientation: 'horizontal',
-  className: undefined,
 };
 
 export { ORIENTATIONS as DIVIDER_ORIENTATIONS };

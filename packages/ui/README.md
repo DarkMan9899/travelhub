@@ -80,6 +80,25 @@ Spinner`, `Skeleton`, `EmptyState`, `Alert`, `Modal`, `Drawer` —
 - No pages, business logic, authentication, or API/database work was
   touched — out of scope by design.
 
+## Phase 5 status (Partner Listing Wizard primitives)
+
+- **New `form-controls/DatePicker`, `listing-media/FileDropzone`,
+  `navigation/WizardProgress` — implemented**, each with colocated
+  `.module.scss`, unit tests, and full keyboard/ARIA support. Built to
+  unblock `apps/web`'s `PartnerListingWizard` (Phase 5 — see the
+  project's Phase 5 plan): a date-range picker for blackout dates, a
+  drag-and-drop file input for the Media step, and a step indicator for
+  the wizard shell.
+- `listing-media` is a previously-empty scaffold group; `FileDropzone` is
+  its first implemented component (and the group's own `index.js`/
+  `package.json` export entry, added this phase). `WizardProgress` is not
+  a `COMPONENT_LIBRARY.md` catalog entry — see `navigation/README.md`'s
+  own section for the "uncataloged structural primitive" rationale
+  already established by the `layout` group.
+- No pages, business logic, authentication, or API/database work was
+  touched — out of scope by design (primitives only, this phase's
+  wizard _steps_ are separate `apps/web` work).
+
 ## Usage
 
 Consuming apps import the token entry point once
@@ -93,12 +112,21 @@ import {
   Avatar,
   Tooltip,
 } from '@travelhub/ui/components/primitives';
-import { Input, Select } from '@travelhub/ui/components/form-controls';
+import {
+  Input,
+  Select,
+  DatePicker,
+} from '@travelhub/ui/components/form-controls';
 import {
   Modal,
   Drawer,
   Alert,
 } from '@travelhub/ui/components/feedback-overlays';
 import { Container, Page, Stack, Grid } from '@travelhub/ui/components/layout';
-import { Breadcrumbs, Sidebar } from '@travelhub/ui/components/navigation';
+import {
+  Breadcrumbs,
+  Sidebar,
+  WizardProgress,
+} from '@travelhub/ui/components/navigation';
+import { FileDropzone } from '@travelhub/ui/components/listing-media';
 ```

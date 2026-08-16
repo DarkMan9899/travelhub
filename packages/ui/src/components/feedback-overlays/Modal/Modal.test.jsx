@@ -101,6 +101,22 @@ describe('Modal (COMPONENT_LIBRARY.md Part II §4)', () => {
     expect(screen.getByRole('button', { name: 'Confirm' })).toBeInTheDocument();
   });
 
+  test('closeLabel prop overrides the default English close-button aria-label', async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <Modal isOpen onClose={onClose} title="Cancel booking" closeLabel="Փակել">
+        Are you sure?
+      </Modal>,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Close' }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Փակել' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   test('supports every documented size without throwing', () => {
     ['sm', 'md', 'lg', 'full'].forEach((size) => {
       const { unmount } = render(

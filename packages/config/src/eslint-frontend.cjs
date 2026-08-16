@@ -108,6 +108,15 @@ module.exports = {
     ],
     // --- React / accessibility discipline ---
     'react/react-in-jsx-scope': 'off', // Vite's automatic JSX runtime
+    // Every component in this codebase declares optional-prop defaults as
+    // native JS default parameters in its destructured signature, never
+    // `Component.defaultProps` (deprecated by React for function
+    // components — see each component's own file). airbnb's base rule
+    // only recognizes `defaultProps`; `functions: 'defaultArguments'`
+    // teaches it to recognize the pattern this repo actually uses, and
+    // still flags a genuinely missing default (or the two forms mixed on
+    // one component) as a real error.
+    'react/require-default-props': ['error', { functions: 'defaultArguments' }],
     'react/jsx-filename-extension': ['error', { extensions: ['.jsx'] }],
     'react/function-component-definition': [
       'error',
@@ -134,6 +143,7 @@ module.exports = {
         devDependencies: [
           '**/*.test.jsx',
           '**/*.test.js',
+          '**/*.test.mjs',
           '**/*.spec.js',
           // `**/`-prefixed so these still match when ESLint is invoked with a
           // cwd other than the package root — e.g. lint-staged's pre-commit
@@ -143,6 +153,10 @@ module.exports = {
           '**/vite.config.js',
           '**/vitest.config.js',
           '**/playwright.config.js',
+          // Phase 20's build-time SSG/SEO-file CLI scripts (prerender.mjs,
+          // generateSeoFiles.mjs) — never bundled into the shipped app,
+          // dotenv/@playwright/test are correctly devDependencies here.
+          '**/scripts/**',
         ],
       },
     ],

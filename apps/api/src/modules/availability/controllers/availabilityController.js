@@ -7,10 +7,18 @@
 
 import {
   toBookableUnitResponse,
+  toPublicBookableUnitResponse,
   toCalendarEntryResponse,
   toBlackoutManagementResponse,
   toPublicRangeResponse,
   toCalendarDayResponse,
+  toPublicAvailabilitySummaryResponse,
+  toPublicDailyAvailabilityResponse,
+  toInventoryBlockResponse,
+  toExternalReservationResponse,
+  toLedgerEntryResponse,
+  toAvailabilityBreakdownResponse,
+  toReservationHoldResponse,
 } from '../dto/availabilityDto.js';
 
 export function createAvailabilityController(availabilityService) {
@@ -214,6 +222,24 @@ export function createAvailabilityController(availabilityService) {
 
     // --- public views ---
 
+    async listPublicUnits(req, res, next) {
+      try {
+        const { listingId } = req.validated.params;
+        const units = await availabilityService.getPublicUnits(
+          req.principal,
+          listingId,
+        );
+        res.status(200).json({
+          success: true,
+          data: units.map(toPublicBookableUnitResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
     async getPublicRanges(req, res, next) {
       try {
         const { listingId } = req.validated.params;
@@ -246,6 +272,231 @@ export function createAvailabilityController(availabilityService) {
         res.status(200).json({
           success: true,
           data: days.map(toCalendarDayResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getPublicAvailabilitySummary(req, res, next) {
+      try {
+        const { listingId } = req.validated.params;
+        const { from, to, unitId } = req.validated.query;
+        const summaries =
+          await availabilityService.getPublicAvailabilitySummary(
+            req.principal,
+            listingId,
+            { from, to, unitId },
+          );
+        res.status(200).json({
+          success: true,
+          data: summaries.map(toPublicAvailabilitySummaryResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getPublicDailyAvailabilityStatus(req, res, next) {
+      try {
+        const { listingId } = req.validated.params;
+        const { from, to, unitId } = req.validated.query;
+        const days = await availabilityService.getPublicDailyAvailabilityStatus(
+          req.principal,
+          listingId,
+          { from, to, unitId },
+        );
+        res.status(200).json({
+          success: true,
+          data: days.map(toPublicDailyAvailabilityResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    // --- Phase 17: manual blocks ---
+
+    async createManualBlock(req, res, next) {
+      try {
+        const block = await availabilityService.createManualBlock(
+          req.principal,
+          req.validated.body,
+        );
+        res.status(201).json({
+          success: true,
+          data: toInventoryBlockResponse(block),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async releaseManualBlock(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        await availabilityService.releaseManualBlock(req.principal, id);
+        res.status(200).json({
+          success: true,
+          data: { released: true },
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async listManualBlocks(req, res, next) {
+      try {
+        const { listingId } = req.validated.query;
+        const blocks = await availabilityService.listManualBlocks(
+          req.principal,
+          listingId,
+        );
+        res.status(200).json({
+          success: true,
+          data: blocks.map(toInventoryBlockResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    // --- Phase 17: external reservations ---
+
+    async createExternalReservation(req, res, next) {
+      try {
+        const reservation = await availabilityService.createExternalReservation(
+          req.principal,
+          req.validated.body,
+        );
+        res.status(201).json({
+          success: true,
+          data: toExternalReservationResponse(reservation),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async bulkImportExternalReservations(req, res, next) {
+      try {
+        const results =
+          await availabilityService.bulkCreateExternalReservations(
+            req.principal,
+            req.validated.body,
+          );
+        res
+          .status(200)
+          .json({ success: true, data: { results }, meta: null, error: null });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async cancelExternalReservation(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        await availabilityService.cancelExternalReservation(req.principal, id);
+        res.status(200).json({
+          success: true,
+          data: { cancelled: true },
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async listExternalReservations(req, res, next) {
+      try {
+        const { listingId } = req.validated.query;
+        const reservations = await availabilityService.listExternalReservations(
+          req.principal,
+          listingId,
+        );
+        res.status(200).json({
+          success: true,
+          data: reservations.map(toExternalReservationResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    // --- Phase 17: ledger + breakdown ---
+
+    async getUnitLedger(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const { from, to } = req.validated.query;
+        const entries = await availabilityService.getInventoryLedger(
+          req.principal,
+          id,
+          { from, to },
+        );
+        res.status(200).json({
+          success: true,
+          data: entries.map(toLedgerEntryResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getUnitBreakdown(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const { from, to } = req.validated.query;
+        const days = await availabilityService.getAvailabilityBreakdown(
+          req.principal,
+          id,
+          {
+            from,
+            to,
+          },
+        );
+        res.status(200).json({
+          success: true,
+          data: days.map(toAvailabilityBreakdownResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getUnitHolds(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const { from, to } = req.validated.query;
+        const holds = await availabilityService.listActiveHoldsForUnit(
+          req.principal,
+          id,
+          { from, to },
+        );
+        res.status(200).json({
+          success: true,
+          data: holds.map(toReservationHoldResponse),
           meta: null,
           error: null,
         });

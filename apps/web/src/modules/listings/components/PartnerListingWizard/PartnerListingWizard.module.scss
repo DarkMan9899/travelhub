@@ -1,0 +1,11 @@
+// PartnerListingWizard — tokens only, consumed from @travelhub/ui.
+
+@use 'tokens' as tokens;
+
+.wizard {
+  padding: tokens.$space-8 0;
+}
+
+.stepBody {
+  margin-top: tokens.$space-8;
+}

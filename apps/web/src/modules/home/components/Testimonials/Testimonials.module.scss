@@ -1,0 +1,22 @@
+// Testimonials — tokens only, consumed from @travelhub/ui. Wider slides
+// than the image-led showcases (Destinations/Listings/Experiences) —
+// these are text cards (quote + rating + author), which need more room
+// per card to stay readable.
+
+@use 'mixins/respond' as respond;
+
+.slide {
+  flex: 0 0 90%;
+
+  @include respond.respond(mobile-large) {
+    flex: 0 0 74%;
+  }
+
+  @include respond.respond(tablet) {
+    flex: 0 0 58%;
+  }
+
+  @include respond.respond(laptop) {
+    flex: 0 0 50%;
+  }
+}

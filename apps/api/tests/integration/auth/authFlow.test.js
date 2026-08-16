@@ -102,6 +102,12 @@ describe('Auth flow: register -> login -> me -> refresh -> logout', () => {
     expect(res.body.data.user.id).toBe(userId);
     expect(res.body.data.roles).toContain('CUSTOMER');
     expect(Array.isArray(res.body.data.permissions)).toBe(true);
+    // Phase 8: toUserDto now additively carries the same preference/avatar
+    // fields userController's toUserResponse already returned, so the
+    // frontend Profile page can prefill entirely from this response.
+    expect(res.body.data.user).toHaveProperty('avatar_url');
+    expect(res.body.data.user).toHaveProperty('preferred_language_id');
+    expect(res.body.data.user).toHaveProperty('preferred_currency_id');
   });
 
   test('GET /auth/me without a token is rejected with 401', async () => {

@@ -21,6 +21,18 @@ async function upsertCategory(connection, { name, slug }) {
   return rows[0].id;
 }
 
+async function upsertCategoryTranslation(
+  connection,
+  { categoryId, languageId, name },
+) {
+  await connection.query(
+    `INSERT INTO listing_category_translations (listing_category_id, language_id, name)
+     VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE name = VALUES(name)`,
+    [categoryId, languageId, name],
+  );
+}
+
 async function upsertAmenity(connection, name) {
   const [existing] = await connection.query(
     'SELECT id FROM listing_amenities WHERE name = ?',
@@ -70,6 +82,31 @@ const ROOT_CATEGORIES = [
   { name: 'Attractions', slug: 'attractions' },
 ];
 
+// listing_category_translations feeds mysqlSearchRepository's
+// searchCategories() COALESCE(locale, defaultLocale, cat.name) chain — every
+// locale-facing surface that renders a category's name (search, homepage,
+// PartnerListingWizard's CategoryStep) reads through it. `en` is seeded
+// explicitly too rather than relying on the `cat.name` final fallback, so
+// the join always resolves without touching the base row.
+const CATEGORY_TRANSLATIONS = {
+  hotels: { en: 'Hotels', hy: 'Հյուրանոցներ', ru: 'Отели' },
+  apartments: { en: 'Apartments', hy: 'Բնակարաններ', ru: 'Квартиры' },
+  villas: { en: 'Villas', hy: 'Վիլլաներ', ru: 'Виллы' },
+  'guest-houses': {
+    en: 'Guest Houses',
+    hy: 'Հյուրատներ',
+    ru: 'Гостевые дома',
+  },
+  restaurants: { en: 'Restaurants', hy: 'Ռեստորաններ', ru: 'Рестораны' },
+  tours: { en: 'Tours', hy: 'Տուրեր', ru: 'Туры' },
+  'car-rentals': { en: 'Car Rentals', hy: 'Ավտովարձույթ', ru: 'Аренда авто' },
+  attractions: {
+    en: 'Attractions',
+    hy: 'Տեսարժան վայրեր',
+    ru: 'Достопримечательности',
+  },
+};
+
 const COMMON_AMENITIES = [
   'WiFi',
   'Parking',
@@ -101,10 +138,27 @@ const DURATION_TIERS = [
 ];
 
 export default async function seedTaxonomyAndProducts(connection) {
+  const languageIds = await getIdsByCode(connection, 'languages', [
+    'en',
+    'hy',
+    'ru',
+  ]);
+
   // eslint-disable-next-line no-restricted-syntax -- seeding must run in a stable, readable order
   for (const category of ROOT_CATEGORIES) {
     // eslint-disable-next-line no-await-in-loop -- sequential by design
-    await upsertCategory(connection, category);
+    const categoryId = await upsertCategory(connection, category);
+    const translations = CATEGORY_TRANSLATIONS[category.slug];
+
+    // eslint-disable-next-line no-restricted-syntax -- seeding must run in a stable, readable order
+    for (const [languageCode, name] of Object.entries(translations)) {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design
+      await upsertCategoryTranslation(connection, {
+        categoryId,
+        languageId: languageIds.get(languageCode),
+        name,
+      });
+    }
   }
 
   // eslint-disable-next-line no-restricted-syntax -- seeding must run in a stable, readable order

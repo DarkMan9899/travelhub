@@ -35,11 +35,11 @@ function CloseIcon() {
 export default function Drawer({
   isOpen,
   onClose,
-  title,
-  ariaLabel,
-  anchor,
-  closeOnBackdropClick,
-  preventClose,
+  title = undefined,
+  ariaLabel = 'Panel',
+  anchor = 'auto',
+  closeOnBackdropClick = true,
+  preventClose = false,
   children,
 }) {
   const titleId = useId();
@@ -88,13 +88,4 @@ Drawer.propTypes = {
   preventClose: PropTypes.bool,
   children: PropTypes.node.isRequired,
 };
-
-Drawer.defaultProps = {
-  title: undefined,
-  ariaLabel: 'Panel',
-  anchor: 'auto',
-  closeOnBackdropClick: true,
-  preventClose: false,
-};
-
 export { ANCHORS as DRAWER_ANCHORS };

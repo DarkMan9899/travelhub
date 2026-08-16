@@ -1,0 +1,274 @@
+/**
+ * PartnerListingWizard — the step orchestrator. Owns navigation/identity
+ * via `useListingWizardState` (URL-per-step, per that hook's own file
+ * header) and the current listing's server data via `useListingQuery`
+ * (only enabled once `wizard.listingId` exists — i.e. from
+ * `BasicInfoStep` onward). Also reads `GET /listings/metadata` itself
+ * (the same React-Query cache entry every dynamic step already reads —
+ * calling the same key twice is a cache hit, not a second request) so it
+ * can convert the listing's raw `attribute_values`/`policy_values` wire
+ * arrays into the domain-value objects `DynamicAttributesStep`/
+ * `PoliciesStep` expect as `initialValues`, without either step needing
+ * to know how to seed itself from a resumed draft.
+ *
+ * A direct URL edit that jumps past Basic Information without a
+ * `listingId` (no legitimate UI path produces this, but URLs are
+ * user-editable) is redirected back to `basicInfo` — every step from
+ * Location onward assumes a real listing id.
+ */
+
+import { useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
+import { useNavigate, useParams } from 'react-router-dom';
+import { WizardProgress } from '@travelhub/ui/components/navigation';
+import { Container } from '@travelhub/ui/components/layout';
+import PageLoader from '../../../../components/PageLoader/PageLoader.jsx';
+import { useToast } from '../../../../contexts/ToastContext.jsx';
+import { useListingWizardState } from './useListingWizardState.js';
+import { useListingQuery } from '../../queries/useListingQuery.js';
+import { useListingMetadataQuery } from '../../queries/useListingMetadataQuery.js';
+import { fromAttributeValuesResponse } from '../../utils/attributeValueMapping.js';
+import { fromPolicyValuesResponse } from '../../utils/policyValueMapping.js';
+import { LISTING_CREATION_STEP_ID } from './wizardSteps.js';
+import CategoryStep from './steps/CategoryStep.jsx';
+import BasicInfoStep from './steps/BasicInfoStep.jsx';
+import LocationStep from './steps/LocationStep.jsx';
+import DynamicAttributesStep from './steps/DynamicAttributesStep.jsx';
+import AmenitiesStep from './steps/AmenitiesStep.jsx';
+import MediaStep from './steps/MediaStep.jsx';
+import PricingStep from './steps/PricingStep.jsx';
+import AvailabilityStep from './steps/AvailabilityStep.jsx';
+import PoliciesStep from './steps/PoliciesStep.jsx';
+import ContentStep from './steps/ContentStep.jsx';
+import ReviewStep from './steps/ReviewStep.jsx';
+import styles from './PartnerListingWizard.module.scss';
+
+export default function PartnerListingWizard({ partnerships }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { locale } = useParams();
+  const { showToast } = useToast();
+  const wizard = useListingWizardState();
+  const listingQuery = useListingQuery(wizard.listingId);
+  const listing = listingQuery.data;
+  const categoryId = listing?.category_ids?.[0] ?? wizard.categoryId;
+  const metadataQuery = useListingMetadataQuery(categoryId, locale);
+
+  const requiresListing = wizard.currentStepIndex > 1;
+  useEffect(() => {
+    if (requiresListing && !wizard.listingId) {
+      wizard.goToStep(LISTING_CREATION_STEP_ID, { replace: true });
+    }
+    // Only re-check when the step or listing id actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requiresListing, wizard.listingId]);
+
+  if (requiresListing && !wizard.listingId) {
+    return null;
+  }
+
+  if (wizard.listingId && listingQuery.isPending) {
+    return <PageLoader />;
+  }
+
+  function handlePublished() {
+    showToast(t('partner.listingWizard.publishSuccess'), {
+      variant: 'success',
+    });
+    navigate(`/${locale}/partner`);
+  }
+
+  const stepLabels = wizard.steps.map((step) => ({
+    id: step.id,
+    label: t(step.labelKey),
+  }));
+  const currentStepLabel = t(
+    wizard.steps[wizard.currentStepIndex]?.labelKey ?? '',
+  );
+
+  return (
+    <Container size="content" className={styles.wizard}>
+      <WizardProgress
+        steps={stepLabels}
+        currentStepId={wizard.currentStepId}
+        completedStepIds={wizard.completedStepIds}
+        onStepClick={wizard.goToStep}
+        ariaLabel={t('partner.listingWizard.progressLabel')}
+        summaryText={t('partner.listingWizard.progressSummary', {
+          current: wizard.currentStepIndex + 1,
+          total: wizard.steps.length,
+          label: currentStepLabel,
+        })}
+        stepAriaLabel={(step) =>
+          t('partner.listingWizard.goToStep', { label: step.label })
+        }
+      />
+
+      <div className={styles.stepBody}>
+        {wizard.currentStepId === 'category' && (
+          <CategoryStep
+            value={categoryId}
+            onChange={wizard.setCategoryId}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'basicInfo' && (
+          <BasicInfoStep
+            listingId={wizard.listingId}
+            categoryId={categoryId}
+            partnerships={partnerships}
+            initialValues={
+              listing
+                ? {
+                    partnerId: listing.partner_id,
+                    listingType: listing.listing_type,
+                    title: listing.translations[0]?.title,
+                    summary: listing.translations[0]?.summary,
+                    description: listing.translations[0]?.description,
+                  }
+                : {}
+            }
+            onCreated={wizard.completeCreationStep}
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'location' && listing && (
+          <LocationStep
+            listingId={wizard.listingId}
+            initialValues={listing.location ?? {}}
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'attributes' && listing && (
+          <DynamicAttributesStep
+            listingId={wizard.listingId}
+            categoryId={categoryId}
+            initialValues={
+              metadataQuery.data
+                ? fromAttributeValuesResponse(
+                    metadataQuery.data.attributes,
+                    listing.attribute_values,
+                  )
+                : {}
+            }
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'amenities' && listing && (
+          <AmenitiesStep
+            listingId={wizard.listingId}
+            categoryId={categoryId}
+            initialValues={listing.amenity_ids ?? []}
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'media' && listing && (
+          <MediaStep
+            listingId={wizard.listingId}
+            media={listing.media}
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'pricing' && listing && (
+          <PricingStep
+            listingId={wizard.listingId}
+            categoryId={categoryId}
+            initialValues={
+              listing.pricing
+                ? {
+                    modelCode: listing.pricing.pricing_model,
+                    amount: listing.pricing.amount,
+                    currencyCode: listing.pricing.currency,
+                  }
+                : {}
+            }
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'availability' && listing && (
+          <AvailabilityStep
+            listingId={wizard.listingId}
+            initialValues={
+              listing.booking_rules
+                ? {
+                    minimumStayNights:
+                      listing.booking_rules.minimum_stay_nights,
+                    maximumStayNights:
+                      listing.booking_rules.maximum_stay_nights,
+                    advanceBookingMinHours:
+                      listing.booking_rules.advance_booking_min_hours,
+                    advanceBookingMaxDays:
+                      listing.booking_rules.advance_booking_max_days,
+                  }
+                : {}
+            }
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'policies' && listing && (
+          <PoliciesStep
+            listingId={wizard.listingId}
+            categoryId={categoryId}
+            initialValues={
+              metadataQuery.data
+                ? fromPolicyValuesResponse(
+                    metadataQuery.data.policies,
+                    listing.policy_values,
+                  )
+                : {}
+            }
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'content' && listing && (
+          <ContentStep
+            listingId={wizard.listingId}
+            initialValues={{
+              highlights: listing.highlights ?? [],
+              itinerarySteps: listing.itinerary_steps ?? [],
+              includedItems: listing.included_items ?? [],
+              faqs: listing.faqs ?? [],
+            }}
+            onBack={wizard.goToPreviousStep}
+            onNext={wizard.goToNextStep}
+          />
+        )}
+
+        {wizard.currentStepId === 'review' && listing && (
+          <ReviewStep
+            listing={listing}
+            onBack={wizard.goToPreviousStep}
+            onPublished={() => handlePublished()}
+          />
+        )}
+      </div>
+    </Container>
+  );
+}
+
+const partnershipShape = PropTypes.shape({
+  partner_id: PropTypes.number.isRequired,
+  display_name: PropTypes.string.isRequired,
+});
+
+PartnerListingWizard.propTypes = {
+  partnerships: PropTypes.arrayOf(partnershipShape).isRequired,
+};

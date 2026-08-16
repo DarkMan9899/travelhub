@@ -1,0 +1,32 @@
+@use 'tokens' as tokens;
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-1;
+  padding: tokens.$space-3;
+  border: 1px solid tokens.$color-gray-100;
+  border-radius: tokens.$radius-md;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: tokens.$color-royal-blue;
+  }
+}
+
+.basedOn {
+  margin: 0;
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.city {
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+}

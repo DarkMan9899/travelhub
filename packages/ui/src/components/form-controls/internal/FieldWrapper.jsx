@@ -34,13 +34,13 @@ function ErrorIcon() {
 }
 
 export default function FieldWrapper({
-  id,
-  label,
-  required,
-  disabled,
-  size,
-  error,
-  helperText,
+  id = undefined,
+  label = undefined,
+  required = false,
+  disabled = false,
+  size = 'md',
+  error = undefined,
+  helperText = undefined,
   children,
 }) {
   const generatedId = useId();
@@ -93,14 +93,4 @@ FieldWrapper.propTypes = {
   error: PropTypes.string,
   helperText: PropTypes.string,
   children: PropTypes.func.isRequired,
-};
-
-FieldWrapper.defaultProps = {
-  id: undefined,
-  label: undefined,
-  required: false,
-  disabled: false,
-  size: 'md',
-  error: undefined,
-  helperText: undefined,
 };
