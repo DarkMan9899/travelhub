@@ -74,7 +74,10 @@
 }
 
 .placeholder {
-  color: colors.$color-gray-400;
+  // gray-400 is "Disabled text" (2.47:1 on white) — this trigger is
+  // enabled/interactive, so it needs gray-600's 5.78:1 to meet WCAG AA's
+  // 4.5:1 minimum (axe color-contrast, Phase 21).
+  color: colors.$color-gray-600;
   font-size: fn.rem(16px);
   line-height: fn.rem(24px);
 }

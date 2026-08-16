@@ -2238,11 +2238,16 @@
           "soldOut": "Սպառված է",
           "lowGeneric": "Ընդամենը {{count}} է մնացել",
           "lowByType": {
-            "HOTEL_ROOM": "Ընդամենը {{count}} սենյակ է մնացել",
-            "PROPERTY_UNIT": "Ընդամենը {{count}} միավոր է մնացել",
-            "RESTAURANT_TABLE": "Ընդամենը {{count}} սեղան է մնացել",
-            "TOUR_DEPARTURE": "{{count}} տեղ հասանելի է",
-            "VEHICLE": "Ընդամենը {{count}} մեքենա է մնացել"
+            "HOTEL_ROOM_one": "Ընդամենը {{count}} սենյակ է մնացել",
+            "HOTEL_ROOM_other": "Ընդամենը {{count}} սենյակ է մնացել",
+            "PROPERTY_UNIT_one": "Ընդամենը {{count}} միավոր է մնացել",
+            "PROPERTY_UNIT_other": "Ընդամենը {{count}} միավոր է մնացել",
+            "RESTAURANT_TABLE_one": "Ընդամենը {{count}} սեղան է մնացել",
+            "RESTAURANT_TABLE_other": "Ընդամենը {{count}} սեղան է մնացել",
+            "TOUR_DEPARTURE_one": "{{count}} տեղ հասանելի է",
+            "TOUR_DEPARTURE_other": "{{count}} տեղ հասանելի է",
+            "VEHICLE_one": "Ընդամենը {{count}} մեքենա է մնացել",
+            "VEHICLE_other": "Ընդամենը {{count}} մեքենա է մնացել"
           }
         }
       },

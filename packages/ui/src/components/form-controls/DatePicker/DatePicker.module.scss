@@ -63,7 +63,11 @@
 }
 
 .placeholder {
-  color: colors.$color-gray-400;
+  // gray-400 is documented as "Disabled text, subtle icons" and only
+  // reaches 2.47:1 on white — this trigger is enabled/interactive, so it
+  // needs gray-600's real body-text contrast (5.78:1) to meet WCAG AA's
+  // 4.5:1 minimum (axe color-contrast, Phase 21).
+  color: colors.$color-gray-600;
 }
 
 .value {

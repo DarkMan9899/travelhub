@@ -187,6 +187,7 @@ export default function ListingDetailPageContent() {
     return (
       <Stack
         gap="6"
+        role="status"
         aria-busy="true"
         aria-label={t('pages.listingDetail.loading')}
       >
