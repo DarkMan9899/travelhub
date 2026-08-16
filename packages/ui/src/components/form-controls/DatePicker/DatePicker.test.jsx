@@ -86,4 +86,54 @@ describe('DatePicker (COMPONENT_LIBRARY.md Part II §2)', () => {
     expect(screen.queryByRole('grid')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Stay dates')).toHaveTextContent('–');
   });
+
+  test('accepts minDate/maxDate as ISO date strings without crashing (real callers, e.g. ListingReservationWidget, pass toISODate() strings, not Date instances)', async () => {
+    const user = userEvent.setup();
+    const todayISO = new Date().toISOString().slice(0, 10);
+    render(<ControlledDatePicker label="Check-in" minDate={todayISO} />);
+
+    await user.click(screen.getByLabelText('Check-in'));
+
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+  });
+
+  test('onChange emits plain YYYY-MM-DD strings, not Date instances (real callers — ListingReservationWidget, AvailabilityStep — send value.start/end straight through as dateFrom/dateTo in a JSON request body with no conversion of their own)', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const anchor = new Date(2026, 5, 15);
+    render(
+      <DatePicker
+        label="Travel date"
+        mode="single"
+        value={anchor}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByLabelText('Travel date'));
+    await user.click(screen.getByRole('gridcell', { name: /^Jun 20,/ }));
+
+    expect(onChange).toHaveBeenCalledWith('2026-06-20');
+  });
+
+  test('range mode onChange emits {start, end} as YYYY-MM-DD strings', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const anchor = new Date(2026, 5, 1);
+    render(
+      <DatePicker
+        label="Stay dates"
+        mode="range"
+        value={{ start: anchor, end: null }}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByLabelText('Stay dates'));
+    await user.click(screen.getByRole('gridcell', { name: /^Jun 10,/ }));
+    expect(onChange).toHaveBeenLastCalledWith({
+      start: '2026-06-01',
+      end: '2026-06-10',
+    });
+  });
 });

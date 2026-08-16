@@ -31,6 +31,21 @@ function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+// `onChange` emits this, not a `Date` — every real consumer
+// (`ListingReservationWidget`, `AvailabilityStep`) sends `value.start`/
+// `value.end` straight through as `dateFrom`/`dateTo` in a JSON API
+// payload with no conversion of their own; a `Date` there serializes to
+// a full ISO *datetime* (`JSON.stringify` calls `toISOString()`), which
+// fails the backend's plain `YYYY-MM-DD` validation. Symmetric with
+// `value` already accepting a string via `toDate()` above.
+function toISODateString(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
 function startOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
@@ -51,8 +66,10 @@ function isSameDay(a, b) {
 
 function isDateDisabled(date, { minDate, maxDate, disabledDates }) {
   const day = startOfDay(date);
-  if (minDate && day < startOfDay(minDate)) return true;
-  if (maxDate && day > startOfDay(maxDate)) return true;
+  const min = toDate(minDate);
+  const max = toDate(maxDate);
+  if (min && day < startOfDay(min)) return true;
+  if (max && day > startOfDay(max)) return true;
   return disabledDates.some((disabledDate) =>
     isSameDay(day, toDate(disabledDate)),
   );
@@ -205,17 +222,18 @@ export default function DatePicker({
 
   function commitDay(day) {
     if (disabled || isDateDisabled(day, constraints)) return;
+    const iso = toISODateString(day);
     if (mode === 'single') {
-      onChange(day);
+      onChange(iso);
       closePanel();
       return;
     }
     if (!rangeStart || rangeEnd) {
-      onChange({ start: day, end: null });
+      onChange({ start: iso, end: null });
     } else if (day < rangeStart) {
-      onChange({ start: day, end: null });
+      onChange({ start: iso, end: null });
     } else {
-      onChange({ start: rangeStart, end: day });
+      onChange({ start: toISODateString(rangeStart), end: iso });
       closePanel();
     }
   }
