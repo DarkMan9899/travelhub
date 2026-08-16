@@ -105,6 +105,13 @@ async function latestNotificationTypes(accessToken) {
   return res.body.data.map((row) => row.event_type);
 }
 
+async function latestNotifications(accessToken) {
+  const res = await request(app)
+    .get('/api/v1/notifications?limit=50')
+    .set('Authorization', `Bearer ${accessToken}`);
+  return res.body.data;
+}
+
 beforeAll(async () => {
   await up();
   await seedAll();
@@ -272,8 +279,24 @@ describe('Domain event -> notification wiring', () => {
 
     const vendorTypes = await latestNotificationTypes(vendor.accessToken);
     expect(vendorTypes).toContain('message.sent');
-    const customerTypes = await latestNotificationTypes(customer.accessToken);
-    expect(customerTypes).not.toContain('message.sent');
+
+    // `customer` and `vendor` are shared, statically-seeded demo accounts
+    // reused across every integration test file in this --runInBand run,
+    // so their notification history isn't private to this test — scope
+    // the "sender excluded" assertion to THIS conversation's message.sent
+    // notifications specifically, not the account's entire recent history
+    // (which may legitimately contain an unrelated message.sent from a
+    // different conversation exercised by another test file earlier in
+    // the run).
+    const customerNotifications = await latestNotifications(
+      customer.accessToken,
+    );
+    const customerMessageSentForThisConversation = customerNotifications.filter(
+      (row) =>
+        row.event_type === 'message.sent' &&
+        row.payload?.conversationId === conversationId,
+    );
+    expect(customerMessageSentForThisConversation).toHaveLength(0);
   });
 
   test('listing.approved and listing.rejected notify the partner owner', async () => {
