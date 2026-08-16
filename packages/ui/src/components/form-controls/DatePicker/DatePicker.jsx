@@ -118,9 +118,32 @@ export default function DatePicker({
   nextMonthLabel = 'Next month',
   id = undefined,
 }) {
-  const single = mode === 'single' ? toDate(value) : null;
-  const rangeStart = mode === 'range' ? toDate(value && value.start) : null;
-  const rangeEnd = mode === 'range' ? toDate(value && value.end) : null;
+  // `toDate()` on a plain `YYYY-MM-DD` string (what every real caller's
+  // `value.start`/`value.end` actually is) parses it as UTC midnight —
+  // per the ECMAScript date-string grammar, only date-only strings do
+  // this, unlike a full datetime string. `day` in `commitDay` below
+  // comes from `buildMonthGrid`'s `new Date(year, month, date)`, which is
+  // always LOCAL midnight. In any timezone ahead of UTC (including
+  // Armenia, this app's own market), local midnight of a given date is
+  // an earlier timestamp than that same date's UTC midnight, so
+  // `day < rangeStart` was true even when `day` and `rangeStart` were
+  // the SAME calendar day — clicking one day twice to commit a same-day
+  // range (e.g. a one-day car rental or tour) silently reset the
+  // selection back to `{start, end: null}` instead of completing it, and
+  // the panel never closed. `startOfDay()` normalizes both sides of
+  // every comparison in this file to local midnight, matching
+  // `isDateDisabled`'s own identical normalization of `minDate`/`maxDate`
+  // just below.
+  const single =
+    mode === 'single' && toDate(value) ? startOfDay(toDate(value)) : null;
+  const rangeStart =
+    mode === 'range' && toDate(value && value.start)
+      ? startOfDay(toDate(value.start))
+      : null;
+  const rangeEnd =
+    mode === 'range' && toDate(value && value.end)
+      ? startOfDay(toDate(value.end))
+      : null;
 
   const [open, setOpen] = useState(false);
   const [viewMonth, setViewMonth] = useState(() =>

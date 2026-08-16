@@ -136,4 +136,36 @@ describe('DatePicker (COMPONENT_LIBRARY.md Part II §2)', () => {
       end: '2026-06-10',
     });
   });
+
+  test('range mode: clicking the same day twice commits a same-day range (e.g. a one-day car rental)', async () => {
+    // Regression test: `rangeStart`/`rangeEnd` used to come straight from
+    // `toDate(value.start/end)` with no `startOfDay()` normalization.
+    // `toDate()` on a plain `YYYY-MM-DD` string parses it as UTC midnight
+    // (the date-only ISO grammar), while the calendar grid's own day
+    // cells are always LOCAL midnight (`new Date(year, month, date)`). In
+    // any timezone ahead of UTC — this project's own dev/CI environment
+    // (`Asia/Yerevan`, UTC+4) included — local midnight of a date is an
+    // earlier timestamp than that same date's UTC midnight, so
+    // `commitDay`'s `day < rangeStart` check was true even for the exact
+    // same day: the second click silently reset the selection back to
+    // `{start, end: null}` instead of completing the range, and the panel
+    // never closed. Real impact: a customer could never book a same-day
+    // car rental or single-day tour by clicking one date twice.
+    const user = userEvent.setup();
+    render(<ControlledDatePicker label="Rental dates" mode="range" />);
+
+    await user.click(screen.getByLabelText('Rental dates'));
+    const day = screen.getByRole('gridcell', { name: /22/ });
+    const dayLabel = day.getAttribute('aria-label');
+    await user.click(day);
+    await user.click(
+      screen.getByRole('gridcell', { name: dayLabel, exact: true }),
+    );
+
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+    const [, monthDay] = dayLabel.match(/^([A-Za-z]+ \d+),/);
+    expect(screen.getByLabelText('Rental dates')).toHaveTextContent(
+      new RegExp(`${monthDay}.*${monthDay}`),
+    );
+  });
 });
