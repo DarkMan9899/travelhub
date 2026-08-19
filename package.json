@@ -19,6 +19,8 @@
     "format:check": "prettier --check .",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "test:integration": "npm run test:integration --workspaces --if-present",
+    "test:contract": "npm run test:contract --workspaces --if-present",
     "dev:web": "npm run dev --workspace apps/web",
     "dev:api": "npm run dev --workspace apps/api",
     "docker:up": "docker compose -f docker/docker-compose.yml up -d",

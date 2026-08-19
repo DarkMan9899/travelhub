@@ -1,9 +1,20 @@
 # Travel Hub Armenia — CI pipeline.
-# Sprint 1 scope: install → lint → build → test, for both apps/web and
-# apps/api, against the foundation scaffold only. Deploy stages are
-# intentionally absent (BACKEND_ARCHITECTURE.md §58 / FRONTEND_ARCHITECTURE.md
-# §38's real deploy targets are wired in a later sprint, not before there is
-# a real feature to ship).
+#
+# `test` runs each workspace's own unit suite only (fast, no real
+# services). `integration` (P0.10, Master Roadmap) is what actually
+# exercises the MySQL/Redis services below against apps/api's real
+# integration Jest project — this was previously never run in CI at all
+# despite service containers already being configured on the `test` job
+# (provisioned, but nothing ever used them). A fresh
+# service container every run means this job can never hit the kind of
+# accumulated-local-state staleness a long-lived local `travelhub_test`
+# database can (e.g. a fixture user email registered by an earlier local
+# run colliding with the same test's next run) — every run starts from
+# an empty, freshly-migrated-and-seeded database.
+#
+# Deploy stages are intentionally absent (BACKEND_ARCHITECTURE.md §58 /
+# FRONTEND_ARCHITECTURE.md §38's real deploy targets are wired in a later
+# phase, not before there is a real, running environment to deploy to).
 
 name: CI
 
@@ -92,3 +103,51 @@ jobs:
           DATABASE_USER: root
           DATABASE_PASSWORD: root_ci_only
           REDIS_URL: redis://127.0.0.1:6379
+
+  integration:
+    name: Integration Tests (apps/api)
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root_ci_only
+          MYSQL_DATABASE: travelhub_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping" --health-interval=5s
+          --health-timeout=5s --health-retries=10
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping" --health-interval=5s
+          --health-timeout=5s --health-retries=10
+    env:
+      NODE_ENV: test
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 3306
+      DATABASE_NAME_TEST: travelhub_test
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root_ci_only
+      REDIS_URL: redis://127.0.0.1:6379
+      # Every var below defaults safely (see config/index.js) — set here
+      # only so a real key/URL is never silently required for CI to pass;
+      # none of these are real credentials, matching the "local"/dev-only
+      # default every one of them already falls back to.
+      CONNECTOR_CONFIG_ENCRYPTION_KEY: ci-only-connector-config-key-not-a-real-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:integration --workspace apps/api
+      # tests/contract/ has no test files yet (a dormant Jest project,
+      # not wired to anything) — not run here so a genuinely empty
+      # category can't masquerade as a passing gate; add this step back
+      # once real contract tests exist.
