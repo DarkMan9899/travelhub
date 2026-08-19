@@ -27,7 +27,8 @@
     "db:reset:test": "node src/infrastructure/database/cli/resetTest.js",
     "db:reset:dev": "node src/infrastructure/database/cli/resetDev.js",
     "db:seed:demo": "node src/infrastructure/database/cli/seedDemo.js",
-    "db:seed:demo:dev": "node src/infrastructure/database/cli/seedDemoDev.js"
+    "db:seed:demo:dev": "node src/infrastructure/database/cli/seedDemoDev.js",
+    "db:reencrypt-connector-configs": "node src/infrastructure/database/cli/reencryptInventoryConnectorConfigs.js"
   },
   "dependencies": {
     "argon2": "^0.41.1",

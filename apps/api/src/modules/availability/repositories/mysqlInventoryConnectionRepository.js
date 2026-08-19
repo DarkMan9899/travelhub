@@ -11,6 +11,10 @@
 
 import { getMysqlPool } from '../../../infrastructure/database/mysqlPool.js';
 import { mapMysqlError } from '../../../infrastructure/database/errorMapping.js';
+import {
+  encryptConnectorConfig,
+  decryptConnectorConfig,
+} from '../../../infrastructure/security/connectorCredentialCipher.js';
 
 function connectionToDomain(row) {
   if (!row) return null;
@@ -22,10 +26,13 @@ function connectionToDomain(row) {
     direction: row.direction,
     name: row.name,
     status: row.status,
-    config:
-      typeof row.config === 'string'
-        ? JSON.parse(row.config)
-        : (row.config ?? null),
+    // P0.6: transparently decrypted here — never re-encrypted or
+    // re-serialized outward past this repository boundary.
+    // `toConnectionResponse` (inventoryConnectionController.js) never
+    // reads `.config` at all, so a decrypted value in this domain
+    // object never reaches an HTTP response; the only real consumers
+    // are `#executeSync`/`testConnection`, which genuinely need it.
+    config: decryptConnectorConfig(row.config),
     webhookSecret: row.webhook_secret,
     exportToken: row.export_token,
     lastAttemptedSyncAt: row.last_attempted_sync_at,
@@ -127,7 +134,7 @@ export class MySqlInventoryConnectionRepository {
           connectorType,
           direction,
           name,
-          config ? JSON.stringify(config) : null,
+          encryptConnectorConfig(config ?? null),
           webhookSecret ?? null,
           exportToken ?? null,
           createdBy,
@@ -188,7 +195,7 @@ export class MySqlInventoryConnectionRepository {
     }
     if (fields.config !== undefined) {
       sets.push('config = ?');
-      values.push(JSON.stringify(fields.config));
+      values.push(encryptConnectorConfig(fields.config));
     }
     if (fields.status !== undefined) {
       sets.push('status = ?');

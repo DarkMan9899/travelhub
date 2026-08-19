@@ -74,6 +74,21 @@ const env = cleanEnv(process.env, {
   // CORS (BACKEND_ARCHITECTURE.md §47)
   CORS_ALLOWED_ORIGINS: str({ default: 'http://localhost:5173' }),
 
+  // Connector credential encryption (P0.6, Master Roadmap) — encrypts
+  // inventory_connections.config (may hold a real iCal/PMS/OTA API key)
+  // at rest. Same "always has a working dev default, production MUST
+  // override it" pattern this file already uses for JWT_ACCESS_SECRET/
+  // JWT_REFRESH_SECRET above — never required to boot (this app never
+  // hard-fails startup on a missing secret; see this file's header
+  // comment's own "fail-fast" scope, which is about *shape* validation,
+  // not about forcing every optional secret to be pre-provisioned), but
+  // any string works as input (connectorCredentialCipher.js derives a
+  // real 32-byte AES-256 key from it via SHA-256, so this does not need
+  // to be exactly 32 bytes itself).
+  CONNECTOR_CONFIG_ENCRYPTION_KEY: str({
+    default: 'dev-only-connector-config-key-change-me',
+  }),
+
   // Logging
   LOG_LEVEL: str({
     choices: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
@@ -161,6 +176,10 @@ const config = Object.freeze({
     allowedOrigins: env.CORS_ALLOWED_ORIGINS.split(',').map((origin) =>
       origin.trim(),
     ),
+  }),
+
+  security: Object.freeze({
+    connectorConfigEncryptionKey: env.CONNECTOR_CONFIG_ENCRYPTION_KEY,
   }),
 
   logging: Object.freeze({
