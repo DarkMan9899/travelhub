@@ -11,14 +11,14 @@
 import { MySqlUserRepository } from './repositories/mysqlUserRepository.js';
 import { UserService } from './services/userService.js';
 import { createUserController } from './controllers/userController.js';
-import { LocalStorageProvider } from '../../infrastructure/storage/localStorageProvider.js';
+import { createStorageProvider } from '../../infrastructure/storage/createStorageProvider.js';
 
 export default function createUsersContainer({
   auditLogger,
   permissionResolver,
 }) {
   const userRepository = new MySqlUserRepository();
-  const storageProvider = new LocalStorageProvider();
+  const storageProvider = createStorageProvider();
 
   const userService = new UserService({
     userRepository,

@@ -21,7 +21,7 @@ import { TypingIndicatorService } from './services/typingIndicatorService.js';
 import { createConversationController } from './controllers/conversationController.js';
 import { createMessageController } from './controllers/messageController.js';
 import { createTypingController } from './controllers/typingController.js';
-import { LocalStorageProvider } from '../../infrastructure/storage/localStorageProvider.js';
+import { createStorageProvider } from '../../infrastructure/storage/createStorageProvider.js';
 
 export default function createMessagingContainer({
   permissionResolver,
@@ -32,7 +32,7 @@ export default function createMessagingContainer({
   const messageRepository = new MySqlMessageRepository();
   const messageReactionRepository = new MySqlMessageReactionRepository();
   const messageAttachmentRepository = new MySqlMessageAttachmentRepository();
-  const storageProvider = new LocalStorageProvider();
+  const storageProvider = createStorageProvider();
 
   const conversationService = new ConversationService({
     conversationRepository,

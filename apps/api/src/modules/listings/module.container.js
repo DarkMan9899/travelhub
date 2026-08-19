@@ -12,7 +12,7 @@ import { MySqlListingMetadataRepository } from './repositories/mysqlListingMetad
 import { ListingService } from './services/listingService.js';
 import { ListingMetadataService } from './services/listingMetadataService.js';
 import { createListingController } from './controllers/listingController.js';
-import { LocalStorageProvider } from '../../infrastructure/storage/localStorageProvider.js';
+import { createStorageProvider } from '../../infrastructure/storage/createStorageProvider.js';
 
 export default function createListingsContainer({
   auditLogger,
@@ -21,7 +21,7 @@ export default function createListingsContainer({
 }) {
   const listingRepository = new MySqlListingRepository();
   const listingMetadataRepository = new MySqlListingMetadataRepository();
-  const storageProvider = new LocalStorageProvider();
+  const storageProvider = createStorageProvider();
 
   const listingService = new ListingService({
     listingRepository,

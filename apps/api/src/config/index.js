@@ -12,7 +12,7 @@
  */
 
 import 'dotenv/config';
-import { cleanEnv, str, num, url } from 'envalid';
+import { cleanEnv, str, num, url, bool } from 'envalid';
 
 const env = cleanEnv(process.env, {
   NODE_ENV: str({
@@ -88,6 +88,35 @@ const env = cleanEnv(process.env, {
   CONNECTOR_CONFIG_ENCRYPTION_KEY: str({
     default: 'dev-only-connector-config-key-change-me',
   }),
+
+  // Object storage (P0.7, Master Roadmap) — `local` (LocalStorageProvider,
+  // disk-backed, dev-only) is the default; `s3` selects S3StorageProvider,
+  // which works against real AWS S3 *and* any S3-compatible provider
+  // (Cloudflare R2, DigitalOcean Spaces, MinIO) via STORAGE_S3_ENDPOINT.
+  // Selecting `s3` with no bucket configured is a runtime error at first
+  // use, never a boot crash — matches this file's own AI/Payments
+  // provider precedent exactly.
+  STORAGE_PROVIDER: str({ choices: ['local', 's3'], default: 'local' }),
+  STORAGE_S3_BUCKET: str({ default: '' }),
+  // 'auto' works for R2; a real AWS deployment should set an actual
+  // region (e.g. 'eu-central-1').
+  STORAGE_S3_REGION: str({ default: 'auto' }),
+  // Empty targets real AWS S3 (the SDK's own default endpoint). Set to
+  // an R2/Spaces/MinIO endpoint URL to target one of those instead — no
+  // code change, just this one var.
+  STORAGE_S3_ENDPOINT: str({ default: '' }),
+  STORAGE_S3_ACCESS_KEY_ID: str({ default: '' }),
+  STORAGE_S3_SECRET_ACCESS_KEY: str({ default: '' }),
+  // MinIO (and some other S3-compatible servers) require path-style
+  // addressing (https://host/bucket/key) instead of virtual-hosted-style
+  // (https://bucket.host/key), which is what AWS S3/R2/Spaces expect.
+  STORAGE_S3_FORCE_PATH_STYLE: bool({ default: false }),
+  // The URL prefix `getUrl()` builds public object URLs from — a CDN
+  // domain, a custom domain in front of the bucket, or the bucket's own
+  // public endpoint. Never derived automatically: which URL shape is
+  // "correct" depends entirely on how the bucket is actually exposed,
+  // which this app has no way to know on its own.
+  STORAGE_S3_PUBLIC_BASE_URL: str({ default: '' }),
 
   // Logging
   LOG_LEVEL: str({
@@ -180,6 +209,19 @@ const config = Object.freeze({
 
   security: Object.freeze({
     connectorConfigEncryptionKey: env.CONNECTOR_CONFIG_ENCRYPTION_KEY,
+  }),
+
+  storage: Object.freeze({
+    provider: env.STORAGE_PROVIDER,
+    s3: Object.freeze({
+      bucket: env.STORAGE_S3_BUCKET,
+      region: env.STORAGE_S3_REGION,
+      endpoint: env.STORAGE_S3_ENDPOINT || undefined,
+      accessKeyId: env.STORAGE_S3_ACCESS_KEY_ID,
+      secretAccessKey: env.STORAGE_S3_SECRET_ACCESS_KEY,
+      forcePathStyle: env.STORAGE_S3_FORCE_PATH_STYLE,
+      publicBaseUrl: env.STORAGE_S3_PUBLIC_BASE_URL,
+    }),
   }),
 
   logging: Object.freeze({
