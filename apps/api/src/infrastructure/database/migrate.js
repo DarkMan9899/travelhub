@@ -85,11 +85,11 @@ async function getAppliedVersions(connection) {
   return new Set(rows.map((row) => row.version));
 }
 
-function createConnection() {
+function createConnection(databaseName = config.database.name) {
   return mysql.createConnection({
     host: config.database.host,
     port: config.database.port,
-    database: config.database.name,
+    database: databaseName,
     user: config.database.user,
     password: config.database.password,
     multipleStatements: true,
@@ -108,8 +108,8 @@ async function runOne(connection, { sql, onSuccess }) {
   }
 }
 
-async function up(steps) {
-  const connection = await createConnection();
+async function up(steps, { databaseName } = {}) {
+  const connection = await createConnection(databaseName);
   try {
     await ensureMigrationsTable(connection);
     const applied = await getAppliedVersions(connection);
