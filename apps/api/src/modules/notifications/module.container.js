@@ -47,6 +47,7 @@ export default function createNotificationsContainer({
     userService,
     auditLogger,
     deliveryService: notificationDeliveryService,
+    preferenceService: notificationPreferenceService,
   });
 
   const notificationController = createNotificationController(

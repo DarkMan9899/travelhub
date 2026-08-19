@@ -23,6 +23,16 @@ import { getModuleLogger } from '../../../logging/logger.js';
 
 export const NOTIFICATION_DELIVERY_QUEUE_NAME = 'notifications.delivery';
 
+// P0.4 (Master Roadmap): this queue previously had no retry configured at
+// all — a transient failure (email provider timeout, a momentary DB
+// blip) was a silent, permanent drop with no second attempt. 3 tries
+// with exponential backoff starting at 5s (5s, 10s, 20s) mirrors this
+// codebase's own `AiService` retry precedent (`2 ** attempt * 200ms`,
+// see `modules/ai/services/aiService.js`) scaled up for a job that's
+// allowed to take longer than an inline HTTP request.
+const DELIVERY_JOB_ATTEMPTS = 3;
+const DELIVERY_JOB_BACKOFF_DELAY_MS = 5000;
+
 const log = getModuleLogger('notifications');
 
 /**
@@ -30,7 +40,13 @@ const log = getModuleLogger('notifications');
  */
 export function createNotificationDeliveryQueue() {
   const connection = createQueueConnection();
-  const queue = new Queue(NOTIFICATION_DELIVERY_QUEUE_NAME, { connection });
+  const queue = new Queue(NOTIFICATION_DELIVERY_QUEUE_NAME, {
+    connection,
+    defaultJobOptions: {
+      attempts: DELIVERY_JOB_ATTEMPTS,
+      backoff: { type: 'exponential', delay: DELIVERY_JOB_BACKOFF_DELAY_MS },
+    },
+  });
 
   async function enqueueDelivery({ notificationId, channel }) {
     await queue.add('deliver', { notificationId, channel });

@@ -29,11 +29,16 @@ function buildService(overrides = {}) {
   };
   const auditLogger = { record: jest.fn().mockResolvedValue(undefined) };
   const deliveryService = { dispatch: jest.fn().mockResolvedValue(undefined) };
+  const preferenceService = {
+    isChannelEnabled: jest.fn().mockResolvedValue(true),
+    ...overrides.preferenceService,
+  };
   const service = new NotificationService({
     notificationRepository,
     userService,
     auditLogger,
     deliveryService,
+    preferenceService,
   });
   return {
     service,
@@ -41,6 +46,7 @@ function buildService(overrides = {}) {
     userService,
     auditLogger,
     deliveryService,
+    preferenceService,
   };
 }
 
@@ -64,9 +70,33 @@ describe('NotificationService', () => {
         eventType: 'booking.created',
         categoryCode: 'BOOKING',
         priorityCode: 'NORMAL',
+        isInAppVisible: true,
       }),
     );
     expect(deliveryService.dispatch).toHaveBeenCalledWith({ id: 100 });
+  });
+
+  test('createNotification snapshots isInAppVisible=false onto the row when the recipient disabled IN_APP for this category (P0.4 — was previously never enforced)', async () => {
+    const { service, notificationRepository, preferenceService } = buildService(
+      {
+        preferenceService: {
+          isChannelEnabled: jest.fn().mockResolvedValue(false),
+        },
+      },
+    );
+    await service.createNotification({
+      recipientUserId: 1,
+      eventType: 'booking.created',
+      categoryCode: 'BOOKING',
+    });
+    expect(preferenceService.isChannelEnabled).toHaveBeenCalledWith(
+      1,
+      'BOOKING',
+      'IN_APP',
+    );
+    expect(notificationRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ isInAppVisible: false }),
+    );
   });
 
   test('listForUser throws AuthenticationError with no principal', async () => {

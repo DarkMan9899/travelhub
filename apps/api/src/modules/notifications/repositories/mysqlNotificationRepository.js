@@ -40,6 +40,7 @@ function toNotificationDomain(row) {
     readAt: row.read_at,
     isArchived: Boolean(row.is_archived),
     archivedAt: row.archived_at,
+    isInAppVisible: Boolean(row.is_in_app_visible),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -49,7 +50,7 @@ const NOTIFICATION_SELECT = `
   n.id, n.recipient_user_id, n.event_id, n.event_type,
   nc.code AS category_code, np.code AS priority_code,
   n.actor_id, n.resource_type, n.resource_id, n.payload, n.metadata,
-  n.is_read, n.read_at, n.is_archived, n.archived_at,
+  n.is_read, n.read_at, n.is_archived, n.archived_at, n.is_in_app_visible,
   n.created_at, n.updated_at
 `;
 
@@ -105,6 +106,7 @@ export class MySqlNotificationRepository {
       resourceId = null,
       payload = {},
       metadata = {},
+      isInAppVisible = true,
     },
     connection = this.#pool,
   ) {
@@ -112,11 +114,11 @@ export class MySqlNotificationRepository {
       const [result] = await connection.query(
         `INSERT INTO notifications
            (recipient_user_id, event_id, event_type, category_id, priority_id,
-            actor_id, resource_type, resource_id, payload, metadata)
+            actor_id, resource_type, resource_id, payload, metadata, is_in_app_visible)
          VALUES (?, ?, ?,
            (SELECT id FROM notification_categories WHERE code = ?),
            (SELECT id FROM notification_priorities WHERE code = ?),
-           ?, ?, ?, ?, ?)
+           ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE id = id`,
         [
           recipientUserId,
@@ -129,6 +131,7 @@ export class MySqlNotificationRepository {
           resourceId,
           JSON.stringify(payload),
           JSON.stringify(metadata),
+          isInAppVisible ? 1 : 0,
         ],
       );
       // `result.insertId` is 0 on the ON DUPLICATE KEY no-op branch (and
@@ -161,7 +164,11 @@ export class MySqlNotificationRepository {
     { status = 'all', categoryCode, search, cursor, limit } = {},
   ) {
     const decoded = decodeCursor(cursor);
-    const conditions = ['n.recipient_user_id = ?', 'n.deleted_at IS NULL'];
+    const conditions = [
+      'n.recipient_user_id = ?',
+      'n.deleted_at IS NULL',
+      'n.is_in_app_visible = 1',
+    ];
     const params = [recipientUserId];
 
     if (status === 'unread') {
@@ -211,7 +218,8 @@ export class MySqlNotificationRepository {
   async countUnread(recipientUserId) {
     const [rows] = await this.#pool.query(
       `SELECT COUNT(*) AS count FROM notifications
-       WHERE recipient_user_id = ? AND is_read = 0 AND is_archived = 0 AND deleted_at IS NULL`,
+       WHERE recipient_user_id = ? AND is_read = 0 AND is_archived = 0
+         AND is_in_app_visible = 1 AND deleted_at IS NULL`,
       [recipientUserId],
     );
     return rows[0].count;

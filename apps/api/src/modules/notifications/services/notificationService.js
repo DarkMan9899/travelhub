@@ -29,24 +29,35 @@ export class NotificationService {
 
   #deliveryService;
 
+  #preferenceService;
+
   constructor({
     notificationRepository,
     userService,
     auditLogger,
     deliveryService,
+    preferenceService,
   }) {
     this.#notificationRepository = notificationRepository;
     this.#userService = userService;
     this.#auditLogger = auditLogger;
     this.#deliveryService = deliveryService;
+    this.#preferenceService = preferenceService;
   }
 
   /**
    * Called by `notificationListener.js` — never by an HTTP route
-   * directly. Writes the in-app row (always) then hands off to
-   * `NotificationDeliveryService` for any other enabled channel — the
-   * business event that triggered this has already finished/committed
-   * by the time this runs, so a slow delivery dispatch can never block it.
+   * directly. Writes the row (always — it's also the source object
+   * `NotificationDeliveryService` reads EMAIL content from) then hands
+   * off to `NotificationDeliveryService` for any other enabled channel —
+   * the business event that triggered this has already finished/
+   * committed by the time this runs, so a slow delivery dispatch can
+   * never block it.
+   *
+   * `IN_APP` has no separate "enqueue" step the way `EMAIL` does — the
+   * row itself IS the in-app delivery — so its preference is enforced by
+   * snapshotting `isInAppVisible` onto the row at creation time instead;
+   * `listForUser`/`countUnread` only ever surface visible rows.
    */
   async createNotification({
     recipientUserId,
@@ -60,6 +71,11 @@ export class NotificationService {
     payload = {},
     metadata = {},
   }) {
+    const isInAppVisible = await this.#preferenceService.isChannelEnabled(
+      recipientUserId,
+      categoryCode,
+      'IN_APP',
+    );
     const notification = await this.#notificationRepository.create({
       recipientUserId,
       eventId,
@@ -71,6 +87,7 @@ export class NotificationService {
       resourceId,
       payload,
       metadata,
+      isInAppVisible,
     });
     await this.#deliveryService.dispatch(notification);
     return notification;
