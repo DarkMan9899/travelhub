@@ -39,3 +39,8 @@ docker/mysql/data/
 
 # Local file storage provider's dev/test-time uploads (never versioned)
 apps/api/uploads/
+
+# Database backups (db:backup's default output — never versioned, may
+# contain real user/payment/connector-credential data)
+backups/
+**/backups/

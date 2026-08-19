@@ -240,6 +240,15 @@ describe('Notifications', () => {
         { category: 'BOOKING', in_app_enabled: true, email_enabled: false },
       ]),
     );
+
+    // Restore the default so this test is idempotent against the persistent
+    // test database — the BOOKING override above would otherwise survive
+    // into the next run and break the "defaults to enabled" assertion.
+    const restoreRes = await request(app)
+      .patch('/api/v1/notifications/preferences/BOOKING')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({ inAppEnabled: true, emailEnabled: true });
+    expect(restoreRes.status).toBe(200);
   });
 
   test('rejects an announcement from a non-admin principal with 403', async () => {
