@@ -986,6 +986,10 @@
           "createdAt": "Обнаружено"
         }
       },
+      "conflictTypes": {
+        "AMBIGUOUS_MAPPING": "Единица не сопоставлена",
+        "CAPACITY_CONFLICT": "Уже забронировано на Desavii"
+      },
       "mapping": {
         "tabLabel": "Сопоставление",
         "noListingTitle": "У этого подключения нет объявления для сопоставления блоков.",

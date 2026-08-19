@@ -986,6 +986,10 @@
           "createdAt": "Հայտնաբերվել է"
         }
       },
+      "conflictTypes": {
+        "AMBIGUOUS_MAPPING": "Կապակցված միավոր չկա",
+        "CAPACITY_CONFLICT": "Արդեն ամրագրված է Desavii-ում"
+      },
       "mapping": {
         "tabLabel": "Համապատասխանեցում",
         "noListingTitle": "Այս կապակցումը հայտարարություն չունի, որից միավորներ համապատասխանեցնել։",

@@ -15,6 +15,7 @@ import { randomBytes } from 'node:crypto';
 import {
   AuthenticationError,
   AuthorizationError,
+  ConflictError,
   NotFoundError,
   ValidationError,
 } from '../../../errors/AppError.js';
@@ -355,19 +356,53 @@ export class InventoryConnectionService {
         connector.importAvailability({
           connectionRecord: connection,
           resolveUnitId: (key) => mappingByKey[key],
-          applyReservation: (event, unitId) =>
-            this.#availabilityService.applySystemExternalReservation(
-              {
-                unitId,
-                dateFrom: event.dateFrom,
-                dateTo: event.dateTo,
-                quantity: 1,
-                connectionId: connection.id,
-                externalEventUid: event.uid,
-                externalReference: event.summary,
-              },
-              dbConnection,
-            ),
+          // One event's capacity conflict must not discard the other
+          // valid events already applied earlier in this same sync run's
+          // transaction. Each event gets its own SAVEPOINT: on a genuine
+          // AVAILABILITY_CONFLICT, only THAT event's partial writes
+          // (e.g. a half-consumed multi-night date range) are rolled
+          // back to the savepoint, while every previously-applied event
+          // in this transaction remains intact and still commits at the
+          // end. Any other error (a real bug, a lost connection) still
+          // propagates and aborts the whole run — only the specific,
+          // expected "not enough capacity" case is caught here.
+          applyReservation: async (event, unitId) => {
+            await dbConnection.query('SAVEPOINT sync_event');
+            try {
+              const applied =
+                await this.#availabilityService.applySystemExternalReservation(
+                  {
+                    unitId,
+                    dateFrom: event.dateFrom,
+                    dateTo: event.dateTo,
+                    quantity: 1,
+                    connectionId: connection.id,
+                    externalEventUid: event.uid,
+                    externalReference: event.summary,
+                  },
+                  dbConnection,
+                );
+              await dbConnection.query('RELEASE SAVEPOINT sync_event');
+              return applied;
+            } catch (err) {
+              await dbConnection.query('ROLLBACK TO SAVEPOINT sync_event');
+              if (err instanceof ConflictError) {
+                return {
+                  created: false,
+                  conflict: {
+                    externalEventUid: event.uid,
+                    conflictType: 'CAPACITY_CONFLICT',
+                    details: {
+                      message: err.message,
+                      dateFrom: event.dateFrom,
+                      dateTo: event.dateTo,
+                    },
+                  },
+                };
+              }
+              throw err;
+            }
+          },
           cancelReservation: async (externalEventUid) => {
             const reservation =
               await this.#externalReservationRepository.findByConnectionAndUid(

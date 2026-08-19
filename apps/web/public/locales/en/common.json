@@ -986,6 +986,10 @@
           "createdAt": "Detected"
         }
       },
+      "conflictTypes": {
+        "AMBIGUOUS_MAPPING": "No unit mapped",
+        "CAPACITY_CONFLICT": "Already booked on Desavii"
+      },
       "mapping": {
         "tabLabel": "Mapping",
         "noListingTitle": "This connection has no listing to map units from.",

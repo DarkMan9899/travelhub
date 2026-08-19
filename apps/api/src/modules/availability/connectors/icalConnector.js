@@ -87,7 +87,7 @@ export class IcalConnector extends InventoryConnector {
    * @param {object} context
    * @param {object} context.connectionRecord
    * @param {(externalResourceId:string)=>(number|undefined)} context.resolveUnitId
-   * @param {(event:object, unitId:number)=>Promise<{created:boolean}>} context.applyReservation
+   * @param {(event:object, unitId:number)=>Promise<{created:boolean, conflict?:object}>} context.applyReservation
    * @param {(externalEventUid:string)=>Promise<void>} context.cancelReservation
    * @param {string[]} context.previouslyImportedUids - UIDs already imported from this connection, so removed/changed events can be detected (spec §19).
    */
@@ -132,7 +132,13 @@ export class IcalConnector extends InventoryConnector {
       } else {
         // eslint-disable-next-line no-await-in-loop
         const result = await applyReservation(event, unitId);
-        if (result.created) {
+        if (result.conflict) {
+          // A genuine capacity conflict on this one event (e.g. it
+          // overlaps a booking already held on Desavii's side) — record
+          // it and keep processing the rest of the feed; it must not
+          // abort the whole sync run.
+          conflicts.push(result.conflict);
+        } else if (result.created) {
           recordsCreated += 1;
         } else {
           recordsSkipped += 1;
