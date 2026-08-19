@@ -29,12 +29,20 @@ function buildService(overrides = {}) {
     ...overrides.emailAdapter,
   };
   const enqueueDelivery = jest.fn().mockResolvedValue(undefined);
+  const emailDeliveryRepository = {
+    create: jest.fn().mockResolvedValue(undefined),
+    ...overrides.emailDeliveryRepository,
+  };
+  const resolveLanguageCode =
+    overrides.resolveLanguageCode ?? jest.fn().mockResolvedValue('en');
   const service = new NotificationDeliveryService({
     notificationRepository,
     preferenceService,
     userService,
     emailAdapter,
     enqueueDelivery,
+    emailDeliveryRepository,
+    resolveLanguageCode,
   });
   return {
     service,
@@ -43,6 +51,8 @@ function buildService(overrides = {}) {
     userService,
     emailAdapter,
     enqueueDelivery,
+    emailDeliveryRepository,
+    resolveLanguageCode,
   };
 }
 
@@ -110,5 +120,56 @@ describe('NotificationDeliveryService', () => {
     const result = await service.deliverViaChannel(1, 'SMS');
     expect(result).toBeNull();
     expect(emailAdapter.send).not.toHaveBeenCalled();
+  });
+
+  test('(P0.3) deliverViaChannel resolves the recipient locale and renders the template in it', async () => {
+    const { service, resolveLanguageCode, emailAdapter } = buildService({
+      userService: {
+        findById: jest.fn().mockResolvedValue({
+          id: 5,
+          email: 'traveler@example.com',
+          preferredLanguageId: 3,
+        }),
+      },
+      resolveLanguageCode: jest.fn().mockResolvedValue('hy'),
+    });
+    await service.deliverViaChannel(1, 'EMAIL');
+    expect(resolveLanguageCode).toHaveBeenCalledWith(3);
+    expect(emailAdapter.send).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: 'Ամրագրումը հաստատվել է' }),
+      'traveler@example.com',
+    );
+  });
+
+  test('(P0.3) deliverViaChannel persists a SENT delivery record on success', async () => {
+    const { service, emailDeliveryRepository } = buildService();
+    await service.deliverViaChannel(1, 'EMAIL');
+    expect(emailDeliveryRepository.create).toHaveBeenCalledWith({
+      notificationId: 1,
+      recipientEmail: 'traveler@example.com',
+      provider: 'console',
+      status: 'SENT',
+      errorMessage: null,
+    });
+  });
+
+  test('(P0.3) deliverViaChannel persists a FAILED delivery record when the adapter reports failure', async () => {
+    const { service, emailDeliveryRepository } = buildService({
+      emailAdapter: {
+        send: jest.fn().mockResolvedValue({
+          delivered: false,
+          provider: 'resend',
+          error: 'Invalid recipient address',
+        }),
+      },
+    });
+    await service.deliverViaChannel(1, 'EMAIL');
+    expect(emailDeliveryRepository.create).toHaveBeenCalledWith({
+      notificationId: 1,
+      recipientEmail: 'traveler@example.com',
+      provider: 'resend',
+      status: 'FAILED',
+      errorMessage: 'Invalid recipient address',
+    });
   });
 });

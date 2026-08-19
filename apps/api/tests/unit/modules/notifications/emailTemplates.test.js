@@ -24,4 +24,33 @@ describe('renderEmail', () => {
     expect(subject).toBe('Notification');
     expect(body).toContain('payment.refunded');
   });
+
+  test('(P0.3) renders a known event type in hy when locale is "hy"', () => {
+    const { subject, body } = renderEmail(
+      'booking.confirmed',
+      { bookingReference: 'BK-42' },
+      'hy',
+    );
+    expect(subject).toBe('Ամրագրումը հաստատվել է');
+    expect(body).toContain('BK-42');
+  });
+
+  test('(P0.3) renders a known event type in ru when locale is "ru"', () => {
+    const { subject, body } = renderEmail(
+      'booking.confirmed',
+      { bookingReference: 'BK-42' },
+      'ru',
+    );
+    expect(subject).toBe('Бронирование подтверждено');
+    expect(body).toContain('BK-42');
+  });
+
+  test('(P0.3) falls back to en for a locale with no translation for a given event', () => {
+    const { subject } = renderEmail(
+      'booking.confirmed',
+      { bookingReference: 'BK-42' },
+      'fr',
+    );
+    expect(subject).toBe('Booking confirmed');
+  });
 });

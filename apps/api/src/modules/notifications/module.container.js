@@ -6,27 +6,39 @@
  * over `users`, the same cross-module rule every other module in this
  * codebase follows.
  *
- * The default `emailAdapter` (`ConsoleEmailProvider`) is the one line a
- * real provider (SendGrid/Resend/SES/SMTP) replaces later — nothing else
- * in this module changes.
+ * `emailAdapter` defaults to `createEmailAdapter()` — P0.3 (Master
+ * Roadmap): selects `ResendEmailProvider` when
+ * `config.email.provider === 'resend'`, `ConsoleEmailProvider`
+ * otherwise. A caller can still override it directly (tests do).
  */
 
 import { MySqlNotificationRepository } from './repositories/mysqlNotificationRepository.js';
 import { MySqlNotificationPreferenceRepository } from './repositories/mysqlNotificationPreferenceRepository.js';
+import { MySqlEmailDeliveryRepository } from './repositories/mysqlEmailDeliveryRepository.js';
 import { NotificationService } from './services/notificationService.js';
 import { NotificationPreferenceService } from './services/notificationPreferenceService.js';
 import { NotificationDeliveryService } from './services/notificationDeliveryService.js';
 import { ConsoleEmailProvider } from './channels/consoleEmailProvider.js';
+import { ResendEmailProvider } from './channels/resendEmailProvider.js';
 import { createNotificationDeliveryQueue } from './jobs/notificationDeliveryQueue.js';
 import { createNotificationController } from './controllers/notificationController.js';
+import config from '../../config/index.js';
+
+function createEmailAdapter() {
+  if (config.email.provider === 'resend') {
+    return new ResendEmailProvider(config.email.resend);
+  }
+  return new ConsoleEmailProvider();
+}
 
 export default function createNotificationsContainer({
   userService,
   auditLogger,
-  emailAdapter = new ConsoleEmailProvider(),
+  emailAdapter = createEmailAdapter(),
 }) {
   const notificationRepository = new MySqlNotificationRepository();
   const preferenceRepository = new MySqlNotificationPreferenceRepository();
+  const emailDeliveryRepository = new MySqlEmailDeliveryRepository();
 
   const notificationPreferenceService = new NotificationPreferenceService({
     preferenceRepository,
@@ -40,6 +52,7 @@ export default function createNotificationsContainer({
     userService,
     emailAdapter,
     enqueueDelivery,
+    emailDeliveryRepository,
   });
 
   const notificationService = new NotificationService({
@@ -58,6 +71,7 @@ export default function createNotificationsContainer({
   return {
     notificationRepository,
     preferenceRepository,
+    emailDeliveryRepository,
     notificationService,
     notificationPreferenceService,
     notificationDeliveryService,

@@ -38,4 +38,32 @@ export async function resolveLocaleIds(
   };
 }
 
-export default { resolveLocaleIds };
+/**
+ * The reverse of `resolveLocaleIds` — P0.3 (Master Roadmap): resolves a
+ * stored `users.preferred_language_id` into the locale code
+ * `emailTemplates.js` selects a template with. Falls back to the
+ * server's default language (never throws) so a user with no preference
+ * set, or a since-deleted language row, still gets a real email rather
+ * than a lookup failure blocking delivery.
+ * @param {number|null} languageId
+ * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} [connection]
+ * @returns {Promise<string>} a locale code, e.g. 'en'
+ */
+export async function findLanguageCodeById(
+  languageId,
+  connection = getMysqlPool(),
+) {
+  if (languageId) {
+    const [[language]] = await connection.query(
+      'SELECT code FROM languages WHERE id = ? LIMIT 1',
+      [languageId],
+    );
+    if (language?.code) return language.code;
+  }
+  const [[defaultLanguage]] = await connection.query(
+    'SELECT code FROM languages WHERE is_default = 1 LIMIT 1',
+  );
+  return defaultLanguage?.code ?? 'en';
+}
+
+export default { resolveLocaleIds, findLanguageCodeById };

@@ -118,6 +118,16 @@ const env = cleanEnv(process.env, {
   // which this app has no way to know on its own.
   STORAGE_S3_PUBLIC_BASE_URL: str({ default: '' }),
 
+  // Email delivery (P0.3, Master Roadmap) — `console` (a real, observable
+  // log line, never a silent no-op) is the default; `resend` selects a
+  // real provider. Selecting `resend` with no key configured degrades to
+  // a clear, logged, non-throwing failure result at send time (see
+  // resendEmailProvider.js), never a boot crash — same precedent as
+  // every other optional provider in this file.
+  EMAIL_PROVIDER: str({ choices: ['console', 'resend'], default: 'console' }),
+  RESEND_API_KEY: str({ default: '' }),
+  RESEND_FROM_ADDRESS: str({ default: '' }),
+
   // Logging
   LOG_LEVEL: str({
     choices: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
@@ -221,6 +231,14 @@ const config = Object.freeze({
       secretAccessKey: env.STORAGE_S3_SECRET_ACCESS_KEY,
       forcePathStyle: env.STORAGE_S3_FORCE_PATH_STYLE,
       publicBaseUrl: env.STORAGE_S3_PUBLIC_BASE_URL,
+    }),
+  }),
+
+  email: Object.freeze({
+    provider: env.EMAIL_PROVIDER,
+    resend: Object.freeze({
+      apiKey: env.RESEND_API_KEY,
+      fromAddress: env.RESEND_FROM_ADDRESS,
     }),
   }),
 
