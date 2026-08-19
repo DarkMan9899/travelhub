@@ -20,6 +20,19 @@
  * webhook is verified correctly on day one. Per Phase 16 spec §6, this is
  * never exercised against a real live event in this environment — only
  * unit-tested against a self-signed fixture.
+ *
+ * P0.1 (Master Roadmap) hardening: `#request` now has a real timeout
+ * (mirrors `icalConnector.js`'s `FETCH_TIMEOUT_MS`/`AbortController`
+ * pattern) and bounded retry with backoff (mirrors `aiService.js`'s
+ * `2 ** attempt * 200ms` precedent) — but ONLY for network failures and
+ * 5xx responses, never for a 4xx (a declined card, bad request) — those
+ * are real, final outcomes, not transient. Retrying a POST safely
+ * requires Stripe's own `Idempotency-Key` header (without it, a retried
+ * `createPaymentIntent` whose first attempt actually succeeded server-
+ * side but whose response was lost could create a SECOND real
+ * PaymentIntent) — `createPaymentIntent`/`refundPayment` key theirs off
+ * this app's own `paymentReference`/`refundReference`, already unique
+ * and stable per payment/refund, so no new identifier is invented.
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -29,6 +42,15 @@ import { getModuleLogger } from '../../../logging/logger.js';
 
 const log = getModuleLogger('payments:provider:stripe');
 const API_BASE = 'https://api.stripe.com/v1';
+const REQUEST_TIMEOUT_MS = 15_000;
+const MAX_RETRIES = 2;
+const RETRY_BASE_DELAY_MS = 200;
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 // Stripe's own PaymentIntent status vocabulary -> this app's normalized codes.
 const STATUS_MAP = Object.freeze({
@@ -106,37 +128,87 @@ export class StripePaymentProvider extends PaymentProvider {
     }
   }
 
-  #headers() {
+  #headers(idempotencyKey) {
     return {
       Authorization: `Bearer ${this.#secretKey}`,
       'Content-Type': 'application/x-www-form-urlencoded',
       'Stripe-Version': this.#apiVersion,
+      ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
     };
   }
 
-  async #request(method, path, body) {
-    let response;
-    try {
-      response = await this.#fetchImpl(`${API_BASE}${path}`, {
-        method,
-        headers: this.#headers(),
-        body: body ? toFormBody(body) : undefined,
-      });
-    } catch (err) {
-      log.error({ err, path }, 'Stripe request failed');
-      throw new ExternalServiceError('Failed to reach the Stripe API.');
+  /**
+   * @param {string} method
+   * @param {string} path
+   * @param {object} [body]
+   * @param {string} [idempotencyKey] — required for any request that
+   *   creates a new financial resource (a PaymentIntent, a Refund); safe
+   *   to omit for GET/cancel/capture, which act on an already-known id.
+   */
+  async #request(method, path, body, idempotencyKey) {
+    let attempt = 0;
+    // eslint-disable-next-line no-constant-condition -- bounded by the explicit return/throw inside
+    while (true) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      let response;
+      try {
+        try {
+          // eslint-disable-next-line no-await-in-loop -- retry loop, sequential by design
+          response = await this.#fetchImpl(`${API_BASE}${path}`, {
+            method,
+            headers: this.#headers(idempotencyKey),
+            body: body ? toFormBody(body) : undefined,
+            signal: controller.signal,
+          });
+        } catch (err) {
+          if (attempt < MAX_RETRIES) {
+            log.warn(
+              { err, path, attempt },
+              'Stripe request failed (network) — retrying',
+            );
+            // eslint-disable-next-line no-await-in-loop -- retry loop, sequential by design
+            await sleep(RETRY_BASE_DELAY_MS * 2 ** attempt);
+            attempt += 1;
+            // eslint-disable-next-line no-continue -- retry the outer while loop
+            continue;
+          }
+          log.error({ err, path }, 'Stripe request failed');
+          throw new ExternalServiceError('Failed to reach the Stripe API.');
+        }
+      } finally {
+        clearTimeout(timeout);
+      }
+
+      // eslint-disable-next-line no-await-in-loop -- retry loop, sequential by design
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        // Only a 5xx (Stripe's own infrastructure) is treated as
+        // transient — a 4xx (declined card, bad request, already-used
+        // idempotency key with different params) is a real, final
+        // outcome and retrying it would be pointless at best, and at
+        // worst could mask a genuine error behind extra latency.
+        if (response.status >= 500 && attempt < MAX_RETRIES) {
+          log.warn(
+            { status: response.status, path, attempt },
+            'Stripe returned a 5xx — retrying',
+          );
+          // eslint-disable-next-line no-await-in-loop -- retry loop, sequential by design
+          await sleep(RETRY_BASE_DELAY_MS * 2 ** attempt);
+          attempt += 1;
+          // eslint-disable-next-line no-continue -- retry the outer while loop
+          continue;
+        }
+        log.error(
+          { status: response.status, path },
+          'Stripe returned a non-OK status',
+        );
+        throw new ExternalServiceError(
+          payload?.error?.message ?? 'The Stripe API returned an error.',
+        );
+      }
+      return payload;
     }
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      log.error(
-        { status: response.status, path },
-        'Stripe returned a non-OK status',
-      );
-      throw new ExternalServiceError(
-        payload?.error?.message ?? 'The Stripe API returned an error.',
-      );
-    }
-    return payload;
   }
 
   async createPaymentIntent({
@@ -146,12 +218,20 @@ export class StripePaymentProvider extends PaymentProvider {
     bookingId,
   }) {
     this.#assertConfigured();
-    const payload = await this.#request('POST', '/payment_intents', {
-      amount: toMinorUnitsString(amount),
-      currency: currencyCode.toLowerCase(),
-      'metadata[payment_reference]': paymentReference,
-      'metadata[booking_id]': bookingId,
-    });
+    const payload = await this.#request(
+      'POST',
+      '/payment_intents',
+      {
+        amount: toMinorUnitsString(amount),
+        currency: currencyCode.toLowerCase(),
+        'metadata[payment_reference]': paymentReference,
+        'metadata[booking_id]': bookingId,
+      },
+      // This app's own paymentReference is already unique/stable per
+      // payment — retrying a lost-response create is then guaranteed to
+      // land on the SAME PaymentIntent Stripe-side, never a duplicate.
+      `create-intent:${paymentReference}`,
+    );
     return {
       providerPaymentId: payload.id,
       status: STATUS_MAP[payload.status] ?? 'CREATED',
@@ -199,13 +279,18 @@ export class StripePaymentProvider extends PaymentProvider {
     };
   }
 
-  async refundPayment(providerPaymentId, { amount, reason }) {
+  async refundPayment(providerPaymentId, { amount, reason, refundReference }) {
     this.#assertConfigured();
-    const payload = await this.#request('POST', '/refunds', {
-      payment_intent: providerPaymentId,
-      amount: toMinorUnitsString(amount),
-      ...(reason ? { 'metadata[reason]': reason } : {}),
-    });
+    const payload = await this.#request(
+      'POST',
+      '/refunds',
+      {
+        payment_intent: providerPaymentId,
+        amount: toMinorUnitsString(amount),
+        ...(reason ? { 'metadata[reason]': reason } : {}),
+      },
+      refundReference ? `create-refund:${refundReference}` : undefined,
+    );
     return {
       providerRefundId: payload.id,
       status: REFUND_STATUS_MAP[payload.status] ?? 'PROCESSING',
@@ -235,12 +320,26 @@ export class StripePaymentProvider extends PaymentProvider {
   // eslint-disable-next-line class-methods-use-this
   normalizeWebhookEvent(rawEvent) {
     const object = rawEvent.data?.object ?? {};
+    // A failed attempt does NOT give the PaymentIntent a distinct
+    // terminal "failed" status on Stripe's side — it typically reverts
+    // to `requires_payment_method` (retryable), which STATUS_MAP would
+    // otherwise silently normalize back to this app's `CREATED` and lose
+    // the failure entirely. `payment_intent.payment_failed` is the
+    // actual, authoritative signal Stripe sends for this case; the real
+    // reason lives on `last_payment_error`, not on `status`.
+    const isFailedAttempt = rawEvent.type === 'payment_intent.payment_failed';
     return {
       providerEventId: rawEvent.id,
       eventType: rawEvent.type,
       normalizedEventType: rawEvent.type,
       providerPaymentId: object.id ?? object.payment_intent ?? null,
-      status: STATUS_MAP[object.status] ?? null,
+      status: isFailedAttempt ? 'FAILED' : (STATUS_MAP[object.status] ?? null),
+      failureCode: isFailedAttempt
+        ? (object.last_payment_error?.code ?? null)
+        : undefined,
+      failureMessage: isFailedAttempt
+        ? (object.last_payment_error?.message ?? null)
+        : undefined,
     };
   }
 }

@@ -504,6 +504,8 @@ export class PaymentService {
         {
           status: normalized.status,
           providerPaymentId: normalized.providerPaymentId,
+          failureCode: normalized.failureCode,
+          failureMessage: normalized.failureMessage,
         },
         { actorId: null, connection },
       );
@@ -683,6 +685,7 @@ export class PaymentService {
           amount: requested.toDecimalString(),
           currencyCode: payment.currencyCode,
           reason,
+          refundReference: refundRow.refundReference,
         },
       );
 

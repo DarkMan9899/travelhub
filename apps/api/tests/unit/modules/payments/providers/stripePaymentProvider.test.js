@@ -218,4 +218,143 @@ describe('StripePaymentProvider', () => {
       status: 'SUCCEEDED',
     });
   });
+
+  test('normalizeWebhookEvent (P0.1): payment_intent.payment_failed maps to FAILED with the real reason, not silently back to CREATED', () => {
+    // Regression: the PaymentIntent's own `status` reverts to
+    // `requires_payment_method` after a failed attempt (STATUS_MAP would
+    // map that to CREATED) — the event TYPE, not the object status, is
+    // what actually signals a failure, and the reason lives on
+    // `last_payment_error`, not `status`.
+    const provider = new StripePaymentProvider({ secretKey: 'sk_test_x' });
+    const normalized = provider.normalizeWebhookEvent({
+      id: 'evt_2',
+      type: 'payment_intent.payment_failed',
+      data: {
+        object: {
+          id: 'pi_123',
+          status: 'requires_payment_method',
+          last_payment_error: {
+            code: 'card_declined',
+            message: 'Your card was declined.',
+          },
+        },
+      },
+    });
+    expect(normalized).toEqual({
+      providerEventId: 'evt_2',
+      eventType: 'payment_intent.payment_failed',
+      normalizedEventType: 'payment_intent.payment_failed',
+      providerPaymentId: 'pi_123',
+      status: 'FAILED',
+      failureCode: 'card_declined',
+      failureMessage: 'Your card was declined.',
+    });
+  });
+
+  test('createPaymentIntent (P0.1): sends a stable Idempotency-Key derived from paymentReference', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'pi_123', status: 'succeeded' }),
+    });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    await provider.createPaymentIntent({
+      amount: '100.00',
+      currencyCode: 'AMD',
+      paymentReference: 'PAY-ABC-123',
+      bookingId: 1,
+    });
+    const [, options] = fetchImpl.mock.calls[0];
+    expect(options.headers['Idempotency-Key']).toBe(
+      'create-intent:PAY-ABC-123',
+    );
+  });
+
+  test('refundPayment (P0.1): sends a stable Idempotency-Key derived from refundReference', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 're_123', status: 'succeeded' }),
+    });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    await provider.refundPayment('pi_123', {
+      amount: '50.00',
+      reason: 'customer request',
+      refundReference: 'REF-XYZ-9',
+    });
+    const [, options] = fetchImpl.mock.calls[0];
+    expect(options.headers['Idempotency-Key']).toBe('create-refund:REF-XYZ-9');
+  });
+
+  test('every request carries an AbortSignal (P0.1: a real request timeout, not an unbounded hang)', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'pi_123', status: 'succeeded' }),
+    });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    await provider.retrievePayment('pi_123');
+    const [, options] = fetchImpl.mock.calls[0];
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  test('(P0.1) a transient network failure is retried and succeeds on a later attempt', async () => {
+    const fetchImpl = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('ETIMEDOUT'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'pi_123', status: 'succeeded' }),
+      });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    const result = await provider.retrievePayment('pi_123');
+    expect(result.status).toBe('SUCCEEDED');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  test('(P0.1) a 5xx response is retried and succeeds on a later attempt', async () => {
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: { message: 'Service unavailable' } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'pi_123', status: 'succeeded' }),
+      });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    const result = await provider.retrievePayment('pi_123');
+    expect(result.status).toBe('SUCCEEDED');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  test('(P0.1) a 4xx response is NEVER retried — it is a final outcome, not transient', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 402,
+      json: async () => ({ error: { message: 'Your card was declined.' } }),
+    });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    await expect(provider.retrievePayment('pi_123')).rejects.toThrow(
+      'Your card was declined.',
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
 });
