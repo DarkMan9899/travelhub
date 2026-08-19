@@ -42,9 +42,16 @@ import { resolveConsumedRange } from '../../../core/domain/accommodationDateSema
 import { resolveBookingTypeCode } from '../../../core/domain/bookableUnitTypeToBookingType.js';
 import { isValidBookingStatusTransition } from '../../../core/domain/bookingStatusTransitions.js';
 import { generateBookingReference } from '../../../core/domain/bookingReference.js';
+import {
+  CANCELLATION_REFUND_ACTIONS,
+  resolveCancellationRefundAction,
+} from '../../../core/domain/cancellationRefundPolicy.js';
 import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
+import { getModuleLogger } from '../../../logging/logger.js';
+
+const log = getModuleLogger('bookings');
 
 const VIEW_ALL_PERMISSION = 'booking.view_all';
 const CONFIRM_PERMISSION = 'booking.confirm';
@@ -71,6 +78,8 @@ export class BookingService {
 
   #eventBus;
 
+  #paymentService;
+
   constructor({
     bookingRepository,
     availabilityService,
@@ -87,6 +96,20 @@ export class BookingService {
     this.#permissionResolver = permissionResolver;
     this.#auditLogger = auditLogger;
     this.#eventBus = eventBus;
+  }
+
+  /**
+   * P0.2 (Master Roadmap) — late-bound, same reason as `AvailabilityService`/
+   * `InventoryConnectionService`'s identical `setAvailabilityService`
+   * precedent: `PaymentService`'s own constructor already depends on
+   * `BookingService` (`recordPaymentOutcome`), so `v1.js` must construct
+   * Bookings before Payments — this breaks that ordering without a
+   * circular import. Optional on purpose: a test/harness that never
+   * constructs a PaymentService (most of this module's own unit tests)
+   * still works, `cancelBooking` just skips the refund-policy step below.
+   */
+  setPaymentService(paymentService) {
+    this.#paymentService = paymentService;
   }
 
   async #isOwnerOrHasPermission(principal, partnerId, permissionKey) {
@@ -707,6 +730,7 @@ export class BookingService {
    */
   async cancelBooking(principal, id, { reason } = {}) {
     if (!principal) throw new AuthenticationError();
+    let cancelledByRole;
     const booking = await withTransaction(async (connection) => {
       const locked = await this.#bookingRepository.lockById(id, connection);
       if (!locked) throw new NotFoundError('Booking not found.');
@@ -720,6 +744,7 @@ export class BookingService {
           CANCEL_ANY_PERMISSION,
         ));
       if (!isCustomer && !isVendorSide) throw new AuthorizationError();
+      cancelledByRole = isCustomer ? 'CUSTOMER' : 'VENDOR';
 
       return this.#applyTransition(
         locked,
@@ -738,7 +763,93 @@ export class BookingService {
       principal,
       booking,
     );
-    return booking;
+    // P0.2 (Master Roadmap): a refund is a separate unit of work from the
+    // status transition above (PaymentService opens its own transaction —
+    // this codebase's own rule against holding one transaction open
+    // across a call into another module, see transaction.js's header
+    // comment), so it runs after the cancellation has already committed.
+    // A refund outcome — success, failure, or "needs a human" — must
+    // never be silent; `resolveRefundForCancelledBooking` always leaves
+    // `bookings.refund_status` in a well-defined, queryable state.
+    await this.#resolveRefundForCancelledBooking(booking, cancelledByRole);
+    return this.#bookingRepository.findById(booking.id);
+  }
+
+  async #resolveRefundForCancelledBooking(booking, cancelledByRole) {
+    if (!this.#paymentService) return;
+    const refundablePayment =
+      await this.#paymentService.getRefundablePaymentForBookingSystemInternal(
+        booking.id,
+      );
+    const action = resolveCancellationRefundAction({
+      cancelledByRole,
+      refundablePayment,
+    });
+
+    if (action === CANCELLATION_REFUND_ACTIONS.NO_REFUND_DUE) {
+      return;
+    }
+
+    if (action === CANCELLATION_REFUND_ACTIONS.REQUIRES_MANUAL_REVIEW) {
+      await this.#bookingRepository.updateRefundStatus(
+        booking.id,
+        'REQUIRES_MANUAL_REVIEW',
+      );
+      await this.#eventBus.publish(
+        createDomainEvent({
+          eventType: EVENT_TYPES.REFUND_REVIEW_REQUIRED,
+          actorId: null,
+          resourceType: 'booking',
+          resourceId: booking.id,
+          payload: {
+            bookingReference: booking.bookingReference,
+            partnerId: booking.partnerId,
+            customerUserId: booking.customerUserId,
+            paymentId: refundablePayment.id,
+          },
+        }),
+      );
+      return;
+    }
+
+    // AUTO_REFUND_FULL — a vendor/admin cancelled a paid booking; the
+    // customer didn't choose this, so this is not held pending a human
+    // decision. The refundable balance (captured minus any prior partial
+    // refund) mirrors exactly what `PaymentService#createRefund` itself
+    // computes for the admin-triggered path — never invented here, and
+    // never plain float arithmetic on a decimal string (Money exists
+    // specifically to rule that class of bug out).
+    const captured = Money.fromDecimalString(
+      refundablePayment.capturedAmount,
+      refundablePayment.currencyCode,
+    );
+    const alreadyRefunded = Money.fromDecimalString(
+      refundablePayment.refundedAmount ?? '0.00',
+      refundablePayment.currencyCode,
+    );
+    const refundableAmount = captured
+      .subtract(alreadyRefunded)
+      .toDecimalString();
+    try {
+      await this.#paymentService.issueSystemRefund(refundablePayment.id, {
+        amount: refundableAmount,
+        reason: 'Automatic refund — booking cancelled by the vendor.',
+        idempotencyKey: `auto-refund:booking:${booking.id}`,
+      });
+      await this.#bookingRepository.updateRefundStatus(
+        booking.id,
+        'AUTO_REFUNDED',
+      );
+    } catch (err) {
+      log.error(
+        { err, bookingId: booking.id, paymentId: refundablePayment.id },
+        'Automatic refund failed on vendor-side booking cancellation',
+      );
+      await this.#bookingRepository.updateRefundStatus(
+        booking.id,
+        'REFUND_FAILED',
+      );
+    }
   }
 
   /** No dedicated `booking.complete`/`booking.no_show` permission is seeded; reuses `booking.confirm` (owner-fallback still applies), same reuse-when-none-fits precedent as Sprint 9's `listing.update`/`listing.moderate`. */

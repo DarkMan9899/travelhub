@@ -50,6 +50,7 @@ export function toBookingResponse(booking) {
     cancelled_at: booking.cancelledAt,
     completed_at: booking.completedAt,
     cancellation_reason: booking.cancellationReason,
+    refund_status: booking.refundStatus,
     created_at: booking.createdAt,
     updated_at: booking.updatedAt,
     items: (booking.items ?? []).map(toBookingItemResponse),

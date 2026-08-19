@@ -108,6 +108,26 @@ export class MySqlPaymentRepository {
     return rows.map(toPaymentDomain);
   }
 
+  /**
+   * P0.2 (Master Roadmap): the payment (if any) for a booking that still
+   * has real, captured money on it — `SUCCEEDED` or `PARTIALLY_REFUNDED`
+   * — used by `BookingService#cancelBooking` to decide whether a
+   * cancellation has money attached that a refund policy must resolve.
+   * Most recent first: a booking can only ever have one non-terminal
+   * payment at a time (`findActiveForBooking`'s own guard), but a prior
+   * FAILED/CANCELLED attempt could still sit alongside a later
+   * SUCCEEDED one, so this is not a bare `LIMIT 1` on booking_id alone.
+   */
+  async findRefundableForBooking(bookingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT ${PAYMENT_SELECT} ${PAYMENT_FROM}
+       WHERE p.booking_id = ? AND pis.code IN ('SUCCEEDED', 'PARTIALLY_REFUNDED')
+       ORDER BY p.created_at DESC LIMIT 1`,
+      [bookingId],
+    );
+    return toPaymentDomain(rows[0]);
+  }
+
   async findByIdempotencyKey(idempotencyKey, connection = this.#pool) {
     const [rows] = await connection.query(
       `SELECT ${PAYMENT_SELECT} ${PAYMENT_FROM} WHERE p.idempotency_key = ? LIMIT 1`,

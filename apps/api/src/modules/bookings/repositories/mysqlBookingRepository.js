@@ -56,6 +56,7 @@ function toBookingDomain(row) {
     cancelledAt: row.cancelled_at,
     completedAt: row.completed_at,
     cancellationReason: row.cancellation_reason,
+    refundStatus: row.refund_status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     tripDateFrom: row.trip_date_from ? toDateString(row.trip_date_from) : null,
@@ -93,7 +94,7 @@ const BOOKING_SELECT = `
   cur.code AS currency_code, b.subtotal_amount, b.fees_amount, b.discount_amount, b.total_amount,
   b.payment_method, ps.code AS payment_status_code,
   b.requested_at, b.confirmed_at, b.rejected_at, b.cancelled_at, b.completed_at,
-  b.cancellation_reason, b.created_at, b.updated_at
+  b.cancellation_reason, b.refund_status, b.created_at, b.updated_at
 `;
 const BOOKING_FROM = `
   FROM bookings b
@@ -252,6 +253,14 @@ export class MySqlBookingRepository {
     await connection.query(
       'UPDATE bookings SET payment_status_id = ? WHERE id = ?',
       [paymentStatusId, id],
+    );
+  }
+
+  /** P0.2 — the sole write path for `refund_status`, called only from `BookingService#cancelBooking` after resolving `cancellationRefundPolicy.js`'s outcome. */
+  async updateRefundStatus(id, refundStatus, connection = this.#pool) {
+    await connection.query(
+      'UPDATE bookings SET refund_status = ? WHERE id = ?',
+      [refundStatus, id],
     );
   }
 

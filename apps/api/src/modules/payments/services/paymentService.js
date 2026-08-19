@@ -531,6 +531,16 @@ export class PaymentService {
     return this.#paymentRepository.findById(id);
   }
 
+  /**
+   * P0.2 (Master Roadmap) — system-internal, no principal: the one call
+   * `BookingService#cancelBooking` makes into this module to find out
+   * whether a booking it just cancelled has real, captured money still
+   * needing a decision. Never exposed via any HTTP route.
+   */
+  async getRefundablePaymentForBookingSystemInternal(bookingId) {
+    return this.#paymentRepository.findRefundableForBooking(bookingId);
+  }
+
   /** 404-masked: visible to the payment's own customer, the booking's partner owner/staff, or `payment.view`. */
   async getPayment(principal, id) {
     const payment = await this.#paymentRepository.findById(id);
@@ -599,7 +609,32 @@ export class PaymentService {
       REFUND_PERMISSION,
     );
     if (!canRefund) throw new AuthorizationError();
+    return this.#executeRefund(principal.userId, paymentId, {
+      amount,
+      reason,
+      idempotencyKey,
+    });
+  }
 
+  /**
+   * P0.2 (Master Roadmap) — trusted-caller-only, no principal/permission
+   * check: `BookingService#cancelBooking` is the only caller, applying
+   * `cancellationRefundPolicy.js`'s AUTO_REFUND_FULL outcome (a business
+   * unilaterally cancelling owes a full refund; the customer didn't
+   * choose to trigger this, so there is no permission for them to hold).
+   * Never exposed via any HTTP route — mirrors `getPaymentSystemInternal`/
+   * `AvailabilityService#applySystemExternalReservation`'s identical
+   * "system-level, no principal" precedent elsewhere in this codebase.
+   */
+  async issueSystemRefund(paymentId, { amount, reason, idempotencyKey } = {}) {
+    return this.#executeRefund(null, paymentId, {
+      amount,
+      reason,
+      idempotencyKey,
+    });
+  }
+
+  async #executeRefund(actorId, paymentId, { amount, reason, idempotencyKey }) {
     if (idempotencyKey) {
       const existing =
         await this.#refundRepository.findByIdempotencyKey(idempotencyKey);
@@ -663,7 +698,7 @@ export class PaymentService {
           statusId: createdRefundStatusId,
           providerCode: provider.code,
           idempotencyKey: idempotencyKey ?? null,
-          requestedBy: principal.userId,
+          requestedBy: actorId,
         },
         connection,
       );
@@ -674,7 +709,7 @@ export class PaymentService {
           type: 'REFUND_CREATED',
           amount: requested.toDecimalString(),
           currencyId: currency.id,
-          actorId: principal.userId,
+          actorId,
         },
         connection,
       );
@@ -731,7 +766,7 @@ export class PaymentService {
           type: isSucceeded ? 'REFUND_SUCCEEDED' : 'REFUND_FAILED',
           amount: requested.toDecimalString(),
           currencyId: currency.id,
-          actorId: principal.userId,
+          actorId,
           metadata: providerResult.failureCode
             ? { failureCode: providerResult.failureCode }
             : null,
@@ -793,7 +828,7 @@ export class PaymentService {
 
       await this.#auditLogger.record(
         {
-          actorId: principal.userId,
+          actorId,
           action: 'payment.refunded',
           targetType: 'payment',
           targetId: payment.id,
@@ -823,7 +858,7 @@ export class PaymentService {
     await this.#eventBus.publish(
       createDomainEvent({
         eventType: EVENT_TYPES.REFUND_CREATED,
-        actorId: principal.userId,
+        actorId,
         resourceType: 'refund',
         resourceId: refund.id,
         payload: {
@@ -844,7 +879,7 @@ export class PaymentService {
             refund.statusCode === 'SUCCEEDED'
               ? EVENT_TYPES.REFUND_SUCCEEDED
               : EVENT_TYPES.REFUND_FAILED,
-          actorId: principal.userId,
+          actorId,
           resourceType: 'refund',
           resourceId: refund.id,
           payload: {

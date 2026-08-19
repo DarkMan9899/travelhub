@@ -1,0 +1,274 @@
+/**
+ * P0.2 (Master Roadmap) — booking <-> payment <-> refund lifecycle.
+ *
+ * Before this, `BookingService#cancelBooking` never touched the Payments
+ * module at all: a CONFIRMED booking with a SUCCEEDED payment could be
+ * cancelled and the payment simply stayed SUCCEEDED, with no automatic
+ * refund and no visible signal that one might be owed. These tests
+ * exercise the real HTTP surface end to end against `LocalPaymentProvider`
+ * (never a mock) — booking creation, confirmation, payment, cancellation,
+ * and (for the manual-review path) the pre-existing admin refund endpoint
+ * resolving what the policy deliberately left for a human.
+ *
+ * Helper functions mirror `paymentLifecycle.test.js`'s own (this
+ * codebase's established per-file-duplication convention for small
+ * integration-test fixtures, not a shared import).
+ */
+
+import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
+import request from 'supertest';
+import { up } from '../../../src/infrastructure/database/migrate.js';
+import { seedAll } from '../../../src/infrastructure/database/seeds/index.js';
+import app from '../../../src/app.js';
+import {
+  getMysqlPool,
+  closeMysqlPool,
+} from '../../../src/infrastructure/database/mysqlPool.js';
+import { closeRedisConnection } from '../../../src/infrastructure/cache/redisClient.js';
+import { resetRateLimits } from '../helpers/resetRateLimits.js';
+import { DEV_CREDENTIALS } from '../../../src/infrastructure/database/seeds/005_dev_accounts.js';
+
+let vendor;
+let admin;
+let partnerId;
+let languageId;
+let customer;
+
+async function login(email, password) {
+  const res = await request(app)
+    .post('/api/v1/auth/login')
+    .send({ email, password });
+  return { accessToken: res.body.data.access_token };
+}
+
+async function registerCustomer(label) {
+  const email = `cancel-refund-${label}-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
+  const res = await request(app).post('/api/v1/auth/register').send({
+    email,
+    password: 'CancelRefundFixture!2024',
+    firstName: 'CancelRefund',
+    lastName: label,
+  });
+  return { accessToken: res.body.data.access_token };
+}
+
+const ONE_PX_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+  'base64',
+);
+
+async function createListing(title) {
+  const res = await request(app)
+    .post('/api/v1/listings')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({
+      partnerId,
+      listingType: 'HOTEL',
+      translations: [{ languageId, title }],
+    });
+  const listingId = res.body.data.id;
+  await request(app)
+    .patch(`/api/v1/listings/${listingId}`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ location: { latitude: 40.1772, longitude: 44.5035 } });
+  await request(app)
+    .post(`/api/v1/listings/${listingId}/media`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .set('Content-Type', 'image/png')
+    .send(ONE_PX_PNG);
+  await request(app)
+    .post('/api/v1/availability/units')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ listingId, bookableUnitType: 'HOTEL_ROOM' });
+  await request(app)
+    .post(`/api/v1/listings/${listingId}/publish`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`);
+  return listingId;
+}
+
+async function registerUnit(listingId) {
+  const res = await request(app)
+    .post('/api/v1/availability/units')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ listingId, bookableUnitType: 'HOTEL_ROOM', capacity: 1 });
+  return res.body.data.id;
+}
+
+async function setPrice(unitId, dateFrom, dateTo, amount) {
+  await request(app)
+    .post('/api/v1/availability')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({
+      unitId,
+      dateFrom,
+      dateTo,
+      status: 'AVAILABLE',
+      priceOverrideAmount: amount,
+      priceOverrideCurrency: 'AMD',
+    });
+}
+
+async function createHold(customerAuth, unitId, dateFrom, dateTo) {
+  const res = await request(app)
+    .post('/api/v1/booking-holds')
+    .set('Authorization', `Bearer ${customerAuth.accessToken}`)
+    .send({
+      items: [{ bookableUnitId: unitId, dateFrom, dateTo, quantity: 1 }],
+    });
+  return res.body.data.items[0].hold_ids;
+}
+
+const GUEST_CONTACT = {
+  fullName: 'Ada Lovelace',
+  email: 'ada@example.com',
+  phone: '+37400000000',
+};
+
+let fixtureDay = 1;
+/** A fresh listing/unit/date per call so parallel-in-file bookings never collide. */
+async function createConfirmedBooking(customerAuth, desiredTotal = 10_000) {
+  const listingId = await createListing(
+    `Cancel Refund Fixture ${Date.now()}-${Math.random()}`,
+  );
+  const unitId = await registerUnit(listingId);
+  const day = fixtureDay;
+  fixtureDay += 1;
+  const dateFrom = `2027-06-${String(day).padStart(2, '0')}`;
+  const dateTo = `2027-06-${String(day + 1).padStart(2, '0')}`;
+  await setPrice(unitId, dateFrom, dateTo, desiredTotal);
+  const holdIds = await createHold(customerAuth, unitId, dateFrom, dateTo);
+  const createRes = await request(app)
+    .post('/api/v1/bookings')
+    .set('Authorization', `Bearer ${customerAuth.accessToken}`)
+    .send({
+      items: [{ holdIds, guests: [] }],
+      guestContactSnapshot: GUEST_CONTACT,
+    });
+  expect(createRes.status).toBe(201);
+  const bookingId = createRes.body.data.id;
+
+  const confirmRes = await request(app)
+    .post(`/api/v1/bookings/${bookingId}/confirm`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`);
+  expect(confirmRes.status).toBe(200);
+  expect(confirmRes.body.data.status).toBe('CONFIRMED');
+
+  return createRes.body.data;
+}
+
+async function paySuccessfully(customerAuth, bookingId) {
+  const res = await request(app)
+    .post('/api/v1/payments')
+    .set('Authorization', `Bearer ${customerAuth.accessToken}`)
+    .send({ bookingId, simulateScenario: 'SUCCESS' });
+  expect(res.status).toBe(201);
+  expect(res.body.data.status).toBe('SUCCEEDED');
+  return res.body.data;
+}
+
+async function getBooking(customerAuth, bookingId) {
+  const res = await request(app)
+    .get(`/api/v1/bookings/${bookingId}`)
+    .set('Authorization', `Bearer ${customerAuth.accessToken}`);
+  return res.body.data;
+}
+
+beforeAll(async () => {
+  await up();
+  await seedAll();
+  await resetRateLimits();
+
+  vendor = await login(
+    DEV_CREDENTIALS.vendor.email,
+    DEV_CREDENTIALS.vendor.password,
+  );
+  admin = await login(
+    DEV_CREDENTIALS.admin.email,
+    DEV_CREDENTIALS.admin.password,
+  );
+  customer = await registerCustomer('customer');
+
+  const pool = getMysqlPool();
+  const [[partnerRow]] = await pool.query(
+    "SELECT id FROM partners WHERE slug = 'yerevan-boutique-hospitality'",
+  );
+  partnerId = partnerRow.id;
+  const [[language]] = await pool.query(
+    "SELECT id FROM languages WHERE code = 'en'",
+  );
+  languageId = language.id;
+}, 60_000);
+
+afterAll(async () => {
+  await closeMysqlPool();
+  await closeRedisConnection();
+});
+
+describe('Booking cancellation <-> refund lifecycle (P0.2)', () => {
+  test('a vendor cancelling a paid, CONFIRMED booking triggers an automatic full refund', async () => {
+    const booking = await createConfirmedBooking(customer, 15_000);
+    const payment = await paySuccessfully(customer, booking.id);
+
+    const cancelRes = await request(app)
+      .post(`/api/v1/bookings/${booking.id}/cancel`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ reason: 'Unit unavailable' });
+    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.body.data.status).toBe('CANCELLED_BY_VENDOR');
+    expect(cancelRes.body.data.refund_status).toBe('AUTO_REFUNDED');
+
+    const paymentRes = await request(app)
+      .get(`/api/v1/payments/${payment.id}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(paymentRes.body.data.status).toBe('REFUNDED');
+    expect(paymentRes.body.data.refundable_amount).toBe('0.00');
+    expect(paymentRes.body.data.refunds).toHaveLength(1);
+    expect(paymentRes.body.data.refunds[0].status).toBe('SUCCEEDED');
+    expect(paymentRes.body.data.refunds[0].amount).toBe('15000.00');
+
+    // Re-cancelling (or any other run) must never double-refund: the
+    // system-refund idempotency key is derived from the booking id.
+    const bookingAfter = await getBooking(customer, booking.id);
+    expect(bookingAfter.refund_status).toBe('AUTO_REFUNDED');
+  });
+
+  test('a customer cancelling their own paid, CONFIRMED booking does NOT auto-refund — it is flagged for manual review, and the existing admin refund flow can still resolve it', async () => {
+    const booking = await createConfirmedBooking(customer, 8_000);
+    const payment = await paySuccessfully(customer, booking.id);
+
+    const cancelRes = await request(app)
+      .post(`/api/v1/bookings/${booking.id}/cancel`)
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({ reason: 'Change of plans' });
+    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.body.data.status).toBe('CANCELLED_BY_CUSTOMER');
+    expect(cancelRes.body.data.refund_status).toBe('REQUIRES_MANUAL_REVIEW');
+
+    // The payment itself is untouched — no silent auto-refund happened.
+    const paymentRes = await request(app)
+      .get(`/api/v1/payments/${payment.id}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(paymentRes.body.data.status).toBe('SUCCEEDED');
+    expect(paymentRes.body.data.refunds).toHaveLength(0);
+
+    // The pre-existing admin refund endpoint fully resolves it — the
+    // policy hands off to a human, it doesn't strand the money.
+    const refundRes = await request(app)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ amount: '8000.00', reason: 'Approved after review' });
+    expect(refundRes.status).toBe(201);
+    expect(refundRes.body.data.status).toBe('SUCCEEDED');
+  });
+
+  test('cancelling a CONFIRMED booking with no successful payment leaves refund_status at NOT_APPLICABLE', async () => {
+    const booking = await createConfirmedBooking(customer, 5_000);
+
+    const cancelRes = await request(app)
+      .post(`/api/v1/bookings/${booking.id}/cancel`)
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({ reason: 'Never paid' });
+    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.body.data.refund_status).toBe('NOT_APPLICABLE');
+  });
+});

@@ -178,6 +178,15 @@ export default function createV1Router({
     auditLogger,
     eventBus,
   });
+  // P0.2 (Master Roadmap): the reverse dependency Bookings' own
+  // constructor can't take directly, since Payments is constructed AFTER
+  // Bookings (it needs bookingService itself, just above) — same
+  // "construct both, then wire the late half via a setter" pattern
+  // `availability/module.container.js`'s `setAvailabilityService` already
+  // establishes for an identical ordering constraint.
+  bookingsContainer.bookingService.setPaymentService(
+    paymentsContainer.paymentService,
+  );
   const adminContainer = createAdminContainer({
     permissionResolver,
     auditLogger,

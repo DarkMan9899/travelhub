@@ -39,6 +39,16 @@ export const EVENT_TYPES = Object.freeze({
   REFUND_CREATED: 'refund.created',
   REFUND_SUCCEEDED: 'refund.succeeded',
   REFUND_FAILED: 'refund.failed',
+  // P0.2 (Master Roadmap) — published by BookingService#cancelBooking
+  // when a customer cancels a paid booking: cancellationRefundPolicy.js
+  // deliberately does not auto-refund a customer-initiated cancellation
+  // (that requires a real, not-invented, per-listing policy this app
+  // doesn't have yet), but the system must never leave this silent —
+  // this is the queryable signal an admin surface/notification listener
+  // can act on. `bookings.refund_status = 'REQUIRES_MANUAL_REVIEW'` is
+  // the persisted source of truth either way, independent of whether
+  // anything currently subscribes to this event.
+  REFUND_REVIEW_REQUIRED: 'refund.review_required',
   // Phase 17 (Inventory, Availability & Connectivity).
   INVENTORY_BLOCKED: 'inventory.blocked',
   INVENTORY_UNBLOCKED: 'inventory.unblocked',
