@@ -128,6 +128,18 @@ const env = cleanEnv(process.env, {
   RESEND_API_KEY: str({ default: '' }),
   RESEND_FROM_ADDRESS: str({ default: '' }),
 
+  // Error tracking / observability (P0.8, Master Roadmap) — `none` (the
+  // structured logger only, already this app's default today) requires
+  // no account; `sentry` selects a real Sentry.io adapter. There was
+  // previously no error-tracking provider of any kind wired into this
+  // app — an uncaught exception or a failed background job had no
+  // signal beyond manually reading stdout logs.
+  ERROR_TRACKING_PROVIDER: str({
+    choices: ['none', 'sentry'],
+    default: 'none',
+  }),
+  SENTRY_DSN: str({ default: '' }),
+
   // Logging
   LOG_LEVEL: str({
     choices: ['fatal', 'error', 'warn', 'info', 'debug', 'trace'],
@@ -239,6 +251,13 @@ const config = Object.freeze({
     resend: Object.freeze({
       apiKey: env.RESEND_API_KEY,
       fromAddress: env.RESEND_FROM_ADDRESS,
+    }),
+  }),
+
+  errorTracking: Object.freeze({
+    provider: env.ERROR_TRACKING_PROVIDER,
+    sentry: Object.freeze({
+      dsn: env.SENTRY_DSN,
     }),
   }),
 

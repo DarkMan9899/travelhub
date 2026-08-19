@@ -35,6 +35,18 @@ const REDACT_PATHS = [
   '*.apiKey',
 ];
 
+/**
+ * The flat key names behind `REDACT_PATHS` above (wildcards stripped) —
+ * P0.8 (Master Roadmap): `infrastructure/observability`'s error tracker
+ * reuses this exact list so a real error-tracking provider never
+ * receives a field this app's own logger would have redacted. One
+ * source of truth, not two redaction lists that could silently drift
+ * apart.
+ */
+export const SENSITIVE_FIELD_NAMES = Object.freeze([
+  ...new Set(REDACT_PATHS.map((path) => path.split('.').pop())),
+]);
+
 const logger = pino({
   level: config.logging.level,
   redact: {

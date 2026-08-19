@@ -19,11 +19,13 @@
 import { Queue, Worker } from 'bullmq';
 import { createQueueConnection } from '../../../infrastructure/queue/connection.js';
 import { getModuleLogger } from '../../../logging/logger.js';
+import { createErrorTracker } from '../../../infrastructure/observability/createErrorTracker.js';
 
 const QUEUE_NAME = 'payments.local-provider-settlement';
 const SETTLEMENT_DELAY_MS = 4_000;
 
 const log = getModuleLogger('payments:local-settlement');
+const errorTracker = createErrorTracker();
 
 let queue;
 
@@ -74,6 +76,7 @@ export function registerLocalProviderSettlementWorker({ paymentService }) {
   );
   worker.on('failed', (job, err) => {
     log.error({ err, jobId: job?.id }, 'Local provider settlement job failed');
+    errorTracker.captureException(err, { jobName: QUEUE_NAME, jobId: job?.id });
   });
 
   return { queue: workerQueue, worker };

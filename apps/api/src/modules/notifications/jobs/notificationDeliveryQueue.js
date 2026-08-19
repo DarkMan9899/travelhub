@@ -20,6 +20,7 @@
 import { Queue, Worker } from 'bullmq';
 import { createQueueConnection } from '../../../infrastructure/queue/connection.js';
 import { getModuleLogger } from '../../../logging/logger.js';
+import { createErrorTracker } from '../../../infrastructure/observability/createErrorTracker.js';
 
 export const NOTIFICATION_DELIVERY_QUEUE_NAME = 'notifications.delivery';
 
@@ -34,6 +35,7 @@ const DELIVERY_JOB_ATTEMPTS = 3;
 const DELIVERY_JOB_BACKOFF_DELAY_MS = 5000;
 
 const log = getModuleLogger('notifications');
+const errorTracker = createErrorTracker();
 
 /**
  * @returns {{queue: Queue, enqueueDelivery: (data: {notificationId: number, channel: string}) => Promise<void>}}
@@ -85,6 +87,11 @@ export function registerNotificationDeliveryWorker({
       { err, jobId: job?.id, data: job?.data },
       'Notification delivery job failed',
     );
+    errorTracker.captureException(err, {
+      jobName: NOTIFICATION_DELIVERY_QUEUE_NAME,
+      jobId: job?.id,
+      attemptsMade: job?.attemptsMade,
+    });
   });
 
   return { queue, worker };

@@ -19,6 +19,7 @@
 import { Queue, Worker } from 'bullmq';
 import { createQueueConnection } from '../../../infrastructure/queue/connection.js';
 import { getModuleLogger } from '../../../logging/logger.js';
+import { createErrorTracker } from '../../../infrastructure/observability/createErrorTracker.js';
 
 const QUEUE_NAME = 'availability.inventory-reconciliation-sweep';
 // A real connector sync involves network I/O (or, for the demo/test
@@ -29,6 +30,7 @@ const SWEEP_INTERVAL_MS = 15 * 60 * 1000;
 const REPEATABLE_JOB_ID = 'inventory-reconciliation-sweep';
 
 const log = getModuleLogger('availability');
+const errorTracker = createErrorTracker();
 
 /** @returns {Promise<Array<{connectionId:number, status:string}>>} one entry per synced connection */
 export async function sweepInventoryConnections(inventoryConnectionService) {
@@ -71,6 +73,10 @@ export function registerInventoryReconciliationSweepJob({
       { err, jobId: job?.id },
       'Inventory reconciliation sweep run failed',
     );
+    errorTracker.captureException(err, {
+      jobName: QUEUE_NAME,
+      jobId: job?.id,
+    });
   });
 
   queue.add(

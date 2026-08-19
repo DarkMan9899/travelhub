@@ -11,6 +11,13 @@
 
 import { AppError } from '../errors/AppError.js';
 import config from '../config/index.js';
+import { createErrorTracker } from '../infrastructure/observability/createErrorTracker.js';
+
+// P0.8 (Master Roadmap): one shared instance for the process lifetime —
+// mirrors this file's own "plain module-level dependency" shape rather
+// than threading a new constructor argument through app.js, matching
+// how `config`/`logger` are already imported directly here.
+const errorTracker = createErrorTracker();
 
 // eslint-disable-next-line no-unused-vars
 export default function errorHandler(err, req, res, next) {
@@ -24,6 +31,14 @@ export default function errorHandler(err, req, res, next) {
   const logPayload = { err, code, httpStatus, requestId: req.requestId };
   if (httpStatus >= 500) {
     log?.error(logPayload, 'Unhandled error');
+    // P0.8: only genuine server-side failures (5xx) go to the error
+    // tracker — a 4xx is an expected, already-handled outcome
+    // (validation, auth, not-found), not a signal something is broken.
+    errorTracker.captureException(err, {
+      code,
+      httpStatus,
+      requestId: req.requestId,
+    });
   } else {
     log?.warn(logPayload, 'Request failed');
   }

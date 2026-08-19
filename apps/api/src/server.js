@@ -13,6 +13,7 @@ import config from './config/index.js';
 import logger from './logging/logger.js';
 import { closeMysqlPool } from './infrastructure/database/mysqlPool.js';
 import { closeRedisConnection } from './infrastructure/cache/redisClient.js';
+import { createErrorTracker } from './infrastructure/observability/createErrorTracker.js';
 import { registerHoldExpirySweepJob } from './modules/booking-holds/jobs/holdExpirySweep.js';
 import { registerInventoryReconciliationSweepJob } from './modules/availability/jobs/inventoryReconciliationSweep.js';
 import { registerPendingVendorSlaSweepJob } from './modules/bookings/jobs/pendingVendorSlaSweep.js';
@@ -21,6 +22,38 @@ import { registerLocalProviderSettlementWorker } from './modules/payments/jobs/l
 
 const server = app.listen(config.port, () => {
   logger.info({ port: config.port, env: config.env }, 'travelhub-api started');
+});
+
+// P0.8 (Master Roadmap): previously no process-level handler existed at
+// all — a genuinely uncaught exception outside Express's own request
+// cycle (a synchronous throw in a timer callback, a BullMQ worker
+// callback that isn't itself wrapped) crashed the process with only a
+// raw stack trace on stderr, and an unhandled promise rejection had no
+// handler whatsoever. Both now go through the same ErrorTracker every
+// other failure path in this app uses, so a real error-tracking
+// provider (once one is configured) never has a blind spot here.
+// `uncaughtException` still exits after reporting — per Node's own
+// guidance, process state after a truly uncaught exception is not
+// guaranteed safe to keep serving requests on; `unhandledRejection`
+// does not exit (an unhandled rejection is recoverable more often than
+// not, and this app predates having one handler at all, so exiting on
+// every occurrence would be a behavior change far riskier than logging
+// it).
+const errorTracker = createErrorTracker();
+
+process.on('uncaughtException', (err) => {
+  logger.error({ err }, 'Uncaught exception — exiting');
+  errorTracker.captureException(err, { fatal: true });
+  errorTracker
+    .flush(2000)
+    .catch(() => {})
+    .finally(() => process.exit(1));
+});
+
+process.on('unhandledRejection', (reason) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  logger.error({ err }, 'Unhandled promise rejection');
+  errorTracker.captureException(err, { unhandledRejection: true });
 });
 
 // Sprint 10: scheduled jobs (BullMQ), registered only here — never in

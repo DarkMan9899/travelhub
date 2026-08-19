@@ -16,12 +16,14 @@ import { Queue, Worker } from 'bullmq';
 import { createQueueConnection } from '../../../infrastructure/queue/connection.js';
 import { getModuleLogger } from '../../../logging/logger.js';
 import config from '../../../config/index.js';
+import { createErrorTracker } from '../../../infrastructure/observability/createErrorTracker.js';
 
 const QUEUE_NAME = 'bookings.pending-vendor-sla-sweep';
 const SWEEP_INTERVAL_MS = 15 * 60_000;
 const REPEATABLE_JOB_ID = 'pending-vendor-sla-sweep';
 
 const log = getModuleLogger('bookings');
+const errorTracker = createErrorTracker();
 
 /** @returns {Promise<number>} how many bookings were auto-expired */
 export async function sweepPendingVendorBookings(bookingService) {
@@ -51,6 +53,7 @@ export function registerPendingVendorSlaSweepJob({ bookingService }) {
   );
   worker.on('failed', (job, err) => {
     log.error({ err, jobId: job?.id }, 'Pending-vendor SLA sweep run failed');
+    errorTracker.captureException(err, { jobName: QUEUE_NAME, jobId: job?.id });
   });
 
   queue.add(

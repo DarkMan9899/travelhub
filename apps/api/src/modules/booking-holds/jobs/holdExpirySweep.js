@@ -20,12 +20,14 @@
 import { Queue, Worker } from 'bullmq';
 import { createQueueConnection } from '../../../infrastructure/queue/connection.js';
 import { getModuleLogger } from '../../../logging/logger.js';
+import { createErrorTracker } from '../../../infrastructure/observability/createErrorTracker.js';
 
 const QUEUE_NAME = 'booking-holds.expiry-sweep';
 const SWEEP_INTERVAL_MS = 30_000;
 const REPEATABLE_JOB_ID = 'hold-expiry-sweep';
 
 const log = getModuleLogger('booking-holds');
+const errorTracker = createErrorTracker();
 
 /** @returns {Promise<number>} how many expired hold rows were released */
 export async function sweepExpiredHolds(availabilityService) {
@@ -55,6 +57,7 @@ export function registerHoldExpirySweepJob({ availabilityService }) {
   );
   worker.on('failed', (job, err) => {
     log.error({ err, jobId: job?.id }, 'Hold-expiry sweep run failed');
+    errorTracker.captureException(err, { jobName: QUEUE_NAME, jobId: job?.id });
   });
 
   queue.add(
