@@ -31,6 +31,13 @@
  * this file could name in advance — "do not hardcode filter lists in the
  * frontend" applies here too. Only a key matching that exact convention
  * (an `attr_` prefix, or the literal `amenityIds`) is swept into it.
+ *
+ * P1.6 (Master Roadmap): `listingType` (backend's real `GET /search`
+ * `listingType` param, `searchValidators.js`) follows the same
+ * "not URL-synced, direct caller only" precedent as `partnerId`/`cityId`
+ * below — `PopularExperiences.jsx` is its one caller so far, filtering
+ * the Homepage's experiences carousel to real `TOUR` listings instead of
+ * fabricated placeholder data.
  */
 
 import { SORT_KEYS, DEFAULT_SORT_KEY } from '../../../constants/sortOptions.js';
@@ -174,6 +181,7 @@ export function toSearchQueryParams(
     categoryId,
     partnerId,
     cityId,
+    listingType,
     sort,
     dateFrom,
     dateTo,
@@ -187,6 +195,7 @@ export function toSearchQueryParams(
   if (categoryId) query.categoryId = categoryId;
   if (partnerId) query.partnerId = partnerId;
   if (cityId) query.cityId = cityId;
+  if (listingType) query.listingType = listingType;
   if (sort) query.sort = sort;
   // Same key names the backend expects — no translation needed, unlike
   // destination -> keyword.

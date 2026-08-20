@@ -17,4 +17,3 @@ export { default as Categories } from './components/Categories/Categories.jsx';
 export { default as WhyTravelHub } from './components/WhyTravelHub/WhyTravelHub.jsx';
 export { default as PartnerCta } from './components/PartnerCta/PartnerCta.jsx';
 export { default as Testimonials } from './components/Testimonials/Testimonials.jsx';
-export { default as Newsletter } from './components/Newsletter/Newsletter.jsx';

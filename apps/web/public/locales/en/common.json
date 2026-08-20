@@ -100,31 +100,14 @@
       "eyebrow": "Explore",
       "title": "Featured destinations",
       "subtitle": "Curated places across Armenia, from historic monasteries to alpine lakes.",
-      "items": {
-        "yerevan": {
-          "name": "Yerevan",
-          "description": "Armenia's vibrant capital — museums, cafés, and pink-tuff architecture."
-        },
-        "dilijan": {
-          "name": "Dilijan",
-          "description": "Forested hills and mountain air, often called Armenia's little Switzerland."
-        },
-        "tatev": {
-          "name": "Tatev",
-          "description": "A clifftop monastery reached by the world's longest reversible cable car."
-        },
-        "sevan": {
-          "name": "Lake Sevan",
-          "description": "One of the world's largest high-altitude lakes, ringed by beaches and monasteries."
-        },
-        "gyumri": {
-          "name": "Gyumri",
-          "description": "Armenia's second city, known for its 19th-century architecture and arts scene."
-        },
-        "jermuk": {
-          "name": "Jermuk",
-          "description": "A mountain spa town famous for its mineral springs and waterfalls."
-        }
+      "empty": {
+        "title": "No destinations yet",
+        "description": "Check back soon — destinations are added as new places are published."
+      },
+      "error": {
+        "title": "Couldn't load destinations",
+        "description": "Something went wrong while loading destinations. Please try again.",
+        "retry": "Try again"
       }
     },
     "featured": {
@@ -144,33 +127,13 @@
       "eyebrow": "Things to do",
       "title": "Popular experiences",
       "subtitle": "Tours and attractions loved by travelers across Armenia.",
-      "durationHours": "{{count}} hours",
-      "priceSuffix": "/ person",
-      "items": {
-        "dilijan-hiking": {
-          "name": "Dilijan Forest Hiking Tour",
-          "location": "Dilijan"
-        },
-        "yerevan-food-walk": {
-          "name": "Yerevan Food & Wine Walk",
-          "location": "Yerevan"
-        },
-        "sevan-boat-trip": {
-          "name": "Lake Sevan Boat Trip",
-          "location": "Lake Sevan"
-        },
-        "tatev-tramway": {
-          "name": "Tatev Aerial Tramway Excursion",
-          "location": "Tatev"
-        },
-        "gyumri-walking-tour": {
-          "name": "Gyumri Old City Walking Tour",
-          "location": "Gyumri"
-        },
-        "jermuk-spa-day": {
-          "name": "Jermuk Waterfalls & Spa Day",
-          "location": "Jermuk"
-        }
+      "empty": {
+        "title": "No experiences yet",
+        "description": "Check back soon — new tours and experiences are added regularly."
+      },
+      "error": {
+        "title": "Couldn't load experiences",
+        "description": "Something went wrong while loading experiences. Please try again."
       }
     },
     "categories": {
@@ -236,16 +199,6 @@
         }
       },
       "disclosure": "Illustrative quotes based on typical traveler feedback."
-    },
-    "newsletter": {
-      "title": "Stay in the know",
-      "subtitle": "Get new destinations, listings, and travel tips across Armenia in your inbox.",
-      "emailLabel": "Email address",
-      "emailPlaceholder": "you@example.com",
-      "emailRequired": "Enter your email address.",
-      "emailInvalid": "Enter a valid email address.",
-      "submit": "Subscribe",
-      "successMessage": "Thanks for subscribing! We'll be in touch."
     },
     "showcase": {
       "previous": "Previous",

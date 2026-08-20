@@ -2,6 +2,10 @@
  * HelpCenterPageContent — `/:locale/help` (Phase 10 redesign). A hub of
  * links into the other real support surfaces (FAQ, Contact) — not a
  * ticketing/search system, since no backend exists for one.
+ *
+ * P1.6 (Master Roadmap): title/lead now come from the real CMS backend
+ * (see `AboutPageContent.jsx`'s identical comment for the fallback
+ * reasoning). The links grid stays static: it's navigation, not content.
  */
 
 import { useTranslation } from 'react-i18next';
@@ -13,11 +17,15 @@ import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
+import { useCmsPageQuery } from '../../queries/useCmsPageQuery.js';
 import styles from './HelpCenterPageContent.module.scss';
 
 export default function HelpCenterPageContent() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { locale } = useParams();
+  const { data: cmsPage } = useCmsPageQuery('help', i18n.language);
+  const title = cmsPage?.title ?? t('cms.help.title');
+  const lead = cmsPage?.content ?? t('cms.help.lead');
 
   const links = [
     {
@@ -34,12 +42,12 @@ export default function HelpCenterPageContent() {
 
   const breadcrumbItems = [
     { label: t('nav.home'), href: `/${locale}` },
-    { label: t('cms.help.title'), href: `/${locale}/help` },
+    { label: title, href: `/${locale}/help` },
   ];
 
   useSeo({
-    title: `${t('cms.help.title')} | ${t('app.name')}`,
-    description: t('cms.help.lead'),
+    title: `${title} | ${t('app.name')}`,
+    description: lead,
     locale,
     path: 'help',
     jsonLd: [buildBreadcrumbListSchema(breadcrumbItems)],
@@ -47,9 +55,9 @@ export default function HelpCenterPageContent() {
 
   return (
     <Section spacing="default">
-      <PageHeader title={t('cms.help.title')} breadcrumbs={breadcrumbItems} />
+      <PageHeader title={title} breadcrumbs={breadcrumbItems} />
       <Stack gap="6">
-        <p className={styles.lead}>{t('cms.help.lead')}</p>
+        <p className={styles.lead}>{lead}</p>
         <div className={styles.linksGrid}>
           {links.map(({ key, href, icon }) => (
             <Card

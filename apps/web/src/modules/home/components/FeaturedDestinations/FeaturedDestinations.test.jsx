@@ -1,8 +1,26 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import FeaturedDestinations from './FeaturedDestinations.jsx';
-import FEATURED_DESTINATIONS from '../../constants/destinations.js';
+import { useDestinationsQuery } from '../../../search/index.js';
+
+// Only the data-fetching hook is mocked (FRONTEND_ARCHITECTURE.md §14 is a
+// React Query concern) — `DestinationCard` renders for real.
+vi.mock('../../../search/index.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, useDestinationsQuery: vi.fn() };
+});
+
+const DESTINATIONS = [
+  { id: 1, slug: 'yerevan', name: 'Yerevan', listing_count: 42 },
+  { id: 2, slug: 'dilijan', name: 'Dilijan', listing_count: 8 },
+  {
+    id: 3,
+    slug: 'no-listings-city',
+    name: 'No Listings City',
+    listing_count: 0,
+  },
+];
 
 function renderSection() {
   return render(
@@ -16,25 +34,65 @@ function renderSection() {
 
 describe('FeaturedDestinations (apps/web/src/modules/home)', () => {
   test('renders a labeled section landmark', () => {
+    useDestinationsQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    });
     renderSection();
     expect(screen.getByRole('region')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument();
   });
 
-  test('renders one card per curated destination inside the showcase', () => {
-    renderSection();
-    // Phase 20 (SEO): 5 of the 6 curated destinations now link straight to
-    // a real `/destinations/:slug` landing page; `tatev` (a landmark, not
-    // a seeded city) still falls back to the honest `?destination=` search
-    // link — a destination card link matches one pattern or the other.
-    const destinationLinks = screen.getAllByRole('link').filter((link) => {
-      const href = link.getAttribute('href') ?? '';
-      return href.includes('destination=') || href.includes('/destinations/');
+  test('renders an error state on failure', () => {
+    useDestinationsQuery.mockReturnValue({
+      data: undefined,
+      isPending: false,
+      isError: true,
+      refetch: vi.fn(),
     });
-    expect(destinationLinks).toHaveLength(FEATURED_DESTINATIONS.length);
+    renderSection();
+    expect(screen.getByRole('heading', { level: 3 })).toBeInTheDocument();
+  });
+
+  test('renders an empty state when no city has published listings', () => {
+    useDestinationsQuery.mockReturnValue({
+      data: [
+        { id: 1, slug: 'quiet-town', name: 'Quiet Town', listing_count: 0 },
+      ],
+      isPending: false,
+      isError: false,
+    });
+    renderSection();
+    // The test harness's i18n instance defaults to Armenian (tests/setup.js).
+    expect(
+      screen.getByRole('heading', { name: 'Ուղղություններ դեռ չկան' }),
+    ).toBeInTheDocument();
+  });
+
+  test('renders one card per real city with published listings, excluding empty ones', () => {
+    useDestinationsQuery.mockReturnValue({
+      data: DESTINATIONS,
+      isPending: false,
+      isError: false,
+    });
+    renderSection();
+    expect(screen.getByRole('link', { name: /Yerevan/ })).toHaveAttribute(
+      'href',
+      '/en/destinations/yerevan',
+    );
+    expect(screen.getByRole('link', { name: /Dilijan/ })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /No Listings City/ }),
+    ).not.toBeInTheDocument();
   });
 
   test('renders a "view all" link to the search route', () => {
+    useDestinationsQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    });
     renderSection();
     // The test harness's i18n instance defaults to Armenian (tests/setup.js).
     expect(screen.getByRole('link', { name: 'Տեսնել բոլորը' })).toHaveAttribute(

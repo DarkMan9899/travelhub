@@ -21,7 +21,7 @@ import { toSearchQueryParams } from '../schemas/searchParams.js';
 export const SEARCH_RESULTS_LIMIT = 12;
 
 /**
- * @param {{ destination?: string, categoryId?: number, sort?: string }} filters
+ * @param {{ destination?: string, categoryId?: number, listingType?: string, sort?: string }} filters
  * @param {{ locale?: string }} [options]
  */
 export function useSearchListingsQuery(filters, { locale } = {}) {

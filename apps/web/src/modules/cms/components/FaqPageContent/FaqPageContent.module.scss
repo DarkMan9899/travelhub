@@ -3,6 +3,14 @@
 @use 'tokens' as tokens;
 @use 'mixins/focus-ring' as focus;
 
+.lead {
+  margin: 0;
+  max-width: 70ch;
+  font-size: tokens.$font-size-body-large;
+  line-height: tokens.$line-height-body-large;
+  color: tokens.$color-gray-600;
+}
+
 .list {
   max-width: 70ch;
 }

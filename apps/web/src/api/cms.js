@@ -2,14 +2,24 @@
  * CMS module — raw endpoint calls (FRONTEND_ARCHITECTURE.md §3.1's
  * `api/` contract). Mirrors `apps/api/src/modules/cms/module.routes.js`.
  *
- * Stage 11.6 (Admin Platform): only the admin-facing endpoints are
- * wired up here. The public `GET /cms/pages/:slug` read exists on the
- * backend but has no frontend caller yet — the six static public pages
- * (`apps/web/src/modules/cms/`) stay static this stage, per the Phase 11
- * plan's own scope decision.
+ * P1.6 (Master Roadmap): `getCmsPage` is the public read the six static
+ * pages (`apps/web/src/modules/cms/`) now actually call, closing the
+ * gap the Stage 11.6 admin editor's own comment flagged ("this editor
+ * is real, but its output isn't live anywhere yet").
  */
 
 import apiClient from './client.js';
+
+/**
+ * `GET /cms/pages/:slug?locale=` — public, no auth. 404s for an unknown
+ * or unpublished slug (the six pages' own fallback-to-static-i18n
+ * handles that — see e.g. `AboutPageContent.jsx`).
+ */
+export function getCmsPage(slug, locale) {
+  return apiClient
+    .get(`/cms/pages/${slug}`, { params: { locale } })
+    .then((response) => response.data);
+}
 
 /** `GET /cms/admin/pages` — every page's slug/publish state, no pagination (small, fixed-ish set). */
 export function getAdminCmsPages() {

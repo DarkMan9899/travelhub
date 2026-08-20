@@ -4,19 +4,21 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './HomePage.jsx';
 import {
   useCategoriesQuery,
+  useDestinationsQuery,
   useSuggestionsQuery,
   useSearchListingsQuery,
 } from '../modules/search/index.js';
 
 // Only the data-fetching hooks are mocked, same as
-// FeaturedListings.test.jsx/Categories.test.jsx — every section renders
-// for real, so this exercises the actual composition
-// `pages/HomePage.jsx` wires together.
+// FeaturedListings.test.jsx/Categories.test.jsx/FeaturedDestinations.test.jsx
+// — every section renders for real, so this exercises the actual
+// composition `pages/HomePage.jsx` wires together.
 vi.mock('../modules/search/index.js', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
     useCategoriesQuery: vi.fn(),
+    useDestinationsQuery: vi.fn(),
     useSuggestionsQuery: vi.fn(),
     useSearchListingsQuery: vi.fn(),
   };
@@ -44,6 +46,11 @@ describe('HomePage (apps/web/src/pages)', () => {
       isPending: false,
       isError: false,
     });
+    useDestinationsQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+    });
     useSuggestionsQuery.mockReturnValue({ data: [], isPending: false });
 
     renderHomePage();
@@ -52,12 +59,11 @@ describe('HomePage (apps/web/src/pages)', () => {
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
     // One labeled section per homepage section (destinations, featured
     // listings, experiences, categories, why-travelhub, partner CTA,
-    // testimonials, newsletter).
+    // testimonials).
     expect(
       screen.getAllByRole('heading', { level: 2 }).length,
-    ).toBeGreaterThanOrEqual(8);
-    // The search widget's destination field and the newsletter's email
-    // field both mount without crashing.
+    ).toBeGreaterThanOrEqual(7);
+    // The search widget's destination field mounts without crashing.
     expect(
       screen.getByRole('combobox', {
         name: /Destination|Ուղղություն|Направление/,

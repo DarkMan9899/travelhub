@@ -19,7 +19,6 @@ import {
   WhyTravelHub,
   PartnerCta,
   Testimonials,
-  Newsletter,
 } from '../modules/home/index.js';
 import useSeo from '../seo/useSeo.js';
 
@@ -44,7 +43,6 @@ export default function HomePage() {
       <WhyTravelHub />
       <PartnerCta />
       <Testimonials />
-      <Newsletter />
     </Container>
   );
 }

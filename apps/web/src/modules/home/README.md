@@ -8,24 +8,34 @@ consumes.
 **Phase 3 status (Premium Homepage):** implemented. The Homepage is now
 the full marketplace landing page — Hero (with the search widget),
 Featured Destinations, Featured Listings, Popular Experiences,
-Categories, Why TravelHub, Become a Partner CTA, Testimonials, and
-Newsletter — composed in `pages/HomePage.jsx` from this module's public
-export surface (`index.js`). Phase 1's `FeaturedListings` is unchanged
-in behavior, just re-styled to match the rest of the page (shared
+Categories, Why TravelHub, Become a Partner CTA, and Testimonials —
+composed in `pages/HomePage.jsx` from this module's public export
+surface (`index.js`). Phase 1's `FeaturedListings` is unchanged in
+behavior, just re-styled to match the rest of the page (shared
 `SectionHeader`/`ScrollReveal`) and linked to the listing detail route.
+
+P1.6 (Master Roadmap) audited every section for fabricated data: Featured
+Destinations and Popular Experiences were rewired to real endpoints (see
+below), and the Newsletter section — a form that took a real email
+address and showed a fake "subscribed" success state with no backend to
+back it — was removed outright rather than left as a dishonest
+placeholder (no minimal real subscribe capability was in scope this
+phase; `hooks/useNewsletterSubscribe.js` is gone).
 
 Real vs. placeholder content:
 
-- **Real, API-backed:** Featured Listings (`useSearchListingsQuery`/
-  `SearchResultCard`, via the `search` module's public export).
+- **Real, API-backed:** Featured Listings, Featured Destinations, and
+  Popular Experiences (all via `useSearchListingsQuery`/
+  `useDestinationsQuery`/`SearchResultCard`/`DestinationCard`, the
+  `search` module's public export — Popular Experiences filters to the
+  real `TOUR` listing type).
 - **Real, not API-backed:** Categories (derived from the existing
   `listings.type` enum — a real taxonomy, just not filterable via the
   Search page yet).
-- **Placeholder** (no corresponding API exists this phase — see each
-  file's own header comment): Featured Destinations, Popular
-  Experiences, Testimonials (`constants/`), and the Newsletter form
-  (`hooks/useNewsletterSubscribe.js` — UI-only, no subscription is
-  actually sent anywhere).
+- **Disclosed placeholder** (no corresponding API exists this phase —
+  see the file's own header comment): Testimonials (`constants/`) —
+  explicitly labeled as illustrative via its own `disclosure` copy,
+  never presented as real user quotes.
 
 Imagery: local, hand-authored SVG illustrations
 (`apps/web/src/assets/images`), not photographs — no image asset
@@ -37,12 +47,11 @@ swapping in real production photography later touches that folder only.
 - `components/` — module-owned UI, composing `@travelhub/ui` primitives.
   Only the sections `pages/HomePage.jsx` composes directly
   (Hero/FeaturedDestinations/FeaturedListings/PopularExperiences/
-  Categories/WhyTravelHub/PartnerCta/Testimonials/Newsletter) are
-  exported from `index.js`; every card component and the shared
+  Categories/WhyTravelHub/PartnerCta/Testimonials) are exported from
+  `index.js`; every card component and the shared
   `SectionHeader`/`ScrollReveal`/`SearchWidget` building blocks stay
   module-private per §6.3's cross-module rule, promoted to `components/`
   or `@travelhub/ui` only once a second module needs one.
-- `hooks/` — module-specific custom hooks (`useNewsletterSubscribe`)
 - `queries/` — React Query query definitions (Ch. 14)
 - `mutations/` — React Query mutation definitions (Ch. 14)
 - `schemas/` — React Hook Form validation schemas (Ch. 15)

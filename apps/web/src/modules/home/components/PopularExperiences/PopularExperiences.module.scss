@@ -15,7 +15,7 @@
   }
 }
 
-// See FeaturedListings.module.scss for why this basis (ExperienceCard
+// See FeaturedListings.module.scss for why this basis (SearchResultCard
 // has the same 4:3-media-plus-text-body shape).
 .slide {
   flex: 0 0 82%;
@@ -30,5 +30,19 @@
 
   @include respond.respond(laptop) {
     flex: 0 0 34%;
+  }
+}
+
+// The pending-state skeleton row mirrors the eventual carousel's slide
+// widths so the loading state doesn't visibly jump in size once real
+// content arrives (see FeaturedListings.module.scss's identical rule).
+.skeletonRow {
+  display: flex;
+  gap: tokens.$space-3;
+  overflow: hidden;
+  padding-block: tokens.$space-4;
+
+  @include respond.respond(laptop) {
+    gap: tokens.$space-4;
   }
 }

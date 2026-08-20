@@ -8,6 +8,10 @@
  * `RequireAuth` itself sends an unauthenticated visitor to
  * `/auth/login?redirect=...` first and returns them to `/partner/apply`
  * after login, so this component doesn't need its own auth branching.
+ *
+ * P1.6 (Master Roadmap): title/lead now come from the real CMS backend
+ * (see `AboutPageContent.jsx`'s identical comment for the fallback
+ * reasoning). The benefits grid and CTA stay static/functional as-is.
  */
 
 import { useTranslation } from 'react-i18next';
@@ -18,6 +22,7 @@ import { Button, Icon } from '@travelhub/ui/components/primitives';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
+import { useCmsPageQuery } from '../../queries/useCmsPageQuery.js';
 import styles from './BecomePartnerPageContent.module.scss';
 
 const BENEFIT_KEYS = [
@@ -27,21 +32,24 @@ const BENEFIT_KEYS = [
 ];
 
 export default function BecomePartnerPageContent() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { locale } = useParams();
+  const { data: cmsPage } = useCmsPageQuery('become-a-partner', i18n.language);
+  const title = cmsPage?.title ?? t('cms.becomePartner.title');
+  const lead = cmsPage?.content ?? t('cms.becomePartner.lead');
 
   const breadcrumbItems = [
     { label: t('nav.home'), href: `/${locale}` },
     {
-      label: t('cms.becomePartner.title'),
+      label: title,
       href: `/${locale}/become-a-partner`,
     },
   ];
 
   useSeo({
-    title: `${t('cms.becomePartner.title')} | ${t('app.name')}`,
-    description: t('cms.becomePartner.lead'),
+    title: `${title} | ${t('app.name')}`,
+    description: lead,
     locale,
     path: 'become-a-partner',
     jsonLd: [buildBreadcrumbListSchema(breadcrumbItems)],
@@ -49,12 +57,9 @@ export default function BecomePartnerPageContent() {
 
   return (
     <Section spacing="default">
-      <PageHeader
-        title={t('cms.becomePartner.title')}
-        breadcrumbs={breadcrumbItems}
-      />
+      <PageHeader title={title} breadcrumbs={breadcrumbItems} />
       <Stack gap="8">
-        <p className={styles.lead}>{t('cms.becomePartner.lead')}</p>
+        <p className={styles.lead}>{lead}</p>
         <div className={styles.benefitsGrid}>
           {BENEFIT_KEYS.map(({ key, icon }) => (
             <Stack key={key} gap="2" as="article" align="flex-start">
