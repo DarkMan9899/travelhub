@@ -122,4 +122,78 @@ describe('SearchFilters (apps/web/src/modules/search)', () => {
       screen.queryByRole('button', { name: 'Մաքրել զտիչները' }),
     ).not.toBeInTheDocument();
   });
+
+  // P1.1 (Master Roadmap): dateFrom/dateTo/guests used to be silently
+  // dropped by this whole module — these prove they now reach
+  // onUpdateFilters with the exact param names GET /search expects.
+  test('(P1.1) picking a start date calls onUpdateFilters with real dateFrom/dateTo keys, push history', async () => {
+    // The DatePicker reports its selection progressively (once per
+    // click) — this harness's `filters` prop is a static mock, not a
+    // real URL round-trip, so it can't reflect a completed two-click
+    // range back down before the second click the way the live app
+    // does (DatePicker's own test suite already covers that mechanic
+    // directly). What this proves is the wiring itself: a real
+    // selection reaches onUpdateFilters under the exact dateFrom/dateTo
+    // keys GET /search expects, as real YYYY-MM-DD strings — not
+    // silently dropped, and not under the stale checkIn/checkOut names.
+    const user = userEvent.setup();
+    const { onUpdateFilters } = renderFilters();
+
+    await user.click(screen.getByLabelText('Ամսաթվեր'));
+    const grid = screen.getByRole('grid');
+    const enabledCells = within(grid)
+      .getAllByRole('gridcell')
+      .filter((cell) => !cell.disabled);
+    await user.click(enabledCells[0]);
+
+    expect(onUpdateFilters).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dateFrom: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      }),
+      { replace: false },
+    );
+    const [patch] = onUpdateFilters.mock.calls[0];
+    expect(Object.keys(patch).sort()).toEqual(['dateFrom', 'dateTo']);
+  });
+
+  test('(P1.1) selecting a guest count calls onUpdateFilters with a numeric guests value, push history', async () => {
+    const user = userEvent.setup();
+    const { onUpdateFilters } = renderFilters();
+
+    await user.click(screen.getAllByTestId('select-trigger')[2]);
+    await user.click(screen.getByText('2 հյուր'));
+
+    expect(onUpdateFilters).toHaveBeenCalledWith(
+      { guests: 2 },
+      { replace: false },
+    );
+  });
+
+  test('(P1.1) renders a dates chip and a guests chip, each removable independently', async () => {
+    const user = userEvent.setup();
+    const { onUpdateFilters } = renderFilters({
+      filters: { dateFrom: '2026-08-01', dateTo: '2026-08-05', guests: 3 },
+      hasActiveFilters: true,
+    });
+
+    const chips = screen.getByRole('group', { name: 'Ակտիվ զտիչներ' });
+    expect(
+      within(chips).getByText('2026-08-01 – 2026-08-05'),
+    ).toBeInTheDocument();
+    expect(within(chips).getByText('3 հյուր')).toBeInTheDocument();
+
+    await user.click(
+      within(chips).getByText('2026-08-01 – 2026-08-05').closest('button'),
+    );
+    expect(onUpdateFilters).toHaveBeenCalledWith(
+      { dateFrom: undefined, dateTo: undefined },
+      { replace: false },
+    );
+
+    await user.click(within(chips).getByText('3 հյուր').closest('button'));
+    expect(onUpdateFilters).toHaveBeenCalledWith(
+      { guests: undefined },
+      { replace: false },
+    );
+  });
 });

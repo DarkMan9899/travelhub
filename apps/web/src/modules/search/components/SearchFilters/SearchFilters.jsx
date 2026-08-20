@@ -19,7 +19,11 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Search, X } from 'lucide-react';
-import { Input, Select } from '@travelhub/ui/components/form-controls';
+import {
+  Input,
+  Select,
+  DatePicker,
+} from '@travelhub/ui/components/form-controls';
 import { Button, Badge } from '@travelhub/ui/components/primitives';
 import { useCategoriesQuery } from '../../queries/useCategoriesQuery.js';
 import {
@@ -29,6 +33,10 @@ import {
 import styles from './SearchFilters.module.scss';
 
 const KEYWORD_DEBOUNCE_MS = 400;
+// P1.1 (Master Roadmap): mirrors the Homepage SearchWidget's own guest
+// list — two independent call sites, not worth centralizing an 8-item
+// array over.
+const GUEST_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 export default function SearchFilters({
   filters,
@@ -36,7 +44,7 @@ export default function SearchFilters({
   onClearFilters,
   hasActiveFilters,
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: categories = [] } = useCategoriesQuery();
   const [keywordText, setKeywordText] = useState(filters.destination);
 
@@ -76,6 +84,20 @@ export default function SearchFilters({
     (category) => category.id === filters.categoryId,
   );
 
+  const guestOptions = GUEST_COUNTS.map((count) => ({
+    value: String(count),
+    label: t('search.filters.guestsCount', { count }),
+  }));
+  const today = new Date().toISOString().slice(0, 10);
+  const dateRangeValue = {
+    start: filters.dateFrom ?? null,
+    end: filters.dateTo ?? null,
+  };
+  const datesLabel =
+    filters.dateFrom && filters.dateTo
+      ? `${filters.dateFrom} – ${filters.dateTo}`
+      : '';
+
   return (
     <div className={styles.filters}>
       <div className={styles.controls}>
@@ -109,6 +131,40 @@ export default function SearchFilters({
             value={filters.sort}
             onChange={(value) =>
               onUpdateFilters({ sort: value }, { replace: false })
+            }
+          />
+        </div>
+        <div className={styles.datesField}>
+          <DatePicker
+            mode="range"
+            ariaLabel={t('search.filters.datesLabel')}
+            placeholder={t('search.filters.datesPlaceholder')}
+            value={dateRangeValue}
+            onChange={(value) =>
+              onUpdateFilters(
+                { dateFrom: value.start, dateTo: value.end },
+                { replace: false },
+              )
+            }
+            minDate={today}
+            locale={i18n.language}
+            previousMonthLabel={t(
+              'partner.listingWizard.datePicker.previousMonth',
+            )}
+            nextMonthLabel={t('partner.listingWizard.datePicker.nextMonth')}
+          />
+        </div>
+        <div className={styles.guestsField}>
+          <Select
+            ariaLabel={t('search.filters.guestsLabel')}
+            placeholder={t('search.filters.guestsPlaceholder')}
+            options={guestOptions}
+            value={filters.guests ? String(filters.guests) : ''}
+            onChange={(value) =>
+              onUpdateFilters(
+                { guests: value ? Number(value) : undefined },
+                { replace: false },
+              )
             }
           />
         </div>
@@ -158,6 +214,49 @@ export default function SearchFilters({
               </span>
             </button>
           )}
+          {datesLabel && (
+            <button
+              type="button"
+              className={styles.chip}
+              onClick={() =>
+                onUpdateFilters(
+                  { dateFrom: undefined, dateTo: undefined },
+                  { replace: false },
+                )
+              }
+            >
+              <Badge variant="neutral" label={datesLabel} size="sm" />
+              <X size={14} aria-hidden="true" />
+              <span className={styles.chipSrLabel}>
+                {t('search.filters.removeFilter', { label: datesLabel })}
+              </span>
+            </button>
+          )}
+          {filters.guests && (
+            <button
+              type="button"
+              className={styles.chip}
+              onClick={() =>
+                onUpdateFilters({ guests: undefined }, { replace: false })
+              }
+            >
+              <Badge
+                variant="neutral"
+                label={t('search.filters.guestsCount', {
+                  count: filters.guests,
+                })}
+                size="sm"
+              />
+              <X size={14} aria-hidden="true" />
+              <span className={styles.chipSrLabel}>
+                {t('search.filters.removeFilter', {
+                  label: t('search.filters.guestsCount', {
+                    count: filters.guests,
+                  }),
+                })}
+              </span>
+            </button>
+          )}
           <Button variant="ghost" size="sm" onClick={onClearFilters}>
             {t('search.filters.clearAll')}
           </Button>
@@ -172,6 +271,9 @@ SearchFilters.propTypes = {
     destination: PropTypes.string,
     categoryId: PropTypes.number,
     sort: PropTypes.string,
+    dateFrom: PropTypes.string,
+    dateTo: PropTypes.string,
+    guests: PropTypes.number,
   }).isRequired,
   onUpdateFilters: PropTypes.func.isRequired,
   onClearFilters: PropTypes.func.isRequired,

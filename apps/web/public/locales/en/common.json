@@ -87,8 +87,7 @@
     "search": {
       "destinationLabel": "Destination",
       "destinationPlaceholder": "Where are you going?",
-      "checkInLabel": "Check-in",
-      "checkOutLabel": "Check-out",
+      "datesLabel": "Dates",
       "datePlaceholder": "Add date",
       "guestsLabel": "Guests",
       "guestsPlaceholder": "Add guests",
@@ -444,6 +443,11 @@
         "alphabetical": "A–Z",
         "relevance": "Best match"
       },
+      "datesLabel": "Dates",
+      "datesPlaceholder": "Add dates",
+      "guestsLabel": "Guests",
+      "guestsPlaceholder": "Add guests",
+      "guestsCount": "{{count}} guests",
       "activeFilters": "Active filters",
       "removeFilter": "Remove {{label}} filter",
       "clearAll": "Clear filters"

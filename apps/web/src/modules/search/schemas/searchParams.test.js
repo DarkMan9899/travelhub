@@ -38,16 +38,67 @@ describe('searchParams (apps/web/src/modules/search)', () => {
       expect(parseSearchParams(params).sort).toBe('newest');
     });
 
-    test("is unaffected by unrelated params (e.g. the Homepage widget's checkIn/checkOut/guests)", () => {
+    test('is unaffected by a truly unrelated/stale param name', () => {
       const params = new URLSearchParams(
-        'destination=dilijan&checkIn=2026-08-01&checkOut=2026-08-05&guests=2',
+        'destination=dilijan&checkIn=2026-08-01&checkOut=2026-08-05',
       );
-      expect(parseSearchParams(params)).toEqual({
-        destination: 'dilijan',
-        categoryId: undefined,
-        sort: 'newest',
-        dynamicFilters: {},
-      });
+      const result = parseSearchParams(params);
+      expect(result.destination).toBe('dilijan');
+      expect(result.dateFrom).toBeUndefined();
+      expect(result.dateTo).toBeUndefined();
+    });
+
+    test('(P1.1) reads a valid dateFrom/dateTo pair', () => {
+      const params = new URLSearchParams(
+        'dateFrom=2026-08-01&dateTo=2026-08-05',
+      );
+      const result = parseSearchParams(params);
+      expect(result.dateFrom).toBe('2026-08-01');
+      expect(result.dateTo).toBe('2026-08-05');
+    });
+
+    test('(P1.1) drops dateFrom/dateTo when only one of the pair is present', () => {
+      expect(
+        parseSearchParams(new URLSearchParams('dateFrom=2026-08-01')).dateFrom,
+      ).toBeUndefined();
+      expect(
+        parseSearchParams(new URLSearchParams('dateTo=2026-08-05')).dateTo,
+      ).toBeUndefined();
+    });
+
+    test('(P1.1) drops a malformed date pair rather than sending garbage upstream', () => {
+      const result = parseSearchParams(
+        new URLSearchParams('dateFrom=not-a-date&dateTo=2026-08-05'),
+      );
+      expect(result.dateFrom).toBeUndefined();
+      expect(result.dateTo).toBeUndefined();
+    });
+
+    test('(P1.1) drops an inverted date range (dateTo before dateFrom)', () => {
+      const result = parseSearchParams(
+        new URLSearchParams('dateFrom=2026-08-05&dateTo=2026-08-01'),
+      );
+      expect(result.dateFrom).toBeUndefined();
+      expect(result.dateTo).toBeUndefined();
+    });
+
+    test('(P1.1) reads a valid guests count', () => {
+      expect(parseSearchParams(new URLSearchParams('guests=4')).guests).toBe(4);
+    });
+
+    test('(P1.1) drops an invalid guests value (zero, negative, non-integer, over the max)', () => {
+      expect(
+        parseSearchParams(new URLSearchParams('guests=0')).guests,
+      ).toBeUndefined();
+      expect(
+        parseSearchParams(new URLSearchParams('guests=-1')).guests,
+      ).toBeUndefined();
+      expect(
+        parseSearchParams(new URLSearchParams('guests=abc')).guests,
+      ).toBeUndefined();
+      expect(
+        parseSearchParams(new URLSearchParams('guests=51')).guests,
+      ).toBeUndefined();
     });
 
     test('collects any non-fixed, non-empty key into dynamicFilters (Phase 4.2)', () => {
@@ -92,6 +143,29 @@ describe('searchParams (apps/web/src/modules/search)', () => {
       expect(params.has('guests')).toBe(false);
     });
 
+    test('(P1.1) writes dateFrom/dateTo/guests when set', () => {
+      const params = buildSearchParams({
+        destination: '',
+        sort: 'newest',
+        dateFrom: '2026-08-01',
+        dateTo: '2026-08-05',
+        guests: 3,
+      });
+      expect(params.get('dateFrom')).toBe('2026-08-01');
+      expect(params.get('dateTo')).toBe('2026-08-05');
+      expect(params.get('guests')).toBe('3');
+    });
+
+    test('(P1.1) never writes a half-formed date pair', () => {
+      const params = buildSearchParams({
+        destination: '',
+        sort: 'newest',
+        dateFrom: '2026-08-01',
+      });
+      expect(params.has('dateFrom')).toBe(false);
+      expect(params.has('dateTo')).toBe(false);
+    });
+
     test('writes dynamicFilters keys straight through, omitting empty values', () => {
       const params = buildSearchParams({
         destination: '',
@@ -128,6 +202,34 @@ describe('searchParams (apps/web/src/modules/search)', () => {
         undefined,
       );
       expect(query).toEqual({ sort: 'newest' });
+    });
+
+    test('(P1.1) includes dateFrom/dateTo/guests using the same key names the backend expects', () => {
+      const query = toSearchQueryParams(
+        {
+          destination: 'yerevan',
+          dateFrom: '2026-08-01',
+          dateTo: '2026-08-05',
+          guests: 2,
+        },
+        'en',
+      );
+      expect(query).toEqual({
+        keyword: 'yerevan',
+        dateFrom: '2026-08-01',
+        dateTo: '2026-08-05',
+        guests: 2,
+        locale: 'en',
+      });
+    });
+
+    test('(P1.1) never sends a half-formed date pair upstream', () => {
+      const query = toSearchQueryParams(
+        { destination: 'yerevan', dateFrom: '2026-08-01' },
+        undefined,
+      );
+      expect(query).not.toHaveProperty('dateFrom');
+      expect(query).not.toHaveProperty('dateTo');
     });
 
     test('spreads dynamicFilters directly into the query object', () => {

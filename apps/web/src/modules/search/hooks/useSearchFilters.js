@@ -93,6 +93,8 @@ export function useSearchFilters() {
     filters.destination ||
     filters.categoryId ||
     filters.sort !== DEFAULT_SORT_KEY ||
+    filters.dateFrom ||
+    filters.guests ||
     Object.keys(filters.dynamicFilters).length > 0,
   );
 

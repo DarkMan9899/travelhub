@@ -12,6 +12,16 @@
  * the Categories section uses, so this dropdown never drifts out of sync
  * with what's actually browsable.
  *
+ * P1.1 (Master Roadmap): dates used to be a pair of plain free-text
+ * `Input` fields under the stale `checkIn`/`checkOut` param names —
+ * `modules/search/schemas/searchParams.js` never read either name (and
+ * even if it had, free text isn't a validatable date). Now a single
+ * real `DatePicker` (range mode, the same component/pattern
+ * `ListingReservationWidget` already uses), emitting `dateFrom`/`dateTo`
+ * — the exact param names both `searchParams.js` and the backend's
+ * `GET /search` validator expect, so a date range picked here now
+ * actually reaches search results, not just the URL bar.
+ *
  * Fields intentionally render with no visible per-field label (an
  * `aria-label`/`ariaLabel` carries the same text for assistive tech
  * instead) — a compact single-row bar reads as an integrated extension
@@ -23,8 +33,8 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { MapPin, CalendarDays } from 'lucide-react';
-import { Input, Select } from '@travelhub/ui/components/form-controls';
+import { MapPin } from 'lucide-react';
+import { Select, DatePicker } from '@travelhub/ui/components/form-controls';
 import { Button } from '@travelhub/ui/components/primitives';
 import { Inline } from '@travelhub/ui/components/layout';
 import { useCategoriesQuery } from '../../../search/index.js';
@@ -34,14 +44,13 @@ import styles from './SearchWidget.module.scss';
 const GUEST_COUNTS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 export default function SearchWidget({ className = undefined }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { locale } = useParams();
   const { data: categories = [] } = useCategoriesQuery({ locale });
 
   const [destination, setDestination] = useState('');
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  const [dateRange, setDateRange] = useState({ start: null, end: null });
   const [guests, setGuests] = useState('');
   const [categoryId, setCategoryId] = useState('');
 
@@ -54,13 +63,16 @@ export default function SearchWidget({ className = undefined }) {
     value: String(count),
     label: t('home.search.guestsCount', { count }),
   }));
+  const today = new Date().toISOString().slice(0, 10);
 
   function handleSubmit(event) {
     event.preventDefault();
     const params = new URLSearchParams();
     if (destination) params.set('destination', destination);
-    if (checkIn) params.set('checkIn', checkIn);
-    if (checkOut) params.set('checkOut', checkOut);
+    if (dateRange.start && dateRange.end) {
+      params.set('dateFrom', dateRange.start);
+      params.set('dateTo', dateRange.end);
+    }
     if (guests) params.set('guests', guests);
     if (categoryId) params.set('categoryId', categoryId);
 
@@ -84,21 +96,18 @@ export default function SearchWidget({ className = undefined }) {
           />
         </div>
         <div className={styles.field}>
-          <Input
-            aria-label={t('home.search.checkInLabel')}
+          <DatePicker
+            mode="range"
+            ariaLabel={t('home.search.datesLabel')}
             placeholder={t('home.search.datePlaceholder')}
-            value={checkIn}
-            onChange={(event) => setCheckIn(event.target.value)}
-            iconLeft={<CalendarDays size={18} aria-hidden="true" />}
-          />
-        </div>
-        <div className={styles.field}>
-          <Input
-            aria-label={t('home.search.checkOutLabel')}
-            placeholder={t('home.search.datePlaceholder')}
-            value={checkOut}
-            onChange={(event) => setCheckOut(event.target.value)}
-            iconLeft={<CalendarDays size={18} aria-hidden="true" />}
+            value={dateRange}
+            onChange={setDateRange}
+            minDate={today}
+            locale={i18n.language}
+            previousMonthLabel={t(
+              'partner.listingWizard.datePicker.previousMonth',
+            )}
+            nextMonthLabel={t('partner.listingWizard.datePicker.nextMonth')}
           />
         </div>
         <div className={styles.field}>

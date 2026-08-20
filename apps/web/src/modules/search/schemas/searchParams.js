@@ -12,12 +12,17 @@
  * (`?destination=...`), so a deep link from the Homepage lands on an
  * already-applied filter here instead of a silently-ignored one.
  *
- * The Homepage widget also sends `checkIn`/`checkOut`/`guests` — the
- * backend's search endpoint has no filter for any of them (see
- * `apps/api/src/modules/search/validators/searchValidators.js`), so they
- * are intentionally never read here. They pass through inertly on first
- * load and are dropped the moment this page's own filters are next
- * updated (`buildSearchParams` only ever writes the keys below).
+ * P1.1 (Master Roadmap): `dateFrom`/`dateTo`/`guests` used to be
+ * documented here as intentionally dropped ("the backend has no filter
+ * for them") — that was true when this file was written but the backend
+ * gained real, validated `dateFrom`/`dateTo`/`guests` availability
+ * filters later (`apps/api/src/modules/search/validators/
+ * searchValidators.js`) and this file was never updated to match, so
+ * every search entry point silently discarded the dates/guest count a
+ * user actually selected. They are named here like every other filter
+ * now, using the exact same key names the backend query param expects
+ * (no translation needed in `toSearchQueryParams`, unlike `destination`
+ * -> `keyword`).
  *
  * `dynamicFilters` (Phase 4.2) is the one deliberate exception to "every
  * key is named here": it holds the generic `attr_{code}` / `attr_{code}
@@ -25,10 +30,7 @@
  * declares as data (`DynamicFilterPanel`'s catalog), not as a fixed enum
  * this file could name in advance — "do not hardcode filter lists in the
  * frontend" applies here too. Only a key matching that exact convention
- * (an `attr_` prefix, or the literal `amenityIds`) is swept into it — a
- * plain "any other key" sweep would also capture the Homepage widget's
- * `checkIn`/`checkOut`/`guests`, which this file's own contract above
- * says must pass through inertly, not be treated as an active filter.
+ * (an `attr_` prefix, or the literal `amenityIds`) is swept into it.
  */
 
 import { SORT_KEYS, DEFAULT_SORT_KEY } from '../../../constants/sortOptions.js';
@@ -37,10 +39,18 @@ export const SEARCH_PARAM_KEYS = Object.freeze({
   destination: 'destination',
   categoryId: 'categoryId',
   sort: 'sort',
+  dateFrom: 'dateFrom',
+  dateTo: 'dateTo',
+  guests: 'guests',
 });
 
 const DYNAMIC_FILTER_KEY_PATTERN = /^attr_/;
 const AMENITY_IDS_KEY = 'amenityIds';
+// Same shape the backend's own `isoDateSchema` requires — a URL param
+// that doesn't match this is never worth sending upstream just to have
+// the backend reject it with a 422.
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_GUESTS = 50;
 
 function isDynamicFilterKey(key) {
   return key === AMENITY_IDS_KEY || DYNAMIC_FILTER_KEY_PATTERN.test(key);
@@ -48,7 +58,7 @@ function isDynamicFilterKey(key) {
 
 /**
  * @param {URLSearchParams} searchParams
- * @returns {{ destination: string, categoryId: number|undefined, sort: string, dynamicFilters: Object<string, string> }}
+ * @returns {{ destination: string, categoryId: number|undefined, sort: string, dateFrom: string|undefined, dateTo: string|undefined, guests: number|undefined, dynamicFilters: Object<string, string> }}
  */
 export function parseSearchParams(searchParams) {
   const destination = (
@@ -65,13 +75,45 @@ export function parseSearchParams(searchParams) {
   const sortRaw = searchParams.get(SEARCH_PARAM_KEYS.sort);
   const sort = SORT_KEYS.includes(sortRaw) ? sortRaw : DEFAULT_SORT_KEY;
 
+  // dateFrom/dateTo are only ever meaningful as a pair — matches the
+  // backend's own `.refine` rule (`dateFrom and dateTo must be provided
+  // together`) rather than silently sending a half-formed range upstream.
+  const dateFromRaw = searchParams.get(SEARCH_PARAM_KEYS.dateFrom);
+  const dateToRaw = searchParams.get(SEARCH_PARAM_KEYS.dateTo);
+  const datesValid =
+    dateFromRaw &&
+    dateToRaw &&
+    ISO_DATE_PATTERN.test(dateFromRaw) &&
+    ISO_DATE_PATTERN.test(dateToRaw) &&
+    dateToRaw >= dateFromRaw;
+  const dateFrom = datesValid ? dateFromRaw : undefined;
+  const dateTo = datesValid ? dateToRaw : undefined;
+
+  const guestsRaw = searchParams.get(SEARCH_PARAM_KEYS.guests);
+  const parsedGuests = Number(guestsRaw);
+  const guests =
+    guestsRaw &&
+    Number.isInteger(parsedGuests) &&
+    parsedGuests > 0 &&
+    parsedGuests <= MAX_GUESTS
+      ? parsedGuests
+      : undefined;
+
   const dynamicFilters = {};
   searchParams.forEach((value, key) => {
     if (!value || !isDynamicFilterKey(key)) return;
     dynamicFilters[key] = value;
   });
 
-  return { destination, categoryId, sort, dynamicFilters };
+  return {
+    destination,
+    categoryId,
+    sort,
+    dateFrom,
+    dateTo,
+    guests,
+    dynamicFilters,
+  };
 }
 
 /**
@@ -79,13 +121,16 @@ export function parseSearchParams(searchParams) {
  * its empty/default value so the URL stays clean (`/search` rather than
  * `/search?destination=&categoryId=&sort=newest` for the all-defaults
  * case), and never carries over unrelated params (see file header).
- * @param {{ destination?: string, categoryId?: number, sort?: string, dynamicFilters?: Object<string, string> }} filters
+ * @param {{ destination?: string, categoryId?: number, sort?: string, dateFrom?: string, dateTo?: string, guests?: number, dynamicFilters?: Object<string, string> }} filters
  * @returns {URLSearchParams}
  */
 export function buildSearchParams({
   destination,
   categoryId,
   sort,
+  dateFrom,
+  dateTo,
+  guests,
   dynamicFilters = {},
 }) {
   const params = new URLSearchParams();
@@ -97,6 +142,14 @@ export function buildSearchParams({
   }
   if (sort && sort !== DEFAULT_SORT_KEY) {
     params.set(SEARCH_PARAM_KEYS.sort, sort);
+  }
+  // Only ever written as a pair — see parseSearchParams's identical rule.
+  if (dateFrom && dateTo) {
+    params.set(SEARCH_PARAM_KEYS.dateFrom, dateFrom);
+    params.set(SEARCH_PARAM_KEYS.dateTo, dateTo);
+  }
+  if (guests) {
+    params.set(SEARCH_PARAM_KEYS.guests, String(guests));
   }
   Object.entries(dynamicFilters).forEach(([key, value]) => {
     if (value) params.set(key, value);
@@ -116,7 +169,17 @@ export function buildSearchParams({
  * through the URL.
  */
 export function toSearchQueryParams(
-  { destination, categoryId, partnerId, cityId, sort, dynamicFilters = {} },
+  {
+    destination,
+    categoryId,
+    partnerId,
+    cityId,
+    sort,
+    dateFrom,
+    dateTo,
+    guests,
+    dynamicFilters = {},
+  },
   locale,
 ) {
   const query = { ...dynamicFilters };
@@ -125,6 +188,13 @@ export function toSearchQueryParams(
   if (partnerId) query.partnerId = partnerId;
   if (cityId) query.cityId = cityId;
   if (sort) query.sort = sort;
+  // Same key names the backend expects — no translation needed, unlike
+  // destination -> keyword.
+  if (dateFrom && dateTo) {
+    query.dateFrom = dateFrom;
+    query.dateTo = dateTo;
+  }
+  if (guests) query.guests = guests;
   if (locale) query.locale = locale;
   return query;
 }

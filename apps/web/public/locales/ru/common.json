@@ -87,8 +87,7 @@
     "search": {
       "destinationLabel": "Направление",
       "destinationPlaceholder": "Куда вы едете?",
-      "checkInLabel": "Заезд",
-      "checkOutLabel": "Выезд",
+      "datesLabel": "Даты",
       "datePlaceholder": "Выбрать дату",
       "guestsLabel": "Гости",
       "guestsPlaceholder": "Добавить гостей",
@@ -444,6 +443,11 @@
         "alphabetical": "А–Я",
         "relevance": "Лучшее совпадение"
       },
+      "datesLabel": "Даты",
+      "datesPlaceholder": "Добавить даты",
+      "guestsLabel": "Гости",
+      "guestsPlaceholder": "Добавить гостей",
+      "guestsCount": "{{count}} гостей",
       "activeFilters": "Активные фильтры",
       "removeFilter": "Убрать фильтр «{{label}}»",
       "clearAll": "Сбросить фильтры"

@@ -67,6 +67,12 @@ describe('stripNonCanonicalParams', () => {
     expect([...stripped.keys()]).toHaveLength(0);
   });
 
+  test('(P1.1) removes the real dateFrom/dateTo search params', () => {
+    const params = new URLSearchParams('dateFrom=2026-09-01&dateTo=2026-09-05');
+    const stripped = stripNonCanonicalParams(params);
+    expect([...stripped.keys()]).toHaveLength(0);
+  });
+
   test('keeps params that genuinely represent distinct indexable content', () => {
     const params = new URLSearchParams('categoryId=5&keyword=yerevan');
 

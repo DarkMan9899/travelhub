@@ -52,8 +52,13 @@ export function buildHreflangAlternates(path = '') {
  * control: a canonical tag always points at the clean, stable form of a
  * page, even when the visited URL carries interaction state.
  */
+// P1.1 (Master Roadmap): `dateFrom`/`dateTo` are the real, currently-
+// used search date-range params (see modules/search/schemas/
+// searchParams.js) — `checkIn`/`checkOut` stay listed too as defensive
+// cleanup for any already-indexed/bookmarked URL still carrying the old
+// (never-functional) names.
 const NON_CANONICAL_PARAM_PATTERN =
-  /^(utm_|checkIn$|checkOut$|guests$|currency$|sort$|cursor$|view$|ref$|fbclid$|gclid$)/i;
+  /^(utm_|checkIn$|checkOut$|dateFrom$|dateTo$|guests$|currency$|sort$|cursor$|view$|ref$|fbclid$|gclid$)/i;
 
 export function stripNonCanonicalParams(searchParams) {
   const params = new URLSearchParams(searchParams);

@@ -27,7 +27,9 @@
 }
 
 .categoryField,
-.sortField {
+.sortField,
+.datesField,
+.guestsField {
   flex: 1 1 calc(50% - #{tokens.$space-2});
 
   @include respond.respond(tablet) {

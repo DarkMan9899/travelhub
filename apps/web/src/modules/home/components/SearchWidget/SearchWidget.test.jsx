@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import SearchWidget from './SearchWidget.jsx';
@@ -83,5 +83,32 @@ describe('SearchWidget (apps/web/src/modules/home)', () => {
     });
     renderSearchWidget();
     expect(screen.getAllByTestId('select-trigger').length).toBeGreaterThan(0);
+  });
+
+  // P1.1 (Master Roadmap): these dates used to be plain free-text
+  // Input fields under the stale checkIn/checkOut param names that
+  // modules/search/schemas/searchParams.js never read — a selected
+  // date range silently never reached search results. Now a real
+  // DatePicker, emitting the dateFrom/dateTo names search actually
+  // reads.
+  test('(P1.1) selecting a date range and submitting navigates with real dateFrom/dateTo params', async () => {
+    const user = userEvent.setup();
+    renderSearchWidget();
+
+    await user.click(screen.getByLabelText('Ամսաթվեր'));
+    const grid = screen.getByRole('grid');
+    const enabledCells = within(grid)
+      .getAllByRole('gridcell')
+      .filter((cell) => !cell.disabled);
+    await user.click(enabledCells[0]);
+    await user.click(enabledCells[enabledCells.length - 1]);
+
+    await user.click(screen.getByRole('button', { name: /Որոնել/ }));
+
+    expect(navigateMock).toHaveBeenCalledTimes(1);
+    const [url] = navigateMock.mock.calls[0];
+    expect(url).toMatch(
+      /^\/en\/search\?dateFrom=\d{4}-\d{2}-\d{2}&dateTo=\d{4}-\d{2}-\d{2}$/,
+    );
   });
 });

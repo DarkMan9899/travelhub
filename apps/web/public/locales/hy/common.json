@@ -87,8 +87,7 @@
     "search": {
       "destinationLabel": "Ուղղություն",
       "destinationPlaceholder": "Ո՞ւր եք գնում",
-      "checkInLabel": "Ժամանում",
-      "checkOutLabel": "Մեկնում",
+      "datesLabel": "Ամսաթվեր",
       "datePlaceholder": "Ընտրել ամսաթիվ",
       "guestsLabel": "Հյուրեր",
       "guestsPlaceholder": "Ավելացնել հյուրեր",
@@ -444,6 +443,11 @@
         "alphabetical": "Ա–Ֆ",
         "relevance": "Լավագույն համընկնում"
       },
+      "datesLabel": "Ամսաթվեր",
+      "datesPlaceholder": "Ավելացնել ամսաթվեր",
+      "guestsLabel": "Հյուրեր",
+      "guestsPlaceholder": "Ավելացնել հյուրեր",
+      "guestsCount": "{{count}} հյուր",
       "activeFilters": "Ակտիվ զտիչներ",
       "removeFilter": "Հեռացնել {{label}} զտիչը",
       "clearAll": "Մաքրել զտիչները"
