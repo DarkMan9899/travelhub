@@ -10,5 +10,7 @@ export { default as PartnerBookingsPageContent } from './components/PartnerBooki
 export { default as PartnerBookingDetailContent } from './components/PartnerBookingDetailContent/PartnerBookingDetailContent.jsx';
 export { default as PartnerCalendarPageContent } from './components/PartnerCalendarPageContent/PartnerCalendarPageContent.jsx';
 export { default as PartnerConnectionsPageContent } from './components/PartnerConnectionsPageContent/PartnerConnectionsPageContent.jsx';
+export { default as PartnerProfilePageContent } from './components/PartnerProfilePageContent/PartnerProfilePageContent.jsx';
 export { default as useMyPartnershipsQuery } from './queries/useMyPartnershipsQuery.js';
+export { default as useMyCompanyProfileQuery } from './queries/useMyCompanyProfileQuery.js';
 export { default as partnerKeys } from './constants/queryKeys.js';

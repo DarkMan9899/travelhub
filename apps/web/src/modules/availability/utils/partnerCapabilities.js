@@ -13,6 +13,9 @@ export const PARTNER_CAPABILITIES = Object.freeze({
   MANAGE_MANUAL_BLOCKS: 'MANAGE_MANUAL_BLOCKS',
   MANAGE_CONNECTIONS: 'MANAGE_CONNECTIONS',
   VIEW_SYNC_LOGS: 'VIEW_SYNC_LOGS',
+  // P1.3 (Master Roadmap) — mirrors the backend's own addition
+  // (`apps/api/src/core/domain/partnerCapabilities.js`) exactly.
+  MANAGE_COMPANY_PROFILE: 'MANAGE_COMPANY_PROFILE',
 });
 
 const ROLE_CAPABILITIES = Object.freeze({

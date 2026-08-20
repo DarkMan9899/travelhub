@@ -9,7 +9,19 @@ import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
 import { withTransaction } from '../../../infrastructure/database/transaction.js';
-import { isPartnerOwner } from '../../../infrastructure/database/repositories/partnerEmployeeRepository.js';
+import {
+  isPartnerOwner,
+  getPartnerEmployeeRoleCode,
+} from '../../../infrastructure/database/repositories/partnerEmployeeRepository.js';
+import {
+  roleHasCapability,
+  PARTNER_CAPABILITIES,
+} from '../../../core/domain/partnerCapabilities.js';
+import { resolveLocaleIds } from '../../../infrastructure/database/repositories/languageRepository.js';
+import {
+  classifyMimeType,
+  isWithinSizeLimit,
+} from '../../media/validators/mediaConstraints.js';
 import { slugify } from '../../../core/domain/slugify.js';
 
 // P1.2 (Master Roadmap) — DRAFT/NEEDS_CHANGES are the two codes added to
@@ -97,16 +109,20 @@ export class PartnerService {
 
   #eventBus;
 
+  #storageProvider;
+
   constructor({
     partnerRepository,
     permissionResolver,
     auditLogger,
     eventBus = createNoOpEventBus(),
+    storageProvider,
   }) {
     this.#eventBus = eventBus;
     this.#partnerRepository = partnerRepository;
     this.#permissionResolver = permissionResolver;
     this.#auditLogger = auditLogger;
+    this.#storageProvider = storageProvider;
   }
 
   /** No owner fallback — every caller of these Stage 11.2 admin methods is inherently acting on someone else's org. */
@@ -157,6 +173,48 @@ export class PartnerService {
     if (!principal) throw new AuthenticationError();
     const owns = await isPartnerOwner(principal.userId, partnerId);
     if (!owns) throw new NotFoundError('Application not found.');
+  }
+
+  /**
+   * P1.3 (Master Roadmap) — any ACTIVE `partner_employees` row, any
+   * role — the read gate for `getMyCompanyProfile`. Deliberately weaker
+   * than `#assertCanManageProfile` below: a receptionist-tier EDITOR
+   * should be able to see the company profile they work for, even
+   * though only OWNER/MANAGER may change it.
+   */
+  async #assertIsMember(principal, partnerId) {
+    if (!principal) throw new AuthenticationError();
+    if (await isPartnerOwner(principal.userId, partnerId)) return;
+    const roleCode = await getPartnerEmployeeRoleCode(
+      principal.userId,
+      partnerId,
+    );
+    if (roleCode) return;
+    throw new AuthorizationError();
+  }
+
+  /**
+   * P1.3 (Master Roadmap) — owner bypass + `MANAGE_COMPANY_PROFILE`
+   * capability, mirroring `inventoryConnectionService.js#assertCapability`'s
+   * exact established pattern for this same `partner_employees` RBAC
+   * system. 403 (AuthorizationError), not 404: unlike an in-progress
+   * application (never publicly discoverable, so 404-masked), an
+   * APPROVED partner's existence is already public via `/partners/:slug`
+   * — only the ability to edit it is restricted here.
+   */
+  async #assertCanManageProfile(principal, partnerId) {
+    if (!principal) throw new AuthenticationError();
+    if (await isPartnerOwner(principal.userId, partnerId)) return;
+    const roleCode = await getPartnerEmployeeRoleCode(
+      principal.userId,
+      partnerId,
+    );
+    if (
+      roleHasCapability(roleCode, PARTNER_CAPABILITIES.MANAGE_COMPANY_PROFILE)
+    ) {
+      return;
+    }
+    throw new AuthorizationError();
   }
 
   /**
@@ -220,12 +278,19 @@ export class PartnerService {
         );
       }
 
+      // P1.3 (Master Roadmap): the onboarding form has no locale-tab
+      // UI (a single "About your business" textarea), so this always
+      // writes to the server's default language — same precedent as
+      // `listingService.js#updateMedia`'s alt-text/caption write via
+      // `resolveLocaleIds()` with no argument.
+      const { defaultLocaleId } = await resolveLocaleIds(undefined, connection);
       const created = await this.#partnerRepository.createApplication(
         {
           legalName: legalName?.trim() || displayName.trim(),
           displayName: displayName.trim(),
           slug: candidateSlug,
           description: description?.trim() || null,
+          languageId: defaultLocaleId,
           email: email?.trim() || null,
           phone: phone?.trim() || null,
           website: website?.trim() || null,
@@ -270,10 +335,15 @@ export class PartnerService {
     }
 
     const { legalName, displayName, description, email, phone, website } = data;
+    let languageId;
+    if (description !== undefined) {
+      ({ defaultLocaleId: languageId } = await resolveLocaleIds());
+    }
     return this.#partnerRepository.updateApplication(partnerId, {
       legalName: legalName?.trim(),
       displayName: displayName?.trim(),
       description: description?.trim(),
+      languageId,
       email: email?.trim(),
       phone: phone?.trim(),
       website: website?.trim(),
@@ -321,6 +391,126 @@ export class PartnerService {
       targetId: partnerId,
       beforeSnapshot: { verificationStatusCode: before.verificationStatusCode },
       afterSnapshot: { verificationStatusCode: 'PENDING' },
+    });
+
+    return updated;
+  }
+
+  /**
+   * P1.3 (Master Roadmap) — owner/staff read of their own company
+   * profile (any status, not just APPROVED — a partner can preview
+   * their own profile mid-edit regardless of moderation state).
+   */
+  async getMyCompanyProfile(principal, partnerId) {
+    await this.#assertIsMember(principal, partnerId);
+    const partner = await this.#partnerRepository.findByIdAdmin(partnerId);
+    if (!partner) throw new NotFoundError('Partner not found.');
+    return partner;
+  }
+
+  /**
+   * P1.3 (Master Roadmap) — owner/staff edit of the public company
+   * identity: name, contact info, social links, and one language's
+   * description. `locale` selects which `partner_translations` row
+   * `description` writes to — required by the validator whenever
+   * `description` is present (`updateProfileSchema`'s own `.refine`).
+   */
+  async updateMyCompanyProfile(principal, partnerId, data) {
+    await this.#assertCanManageProfile(principal, partnerId);
+    const before = await this.#partnerRepository.findByIdAdmin(partnerId);
+    if (!before) throw new NotFoundError('Partner not found.');
+
+    const {
+      displayName,
+      email,
+      phone,
+      website,
+      description,
+      locale,
+      socialLinks,
+    } = data;
+
+    let languageId;
+    if (description !== undefined) {
+      ({ localeId: languageId } = await resolveLocaleIds(locale));
+    }
+
+    const updated = await this.#partnerRepository.updateProfile(partnerId, {
+      displayName: displayName?.trim(),
+      email: email?.trim(),
+      phone: phone?.trim(),
+      website: website?.trim(),
+      socialLinks,
+    });
+
+    if (description !== undefined) {
+      await this.#partnerRepository.upsertTranslation({
+        partnerId,
+        languageId,
+        description: description.trim(),
+      });
+    }
+
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'partner.profile_updated',
+      targetType: 'partner',
+      targetId: partnerId,
+      beforeSnapshot: { displayName: before.displayName },
+      afterSnapshot: { displayName: updated.displayName },
+    });
+
+    return description !== undefined
+      ? this.#partnerRepository.findByIdAdmin(partnerId)
+      : updated;
+  }
+
+  /**
+   * P1.3 (Master Roadmap) — logo/cover upload. Images only (unlike
+   * listings' media, which also accepts video/documents) — a company's
+   * visual identity assets, not its catalog content.
+   * @param {'logo'|'cover'} kind
+   * @param {Buffer} buffer
+   * @param {string} mimeType
+   */
+  async uploadCompanyMedia(principal, partnerId, kind, buffer, mimeType) {
+    await this.#assertCanManageProfile(principal, partnerId);
+    const partner = await this.#partnerRepository.findByIdAdmin(partnerId);
+    if (!partner) throw new NotFoundError('Partner not found.');
+
+    if (classifyMimeType(mimeType) !== 'image') {
+      throw new ValidationError(
+        'Logo/cover images must be JPEG, PNG, or WebP.',
+      );
+    }
+    if (!isWithinSizeLimit(mimeType, buffer.length)) {
+      throw new ValidationError('Image exceeds the maximum allowed size.');
+    }
+
+    const extension = mimeType.split('/')[1];
+    const key = `partners/${partnerId}/${kind}-${Date.now()}.${extension}`;
+    const { url } = await this.#storageProvider.put(key, buffer, {
+      contentType: mimeType,
+    });
+
+    const media = await this.#partnerRepository.insertMedia({
+      partnerId,
+      mimeType,
+      url,
+      fileSizeBytes: buffer.length,
+      ownerUserId: principal.userId,
+    });
+
+    const updated = await this.#partnerRepository.updateMedia(partnerId, {
+      [kind === 'logo' ? 'logoMediaId' : 'coverMediaId']: media.id,
+    });
+
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'partner.media_updated',
+      targetType: 'partner',
+      targetId: partnerId,
+      afterSnapshot: { kind, mediaId: media.id },
     });
 
     return updated;

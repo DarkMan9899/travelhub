@@ -107,6 +107,9 @@ const PartnerCalendarPage = lazy(
 const PartnerConnectionsPage = lazy(
   () => import('../pages/partner/PartnerConnectionsPage.jsx'),
 );
+const PartnerProfilePage = lazy(
+  () => import('../pages/partner/PartnerProfilePage.jsx'),
+);
 const PartnerNotificationsPage = lazy(
   () => import('../pages/partner/PartnerNotificationsPage.jsx'),
 );
@@ -360,6 +363,7 @@ export default function AppRoutes() {
               path="partner/connections"
               element={<PartnerConnectionsPage />}
             />
+            <Route path="partner/profile" element={<PartnerProfilePage />} />
             <Route
               path="partner/notifications"
               element={<PartnerNotificationsPage />}

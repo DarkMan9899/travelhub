@@ -60,7 +60,13 @@ function toPartnerDetailDomain(row) {
     email: row.email,
     phone: row.phone,
     website: row.website,
-    socialLinks: row.social_links ? JSON.parse(row.social_links) : {},
+    // mysql2 already deserializes a JSON-column value into a real JS
+    // object before it ever reaches this row — `JSON.parse` on top of
+    // that throws ("[object Object]" is not valid JSON) the first time
+    // this column is ever non-null (P1.3 is the first write path this
+    // column ever had; every prior read saw only NULL, so this bug was
+    // latent, never actually exercised, until now).
+    socialLinks: row.social_links ?? {},
   };
 }
 
@@ -92,9 +98,12 @@ function toPartnerAdminDetailDomain(row) {
   return {
     ...toPartnerAdminSummaryDomain(row),
     legalName: row.legal_name,
-    description: row.description,
     phone: row.phone,
     website: row.website,
+    coverUrl: row.cover_url,
+    // See `toPartnerDetailDomain`'s identical comment — mysql2 already
+    // deserializes this JSON column; parsing it again throws.
+    socialLinks: row.social_links ?? {},
     // P1.2 (Master Roadmap): the admin's feedback on a NEEDS_CHANGES (or
     // REJECTED) review decision — see updateVerificationStatus's own doc
     // comment for the full lifecycle.
@@ -104,11 +113,33 @@ function toPartnerAdminDetailDomain(row) {
     ownerEmail: row.owner_email,
     ownerFirstName: row.owner_first_name,
     ownerLastName: row.owner_last_name,
+    // P1.3 (Master Roadmap): attached by `findByIdAdmin` in a second
+    // query, never selected here — see `findTranslations`'s own comment.
+    translations: [],
   };
 }
 
+function toTranslationDomain(row) {
+  return {
+    id: row.id,
+    partnerId: row.partner_id,
+    languageId: row.language_id,
+    languageCode: row.language_code,
+    description: row.description,
+  };
+}
+
+// P1.3 (Master Roadmap): `p.description` was dropped in migration 0031
+// in favor of `partner_translations` (localized) — this "any available
+// description" subquery is the list/card-view fallback, mirroring
+// `mysqlListingRepository.js`'s identical `(SELECT title FROM
+// listing_translations ... ORDER BY language_id ASC LIMIT 1)` pattern
+// for list rows: real per-locale resolution only matters once a reader
+// is looking at ONE company's own page, not scanning a directory of
+// many — see `findPublicBySlug`'s own comment for that real resolution.
 const PUBLIC_SELECT_COLUMNS = `
-  p.id, p.slug, p.display_name, p.description, p.email, p.phone, p.website, p.social_links,
+  p.id, p.slug, p.display_name, p.email, p.phone, p.website, p.social_links,
+  (SELECT description FROM partner_translations WHERE partner_id = p.id ORDER BY language_id ASC LIMIT 1) AS description,
   p.created_at AS member_since,
   lm.url AS logo_url, cm.url AS cover_url, vms.code AS verification_status_code,
   (SELECT COUNT(*) FROM listings l
@@ -150,9 +181,9 @@ const ADMIN_SELECT_COLUMNS = `
   (SELECT COUNT(*) FROM listings l WHERE l.partner_id = p.id AND l.deleted_at IS NULL) AS listing_count
 `;
 const ADMIN_DETAIL_SELECT_COLUMNS = `
-  p.id, p.slug, p.legal_name, p.display_name, p.description, p.email, p.phone, p.website,
+  p.id, p.slug, p.legal_name, p.display_name, p.email, p.phone, p.website, p.social_links,
   p.review_note,
-  lm.url AS logo_url, vms.code AS verification_status_code, ms.code AS moderation_status_code,
+  lm.url AS logo_url, cm.url AS cover_url, vms.code AS verification_status_code, ms.code AS moderation_status_code,
   p.created_at,
   (SELECT COUNT(*) FROM listings l WHERE l.partner_id = p.id AND l.deleted_at IS NULL) AS total_listing_count,
   (SELECT COUNT(*) FROM listings l JOIN listing_statuses ls ON ls.id = l.status_id
@@ -244,6 +275,15 @@ export class MySqlPartnerRepository {
    * Phase 10. Returns `null` for an unknown/unapproved/deleted slug —
    * the Service maps that to a 404, same as `findBySlug` misses do
    * everywhere else in this codebase (listings, categories).
+   *
+   * P1.3 (Master Roadmap): unlike the "any available description"
+   * fallback on `PUBLIC_SELECT_COLUMNS` (fine for a directory card), a
+   * reader on the company's own page deserves the real, locale-aware
+   * text — so this attaches the FULL `translations` array (same
+   * two-query shape `mysqlListingRepository.js`'s `#assembleListing`
+   * uses for a single listing), leaving locale resolution to the
+   * frontend's `getLocalizedTranslation` util rather than threading a
+   * `?locale=` param through this read.
    * @param {string} slug
    */
   async findPublicBySlug(slug) {
@@ -253,7 +293,9 @@ export class MySqlPartnerRepository {
        LIMIT 1`,
       [slug],
     );
-    return rows[0] ? toPartnerDetailDomain(rows[0]) : null;
+    if (!rows[0]) return null;
+    const translations = await this.findTranslations(rows[0].id);
+    return { ...toPartnerDetailDomain(rows[0]), translations };
   }
 
   /**
@@ -328,7 +370,52 @@ export class MySqlPartnerRepository {
        LIMIT 1`,
       [id],
     );
-    return rows[0] ? toPartnerAdminDetailDomain(rows[0]) : null;
+    if (!rows[0]) return null;
+    const translations = await this.findTranslations(id, connection);
+    return { ...toPartnerAdminDetailDomain(rows[0]), translations };
+  }
+
+  /**
+   * P1.3 (Master Roadmap) — every localized description this partner
+   * has, one row per language it's been authored in (never all
+   * languages padded with empty rows) — mirrors
+   * `mysqlListingRepository.js`'s translation-array read exactly.
+   * @param {number} partnerId
+   * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} [connection]
+   */
+  async findTranslations(partnerId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT pt.id, pt.partner_id, pt.language_id, pt.description, lang.code AS language_code
+       FROM partner_translations pt
+       JOIN languages lang ON lang.id = pt.language_id
+       WHERE pt.partner_id = ?
+       ORDER BY pt.language_id ASC`,
+      [partnerId],
+    );
+    return rows.map(toTranslationDomain);
+  }
+
+  /**
+   * Upserts one language's description — `ON DUPLICATE KEY UPDATE`
+   * against `uq_partner_translations_partner_id_language_id`, mirroring
+   * `mysqlListingRepository.js#insertTranslation` exactly.
+   * @param {{partnerId: number, languageId: number, description: string|null}} data
+   * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} [connection]
+   */
+  async upsertTranslation(
+    { partnerId, languageId, description },
+    connection = this.#pool,
+  ) {
+    try {
+      await connection.query(
+        `INSERT INTO partner_translations (partner_id, language_id, description)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE description = VALUES(description)`,
+        [partnerId, languageId, description],
+      );
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
   }
 
   /**
@@ -347,6 +434,7 @@ export class MySqlPartnerRepository {
       displayName,
       slug,
       description,
+      languageId,
       email,
       phone,
       website,
@@ -357,9 +445,9 @@ export class MySqlPartnerRepository {
     try {
       const [result] = await connection.query(
         `INSERT INTO partners
-          (legal_name, display_name, slug, description, email, phone, website,
+          (legal_name, display_name, slug, email, phone, website,
            verification_status_id, moderation_status_id, owner_user_id, created_by, updated_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?,
+         VALUES (?, ?, ?, ?, ?, ?,
            (SELECT id FROM moderation_statuses WHERE code = 'DRAFT'),
            (SELECT id FROM moderation_statuses WHERE code = 'PENDING'),
            ?, ?, ?)`,
@@ -367,7 +455,6 @@ export class MySqlPartnerRepository {
           legalName,
           displayName,
           slug,
-          description ?? null,
           email ?? null,
           phone ?? null,
           website ?? null,
@@ -382,6 +469,12 @@ export class MySqlPartnerRepository {
          VALUES (?, ?, (SELECT id FROM partner_employee_roles WHERE code = 'OWNER'), ?, ?)`,
         [partnerId, ownerUserId, ownerUserId, ownerUserId],
       );
+      if (description) {
+        await this.upsertTranslation(
+          { partnerId, languageId, description },
+          connection,
+        );
+      }
       return this.findByIdAdmin(partnerId, connection);
     } catch (err) {
       throw mapMysqlError(err);
@@ -406,7 +499,7 @@ export class MySqlPartnerRepository {
    */
   async updateApplication(
     id,
-    { legalName, displayName, description, email, phone, website },
+    { legalName, displayName, description, languageId, email, phone, website },
     connection = this.#pool,
   ) {
     const assignments = [];
@@ -419,10 +512,6 @@ export class MySqlPartnerRepository {
       assignments.push('display_name = ?');
       values.push(displayName);
     }
-    if (description !== undefined) {
-      assignments.push('description = ?');
-      values.push(description);
-    }
     if (email !== undefined) {
       assignments.push('email = ?');
       values.push(email);
@@ -434,6 +523,12 @@ export class MySqlPartnerRepository {
     if (website !== undefined) {
       assignments.push('website = ?');
       values.push(website);
+    }
+    if (description !== undefined) {
+      await this.upsertTranslation(
+        { partnerId: id, languageId, description },
+        connection,
+      );
     }
     if (assignments.length === 0) return this.findByIdAdmin(id, connection);
     values.push(id);
@@ -496,6 +591,126 @@ export class MySqlPartnerRepository {
       [statusCode, id],
     );
     return this.findByIdAdmin(id);
+  }
+
+  /**
+   * P1.3 (Master Roadmap) — owner/staff edit of an APPROVED partner's
+   * public company identity. Unlike `updateApplication` (which the
+   * Service restricts to DRAFT/NEEDS_CHANGES applications), this has no
+   * status restriction of its own — `partnerService.js#assertCanManage
+   * Profile` is what gates who may call it, not this method. Adds
+   * `socialLinks` (JSON-stringified) support, which `updateApplication`
+   * never needed (the onboarding form has no social-links field).
+   */
+  async updateProfile(
+    id,
+    { displayName, email, phone, website, socialLinks },
+    connection = this.#pool,
+  ) {
+    const assignments = [];
+    const values = [];
+    if (displayName !== undefined) {
+      assignments.push('display_name = ?');
+      values.push(displayName);
+    }
+    if (email !== undefined) {
+      assignments.push('email = ?');
+      values.push(email);
+    }
+    if (phone !== undefined) {
+      assignments.push('phone = ?');
+      values.push(phone);
+    }
+    if (website !== undefined) {
+      assignments.push('website = ?');
+      values.push(website);
+    }
+    if (socialLinks !== undefined) {
+      assignments.push('social_links = ?');
+      values.push(JSON.stringify(socialLinks));
+    }
+    if (assignments.length === 0) return this.findByIdAdmin(id, connection);
+    values.push(id);
+    await connection.query(
+      `UPDATE partners SET ${assignments.join(', ')} WHERE id = ?`,
+      values,
+    );
+    return this.findByIdAdmin(id, connection);
+  }
+
+  /**
+   * P1.3 — points `logo_media_id`/`cover_media_id` at a freshly uploaded
+   * `media` row. Only the one kind being replaced is touched (partial
+   * update, same `undefined` = leave unchanged convention as every other
+   * write in this repository).
+   * @param {{logoMediaId?: number, coverMediaId?: number}} fields
+   */
+  async updateMedia(
+    id,
+    { logoMediaId, coverMediaId },
+    connection = this.#pool,
+  ) {
+    const assignments = [];
+    const values = [];
+    if (logoMediaId !== undefined) {
+      assignments.push('logo_media_id = ?');
+      values.push(logoMediaId);
+    }
+    if (coverMediaId !== undefined) {
+      assignments.push('cover_media_id = ?');
+      values.push(coverMediaId);
+    }
+    if (assignments.length === 0) return this.findByIdAdmin(id, connection);
+    values.push(id);
+    await connection.query(
+      `UPDATE partners SET ${assignments.join(', ')} WHERE id = ?`,
+      values,
+    );
+    return this.findByIdAdmin(id, connection);
+  }
+
+  /**
+   * P1.3 — inserts the `media` row a logo/cover upload points to.
+   * `mediable_type = 'partner'` for provenance even though no query
+   * currently joins back by it (`partners.logo_media_id`/`cover_media_id`
+   * are direct soft references, same as `mysqlListingRepository.js#
+   * attachMedia`'s `mediable_type = 'listing'` precedent).
+   * `moderation_status_id` starts APPROVED, not PENDING — a partner's own
+   * logo/cover is their direct upload of their own identity, not
+   * user-generated content awaiting review (unlike a listing photo).
+   */
+  async insertMedia(
+    { partnerId, mimeType, url, fileSizeBytes, ownerUserId },
+    connection = this.#pool,
+  ) {
+    try {
+      const [result] = await connection.query(
+        `INSERT INTO media
+          (mediable_type, mediable_id, media_type_id, url, upload_status_id, moderation_status_id, mime_type, file_size_bytes, owner_user_id, created_by, updated_by)
+         VALUES ('partner', ?,
+           (SELECT id FROM media_types WHERE code = 'IMAGE'),
+           ?,
+           (SELECT id FROM media_upload_statuses WHERE code = 'COMPLETED'),
+           (SELECT id FROM moderation_statuses WHERE code = 'APPROVED'),
+           ?, ?, ?, ?, ?)`,
+        [
+          partnerId,
+          url,
+          mimeType,
+          fileSizeBytes,
+          ownerUserId,
+          ownerUserId,
+          ownerUserId,
+        ],
+      );
+      const [[media]] = await connection.query(
+        'SELECT id, url FROM media WHERE id = ?',
+        [result.insertId],
+      );
+      return media;
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
   }
 
   /**

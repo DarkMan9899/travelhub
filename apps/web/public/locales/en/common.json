@@ -674,12 +674,55 @@
       "bookings": "Bookings",
       "calendar": "Calendar",
       "connections": "Connections",
+      "profile": "Company profile",
       "messages": "Messages",
       "notifications": "Notifications",
       "aiUsage": "AI Usage"
     },
     "aiUsage": {
       "heading": "AI Usage"
+    },
+    "profile": {
+      "heading": "Company profile",
+      "error": {
+        "title": "We couldn't load your company profile.",
+        "retry": "Try again"
+      },
+      "sections": {
+        "media": "Logo & cover image",
+        "identity": "Company identity",
+        "social": "Social links"
+      },
+      "fields": {
+        "displayNameLabel": "Public business name",
+        "descriptionLabel": "About your business",
+        "descriptionHelper": "Shown on your public company page in the language you're currently viewing this dashboard in.",
+        "emailLabel": "Business email",
+        "phoneLabel": "Business phone",
+        "websiteLabel": "Website"
+      },
+      "validation": {
+        "displayNameRequired": "Public business name is required.",
+        "emailInvalid": "Enter a valid email address.",
+        "websiteInvalid": "Enter a valid URL, starting with https://."
+      },
+      "social": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "x": "X (Twitter)",
+        "youtube": "YouTube",
+        "tiktok": "TikTok",
+        "linkedin": "LinkedIn"
+      },
+      "uploadLogo": "Upload logo",
+      "uploadCover": "Upload cover image",
+      "uploadValidationError": "Please choose a JPEG, PNG, or WebP image under 10 MB.",
+      "uploadError": "Something went wrong uploading the image. Please try again.",
+      "logoUploadSuccess": "Logo updated.",
+      "coverUploadSuccess": "Cover image updated.",
+      "saveAction": "Save changes",
+      "saveSuccess": "Company profile updated.",
+      "saveError": "Something went wrong. Please try again."
     },
     "dashboard": {
       "greeting": "Welcome back, {{name}}",

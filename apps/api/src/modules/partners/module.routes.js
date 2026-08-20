@@ -10,8 +10,9 @@
  * `:slug = "mine"`.
  */
 
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { validate } from '../../validation/validate.js';
+import { ALLOWED_IMAGE_MIME_TYPES } from '../media/validators/mediaConstraints.js';
 import {
   listPublicPartnersQuerySchema,
   partnerSlugParamsSchema,
@@ -22,6 +23,7 @@ import {
   updateModerationStatusSchema,
   createApplicationSchema,
   updateApplicationSchema,
+  updateProfileSchema,
 } from './validators/partnerValidators.js';
 
 export default function createPartnerRoutes({ partnerController, guards }) {
@@ -67,6 +69,42 @@ export default function createPartnerRoutes({ partnerController, guards }) {
     requireAuth,
     validate(partnerIdParamsSchema),
     partnerController.submitMyApplication,
+  );
+
+  // P1.3 (Master Roadmap) — owner/staff company-profile management, for
+  // an already-APPROVED partner (unlike `/applications/*` above, which
+  // is scoped to an in-progress application). `PartnerService#assertCan
+  // ManageProfile` (owner bypass + `MANAGE_COMPANY_PROFILE` capability)
+  // does the real authorization; `requireAuth` here is just the
+  // fast-fail layer, same defense-in-depth convention as `/admin/*`.
+  router.get(
+    '/:id/profile',
+    requireAuth,
+    validate(partnerIdParamsSchema),
+    partnerController.getMyCompanyProfile,
+  );
+  router.patch(
+    '/:id/profile',
+    requireAuth,
+    validate(updateProfileSchema),
+    partnerController.updateMyCompanyProfile,
+  );
+  router.post(
+    '/:id/logo',
+    requireAuth,
+    // Scoped to this one route only, same pattern as the listings
+    // module's media upload — the global body parser skips non-JSON
+    // content-types.
+    express.raw({ type: ALLOWED_IMAGE_MIME_TYPES, limit: '10mb' }),
+    validate(partnerIdParamsSchema),
+    partnerController.uploadCompanyLogo,
+  );
+  router.post(
+    '/:id/cover',
+    requireAuth,
+    express.raw({ type: ALLOWED_IMAGE_MIME_TYPES, limit: '10mb' }),
+    validate(partnerIdParamsSchema),
+    partnerController.uploadCompanyCover,
   );
 
   // Phase 11 Admin Platform — registered before `/:slug` (same reason

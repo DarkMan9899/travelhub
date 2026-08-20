@@ -30,7 +30,29 @@ export function toPartnerSummaryResponse(partner) {
   };
 }
 
-/** Company profile — Phase 10. Additive to the summary shape above. */
+/**
+ * Localized-translation rows — shared shape between the public detail
+ * response and the owner/admin detail response below, matching
+ * `listingDto.js`'s `toTranslationResponse` field names exactly so the
+ * frontend's one `getLocalizedTranslation` util works against either.
+ */
+function toTranslationResponse(translation) {
+  return {
+    language_id: translation.languageId,
+    language_code: translation.languageCode,
+    description: translation.description,
+  };
+}
+
+/**
+ * Company profile — Phase 10. Additive to the summary shape above.
+ * P1.3 (Master Roadmap): `translations` is the real, locale-aware
+ * source of truth for `description` — `description` itself (inherited
+ * from `toPartnerSummaryResponse`) stays as the "any available"
+ * fallback a directory card snippet is fine with; a reader on the
+ * company's own page should resolve `translations` instead (see
+ * `getLocalizedTranslation`, reused from the listings module).
+ */
 export function toPartnerDetailResponse(partner) {
   return {
     ...toPartnerSummaryResponse(partner),
@@ -38,6 +60,7 @@ export function toPartnerDetailResponse(partner) {
     phone: partner.phone,
     website: partner.website,
     social_links: partner.socialLinks,
+    translations: (partner.translations ?? []).map(toTranslationResponse),
   };
 }
 
@@ -56,17 +79,28 @@ export function toAdminPartnerSummaryResponse(partner) {
   };
 }
 
-/** Stage 11.2 admin detail — additive to the admin summary shape above. Also the shape returned by every P1.2 self-service application endpoint (same underlying repository read, owner-gated instead of permission-gated). */
+/**
+ * Stage 11.2 admin detail — additive to the admin summary shape above.
+ * Also the shape returned by every P1.2 self-service application
+ * endpoint AND P1.3's owner/staff company-profile endpoints (same
+ * underlying repository read, owner/staff-gated or permission-gated
+ * depending on the route). P1.3: `description` (flat) dropped in favor
+ * of `translations`, `cover_url`/`social_links` added — an approved
+ * partner's profile editor needs both, and the P1.2 admin review UI
+ * never rendered `description` in the first place (nothing to break).
+ */
 export function toAdminPartnerDetailResponse(partner) {
   return {
     ...toAdminPartnerSummaryResponse(partner),
     legal_name: partner.legalName,
-    description: partner.description,
     phone: partner.phone,
     website: partner.website,
+    cover_url: partner.coverUrl,
+    social_links: partner.socialLinks,
     review_note: partner.reviewNote ?? null,
     total_listing_count: partner.totalListingCount,
     published_listing_count: partner.publishedListingCount,
+    translations: (partner.translations ?? []).map(toTranslationResponse),
     owner: partner.ownerEmail
       ? {
           email: partner.ownerEmail,

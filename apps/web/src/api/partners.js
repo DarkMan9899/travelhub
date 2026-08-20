@@ -105,6 +105,57 @@ export function submitPartnerApplication(id) {
 }
 
 /**
+ * P1.3 (Master Roadmap) — owner/staff company-profile management for an
+ * already-APPROVED partner, all under `/partners/:id/*`. Any active
+ * partner_employees member may read; only OWNER or a role granted
+ * `MANAGE_COMPANY_PROFILE` may write (enforced server-side in
+ * `partnerService.js#assertCanManageProfile` — never just by hiding a
+ * button here).
+ */
+
+/** `GET /partners/:id/profile` — the caller's own company profile (any status). */
+export function getMyCompanyProfile(id) {
+  return apiClient
+    .get(`/partners/${id}/profile`)
+    .then((response) => response.data);
+}
+
+/**
+ * `PATCH /partners/:id/profile` — `displayName`/`email`/`phone`/
+ * `website`/`socialLinks` update anytime; `description` requires
+ * `locale` alongside it (which `partner_translations` row to write —
+ * see `partnerValidators.js`'s `updateProfileSchema`).
+ */
+export function updateMyCompanyProfile(id, data) {
+  return apiClient
+    .patch(`/partners/${id}/profile`, data)
+    .then((response) => response.data);
+}
+
+/**
+ * `POST /partners/:id/logo` / `/cover` — raw binary body, same
+ * one-request-per-file convention as `attachListingMedia`.
+ * @param {number} id
+ * @param {File} file
+ */
+export function uploadCompanyLogo(id, file) {
+  return apiClient
+    .post(`/partners/${id}/logo`, file, {
+      headers: { 'Content-Type': file.type },
+    })
+    .then((response) => response.data);
+}
+
+/** @param {number} id @param {File} file */
+export function uploadCompanyCover(id, file) {
+  return apiClient
+    .post(`/partners/${id}/cover`, file, {
+      headers: { 'Content-Type': file.type },
+    })
+    .then((response) => response.data);
+}
+
+/**
  * Stage 11.2 (Partner Management) — admin-scoped endpoints, all under
  * `/partners/admin/*`. Requires `partner.verify` or `partner.moderate`
  * for reads, the specific one for each write (see

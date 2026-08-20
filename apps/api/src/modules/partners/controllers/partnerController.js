@@ -12,6 +12,7 @@ import {
   toAdminPartnerSummaryResponse,
   toAdminPartnerDetailResponse,
 } from '../dto/partnerDto.js';
+import { ValidationError } from '../../../errors/AppError.js';
 
 export function createPartnerController(partnerService) {
   return {
@@ -236,6 +237,96 @@ export function createPartnerController(partnerService) {
           req.principal,
           id,
           status,
+        );
+        res.status(200).json({
+          success: true,
+          data: toAdminPartnerDetailResponse(partner),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    // P1.3 (Master Roadmap) — owner/staff company-profile management.
+    async getMyCompanyProfile(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const partner = await partnerService.getMyCompanyProfile(
+          req.principal,
+          id,
+        );
+        res.status(200).json({
+          success: true,
+          data: toAdminPartnerDetailResponse(partner),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async updateMyCompanyProfile(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const partner = await partnerService.updateMyCompanyProfile(
+          req.principal,
+          id,
+          req.validated.body,
+        );
+        res.status(200).json({
+          success: true,
+          data: toAdminPartnerDetailResponse(partner),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async uploadCompanyLogo(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const buffer = req.body;
+        const mimeType = req.headers['content-type'];
+        if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+          throw new ValidationError('Request body must be a non-empty file.');
+        }
+        const partner = await partnerService.uploadCompanyMedia(
+          req.principal,
+          id,
+          'logo',
+          buffer,
+          mimeType,
+        );
+        res.status(200).json({
+          success: true,
+          data: toAdminPartnerDetailResponse(partner),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async uploadCompanyCover(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const buffer = req.body;
+        const mimeType = req.headers['content-type'];
+        if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+          throw new ValidationError('Request body must be a non-empty file.');
+        }
+        const partner = await partnerService.uploadCompanyMedia(
+          req.principal,
+          id,
+          'cover',
+          buffer,
+          mimeType,
         );
         res.status(200).json({
           success: true,

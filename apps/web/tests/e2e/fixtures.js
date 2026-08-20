@@ -16,26 +16,38 @@
 import { test as base, expect, request } from '@playwright/test';
 import Redis from 'ioredis';
 
+/**
+ * Shared by the autouse `page` fixture below AND callable directly from
+ * inside a spec — a handful of specs (e.g. `partnerProfile.spec.js`'s
+ * happy path: register -> admin login -> owner re-login, all against the
+ * `sensitive` tier's real 10/min production ceiling) legitimately chain
+ * enough auth calls within ONE test to exhaust a budget that's only ever
+ * flushed once, at that test's start.
+ */
+export async function resetRateLimits() {
+  const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+  });
+  try {
+    await redis.connect();
+    const keys = (
+      await Promise.all([
+        redis.keys('ratelimit:*'),
+        redis.keys('session:login_attempts:*'),
+      ])
+    ).flat();
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } finally {
+    redis.disconnect();
+  }
+}
+
 export const test = base.extend({
   page: async ({ page }, use) => {
-    const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
-      lazyConnect: true,
-      maxRetriesPerRequest: 1,
-    });
-    try {
-      await redis.connect();
-      const keys = (
-        await Promise.all([
-          redis.keys('ratelimit:*'),
-          redis.keys('session:login_attempts:*'),
-        ])
-      ).flat();
-      if (keys.length > 0) {
-        await redis.del(...keys);
-      }
-    } finally {
-      redis.disconnect();
-    }
+    await resetRateLimits();
     await use(page);
   },
 });

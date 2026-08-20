@@ -30,12 +30,26 @@ import { Icon } from '@travelhub/ui/components/primitives';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
+import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';
 import { useCompanyQuery } from '../../queries/useCompanyQuery.js';
 import {
   useSearchListingsQuery,
   SearchResultCard,
 } from '../../../search/index.js';
 import styles from './CompanyProfilePageContent.module.scss';
+
+// Brand names, not translated content — same convention as leaving
+// "Facebook"/"Instagram" untranslated on `PartnerProfilePageContent`'s
+// own edit form (`partner.profile.social.*`'s own strings are the
+// identical brand names in every locale, for the same reason).
+const SOCIAL_PLATFORM_LABELS = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  x: 'X (Twitter)',
+  youtube: 'YouTube',
+  tiktok: 'TikTok',
+  linkedin: 'LinkedIn',
+};
 
 export default function CompanyProfilePageContent() {
   const { t } = useTranslation();
@@ -56,6 +70,20 @@ export default function CompanyProfilePageContent() {
   );
   const listings = listingsData?.pages[0]?.results ?? [];
 
+  // P1.3 (Master Roadmap): `description` moved from a flat column to
+  // `partner_translations` — resolved for the current locale via the
+  // same `getLocalizedTranslation` util listings use, falling back to
+  // the "any available" flat `description` (Companies-directory-card
+  // fallback — see `mysqlPartnerRepository.js`'s own comment) only if
+  // no translation matched at all.
+  const description =
+    getLocalizedTranslation(company?.translations, locale)?.description ||
+    company?.description ||
+    '';
+  const socialLinks = Object.entries(company?.social_links ?? {}).filter(
+    ([, url]) => url,
+  );
+
   const canonicalPath = `companies/${slug}`;
   const breadcrumbItems = company
     ? [
@@ -67,7 +95,7 @@ export default function CompanyProfilePageContent() {
 
   useSeo({
     title: company ? `${company.display_name} | ${t('app.name')}` : undefined,
-    description: company?.description || t('seo.companies.description'),
+    description: description || t('seo.companies.description'),
     locale,
     path: company ? canonicalPath : undefined,
     noindex: !company,
@@ -141,9 +169,7 @@ export default function CompanyProfilePageContent() {
                 </span>
               )}
             </Inline>
-            {company.description && (
-              <p className={styles.description}>{company.description}</p>
-            )}
+            {description && <p className={styles.description}>{description}</p>}
           </div>
         </div>
       </div>
@@ -173,6 +199,23 @@ export default function CompanyProfilePageContent() {
               {company.website}
             </a>
           )}
+        </Inline>
+      )}
+
+      {socialLinks.length > 0 && (
+        <Inline gap="6" className={styles.contactRow}>
+          {socialLinks.map(([platform, url]) => (
+            <a
+              key={platform}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.contactLink}
+            >
+              <Icon icon={Globe} size="sm" />
+              {SOCIAL_PLATFORM_LABELS[platform] ?? platform}
+            </a>
+          ))}
         </Inline>
       )}
 

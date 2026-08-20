@@ -59,6 +59,30 @@ describe('toPartnerDetailResponse', () => {
       phone: '+37411000000',
       website: 'https://example.com',
       social_links: { instagram: 'https://instagram.com/example' },
+      translations: [],
     });
+  });
+
+  // P1.3 (Master Roadmap): the real, locale-aware source of truth for
+  // `description` — the flat `description` field above stays only as
+  // the "any available" directory-card fallback (see
+  // `mysqlPartnerRepository.js`'s own comment on that subquery).
+  test('P1.3: maps translations to the public response shape', () => {
+    const response = toPartnerDetailResponse({
+      ...SUMMARY_DOMAIN,
+      email: 'hello@example.com',
+      phone: '+37411000000',
+      website: 'https://example.com',
+      socialLinks: {},
+      translations: [
+        { languageId: 1, languageCode: 'en', description: 'In English.' },
+        { languageId: 2, languageCode: 'hy', description: 'Հայերենով.' },
+      ],
+    });
+
+    expect(response.translations).toEqual([
+      { language_id: 1, language_code: 'en', description: 'In English.' },
+      { language_id: 2, language_code: 'hy', description: 'Հայերենով.' },
+    ]);
   });
 });

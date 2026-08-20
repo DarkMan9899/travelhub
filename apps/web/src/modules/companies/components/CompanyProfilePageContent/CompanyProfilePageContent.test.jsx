@@ -91,6 +91,40 @@ describe('CompanyProfilePageContent (apps/web/src/modules/companies)', () => {
     ).not.toBeInTheDocument();
   });
 
+  test('P1.3: prefers the locale-matched translation over the flat fallback description, and renders social links', () => {
+    useCompanyQuery.mockReturnValue({
+      data: {
+        ...COMPANY,
+        description: 'Any-locale fallback text.',
+        translations: [
+          {
+            language_id: 2,
+            language_code: 'hy',
+            description: 'Հայերեն նկարագրություն',
+          },
+        ],
+        social_links: { facebook: 'https://facebook.com/yerevan-boutique' },
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useSearchListingsQuery.mockReturnValue({
+      data: { pages: [{ results: [] }] },
+    });
+    renderPage();
+
+    expect(screen.getByText('Հայերեն նկարագրություն')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Any-locale fallback text.'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Facebook/ })).toHaveAttribute(
+      'href',
+      'https://facebook.com/yerevan-boutique',
+    );
+  });
+
   test('renders the company listings, reusing SearchResultCard', () => {
     useCompanyQuery.mockReturnValue({
       data: COMPANY,

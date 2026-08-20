@@ -9,6 +9,7 @@
 import { MySqlPartnerRepository } from './repositories/mysqlPartnerRepository.js';
 import { PartnerService } from './services/partnerService.js';
 import { createPartnerController } from './controllers/partnerController.js';
+import { createStorageProvider } from '../../infrastructure/storage/createStorageProvider.js';
 
 export default function createPartnersContainer({
   permissionResolver,
@@ -16,11 +17,15 @@ export default function createPartnersContainer({
   eventBus,
 } = {}) {
   const partnerRepository = new MySqlPartnerRepository();
+  // P1.3 (Master Roadmap) — logo/cover upload, same self-contained
+  // factory call as the listings module's own container.
+  const storageProvider = createStorageProvider();
   const partnerService = new PartnerService({
     partnerRepository,
     permissionResolver,
     auditLogger,
     eventBus,
+    storageProvider,
   });
   const partnerController = createPartnerController(partnerService);
 

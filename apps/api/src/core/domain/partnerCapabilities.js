@@ -24,14 +24,21 @@ export const PARTNER_CAPABILITIES = Object.freeze({
   MANAGE_MANUAL_BLOCKS: 'MANAGE_MANUAL_BLOCKS',
   MANAGE_CONNECTIONS: 'MANAGE_CONNECTIONS',
   VIEW_SYNC_LOGS: 'VIEW_SYNC_LOGS',
+  // P1.3 (Master Roadmap): editing the partner's PUBLIC company identity
+  // (name, description, logo/cover, contact/social links) — kept
+  // OWNER/MANAGER only, same trust tier as MANAGE_CONNECTIONS, not
+  // extended to BOOKING_MANAGER/EDITOR: those roles operate day-to-day
+  // inventory, not the org's public-facing identity.
+  MANAGE_COMPANY_PROFILE: 'MANAGE_COMPANY_PROFILE',
 });
 
 // Role -> the set of capabilities it grants, beyond OWNER's implicit
 // all-access bypass. `MANAGER` mirrors OWNER for inventory purposes
 // (day-to-day operational trust); `BOOKING_MANAGER` gets everything
-// operational but never `MANAGE_CONNECTIONS` (connector credentials are
-// a more sensitive, less-frequently-changed setting, kept OWNER/MANAGER
-// only); `EDITOR`/`ANALYTICS_VIEWER` are read-only here.
+// operational but never `MANAGE_CONNECTIONS`/`MANAGE_COMPANY_PROFILE`
+// (connector credentials and public company identity are both more
+// sensitive, less-frequently-changed settings, kept OWNER/MANAGER only);
+// `EDITOR`/`ANALYTICS_VIEWER` are read-only here.
 const ROLE_CAPABILITIES = Object.freeze({
   MANAGER: Object.freeze([
     PARTNER_CAPABILITIES.VIEW_AVAILABILITY,
@@ -40,6 +47,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     PARTNER_CAPABILITIES.MANAGE_MANUAL_BLOCKS,
     PARTNER_CAPABILITIES.MANAGE_CONNECTIONS,
     PARTNER_CAPABILITIES.VIEW_SYNC_LOGS,
+    PARTNER_CAPABILITIES.MANAGE_COMPANY_PROFILE,
   ]),
   BOOKING_MANAGER: Object.freeze([
     PARTNER_CAPABILITIES.VIEW_AVAILABILITY,

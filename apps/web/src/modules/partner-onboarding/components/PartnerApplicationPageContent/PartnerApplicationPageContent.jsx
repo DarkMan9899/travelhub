@@ -40,6 +40,7 @@ import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import useNoIndex from '../../../../seo/useNoIndex.js';
 import { submitPartnerApplication } from '../../../../api/partners.js';
+import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';
 import onboardingKeys from '../../constants/queryKeys.js';
 import { useMyApplicationsQuery } from '../../queries/useMyApplicationsQuery.js';
 import { useApplicationQuery } from '../../queries/useApplicationQuery.js';
@@ -230,14 +231,21 @@ ApplicationForm.propTypes = {
   isSubmitting: PropTypes.bool.isRequired,
 };
 
-function toFormValues(application) {
+// P1.3 (Master Roadmap): `description` moved from a flat column to
+// `partner_translations` (localized) — resolved here via the shared
+// `getLocalizedTranslation` util (same one the public company page
+// uses), never a raw `application.description` field, which no longer
+// exists on the response at all.
+function toFormValues(application, locale) {
   return {
     displayName: application?.display_name ?? '',
     legalName: application?.legal_name ?? '',
     email: application?.email ?? '',
     phone: application?.phone ?? '',
     website: application?.website ?? '',
-    description: application?.description ?? '',
+    description:
+      getLocalizedTranslation(application?.translations, locale)?.description ??
+      '',
   };
 }
 
@@ -393,7 +401,7 @@ export default function PartnerApplicationPageContent() {
                 <Skeleton variant="text" width="100%" />
               ) : (
                 <ApplicationForm
-                  defaultValues={toFormValues(application)}
+                  defaultValues={toFormValues(application, locale)}
                   readOnly={readOnly}
                   onSaveDraft={(values) => handleSaveDraft(values)}
                   onSubmitForReview={(values) => handleSubmitForReview(values)}

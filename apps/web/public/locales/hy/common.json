@@ -674,12 +674,55 @@
       "bookings": "Ամրագրումներ",
       "calendar": "Օրացույց",
       "connections": "Կապակցումներ",
+      "profile": "Ընկերության պրոֆիլ",
       "messages": "Հաղորդագրություններ",
       "notifications": "Ծանուցումներ",
       "aiUsage": "AI օգտագործում"
     },
     "aiUsage": {
       "heading": "AI օգտագործում"
+    },
+    "profile": {
+      "heading": "Ընկերության պրոֆիլ",
+      "error": {
+        "title": "Չհաջողվեց բեռնել ձեր ընկերության պրոֆիլը։",
+        "retry": "Կրկին փորձել"
+      },
+      "sections": {
+        "media": "Լոգո և կազմի պատկեր",
+        "identity": "Ընկերության ինքնություն",
+        "social": "Սոցիալական հղումներ"
+      },
+      "fields": {
+        "displayNameLabel": "Հանրային բիզնես անվանում",
+        "descriptionLabel": "Ձեր բիզնեսի մասին",
+        "descriptionHelper": "Ցուցադրվում է ձեր հանրային ընկերության էջում այն լեզվով, որով ներկայումս դիտում եք այս վահանակը։",
+        "emailLabel": "Բիզնես էլ. փոստ",
+        "phoneLabel": "Բիզնես հեռախոս",
+        "websiteLabel": "Կայք"
+      },
+      "validation": {
+        "displayNameRequired": "Հանրային բիզնես անվանումը պարտադիր է։",
+        "emailInvalid": "Մուտքագրեք վավեր էլ. փոստի հասցե։",
+        "websiteInvalid": "Մուտքագրեք վավեր URL՝ սկսվող https://-ով։"
+      },
+      "social": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "x": "X (Twitter)",
+        "youtube": "YouTube",
+        "tiktok": "TikTok",
+        "linkedin": "LinkedIn"
+      },
+      "uploadLogo": "Վերբեռնել լոգո",
+      "uploadCover": "Վերբեռնել կազմի պատկեր",
+      "uploadValidationError": "Խնդրում ենք ընտրել JPEG, PNG կամ WebP պատկեր՝ մինչև 10 ՄԲ։",
+      "uploadError": "Պատկերը վերբեռնելիս ինչ-որ բան այն չգնաց։ Խնդրում ենք կրկին փորձել։",
+      "logoUploadSuccess": "Լոգոն թարմացվել է։",
+      "coverUploadSuccess": "Կազմի պատկերը թարմացվել է։",
+      "saveAction": "Պահպանել փոփոխությունները",
+      "saveSuccess": "Ընկերության պրոֆիլը թարմացվել է։",
+      "saveError": "Ինչ-որ բան այն չգնաց։ Խնդրում ենք կրկին փորձել։"
     },
     "dashboard": {
       "greeting": "Բարի վերադարձ, {{name}}",

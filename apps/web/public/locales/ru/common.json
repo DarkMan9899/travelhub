@@ -674,12 +674,55 @@
       "bookings": "Бронирования",
       "calendar": "Календарь",
       "connections": "Подключения",
+      "profile": "Профиль компании",
       "messages": "Сообщения",
       "notifications": "Уведомления",
       "aiUsage": "Использование ИИ"
     },
     "aiUsage": {
       "heading": "Использование ИИ"
+    },
+    "profile": {
+      "heading": "Профиль компании",
+      "error": {
+        "title": "Не удалось загрузить профиль вашей компании.",
+        "retry": "Повторить"
+      },
+      "sections": {
+        "media": "Логотип и обложка",
+        "identity": "Идентичность компании",
+        "social": "Социальные сети"
+      },
+      "fields": {
+        "displayNameLabel": "Публичное название компании",
+        "descriptionLabel": "О вашем бизнесе",
+        "descriptionHelper": "Отображается на вашей публичной странице компании на том языке, на котором вы сейчас просматриваете эту панель.",
+        "emailLabel": "Рабочий email",
+        "phoneLabel": "Рабочий телефон",
+        "websiteLabel": "Сайт"
+      },
+      "validation": {
+        "displayNameRequired": "Публичное название компании обязательно.",
+        "emailInvalid": "Введите корректный email-адрес.",
+        "websiteInvalid": "Введите корректный URL, начинающийся с https://."
+      },
+      "social": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "x": "X (Twitter)",
+        "youtube": "YouTube",
+        "tiktok": "TikTok",
+        "linkedin": "LinkedIn"
+      },
+      "uploadLogo": "Загрузить логотип",
+      "uploadCover": "Загрузить обложку",
+      "uploadValidationError": "Пожалуйста, выберите изображение JPEG, PNG или WebP размером до 10 МБ.",
+      "uploadError": "Что-то пошло не так при загрузке изображения. Пожалуйста, попробуйте снова.",
+      "logoUploadSuccess": "Логотип обновлён.",
+      "coverUploadSuccess": "Обложка обновлена.",
+      "saveAction": "Сохранить изменения",
+      "saveSuccess": "Профиль компании обновлён.",
+      "saveError": "Что-то пошло не так. Пожалуйста, попробуйте снова."
     },
     "dashboard": {
       "greeting": "С возвращением, {{name}}",

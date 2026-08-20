@@ -101,3 +101,48 @@ export const updateModerationStatusSchema = z.object({
     status: z.enum(['APPROVED', 'FLAGGED']),
   }),
 });
+
+// P1.3 (Master Roadmap) — owner/staff company-profile editing. Fixed,
+// known social-platform keys rather than an arbitrary-key record: this
+// schema's `partners.social_links` column doc comment ("Map of platform
+// -> URL") already implies a bounded vocabulary, and an unbounded record
+// would let a caller stuff arbitrary keys into a column every reader
+// (public profile page, future admin tooling) assumes has a known shape.
+const socialLinksSchema = z
+  .object({
+    facebook: z.string().trim().url().max(255).optional().or(z.literal('')),
+    instagram: z.string().trim().url().max(255).optional().or(z.literal('')),
+    x: z.string().trim().url().max(255).optional().or(z.literal('')),
+    youtube: z.string().trim().url().max(255).optional().or(z.literal('')),
+    tiktok: z.string().trim().url().max(255).optional().or(z.literal('')),
+    linkedin: z.string().trim().url().max(255).optional().or(z.literal('')),
+  })
+  .strict();
+
+export const updateProfileSchema = z.object({
+  params: z.object({ id: z.coerce.number().int().positive() }),
+  query: passthroughQuery,
+  body: z
+    .object({
+      displayName: z.string().trim().min(1).max(255).optional(),
+      email: z.string().trim().email().max(255).optional().or(z.literal('')),
+      phone: z.string().trim().max(30).optional(),
+      website: z.string().trim().url().max(255).optional().or(z.literal('')),
+      description: z.string().trim().max(5000).optional(),
+      // Which language `description` is written in — the dashboard's own
+      // current UI locale, matching `LANGUAGE_ID_BY_LOCALE`'s existing
+      // frontend convention (`modules/listings/constants/languageIds.js`).
+      // Required only when `description` is present — enforced below via
+      // `.refine`, not `.min(1)` on the field itself, since every other
+      // field may be updated with no `description` in the same request.
+      locale: z.enum(['en', 'hy', 'ru']).optional(),
+      socialLinks: socialLinksSchema.optional(),
+    })
+    .refine(
+      (body) => body.description === undefined || body.locale !== undefined,
+      {
+        message: 'locale is required when description is present.',
+        path: ['locale'],
+      },
+    ),
+});
