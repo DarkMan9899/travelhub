@@ -1,13 +1,64 @@
 import {
   NotFoundError,
+  AuthenticationError,
   AuthorizationError,
   ValidationError,
+  ConflictError,
 } from '../../../errors/AppError.js';
 import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
+import { withTransaction } from '../../../infrastructure/database/transaction.js';
+import { isPartnerOwner } from '../../../infrastructure/database/repositories/partnerEmployeeRepository.js';
+import { slugify } from '../../../core/domain/slugify.js';
 
-const VERIFICATION_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'];
+// P1.2 (Master Roadmap) — DRAFT/NEEDS_CHANGES are the two codes added to
+// the shared moderation_statuses lookup for self-service onboarding (see
+// seeds/001_lookups.js's own comment); PENDING/APPROVED/REJECTED already
+// existed. `updateVerificationStatus` (admin-only) only accepts the
+// three admin-facing outcomes below — DRAFT is owner-only (set at
+// creation) and reached again only implicitly, never admin-settable.
+const VERIFICATION_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'NEEDS_CHANGES',
+];
+// Pre-existing, tested admin behavior (adminPartnerManagement.test.js):
+// PENDING/APPROVED/REJECTED are freely inter-transitionable at any
+// time — an admin can re-approve a previously-rejected partner, or
+// reject an already-approved one after a later-discovered issue. That
+// permissiveness predates NEEDS_CHANGES and must not regress just
+// because a stricter state machine would read more cleanly. What IS
+// new and real: an application still in DRAFT (never submitted) or
+// NEEDS_CHANGES (currently in the applicant's own court, not the
+// admin's) is never something an admin "reviews" — and NEEDS_CHANGES
+// itself is only ever reachable from PENDING, since it didn't exist
+// before and has no legacy behavior to preserve.
+const UNREVIEWABLE_STATUSES = ['DRAFT', 'NEEDS_CHANGES'];
+// An owner may only edit/submit their OWN application while it's
+// actually theirs to change — never once it's under review or already
+// resolved.
+const OWNER_EDITABLE_STATUSES = ['DRAFT', 'NEEDS_CHANGES'];
+// A user may not start a second application while one is already
+// in-flight (DRAFT/PENDING/NEEDS_CHANGES) — a real, conservative default
+// to prevent confusing duplicate applications, not a permanent ban:
+// nothing stops a new application once a prior one is fully resolved
+// (APPROVED/REJECTED).
+const IN_PROGRESS_STATUSES = ['DRAFT', 'PENDING', 'NEEDS_CHANGES'];
+// P1.2: no legal/KYC document requirement is defined for Desavii yet —
+// deliberately NOT invented here (see the Master Roadmap's explicit
+// instruction). This is the one real extension point: a future
+// `requiredDocuments`/KYC step would run right after this list is
+// satisfied, before submitMyApplication moves the application to
+// PENDING, without changing anything else in this state machine.
+const REQUIRED_FIELDS_TO_SUBMIT = [
+  'legalName',
+  'displayName',
+  'email',
+  'phone',
+];
+
 // This schema's shared `moderation_statuses` lookup has no literal
 // SUSPENDED/RESTORED value — a partner's "moderation" lifecycle (as
 // opposed to its "verification" lifecycle) only ever moves between
@@ -77,7 +128,202 @@ export class PartnerService {
   }
 
   async getMyPartnerships(principal) {
+    // P1.2 (Master Roadmap): approvedOnly — see
+    // mysqlPartnerRepository.js#listMembershipsForUser's own doc comment
+    // for why this specific caller (feeding AuthContext's
+    // RequirePartner-gating `partnerships` array) must never include an
+    // in-progress application.
+    return this.#partnerRepository.listMembershipsForUser(principal.userId, {
+      approvedOnly: true,
+    });
+  }
+
+  /**
+   * P1.2 (Master Roadmap) — `GET /partners/applications` — every
+   * partner org this user owns/belongs to, REGARDLESS of status
+   * (unlike `getMyPartnerships`/`GET /partners/mine`, which is
+   * deliberately approved-only — see that method's own comment). This
+   * is how the frontend discovers "do I already have an application"
+   * (DRAFT/PENDING/NEEDS_CHANGES/REJECTED all included) without needing
+   * to already know its id.
+   */
+  async getMyApplications(principal) {
+    if (!principal) throw new AuthenticationError();
     return this.#partnerRepository.listMembershipsForUser(principal.userId);
+  }
+
+  /** Owner-only gate shared by every self-service application method below — 404-masked, matching this codebase's "don't reveal existence to a non-owner" convention elsewhere (payments, bookings). */
+  async #assertOwnsApplication(principal, partnerId) {
+    if (!principal) throw new AuthenticationError();
+    const owns = await isPartnerOwner(principal.userId, partnerId);
+    if (!owns) throw new NotFoundError('Application not found.');
+  }
+
+  /**
+   * P1.2 (Master Roadmap) — starts a new self-service partner
+   * application as a DRAFT. Any authenticated user may apply; no
+   * special permission is required (becoming a partner applicant is
+   * open by design — `partner.verify` only gates the admin REVIEW side).
+   * Refuses a second in-flight application while one already exists
+   * (see IN_PROGRESS_STATUSES) — a real, conservative default against
+   * confusing duplicates, not a permanent restriction.
+   */
+  async applyToBecomePartner(principal, data) {
+    if (!principal) throw new AuthenticationError();
+
+    const existing = await this.#partnerRepository.listMembershipsForUser(
+      principal.userId,
+    );
+    if (existing.length > 0) {
+      const details = await Promise.all(
+        existing.map((m) => this.#partnerRepository.findByIdAdmin(m.partnerId)),
+      );
+      const inProgress = details.find((d) =>
+        IN_PROGRESS_STATUSES.includes(d.verificationStatusCode),
+      );
+      if (inProgress) {
+        throw new ConflictError(
+          'You already have an in-progress partner application.',
+          'APPLICATION_ALREADY_IN_PROGRESS',
+        );
+      }
+    }
+
+    const { legalName, displayName, description, email, phone, website } = data;
+    if (!displayName || !displayName.trim()) {
+      throw new ValidationError('A business/display name is required.', [
+        { field: 'displayName', issue: 'REQUIRED' },
+      ]);
+    }
+
+    return withTransaction(async (connection) => {
+      let slug = slugify(displayName);
+      if (!slug) slug = `partner-${Date.now()}`;
+      // Auto-suffixed on collision rather than surfaced as a validation
+      // error — the onboarding form never shows a "slug" field at all
+      // (unlike the Listing Wizard's explicit, user-editable slug field),
+      // so there is nothing for an applicant to "fix" themselves.
+      let attempt = 0;
+      let candidateSlug = slug;
+      // eslint-disable-next-line no-await-in-loop -- small, bounded collision-retry loop, not a hot path
+      let exists = await this.#partnerRepository.slugExists(
+        candidateSlug,
+        connection,
+      );
+      while (exists) {
+        attempt += 1;
+        candidateSlug = `${slug}-${attempt + 1}`;
+        // eslint-disable-next-line no-await-in-loop -- small, bounded collision-retry loop, not a hot path
+        exists = await this.#partnerRepository.slugExists(
+          candidateSlug,
+          connection,
+        );
+      }
+
+      const created = await this.#partnerRepository.createApplication(
+        {
+          legalName: legalName?.trim() || displayName.trim(),
+          displayName: displayName.trim(),
+          slug: candidateSlug,
+          description: description?.trim() || null,
+          email: email?.trim() || null,
+          phone: phone?.trim() || null,
+          website: website?.trim() || null,
+          ownerUserId: principal.userId,
+        },
+        connection,
+      );
+
+      await this.#auditLogger.record(
+        {
+          actorId: principal.userId,
+          action: 'partner.application_created',
+          targetType: 'partner',
+          targetId: created.id,
+          afterSnapshot: { displayName: created.displayName },
+        },
+        connection,
+      );
+
+      return created;
+    });
+  }
+
+  /** Owner-only read of an in-progress or resolved application — full detail, including the admin's reviewNote if any. */
+  async getMyApplication(principal, partnerId) {
+    await this.#assertOwnsApplication(principal, partnerId);
+    const application = await this.#partnerRepository.findByIdAdmin(partnerId);
+    if (!application) throw new NotFoundError('Application not found.');
+    return application;
+  }
+
+  /** Owner-only edit — only while the application is still theirs to change (see OWNER_EDITABLE_STATUSES). */
+  async updateMyApplication(principal, partnerId, data) {
+    await this.#assertOwnsApplication(principal, partnerId);
+    const before = await this.#partnerRepository.findByIdAdmin(partnerId);
+    if (!before) throw new NotFoundError('Application not found.');
+    if (!OWNER_EDITABLE_STATUSES.includes(before.verificationStatusCode)) {
+      throw new ConflictError(
+        'This application can no longer be edited in its current state.',
+        'APPLICATION_NOT_EDITABLE',
+      );
+    }
+
+    const { legalName, displayName, description, email, phone, website } = data;
+    return this.#partnerRepository.updateApplication(partnerId, {
+      legalName: legalName?.trim(),
+      displayName: displayName?.trim(),
+      description: description?.trim(),
+      email: email?.trim(),
+      phone: phone?.trim(),
+      website: website?.trim(),
+    });
+  }
+
+  /**
+   * Owner-only — moves a DRAFT/NEEDS_CHANGES application to PENDING
+   * (awaiting admin review), clearing any prior reviewNote (a stale
+   * "please fix X" from a previous round must never linger against a
+   * freshly resubmitted application — see migration 0030's own comment).
+   * Validates the same minimal, non-KYC contact-reachability fields
+   * REQUIRED_FIELDS_TO_SUBMIT names; see that constant's comment for the
+   * real, deliberate KYC extension point this does NOT implement.
+   */
+  async submitMyApplication(principal, partnerId) {
+    await this.#assertOwnsApplication(principal, partnerId);
+    const before = await this.#partnerRepository.findByIdAdmin(partnerId);
+    if (!before) throw new NotFoundError('Application not found.');
+    if (!OWNER_EDITABLE_STATUSES.includes(before.verificationStatusCode)) {
+      throw new ConflictError(
+        'This application has already been submitted.',
+        'APPLICATION_NOT_EDITABLE',
+      );
+    }
+
+    const missing = REQUIRED_FIELDS_TO_SUBMIT.filter((field) => !before[field]);
+    if (missing.length > 0) {
+      throw new ValidationError(
+        'Please complete all required fields before submitting.',
+        missing.map((field) => ({ field, issue: 'REQUIRED' })),
+      );
+    }
+
+    const updated = await this.#partnerRepository.updateVerificationStatus(
+      partnerId,
+      'PENDING',
+      { reviewNote: null },
+    );
+
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'partner.application_submitted',
+      targetType: 'partner',
+      targetId: partnerId,
+      beforeSnapshot: { verificationStatusCode: before.verificationStatusCode },
+      afterSnapshot: { verificationStatusCode: 'PENDING' },
+    });
+
+    return updated;
   }
 
   /**
@@ -144,8 +390,14 @@ export class PartnerService {
    * `partner.verify` outright (MODERATOR, which only has
    * `partner.moderate`, cannot make verification decisions — see
    * `004_roles_and_permissions.js`'s `ROLE_PERMISSIONS`).
+   *
+   * @param {string} statusCode APPROVED|REJECTED|NEEDS_CHANGES
+   * @param {{reviewNote?: string}} [opts] required, non-empty for
+   *   NEEDS_CHANGES (the applicant needs to know what to fix); optional
+   *   for REJECTED (a reason, if the admin wants to give one); ignored
+   *   for APPROVED.
    */
-  async updateVerificationStatus(principal, partnerId, statusCode) {
+  async updateVerificationStatus(principal, partnerId, statusCode, opts = {}) {
     if (!VERIFICATION_STATUSES.includes(statusCode)) {
       throw new ValidationError('Invalid verification status.');
     }
@@ -154,9 +406,46 @@ export class PartnerService {
     const before = await this.#partnerRepository.findByIdAdmin(partnerId);
     if (!before) throw new NotFoundError('Partner not found.');
 
+    // See UNREVIEWABLE_STATUSES's own comment — this preserves the
+    // pre-existing, tested free transition among PENDING/APPROVED/
+    // REJECTED while protecting the two new states.
+    if (UNREVIEWABLE_STATUSES.includes(before.verificationStatusCode)) {
+      throw new ConflictError(
+        `Cannot review an application in ${before.verificationStatusCode} state.`,
+        'INVALID_APPLICATION_TRANSITION',
+      );
+    }
+    if (
+      statusCode === 'NEEDS_CHANGES' &&
+      before.verificationStatusCode !== 'PENDING'
+    ) {
+      throw new ConflictError(
+        'NEEDS_CHANGES can only be set on a submitted (PENDING) application.',
+        'INVALID_APPLICATION_TRANSITION',
+      );
+    }
+
+    const { reviewNote } = opts;
+    if (statusCode === 'NEEDS_CHANGES' && !reviewNote?.trim()) {
+      throw new ValidationError(
+        'A note explaining what needs to change is required.',
+        [{ field: 'reviewNote', issue: 'REQUIRED' }],
+      );
+    }
+
     const updated = await this.#partnerRepository.updateVerificationStatus(
       partnerId,
       statusCode,
+      {
+        // Cleared on APPROVED (nothing left to fix); set on
+        // NEEDS_CHANGES/REJECTED when the admin supplied one; left
+        // untouched (undefined) only never happens here — every branch
+        // has an explicit value, so a stale note can never silently
+        // survive a new decision.
+        reviewNote:
+          statusCode === 'APPROVED' ? null : (reviewNote?.trim() ?? null),
+        alsoApproveModerationStatus: statusCode === 'APPROVED',
+      },
     );
 
     await this.#auditLogger.record({
@@ -165,20 +454,30 @@ export class PartnerService {
       targetType: 'partner',
       targetId: partnerId,
       beforeSnapshot: { verificationStatusCode: before.verificationStatusCode },
-      afterSnapshot: { verificationStatusCode: statusCode },
+      afterSnapshot: {
+        verificationStatusCode: statusCode,
+        reviewNote: reviewNote ?? null,
+      },
     });
 
-    if (statusCode === 'APPROVED') {
-      await this.#eventBus.publish(
-        createDomainEvent({
-          eventType: EVENT_TYPES.PARTNER_APPROVED,
-          actorId: principal.userId,
-          resourceType: 'partner',
-          resourceId: partnerId,
-          payload: { partnerId, partnerName: updated.displayName },
-        }),
-      );
-    }
+    const eventTypeByStatus = {
+      APPROVED: EVENT_TYPES.PARTNER_APPROVED,
+      REJECTED: EVENT_TYPES.PARTNER_REJECTED,
+      NEEDS_CHANGES: EVENT_TYPES.PARTNER_NEEDS_CHANGES,
+    };
+    await this.#eventBus.publish(
+      createDomainEvent({
+        eventType: eventTypeByStatus[statusCode],
+        actorId: principal.userId,
+        resourceType: 'partner',
+        resourceId: partnerId,
+        payload: {
+          partnerId,
+          partnerName: updated.displayName,
+          reviewNote: updated.reviewNote,
+        },
+      }),
+    );
 
     return updated;
   }

@@ -1,5 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ToastProvider from '../../../../providers/ToastProvider.jsx';
 import ConfirmProvider from '../../../../providers/ConfirmProvider.jsx';
@@ -164,5 +165,152 @@ describe('AdminPartnerDetailContent (apps/web/src/modules/admin)', () => {
       screen.getByText('Սեփականատեր գրանցված չէ', { exact: false }),
     ).toBeInTheDocument();
     expect(screen.getByText('Ամրագրումներ դեռ չկան։')).toBeInTheDocument();
+  });
+
+  test('P1.2: shows the "Request changes" action only while PENDING, and shows an existing review note', () => {
+    useAdminPartnerDetailQuery.mockReturnValue({
+      data: {
+        id: 3,
+        slug: 'sevan-lakeside-tours',
+        display_name: 'Sevan Lakeside Tours',
+        email: 'partner.sevan@example.com',
+        verification_status: 'PENDING',
+        moderation_status: 'APPROVED',
+        review_note: 'Please add a valid phone number.',
+        total_listing_count: 0,
+        published_listing_count: 0,
+        owner: null,
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    useAdminPartnerBookingsQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+    });
+    useUpdatePartnerVerificationStatusMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    useUpdatePartnerModerationStatusMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    renderPage();
+
+    expect(
+      screen.getByRole('button', { name: 'Պահանջել փոփոխություններ' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Please add a valid phone number.'),
+    ).toBeInTheDocument();
+  });
+
+  test('P1.2: hides every verification action while the application is still DRAFT/NEEDS_CHANGES', () => {
+    useAdminPartnerDetailQuery.mockReturnValue({
+      data: {
+        id: 4,
+        slug: 'dilijan-cabins',
+        display_name: 'Dilijan Cabins',
+        email: 'partner.dilijan@example.com',
+        verification_status: 'NEEDS_CHANGES',
+        moderation_status: 'APPROVED',
+        review_note: 'Please add a valid phone number.',
+        total_listing_count: 0,
+        published_listing_count: 0,
+        owner: null,
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    useAdminPartnerBookingsQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+    });
+    useUpdatePartnerVerificationStatusMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    useUpdatePartnerModerationStatusMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    renderPage();
+
+    expect(
+      screen.queryByRole('button', { name: 'Հաստատել' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Մերժել' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Պահանջել փոփոխություններ' }),
+    ).not.toBeInTheDocument();
+    // The Visibility (moderation) action group is unaffected.
+    expect(
+      screen.getByRole('button', { name: 'Կասեցնել' }),
+    ).toBeInTheDocument();
+  });
+
+  test('P1.2: typing a review note in the "Request changes" dialog actually reaches the mutation', async () => {
+    const user = userEvent.setup();
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    useAdminPartnerDetailQuery.mockReturnValue({
+      data: {
+        id: 3,
+        slug: 'sevan-lakeside-tours',
+        display_name: 'Sevan Lakeside Tours',
+        email: 'partner.sevan@example.com',
+        verification_status: 'PENDING',
+        moderation_status: 'APPROVED',
+        review_note: null,
+        total_listing_count: 0,
+        published_listing_count: 0,
+        owner: null,
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    useAdminPartnerBookingsQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+    });
+    useUpdatePartnerVerificationStatusMutation.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
+    useUpdatePartnerModerationStatusMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    renderPage();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Պահանջել փոփոխություններ' }),
+    );
+
+    const textarea = await screen.findByLabelText(
+      /Ծանոթագրություն դիմորդի համար/,
+    );
+    await user.type(textarea, 'Please add a valid phone number.');
+    expect(textarea).toHaveValue('Please add a valid phone number.');
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(
+      within(dialog).getByRole('button', {
+        name: 'Պահանջել փոփոխություններ',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalledWith({
+        id: 3,
+        status: 'NEEDS_CHANGES',
+        reviewNote: 'Please add a valid phone number.',
+      });
+    });
   });
 });

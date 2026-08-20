@@ -1,9 +1,13 @@
 /**
  * BecomePartnerPageContent — `/:locale/become-a-partner` (Phase 10
- * redesign). Marketing content with a single CTA. No self-service
- * "create a partner org" flow exists in the backend, so the CTA
- * honestly routes to account registration (existing, real) rather than
- * a fabricated application flow — see the Phase 10 plan's scope notes.
+ * redesign). Marketing content with a single CTA.
+ *
+ * P1.2 (Master Roadmap) added the real self-service application flow at
+ * `/partner/apply`, wrapped in `RequireAuth` (not `RequirePartner` — an
+ * applicant has no partnership yet). The CTA always routes there;
+ * `RequireAuth` itself sends an unauthenticated visitor to
+ * `/auth/login?redirect=...` first and returns them to `/partner/apply`
+ * after login, so this component doesn't need its own auth branching.
  */
 
 import { useTranslation } from 'react-i18next';
@@ -68,7 +72,7 @@ export default function BecomePartnerPageContent() {
           <Button
             variant="primary"
             size="lg"
-            onClick={() => navigate(`/${locale}/auth/register`)}
+            onClick={() => navigate(`/${locale}/partner/apply`)}
           >
             {t('cms.becomePartner.cta')}
           </Button>

@@ -132,6 +132,35 @@ const TEMPLATES = {
       body: `Поздравляем — «${partnerName ?? 'Ваш партнёрский аккаунт'}» одобрено.`,
     }),
   },
+  // P1.2 (Master Roadmap) — the two other real review outcomes.
+  'partner.rejected': {
+    en: ({ partnerName }) => ({
+      subject: 'Partner application not approved',
+      body: `Your application for "${partnerName ?? 'your business'}" was not approved.`,
+    }),
+    hy: ({ partnerName }) => ({
+      subject: 'Գործընկերոջ հայտը մերժվել է',
+      body: `Ձեր «${partnerName ?? 'ձեր բիզնեսի'}» հայտը չի հաստատվել:`,
+    }),
+    ru: ({ partnerName }) => ({
+      subject: 'Заявка партнёра отклонена',
+      body: `Ваша заявка на «${partnerName ?? 'ваш бизнес'}» не была одобрена.`,
+    }),
+  },
+  'partner.needs_changes': {
+    en: ({ partnerName, reviewNote }) => ({
+      subject: 'Changes requested on your partner application',
+      body: `Your application for "${partnerName ?? 'your business'}" needs some changes before it can be approved.${reviewNote ? ` Reviewer note: ${reviewNote}` : ''}`,
+    }),
+    hy: ({ partnerName, reviewNote }) => ({
+      subject: 'Ձեր հայտում փոփոխություններ են պահանջվում',
+      body: `Ձեր «${partnerName ?? 'ձեր բիզնեսի'}» հայտը հաստատվելուց առաջ պահանջում է որոշ փոփոխություններ:${reviewNote ? ` Գրախոսի նշում. ${reviewNote}` : ''}`,
+    }),
+    ru: ({ partnerName, reviewNote }) => ({
+      subject: 'По вашей заявке партнёра запрошены изменения',
+      body: `Ваша заявка на «${partnerName ?? 'ваш бизнес'}» требует изменений перед одобрением.${reviewNote ? ` Комментарий проверяющего: ${reviewNote}` : ''}`,
+    }),
+  },
   'listing.approved': {
     en: ({ listingTitle }) => ({
       subject: 'Listing approved',

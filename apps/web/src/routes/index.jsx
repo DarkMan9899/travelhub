@@ -83,6 +83,9 @@ const NotificationsPage = lazy(
   () => import('../pages/account/NotificationsPage.jsx'),
 );
 const MessagesPage = lazy(() => import('../pages/account/MessagesPage.jsx'));
+const PartnerApplicationPage = lazy(
+  () => import('../pages/partner/PartnerApplicationPage.jsx'),
+);
 const PartnerDashboardPage = lazy(
   () => import('../pages/partner/PartnerDashboardPage.jsx'),
 );
@@ -303,6 +306,23 @@ export default function AppRoutes() {
               element={<MessagesPage />}
             />
             <Route path="account/settings" element={<SettingsPage />} />
+          </Route>
+
+          {/* Partner Onboarding (P1.2, Master Roadmap) — RequireAuth only,
+              deliberately NOT RequirePartner: an applicant has no
+              partnership yet, so gating this behind `RequirePartner`
+              would make the application flow unreachable. Kept under the
+              focused `PublicLayout` chrome, same precedent as the
+              Booking Flow group above — a form-centric flow, not a
+              partner-dashboard page. */}
+          <Route
+            element={
+              <RequireAuth>
+                <PublicLayout />
+              </RequireAuth>
+            }
+          >
+            <Route path="partner/apply" element={<PartnerApplicationPage />} />
           </Route>
 
           {/* Partner (§4.2/§5.4) — RequireAuth + RequirePartner (Phase 5:

@@ -15,16 +15,37 @@
  * (Phase 14.10 cleanup) — a role lacking both (e.g. SUPPORT) sees the
  * read-only profile with neither action group, rather than buttons that
  * always 403 on click.
+ *
+ * P1.2 (Master Roadmap): a third verification outcome, "Request
+ * Changes" (NEEDS_CHANGES), only reachable from PENDING (see
+ * `partnerService.js`'s `UNREVIEWABLE_STATUSES`/PENDING-only guard) —
+ * DRAFT/NEEDS_CHANGES applications are still owned by the applicant and
+ * have no reviewable verification action here at all, so the whole
+ * Verification action group is hidden for those two statuses rather
+ * than rendering buttons that would 409. The backend requires a
+ * non-empty `reviewNote` for NEEDS_CHANGES, so that one action needs a
+ * real text field — the shared `useConfirm()` (`ConfirmContext.jsx`) only
+ * takes a plain title/description string and can't host one: its `Modal`
+ * lives in `ConfirmProvider`, which snapshots `description` once into
+ * its own `request` state at `confirm()`-call time, so a controlled
+ * `Textarea` passed as that `description` would never re-render as the
+ * admin types (its `value` prop is frozen to whatever it was at that one
+ * snapshot). This action renders its own local `Modal` directly in this
+ * component's tree instead, so the Textarea's `value`/`onChange` are
+ * ordinary local state that re-renders normally on every keystroke.
  */
 
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Section, Stack, Grid, Inline } from '@travelhub/ui/components/layout';
 import { Card, Badge, Button } from '@travelhub/ui/components/primitives';
+import { Textarea } from '@travelhub/ui/components/form-controls';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
+  Modal,
 } from '@travelhub/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import RouterLink from '../../../../components/RouterLink.jsx';
@@ -37,10 +58,19 @@ import { useUpdatePartnerVerificationStatusMutation } from '../../mutations/useU
 import { useUpdatePartnerModerationStatusMutation } from '../../mutations/useUpdatePartnerModerationStatusMutation.js';
 
 const VERIFICATION_BADGE_VARIANT = {
+  DRAFT: 'neutral',
   PENDING: 'warning',
   APPROVED: 'success',
   REJECTED: 'danger',
+  NEEDS_CHANGES: 'warning',
 };
+
+// PENDING is the only status a `partner.verify` holder may act on
+// (`partnerService.js`'s `UNREVIEWABLE_STATUSES`) — DRAFT/NEEDS_CHANGES
+// are still with the applicant, and APPROVED/REJECTED already have a
+// decision (the existing free re-decision behavior below stays
+// available from those two, matching `adminPartnerManagement.test.js`).
+const VERIFICATION_ACTIONABLE_STATUSES = ['PENDING', 'APPROVED', 'REJECTED'];
 
 const MODERATION_BADGE_VARIANT = {
   APPROVED: 'success',
@@ -57,9 +87,27 @@ export default function AdminPartnerDetailContent() {
   const canModerate = permissions.includes('partner.moderate');
 
   const partnerQuery = useAdminPartnerDetailQuery(id);
+  const canVerifyNow =
+    canVerify &&
+    VERIFICATION_ACTIONABLE_STATUSES.includes(
+      partnerQuery.data?.verification_status,
+    );
   const bookingsQuery = useAdminPartnerBookingsQuery(id);
   const verificationMutation = useUpdatePartnerVerificationStatusMutation();
   const moderationMutation = useUpdatePartnerModerationStatusMutation();
+
+  const [isRequestChangesOpen, setIsRequestChangesOpen] = useState(false);
+  const [reviewNoteValue, setReviewNoteValue] = useState('');
+
+  // Stable across renders on purpose: `Modal`'s focus trap
+  // (`useFocusTrap.js`) re-runs its effect whenever `onClose`'s identity
+  // changes, moving focus back to the dialog's first focusable element
+  // each time — an inline arrow here would re-steal focus off the
+  // Textarea on every keystroke (confirmed: typing beyond the first
+  // character silently went nowhere).
+  const handleCloseRequestChanges = useCallback(() => {
+    setIsRequestChangesOpen(false);
+  }, []);
 
   if (partnerQuery.isError) {
     return (
@@ -111,6 +159,35 @@ export default function AdminPartnerDetailContent() {
         ),
         { variant: 'success' },
       );
+    } catch {
+      showToast(t('admin.partners.statusError'), { variant: 'danger' });
+    }
+  }
+
+  function handleOpenRequestChanges() {
+    setReviewNoteValue('');
+    setIsRequestChangesOpen(true);
+  }
+
+  async function handleConfirmRequestChanges() {
+    const reviewNote = reviewNoteValue.trim();
+    if (!reviewNote) {
+      showToast(t('admin.partnerDetail.verification.reviewNoteRequired'), {
+        variant: 'danger',
+      });
+      return;
+    }
+
+    try {
+      await verificationMutation.mutateAsync({
+        id: partner.id,
+        status: 'NEEDS_CHANGES',
+        reviewNote,
+      });
+      setIsRequestChangesOpen(false);
+      showToast(t('admin.partnerDetail.verification.needsChangesSuccess'), {
+        variant: 'success',
+      });
     } catch {
       showToast(t('admin.partners.statusError'), { variant: 'danger' });
     }
@@ -223,14 +300,25 @@ export default function AdminPartnerDetailContent() {
                 </Inline>
               </Inline>
 
-              {(canVerify || canModerate) && (
+              {partner.review_note && (
+                <Card padding="md">
+                  <Stack gap="1">
+                    <strong>
+                      {t('admin.partnerDetail.verification.reviewNoteLabel')}
+                    </strong>
+                    <span>{partner.review_note}</span>
+                  </Stack>
+                </Card>
+              )}
+
+              {(canVerifyNow || canModerate) && (
                 <Inline gap="3" wrap>
-                  {canVerify && (
+                  {canVerifyNow && (
                     <Stack gap="2">
                       <span>
                         {t('admin.partnerDetail.verification.heading')}
                       </span>
-                      <Inline gap="2">
+                      <Inline gap="2" wrap>
                         <Button
                           variant="primary"
                           size="sm"
@@ -247,6 +335,17 @@ export default function AdminPartnerDetailContent() {
                         >
                           {t('admin.partnerDetail.verification.rejectAction')}
                         </Button>
+                        {partner.verification_status === 'PENDING' && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleOpenRequestChanges()}
+                          >
+                            {t(
+                              'admin.partnerDetail.verification.needsChangesAction',
+                            )}
+                          </Button>
+                        )}
                       </Inline>
                     </Stack>
                   )}
@@ -321,6 +420,52 @@ export default function AdminPartnerDetailContent() {
           </Card>
         </Grid>
       </Stack>
+
+      {isRequestChangesOpen && (
+        <Modal
+          isOpen
+          onClose={handleCloseRequestChanges}
+          title={t(
+            'admin.partnerDetail.verification.needsChangesConfirmTitle',
+            {
+              name: partner.display_name,
+            },
+          )}
+          size="sm"
+          footer={
+            <Inline gap="3" justify="flex-end">
+              <Button variant="ghost" onClick={handleCloseRequestChanges}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleConfirmRequestChanges()}
+                loading={verificationMutation.isPending}
+              >
+                {t('admin.partnerDetail.verification.needsChangesAction')}
+              </Button>
+            </Inline>
+          }
+        >
+          <Stack gap="3">
+            <p>
+              {t(
+                'admin.partnerDetail.verification.needsChangesConfirmDescription',
+              )}
+            </p>
+            <Textarea
+              label={t('admin.partnerDetail.verification.reviewNoteLabel')}
+              value={reviewNoteValue}
+              onChange={(event) => setReviewNoteValue(event.target.value)}
+              placeholder={t(
+                'admin.partnerDetail.verification.reviewNotePlaceholder',
+              )}
+              rows={4}
+              required
+            />
+          </Stack>
+        </Modal>
+      )}
     </Section>
   );
 }

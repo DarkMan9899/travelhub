@@ -1489,9 +1489,11 @@
         "listings": "Listings"
       },
       "verificationStatus": {
+        "DRAFT": "Draft",
         "PENDING": "Pending",
         "APPROVED": "Approved",
-        "REJECTED": "Rejected"
+        "REJECTED": "Rejected",
+        "NEEDS_CHANGES": "Needs changes"
       },
       "moderationStatus": {
         "APPROVED": "Visible",
@@ -1531,12 +1533,19 @@
         "heading": "Verification",
         "approveAction": "Approve",
         "rejectAction": "Reject",
+        "needsChangesAction": "Request changes",
         "approveConfirmTitle": "Approve {{name}}?",
         "approveConfirmDescription": "This partner will be marked verified and shown a \"Verified\" badge publicly.",
         "rejectConfirmTitle": "Reject {{name}}?",
         "rejectConfirmDescription": "This partner's verification request will be marked rejected.",
+        "needsChangesConfirmTitle": "Request changes from {{name}}?",
+        "needsChangesConfirmDescription": "The applicant will be asked to update their application and resubmit it for review. Explain what needs to change.",
         "approveSuccess": "Partner verification approved.",
-        "rejectSuccess": "Partner verification rejected."
+        "rejectSuccess": "Partner verification rejected.",
+        "needsChangesSuccess": "Changes requested. The applicant has been notified.",
+        "reviewNoteLabel": "Note to applicant",
+        "reviewNotePlaceholder": "e.g. Please provide a valid business phone number.",
+        "reviewNoteRequired": "A note is required so the applicant knows what to change."
       },
       "moderation": {
         "heading": "Visibility",
@@ -2345,6 +2354,47 @@
       "listingsHeading": "Listings"
     }
   },
+  "partnerOnboarding": {
+    "heading": "Partner application",
+    "lead": "Tell us about your business. You can save a draft and come back anytime before submitting it for review.",
+    "error": {
+      "title": "We couldn't load your application.",
+      "retry": "Try again"
+    },
+    "fields": {
+      "displayNameLabel": "Public business name",
+      "displayNameRequired": "Public business name is required.",
+      "legalNameLabel": "Legal business name",
+      "legalNameHelper": "The registered legal name of your company.",
+      "emailLabel": "Business email",
+      "emailInvalid": "Enter a valid email address.",
+      "phoneLabel": "Business phone",
+      "websiteLabel": "Website",
+      "websiteInvalid": "Enter a valid URL, starting with https://.",
+      "descriptionLabel": "About your business"
+    },
+    "actions": {
+      "saveDraft": "Save draft",
+      "submitForReview": "Submit for review"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "PENDING": "Under review",
+      "NEEDS_CHANGES": "Changes requested",
+      "APPROVED": "Approved",
+      "REJECTED": "Not approved",
+      "pendingNotice": "Your application is under review. We'll notify you as soon as a decision is made.",
+      "reviewNoteLabel": "Feedback from our team",
+      "rejectedNotice": "Your previous application was not approved. You can start a new one below.",
+      "submitRequiredFieldsHint": "Public business name, legal business name, email, and phone are required before you can submit for review."
+    },
+    "toast": {
+      "createSuccess": "Application started. You can continue filling it in anytime.",
+      "draftSaved": "Draft saved.",
+      "submitSuccess": "Application submitted for review.",
+      "error": "Something went wrong. Please try again."
+    }
+  },
   "cms": {
     "about": {
       "title": "About desavii",
@@ -2648,6 +2698,8 @@
       "reviewSubmitted": "You received a new {{rating}}-star review",
       "favoriteAdded": "A traveler favorited your listing",
       "partnerApproved": "{{partnerName}} was approved",
+      "partnerRejected": "Your application for {{partnerName}} was not approved",
+      "partnerNeedsChanges": "Changes requested on your application for {{partnerName}}",
       "listingApproved": "Your listing was approved",
       "listingRejected": "Your listing was rejected",
       "generic": "Notification: {{eventType}}"

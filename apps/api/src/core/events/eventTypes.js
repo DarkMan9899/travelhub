@@ -20,6 +20,12 @@ export const EVENT_TYPES = Object.freeze({
   REVIEW_SUBMITTED: 'review.submitted',
   FAVORITE_ADDED: 'favorite.added',
   PARTNER_APPROVED: 'partner.approved',
+  // P1.2 (Master Roadmap) — the two other real outcomes of a partner
+  // application review, previously unpublished (only approval notified
+  // the applicant; a rejection or a request for changes left them with
+  // no signal beyond checking the application page themselves).
+  PARTNER_REJECTED: 'partner.rejected',
+  PARTNER_NEEDS_CHANGES: 'partner.needs_changes',
   LISTING_APPROVED: 'listing.approved',
   LISTING_REJECTED: 'listing.rejected',
   CONVERSATION_CREATED: 'conversation.created',

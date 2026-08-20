@@ -58,6 +58,53 @@ export function getPartnerMembershipsForUser(userId) {
 }
 
 /**
+ * P1.2 (Master Roadmap) — self-service partner onboarding, all under
+ * `/partners/applications*`. Any authenticated user; no special
+ * permission (the admin review side, `/partners/admin/*` above, is
+ * permission-gated — this is the applicant's own side).
+ */
+
+/**
+ * `GET /partners/applications` — every partner org this user owns/
+ * belongs to REGARDLESS of status (unlike `getMyPartnerships`, which is
+ * deliberately approved-only). How the frontend discovers "do I already
+ * have an application in progress" without knowing its id upfront.
+ */
+export function getMyApplications() {
+  return apiClient
+    .get('/partners/applications')
+    .then((response) => response.data);
+}
+
+/** `POST /partners/applications` — starts a new DRAFT application. `displayName` is the only required field at this stage. */
+export function createPartnerApplication(data) {
+  return apiClient
+    .post('/partners/applications', data)
+    .then((response) => response.data);
+}
+
+/** `GET /partners/applications/:id` — owner-only full detail, including the admin's reviewNote if any. 404s for anyone but the owner. */
+export function getPartnerApplication(id) {
+  return apiClient
+    .get(`/partners/applications/${id}`)
+    .then((response) => response.data);
+}
+
+/** `PATCH /partners/applications/:id` — owner-only edit; only while DRAFT/NEEDS_CHANGES (409 otherwise). */
+export function updatePartnerApplication(id, data) {
+  return apiClient
+    .patch(`/partners/applications/${id}`, data)
+    .then((response) => response.data);
+}
+
+/** `POST /partners/applications/:id/submit` — DRAFT/NEEDS_CHANGES -> PENDING. 422 if required fields are incomplete. */
+export function submitPartnerApplication(id) {
+  return apiClient
+    .post(`/partners/applications/${id}/submit`)
+    .then((response) => response.data);
+}
+
+/**
  * Stage 11.2 (Partner Management) — admin-scoped endpoints, all under
  * `/partners/admin/*`. Requires `partner.verify` or `partner.moderate`
  * for reads, the specific one for each write (see
@@ -83,12 +130,17 @@ export function getAdminPartnerDetail(id) {
 }
 
 /**
- * `PATCH /partners/admin/:id/verification-status` — approve/reject/reset
- * a partner's onboarding decision. Requires `partner.verify`.
+ * `PATCH /partners/admin/:id/verification-status` — approve/reject/
+ * request-changes on a partner's onboarding decision. Requires
+ * `partner.verify`. `reviewNote` is required by the backend for
+ * NEEDS_CHANGES, optional for REJECTED, ignored for APPROVED.
  */
-export function updatePartnerVerificationStatus(id, status) {
+export function updatePartnerVerificationStatus(id, status, reviewNote) {
   return apiClient
-    .patch(`/partners/admin/${id}/verification-status`, { status })
+    .patch(`/partners/admin/${id}/verification-status`, {
+      status,
+      ...(reviewNote ? { reviewNote } : {}),
+    })
     .then((response) => response.data);
 }
 

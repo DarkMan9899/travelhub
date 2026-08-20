@@ -53,8 +53,45 @@ export const updateVerificationStatusSchema = z.object({
   params: z.object({ id: z.coerce.number().int().positive() }),
   query: passthroughQuery,
   body: z.object({
-    status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
+    status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'NEEDS_CHANGES']),
+    reviewNote: z.string().trim().max(2000).optional(),
   }),
+});
+
+// P1.2 (Master Roadmap) — self-service partner onboarding. Every text
+// field is optional at DRAFT-save time (a draft may be incomplete) —
+// `submitMyApplication`'s own Service-layer check is what actually
+// enforces REQUIRED_FIELDS_TO_SUBMIT before an application can move to
+// PENDING. No legal/KYC document fields — see partnerService.js's
+// REQUIRED_FIELDS_TO_SUBMIT comment for that deliberate extension point.
+const applicationFieldsSchema = z.object({
+  // No `.min(1)`: unlike `displayName` (never legitimately blank once an
+  // application exists — the UI's own `required` rule keeps a blank
+  // value from ever reaching a PATCH in practice), `legalName` has no
+  // such UI-side enforcement — `ApplicationForm`'s untouched fields send
+  // `''`, not `undefined`, on every draft save (`Save draft` submits the
+  // whole form, not just changed fields) — so `.min(1)` here would 422 a
+  // perfectly normal "not filled in yet" draft save.
+  legalName: z.string().trim().max(255).optional().or(z.literal('')),
+  displayName: z.string().trim().min(1).max(255).optional(),
+  description: z.string().trim().max(5000).optional(),
+  email: z.string().trim().email().max(255).optional().or(z.literal('')),
+  phone: z.string().trim().max(30).optional(),
+  website: z.string().trim().url().max(255).optional().or(z.literal('')),
+});
+
+export const createApplicationSchema = z.object({
+  params: z.object({}).passthrough(),
+  query: passthroughQuery,
+  body: applicationFieldsSchema.extend({
+    displayName: z.string().trim().min(1).max(255),
+  }),
+});
+
+export const updateApplicationSchema = z.object({
+  params: z.object({ id: z.coerce.number().int().positive() }),
+  query: passthroughQuery,
+  body: applicationFieldsSchema,
 });
 
 export const updateModerationStatusSchema = z.object({

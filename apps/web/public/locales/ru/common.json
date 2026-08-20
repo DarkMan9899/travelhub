@@ -1501,9 +1501,11 @@
         "listings": "Объявления"
       },
       "verificationStatus": {
+        "DRAFT": "Черновик",
         "PENDING": "Ожидает",
         "APPROVED": "Проверен",
-        "REJECTED": "Отклонён"
+        "REJECTED": "Отклонён",
+        "NEEDS_CHANGES": "Требуются изменения"
       },
       "moderationStatus": {
         "APPROVED": "Виден",
@@ -1543,12 +1545,19 @@
         "heading": "Проверка",
         "approveAction": "Одобрить",
         "rejectAction": "Отклонить",
+        "needsChangesAction": "Запросить изменения",
         "approveConfirmTitle": "Одобрить {{name}}?",
         "approveConfirmDescription": "Этот партнёр будет отмечен как проверенный и публично получит значок «Проверено».",
         "rejectConfirmTitle": "Отклонить {{name}}?",
         "rejectConfirmDescription": "Заявка этого партнёра на проверку будет отмечена как отклонённая.",
+        "needsChangesConfirmTitle": "Запросить изменения у {{name}}?",
+        "needsChangesConfirmDescription": "Заявителю будет предложено обновить заявку и отправить её на повторную проверку. Опишите, что нужно изменить.",
         "approveSuccess": "Проверка партнёра одобрена.",
-        "rejectSuccess": "Проверка партнёра отклонена."
+        "rejectSuccess": "Проверка партнёра отклонена.",
+        "needsChangesSuccess": "Запрос на изменения отправлен. Заявитель уведомлён.",
+        "reviewNoteLabel": "Примечание для заявителя",
+        "reviewNotePlaceholder": "напр.: Укажите действующий номер телефона компании.",
+        "reviewNoteRequired": "Примечание обязательно, чтобы заявитель знал, что нужно изменить."
       },
       "moderation": {
         "heading": "Видимость",
@@ -2367,6 +2376,47 @@
       "listingsHeading": "Объявления"
     }
   },
+  "partnerOnboarding": {
+    "heading": "Заявка партнёра",
+    "lead": "Расскажите нам о своём бизнесе. Вы можете сохранить черновик и вернуться в любое время, прежде чем отправить его на рассмотрение.",
+    "error": {
+      "title": "Не удалось загрузить вашу заявку.",
+      "retry": "Повторить"
+    },
+    "fields": {
+      "displayNameLabel": "Публичное название компании",
+      "displayNameRequired": "Публичное название компании обязательно.",
+      "legalNameLabel": "Юридическое название",
+      "legalNameHelper": "Официально зарегистрированное юридическое название вашей компании.",
+      "emailLabel": "Рабочий email",
+      "emailInvalid": "Введите корректный email-адрес.",
+      "phoneLabel": "Рабочий телефон",
+      "websiteLabel": "Сайт",
+      "websiteInvalid": "Введите корректный URL, начинающийся с https://.",
+      "descriptionLabel": "О вашем бизнесе"
+    },
+    "actions": {
+      "saveDraft": "Сохранить черновик",
+      "submitForReview": "Отправить на рассмотрение"
+    },
+    "status": {
+      "DRAFT": "Черновик",
+      "PENDING": "На рассмотрении",
+      "NEEDS_CHANGES": "Требуются изменения",
+      "APPROVED": "Одобрено",
+      "REJECTED": "Не одобрено",
+      "pendingNotice": "Ваша заявка находится на рассмотрении. Мы сообщим вам, как только будет принято решение.",
+      "reviewNoteLabel": "Отзыв нашей команды",
+      "rejectedNotice": "Ваша предыдущая заявка не была одобрена. Вы можете подать новую заявку ниже.",
+      "submitRequiredFieldsHint": "Публичное название компании, юридическое название, email и телефон обязательны для отправки на рассмотрение."
+    },
+    "toast": {
+      "createSuccess": "Заявка создана. Вы можете дозаполнить её в любое время.",
+      "draftSaved": "Черновик сохранён.",
+      "submitSuccess": "Заявка отправлена на рассмотрение.",
+      "error": "Что-то пошло не так. Пожалуйста, попробуйте снова."
+    }
+  },
   "cms": {
     "about": {
       "title": "О desavii",
@@ -2670,6 +2720,8 @@
       "reviewSubmitted": "Вы получили новый отзыв на {{rating}} звёзд",
       "favoriteAdded": "Путешественник добавил ваше объявление в избранное",
       "partnerApproved": "{{partnerName}} одобрен(о)",
+      "partnerRejected": "Ваша заявка на {{partnerName}} не одобрена",
+      "partnerNeedsChanges": "По заявке на {{partnerName}} запрошены изменения",
       "listingApproved": "Ваше объявление одобрено",
       "listingRejected": "Ваше объявление отклонено",
       "generic": "Уведомление: {{eventType}}"

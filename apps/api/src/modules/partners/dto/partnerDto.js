@@ -8,6 +8,8 @@ export function toPartnershipResponse(membership) {
     slug: membership.slug,
     display_name: membership.displayName,
     role: membership.roleCode,
+    // P1.2 (Master Roadmap) — additive.
+    verification_status: membership.verificationStatusCode,
   };
 }
 
@@ -54,13 +56,15 @@ export function toAdminPartnerSummaryResponse(partner) {
   };
 }
 
-/** Stage 11.2 admin detail — additive to the admin summary shape above. */
+/** Stage 11.2 admin detail — additive to the admin summary shape above. Also the shape returned by every P1.2 self-service application endpoint (same underlying repository read, owner-gated instead of permission-gated). */
 export function toAdminPartnerDetailResponse(partner) {
   return {
     ...toAdminPartnerSummaryResponse(partner),
+    legal_name: partner.legalName,
     description: partner.description,
     phone: partner.phone,
     website: partner.website,
+    review_note: partner.reviewNote ?? null,
     total_listing_count: partner.totalListingCount,
     published_listing_count: partner.publishedListingCount,
     owner: partner.ownerEmail

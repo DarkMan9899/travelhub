@@ -44,6 +44,15 @@ const REGISTRY = {
     key: 'notifications.copy.partnerApproved',
     params: { partnerName: payload.partnerName },
   }),
+  // P1.2 (Master Roadmap) — the two other real review outcomes.
+  'partner.rejected': (payload) => ({
+    key: 'notifications.copy.partnerRejected',
+    params: { partnerName: payload.partnerName },
+  }),
+  'partner.needs_changes': (payload) => ({
+    key: 'notifications.copy.partnerNeedsChanges',
+    params: { partnerName: payload.partnerName },
+  }),
   'listing.approved': () => ({
     key: 'notifications.copy.listingApproved',
     params: {},

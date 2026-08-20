@@ -147,6 +147,27 @@ export function registerNotificationListeners({
     }),
   );
 
+  // P1.2 (Master Roadmap) — the two other real outcomes of an
+  // application review; previously only approval notified the
+  // applicant at all.
+  eventBus.subscribe(EVENT_TYPES.PARTNER_REJECTED, (event) =>
+    notifyPartnerOwner(event, {
+      categoryCode: 'PARTNER',
+      priorityCode: PRIORITY.HIGH,
+      payload: { partnerName: event.payload.partnerName },
+    }),
+  );
+  eventBus.subscribe(EVENT_TYPES.PARTNER_NEEDS_CHANGES, (event) =>
+    notifyPartnerOwner(event, {
+      categoryCode: 'PARTNER',
+      priorityCode: PRIORITY.HIGH,
+      payload: {
+        partnerName: event.payload.partnerName,
+        reviewNote: event.payload.reviewNote,
+      },
+    }),
+  );
+
   eventBus.subscribe(EVENT_TYPES.LISTING_APPROVED, (event) =>
     notifyPartnerOwner(event, {
       categoryCode: 'LISTING',

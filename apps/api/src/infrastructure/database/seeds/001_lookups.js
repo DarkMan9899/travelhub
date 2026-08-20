@@ -21,6 +21,15 @@ export default async function seedLookups(connection) {
     { code: 'APPROVED', name: 'Approved' },
     { code: 'REJECTED', name: 'Rejected' },
     { code: 'FLAGGED', name: 'Flagged' },
+    // P1.2 (Master Roadmap): partner self-service onboarding reuses this
+    // one shared lookup rather than a second near-identical table (same
+    // "one lookup instead of four" rule migration 0003's own header
+    // comment already establishes) — these two codes are only ever valid
+    // for partners.verification_status_id, never moderation_status_id
+    // (partnerService.js's own VERIFICATION_STATUSES/MODERATION_STATUSES
+    // arrays enforce that scoping at the application layer).
+    { code: 'DRAFT', name: 'Draft' },
+    { code: 'NEEDS_CHANGES', name: 'Needs Changes' },
   ]);
 
   await upsertByCode(connection, 'partner_employee_roles', [

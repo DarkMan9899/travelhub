@@ -18,6 +18,7 @@
  */
 
 import { getMysqlPool } from '../../../infrastructure/database/mysqlPool.js';
+import { mapMysqlError } from '../../../infrastructure/database/errorMapping.js';
 import {
   decodeCursor,
   buildPageMeta,
@@ -29,6 +30,11 @@ function toMembershipDomain(row) {
     slug: row.slug,
     displayName: row.display_name,
     roleCode: row.role_code,
+    // P1.2 (Master Roadmap): additive — lets a caller that does want the
+    // full picture (listMembershipsForUserAdmin; a future "my
+    // applications" list) distinguish a real, approved membership from
+    // an in-progress application without a second query.
+    verificationStatusCode: row.verification_status_code,
   };
 }
 
@@ -85,9 +91,14 @@ function toPartnerAdminSummaryDomain(row) {
 function toPartnerAdminDetailDomain(row) {
   return {
     ...toPartnerAdminSummaryDomain(row),
+    legalName: row.legal_name,
     description: row.description,
     phone: row.phone,
     website: row.website,
+    // P1.2 (Master Roadmap): the admin's feedback on a NEEDS_CHANGES (or
+    // REJECTED) review decision — see updateVerificationStatus's own doc
+    // comment for the full lifecycle.
+    reviewNote: row.review_note,
     totalListingCount: Number(row.total_listing_count),
     publishedListingCount: Number(row.published_listing_count),
     ownerEmail: row.owner_email,
@@ -139,7 +150,8 @@ const ADMIN_SELECT_COLUMNS = `
   (SELECT COUNT(*) FROM listings l WHERE l.partner_id = p.id AND l.deleted_at IS NULL) AS listing_count
 `;
 const ADMIN_DETAIL_SELECT_COLUMNS = `
-  p.id, p.slug, p.display_name, p.description, p.email, p.phone, p.website,
+  p.id, p.slug, p.legal_name, p.display_name, p.description, p.email, p.phone, p.website,
+  p.review_note,
   lm.url AS logo_url, vms.code AS verification_status_code, ms.code AS moderation_status_code,
   p.created_at,
   (SELECT COUNT(*) FROM listings l WHERE l.partner_id = p.id AND l.deleted_at IS NULL) AS total_listing_count,
@@ -161,15 +173,37 @@ export class MySqlPartnerRepository {
 
   /**
    * @param {number} userId
+   * @param {{approvedOnly?: boolean}} [opts] P1.2 (Master Roadmap):
+   *   `approvedOnly` excludes a DRAFT/PENDING/NEEDS_CHANGES/REJECTED
+   *   application — real, capability-granting memberships only. Default
+   *   `false` preserves this method's two other callers' existing
+   *   behavior (`listMembershipsForUserAdmin`, and `applyToBecomePartner`'s
+   *   own "do you already have one in progress" check, which needs to
+   *   see exactly the statuses `approvedOnly` would hide). `GET
+   *   /partners/mine` is the one caller that opts into `approvedOnly` —
+   *   its response feeds `AuthContext`'s `partnerships` array, which
+   *   `RequirePartner` uses to gate the entire partner dashboard; an
+   *   applicant mid-review must not get real partner capabilities just
+   *   because a `partner_employees` OWNER row already exists for their
+   *   still-unapproved application.
    * @returns {Promise<Array<{partnerId, slug, displayName, roleCode}>>}
    */
-  async listMembershipsForUser(userId) {
+  async listMembershipsForUser(userId, { approvedOnly = false } = {}) {
+    const conditions = [
+      'pe.user_id = ?',
+      'pe.deleted_at IS NULL',
+      'p.deleted_at IS NULL',
+    ];
+    if (approvedOnly) {
+      conditions.push("vms.code = 'APPROVED'");
+    }
     const [rows] = await this.#pool.query(
-      `SELECT p.id, p.slug, p.display_name, per.code AS role_code
+      `SELECT p.id, p.slug, p.display_name, per.code AS role_code, vms.code AS verification_status_code
        FROM partner_employees pe
        JOIN partners p ON p.id = pe.partner_id
        JOIN partner_employee_roles per ON per.id = pe.role_id
-       WHERE pe.user_id = ? AND pe.deleted_at IS NULL AND p.deleted_at IS NULL
+       JOIN moderation_statuses vms ON vms.id = p.verification_status_id
+       WHERE ${conditions.join(' AND ')}
        ORDER BY p.display_name ASC`,
       [userId],
     );
@@ -278,11 +312,17 @@ export class MySqlPartnerRepository {
    * Phase 11 Admin Platform admin detail — any non-deleted partner
    * regardless of status, plus listing stats and the owning user's
    * identity (`partners.owner_user_id`, set at creation, distinct from
-   * the possibly-multiple `partner_employees` OWNER-role rows).
+   * the possibly-multiple `partner_employees` OWNER-role rows). Also the
+   * P1.2 owner-facing "my application" read (same shape, gated
+   * differently at the Service layer) — accepts an optional `connection`
+   * so a caller inside an open transaction (`createApplication`) reads
+   * back the row it just inserted on the SAME connection, not a pool
+   * connection that can't see it pre-commit.
    * @param {number} id
+   * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} [connection]
    */
-  async findByIdAdmin(id) {
-    const [rows] = await this.#pool.query(
+  async findByIdAdmin(id, connection = this.#pool) {
+    const [rows] = await connection.query(
       `SELECT ${ADMIN_DETAIL_SELECT_COLUMNS} ${ADMIN_FROM_JOINED}
        WHERE p.id = ? AND p.deleted_at IS NULL
        LIMIT 1`,
@@ -292,15 +332,152 @@ export class MySqlPartnerRepository {
   }
 
   /**
-   * @param {number} id
-   * @param {string} statusCode PENDING|APPROVED|REJECTED
+   * P1.2 (Master Roadmap) — self-service partner onboarding.
+   * `verification_status_id` starts at DRAFT; `moderation_status_id`
+   * starts at PENDING (an unverified partner has no meaningful
+   * moderation state yet — it must never start at APPROVED, which would
+   * make an unreviewed company page publicly visible). Creates the
+   * owning `partner_employees` OWNER row in the SAME transaction so
+   * `GET /partners/mine` (already existing, unchanged) picks up the new
+   * application immediately with zero special-casing.
    */
-  async updateVerificationStatus(id, statusCode) {
+  async createApplication(
+    {
+      legalName,
+      displayName,
+      slug,
+      description,
+      email,
+      phone,
+      website,
+      ownerUserId,
+    },
+    connection,
+  ) {
+    try {
+      const [result] = await connection.query(
+        `INSERT INTO partners
+          (legal_name, display_name, slug, description, email, phone, website,
+           verification_status_id, moderation_status_id, owner_user_id, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?,
+           (SELECT id FROM moderation_statuses WHERE code = 'DRAFT'),
+           (SELECT id FROM moderation_statuses WHERE code = 'PENDING'),
+           ?, ?, ?)`,
+        [
+          legalName,
+          displayName,
+          slug,
+          description ?? null,
+          email ?? null,
+          phone ?? null,
+          website ?? null,
+          ownerUserId,
+          ownerUserId,
+          ownerUserId,
+        ],
+      );
+      const partnerId = result.insertId;
+      await connection.query(
+        `INSERT INTO partner_employees (partner_id, user_id, role_id, created_by, updated_by)
+         VALUES (?, ?, (SELECT id FROM partner_employee_roles WHERE code = 'OWNER'), ?, ?)`,
+        [partnerId, ownerUserId, ownerUserId, ownerUserId],
+      );
+      return this.findByIdAdmin(partnerId, connection);
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+  }
+
+  /** @param {string} slug @returns {Promise<boolean>} */
+  async slugExists(slug, connection = this.#pool) {
+    const [rows] = await connection.query(
+      'SELECT id FROM partners WHERE active_slug = ? LIMIT 1',
+      [slug],
+    );
+    return rows.length > 0;
+  }
+
+  /**
+   * P1.2 — owner-side edit of an in-progress application. The Service
+   * enforces that this only runs while `verification_status_id` is
+   * DRAFT/NEEDS_CHANGES; the repository just writes whatever fields are
+   * supplied (undefined = leave unchanged, matching every other
+   * repository's partial-update convention in this codebase).
+   */
+  async updateApplication(
+    id,
+    { legalName, displayName, description, email, phone, website },
+    connection = this.#pool,
+  ) {
+    const assignments = [];
+    const values = [];
+    if (legalName !== undefined) {
+      assignments.push('legal_name = ?');
+      values.push(legalName);
+    }
+    if (displayName !== undefined) {
+      assignments.push('display_name = ?');
+      values.push(displayName);
+    }
+    if (description !== undefined) {
+      assignments.push('description = ?');
+      values.push(description);
+    }
+    if (email !== undefined) {
+      assignments.push('email = ?');
+      values.push(email);
+    }
+    if (phone !== undefined) {
+      assignments.push('phone = ?');
+      values.push(phone);
+    }
+    if (website !== undefined) {
+      assignments.push('website = ?');
+      values.push(website);
+    }
+    if (assignments.length === 0) return this.findByIdAdmin(id, connection);
+    values.push(id);
+    await connection.query(
+      `UPDATE partners SET ${assignments.join(', ')} WHERE id = ?`,
+      values,
+    );
+    return this.findByIdAdmin(id, connection);
+  }
+
+  /**
+   * @param {number} id
+   * @param {string} statusCode DRAFT|PENDING|NEEDS_CHANGES|APPROVED|REJECTED
+   * @param {{reviewNote?: string|null, alsoApproveModerationStatus?: boolean}} [opts]
+   *   `alsoApproveModerationStatus`: P1.2 — a fresh application's
+   *   `moderation_status_id` starts at PENDING (never APPROVED — see
+   *   `createApplication`'s comment), so the one moment it must become
+   *   publicly visible is exactly when an admin approves verification.
+   *   Doing both in the SAME UPDATE keeps them atomic — there is no
+   *   window where a partner is verification-APPROVED but still
+   *   moderation-PENDING (and therefore invisible for no visible reason).
+   */
+  async updateVerificationStatus(
+    id,
+    statusCode,
+    { reviewNote, alsoApproveModerationStatus = false } = {},
+  ) {
+    const assignments = [
+      'verification_status_id = (SELECT id FROM moderation_statuses WHERE code = ?)',
+    ];
+    const values = [statusCode];
+    if (reviewNote !== undefined) {
+      assignments.push('review_note = ?');
+      values.push(reviewNote);
+    }
+    if (alsoApproveModerationStatus) {
+      assignments.push(
+        "moderation_status_id = (SELECT id FROM moderation_statuses WHERE code = 'APPROVED')",
+      );
+    }
+    values.push(id);
     await this.#pool.query(
-      `UPDATE partners
-       SET verification_status_id = (SELECT id FROM moderation_statuses WHERE code = ?)
-       WHERE id = ?`,
-      [statusCode, id],
+      `UPDATE partners SET ${assignments.join(', ')} WHERE id = ?`,
+      values,
     );
     return this.findByIdAdmin(id);
   }
