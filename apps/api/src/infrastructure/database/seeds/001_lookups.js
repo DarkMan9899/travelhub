@@ -152,4 +152,13 @@ export default async function seedLookups(connection) {
     { code: 'REJECTED', name: 'Rejected' },
     { code: 'CANCELLED', name: 'Cancelled' },
   ]);
+
+  // P1.5 (Master Roadmap) — a customer's reason for reporting a review.
+  await upsertByCode(connection, 'review_report_reasons', [
+    { code: 'SPAM', name: 'Spam or advertising' },
+    { code: 'ABUSIVE', name: 'Abusive or offensive language' },
+    { code: 'OFF_TOPIC', name: 'Not about this listing/stay' },
+    { code: 'FAKE', name: 'Suspected fake review' },
+    { code: 'OTHER', name: 'Other' },
+  ]);
 }

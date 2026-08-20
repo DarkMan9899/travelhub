@@ -36,3 +36,53 @@ export const bookingIdParamsSchema = z.object({
   query: passthroughQuery,
   body: z.any(),
 });
+
+// P1.5 (Master Roadmap) — Review Trust & Safety.
+
+export const reviewIdParamsSchema = z.object({
+  params: z.object({ id: z.coerce.number().int().positive() }),
+  query: passthroughQuery,
+  body: z.any(),
+});
+
+export const listReviewsAdminQuerySchema = z.object({
+  params: passthroughParams,
+  query: z.object({
+    moderationStatus: z
+      .enum(['PENDING', 'APPROVED', 'REJECTED', 'FLAGGED'])
+      .optional(),
+    // `z.coerce.boolean()` is a footgun for a query string: it calls
+    // `Boolean(value)`, and `Boolean('false')` is `true` (any non-empty
+    // string is truthy) — `?hasReports=false` would otherwise silently
+    // mean "true". Only the literal strings 'true'/'false' are accepted.
+    hasReports: z
+      .enum(['true', 'false'])
+      .optional()
+      .transform((value) =>
+        value === undefined ? undefined : value === 'true',
+      ),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+  }),
+  body: z.any(),
+});
+
+export const updateReviewModerationStatusSchema = z.object({
+  params: z.object({ id: z.coerce.number().int().positive() }),
+  query: passthroughQuery,
+  body: z.object({
+    status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'FLAGGED']),
+    notes: z.string().trim().max(500).optional(),
+  }),
+});
+
+const REPORT_REASON_CODES = ['SPAM', 'ABUSIVE', 'OFF_TOPIC', 'FAKE', 'OTHER'];
+
+export const reportReviewSchema = z.object({
+  params: z.object({ id: z.coerce.number().int().positive() }),
+  query: passthroughQuery,
+  body: z.object({
+    reasonCode: z.enum(REPORT_REASON_CODES),
+    details: z.string().trim().max(1000).optional(),
+  }),
+});

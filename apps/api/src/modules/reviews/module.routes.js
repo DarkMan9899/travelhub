@@ -11,11 +11,15 @@ import {
   submitReviewSchema,
   listReviewsQuerySchema,
   bookingIdParamsSchema,
+  reviewIdParamsSchema,
+  listReviewsAdminQuerySchema,
+  updateReviewModerationStatusSchema,
+  reportReviewSchema,
 } from './validators/reviewValidators.js';
 
 export default function createReviewRoutes({ reviewController, guards }) {
   const router = Router();
-  const { requireAuth } = guards;
+  const { requireAuth, requirePermission } = guards;
 
   router.post(
     '/',
@@ -35,6 +39,44 @@ export default function createReviewRoutes({ reviewController, guards }) {
     requireAuth,
     validate(bookingIdParamsSchema),
     reviewController.getForBooking,
+  );
+
+  // P1.5 (Master Roadmap) — Review Trust & Safety, `/admin*`, registered
+  // before `/:id`-shaped routes below for the usual collision-avoidance
+  // reason (every other admin-moderation module in this codebase does
+  // the same). Each route's permission is enforced again inside
+  // `ReviewService` (defense in depth) — the guard here is the
+  // fast-fail layer.
+  router.get(
+    '/admin',
+    requireAuth,
+    requirePermission('review.moderate'),
+    validate(listReviewsAdminQuerySchema),
+    reviewController.listAdmin,
+  );
+  router.get(
+    '/admin/:id',
+    requireAuth,
+    requirePermission('review.moderate'),
+    validate(reviewIdParamsSchema),
+    reviewController.getAdminDetail,
+  );
+  router.patch(
+    '/admin/:id/moderation-status',
+    requireAuth,
+    requirePermission('review.moderate'),
+    validate(updateReviewModerationStatusSchema),
+    reviewController.updateModerationStatus,
+  );
+
+  // Reporting is open to any authenticated user (see
+  // `reviewService.js#reportReview`'s own comment) — no
+  // `requirePermission` here, `requireAuth` is the only gate.
+  router.post(
+    '/:id/report',
+    requireAuth,
+    validate(reportReviewSchema),
+    reviewController.report,
   );
 
   return router;

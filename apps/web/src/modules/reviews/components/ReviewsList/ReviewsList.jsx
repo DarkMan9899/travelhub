@@ -5,22 +5,99 @@
  * endpoint already returns) plus a "Load more" list of review cards,
  * same triad (Skeleton/EmptyState/ErrorState) every other list in this
  * codebase uses.
+ *
+ * P1.5 (Master Roadmap, Review Trust & Safety): also renders
+ * `vendor_response` (the DTO has returned it since Phase 12, but no UI
+ * ever displayed it — a real, previously-unnoticed gap, not new scope),
+ * and adds a "Report" action per review, same `isAuthenticated` ?
+ * render : null gate `FavoriteButton.jsx` already establishes for a
+ * logged-out visitor acting on public content.
  */
 
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Stack, Inline } from '@travelhub/ui/components/layout';
 import { Card, Button } from '@travelhub/ui/components/primitives';
 import { RatingStars } from '@travelhub/ui/components/data-display';
+import { Select, Textarea } from '@travelhub/ui/components/form-controls';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
   Spinner,
+  Modal,
 } from '@travelhub/ui/components/feedback-overlays';
+import { useAuth } from '../../../../contexts/AuthContext.jsx';
+import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useListingReviewsQuery } from '../../queries/useListingReviewsQuery.js';
+import { useReportReviewMutation } from '../../mutations/useReportReviewMutation.js';
 import styles from './ReviewsList.module.scss';
+
+const REPORT_REASON_CODES = ['SPAM', 'ABUSIVE', 'OFF_TOPIC', 'FAKE', 'OTHER'];
+
+function ReportReviewModal({ isOpen, onClose, onSubmitReport, isSaving }) {
+  const { t } = useTranslation();
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: { reasonCode: 'SPAM', details: '' },
+  });
+
+  async function onSubmit(values) {
+    const ok = await onSubmitReport(values);
+    if (ok) reset();
+  }
+
+  const reasonOptions = REPORT_REASON_CODES.map((code) => ({
+    value: code,
+    label: t(`reviews.report.reasons.${code}`),
+  }));
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={t('reviews.report.title')}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack gap="4">
+          <Controller
+            name="reasonCode"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label={t('reviews.report.reasonLabel')}
+                options={reasonOptions}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          <Controller
+            name="details"
+            control={control}
+            render={({ field }) => (
+              <Textarea
+                label={t('reviews.report.detailsLabel')}
+                rows={3}
+                // eslint-disable-next-line react/jsx-props-no-spreading
+                {...field}
+              />
+            )}
+          />
+          <Inline justify="flex-end">
+            <Button type="submit" variant="primary" loading={isSaving}>
+              {t('reviews.report.submitAction')}
+            </Button>
+          </Inline>
+        </Stack>
+      </form>
+    </Modal>
+  );
+}
+
+ReportReviewModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmitReport: PropTypes.func.isRequired,
+  isSaving: PropTypes.bool.isRequired,
+};
 
 function ReviewsListSkeleton() {
   return (
@@ -35,6 +112,9 @@ function ReviewsListSkeleton() {
 
 export default function ReviewsList({ listingId }) {
   const { t, i18n } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const { showToast } = useToast();
+  const [reportTarget, setReportTarget] = useState(null);
   const {
     data,
     isPending,
@@ -44,6 +124,7 @@ export default function ReviewsList({ listingId }) {
     hasNextPage,
     isFetchingNextPage,
   } = useListingReviewsQuery(listingId);
+  const reportMutation = useReportReviewMutation();
 
   const reviews = useMemo(
     () => data?.pages.flatMap((page) => page.results) ?? [],
@@ -57,6 +138,23 @@ export default function ReviewsList({ listingId }) {
       }),
     [i18n.language],
   );
+
+  async function handleSubmitReport(values) {
+    try {
+      await reportMutation.mutateAsync({ id: reportTarget.id, ...values });
+      showToast(t('reviews.report.success'), { variant: 'success' });
+      setReportTarget(null);
+      return true;
+    } catch (err) {
+      showToast(
+        err.code === 'CONFLICT'
+          ? t('reviews.report.alreadyReported')
+          : t('reviews.report.error'),
+        { variant: 'danger' },
+      );
+      return false;
+    }
+  }
 
   if (isError) {
     return (
@@ -102,6 +200,25 @@ export default function ReviewsList({ listingId }) {
                 <p className={styles.reviewTitle}>{review.title}</p>
               )}
               {review.content && <p>{review.content}</p>}
+              {review.vendor_response && (
+                <Card as="div" padding="md" className={styles.vendorResponse}>
+                  <Stack gap="1">
+                    <strong>{t('reviews.vendorResponseLabel')}</strong>
+                    <p>{review.vendor_response}</p>
+                  </Stack>
+                </Card>
+              )}
+              {isAuthenticated && (
+                <Inline justify="flex-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReportTarget(review)}
+                  >
+                    {t('reviews.report.action')}
+                  </Button>
+                </Inline>
+              )}
             </Stack>
           </Card>
         ))}
@@ -118,6 +235,14 @@ export default function ReviewsList({ listingId }) {
             t('reviews.list.loadMore')
           )}
         </Button>
+      )}
+      {reportTarget && (
+        <ReportReviewModal
+          isOpen
+          onClose={() => setReportTarget(null)}
+          onSubmitReport={(values) => handleSubmitReport(values)}
+          isSaving={reportMutation.isPending}
+        />
       )}
     </Stack>
   );

@@ -27,3 +27,4 @@ export { default as AdminAiModerationPageContent } from './components/AdminAiMod
 export { default as AdminAiUsagePageContent } from './components/AdminAiUsagePageContent/AdminAiUsagePageContent.jsx';
 export { default as AdminPaymentsPageContent } from './components/AdminPaymentsPageContent/AdminPaymentsPageContent.jsx';
 export { default as AdminPaymentDetailContent } from './components/AdminPaymentDetailContent/AdminPaymentDetailContent.jsx';
+export { default as AdminReviewModerationPageContent } from './components/AdminReviewModerationPageContent/AdminReviewModerationPageContent.jsx';

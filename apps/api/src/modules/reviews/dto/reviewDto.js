@@ -30,3 +30,28 @@ export function toReviewSummaryResponse(summary) {
     review_count: summary.reviewCount,
   };
 }
+
+/** P1.5 (Master Roadmap) — admin moderation queue/detail, additive over the public shape. */
+export function toReviewAdminResponse(review) {
+  return {
+    ...toReviewResponse(review),
+    listing_title: review.listingTitle,
+    moderation_notes: review.moderationNotes,
+    moderated_at: review.moderatedAt,
+    moderated_by: review.moderatedBy,
+    report_count: review.reportCount,
+  };
+}
+
+export function toReviewReportResponse(report) {
+  return {
+    id: report.id,
+    review_id: report.reviewId,
+    reporter_user_id: report.reporterUserId,
+    reason: report.reasonCode,
+    reason_name: report.reasonName,
+    details: report.details,
+    created_at: report.createdAt,
+    resolved_at: report.resolvedAt,
+  };
+}

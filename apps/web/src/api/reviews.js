@@ -23,3 +23,42 @@ export function listListingReviews(listingId, { cursor, limit } = {}) {
     .get('/reviews', { params: { listingId, cursor, limit } })
     .then((response) => response.data);
 }
+
+/**
+ * P1.5 (Master Roadmap) — Review Trust & Safety, `/reviews/admin*`.
+ * Requires `review.moderate`.
+ */
+
+/** `GET /reviews/admin` — the moderation queue, cursor-paginated. */
+export function getAdminReviews(params) {
+  return apiClient
+    .get('/reviews/admin', { params })
+    .then((response) => response.data);
+}
+
+/** `GET /reviews/admin/:id` — full detail plus every report filed against it. */
+export function getAdminReviewDetail(id) {
+  return apiClient
+    .get(`/reviews/admin/${id}`)
+    .then((response) => response.data);
+}
+
+/** `PATCH /reviews/admin/:id/moderation-status` — `{ status, notes? }`. */
+export function updateReviewModerationStatus(id, status, notes) {
+  return apiClient
+    .patch(`/reviews/admin/${id}/moderation-status`, {
+      status,
+      ...(notes ? { notes } : {}),
+    })
+    .then((response) => response.data);
+}
+
+/**
+ * `POST /reviews/:id/report` — `{ reasonCode, details? }`. Any
+ * authenticated user; 409 if this caller already reported this review.
+ */
+export function reportReview(id, { reasonCode, details }) {
+  return apiClient
+    .post(`/reviews/${id}/report`, { reasonCode, details })
+    .then((response) => response.data);
+}

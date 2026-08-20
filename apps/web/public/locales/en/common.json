@@ -1468,6 +1468,7 @@
       "users": "Users",
       "partners": "Partners",
       "listings": "Listings",
+      "reviews": "Reviews",
       "bookings": "Bookings",
       "payments": "Payments",
       "marketplaceConfig": "Configuration",
@@ -1705,6 +1706,52 @@
       "notesPlaceholder": "e.g. Missing required photos.",
       "rejectSuccess": "Listing rejected.",
       "statusError": "Something went wrong. Please try again."
+    },
+    "reviewModeration": {
+      "heading": "Review Moderation",
+      "loadMore": "Load more",
+      "filters": {
+        "moderationLabel": "Moderation",
+        "moderationAll": "All moderation statuses",
+        "reportedLabel": "Reports",
+        "reportedOnly": "Reported only",
+        "allReviews": "All reviews"
+      },
+      "table": {
+        "listing": "Listing",
+        "customer": "Customer",
+        "rating": "Rating",
+        "content": "Review",
+        "status": "Status",
+        "reports": "Reports"
+      },
+      "moderationStatus": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected",
+        "FLAGGED": "Flagged"
+      },
+      "empty": {
+        "title": "No reviews found",
+        "description": "Try a different filter."
+      },
+      "error": {
+        "title": "Something went wrong loading reviews.",
+        "retry": "Try again"
+      },
+      "approveAction": "Approve",
+      "rejectAction": "Reject",
+      "approveConfirmTitle": "Approve this review?",
+      "approveConfirmDescription": "This review will be marked as moderation-approved and stay visible.",
+      "approveSuccess": "Review approved.",
+      "rejectDialogTitle": "Reject this review?",
+      "rejectDialogDescription": "This review will be hidden from the public listing page, and the author will be notified. You can add an optional note explaining why.",
+      "notesLabel": "Notes (optional)",
+      "notesPlaceholder": "e.g. Violates our content guidelines.",
+      "rejectSuccess": "Review rejected.",
+      "statusError": "Something went wrong. Please try again.",
+      "viewReports": "Reports ({{count}})",
+      "reportsDialogTitle": "Reports on this review"
     },
     "bookings": {
       "heading": "Bookings",
@@ -2604,6 +2651,24 @@
       "errorTitle": "We couldn't load reviews.",
       "errorRetry": "Try again",
       "loadMore": "Load more reviews"
+    },
+    "vendorResponseLabel": "Response from the business",
+    "report": {
+      "action": "Report",
+      "title": "Report this review",
+      "reasonLabel": "Reason",
+      "reasons": {
+        "SPAM": "Spam or advertising",
+        "ABUSIVE": "Abusive or offensive language",
+        "OFF_TOPIC": "Not about this listing/stay",
+        "FAKE": "Suspected fake review",
+        "OTHER": "Other"
+      },
+      "detailsLabel": "Additional details (optional)",
+      "submitAction": "Submit report",
+      "success": "Thanks — we'll take a look.",
+      "alreadyReported": "You've already reported this review.",
+      "error": "Something went wrong. Please try again."
     }
   },
   "ai": {

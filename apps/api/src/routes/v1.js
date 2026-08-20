@@ -124,6 +124,7 @@ export default function createV1Router({
   // over `bookings`/`listings` (BACKEND_ARCHITECTURE.md §4).
   const reviewsContainer = createReviewsContainer({
     bookingService: bookingsContainer.bookingService,
+    permissionResolver,
     auditLogger,
     eventBus,
   });
@@ -153,6 +154,10 @@ export default function createV1Router({
     notificationService: notificationsContainer.notificationService,
     partnerService: partnersContainer.partnerService,
     conversationService: messagingContainer.conversationService,
+    // P1.5 (Master Roadmap): moderator/admin audience resolution for
+    // REVIEW_REPORTED — same `usersContainer.userService` every other
+    // cross-module listener dependency already reuses.
+    userService: usersContainer.userService,
   });
   // Phase 15 (AI Platform): depends on Bookings'/Listings' public Service
   // interfaces only (memory-affinity resolution in aiListener.js) — never

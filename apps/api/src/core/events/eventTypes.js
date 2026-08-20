@@ -68,6 +68,19 @@ export const EVENT_TYPES = Object.freeze({
   // becomes a real `partner_employees` row (never at invite-send time,
   // when there may not even be a `users` row yet to notify in-app).
   PARTNER_STAFF_ADDED: 'partner.staff_added',
+  // P1.5 (Master Roadmap, Review Trust & Safety). Reviews are
+  // auto-approved on submission (see mysqlReviewRepository.js's own
+  // comment), so an admin moderation action is only notification-worthy
+  // on the one outcome that actually changes something the author can
+  // see — hiding an already-live review. There is no
+  // REVIEW_APPROVED/REVIEW_FLAGGED equivalent: re-approving or flagging
+  // is either a no-op from the author's side or an interim state, same
+  // reasoning `partnerService.js#updateModerationStatus` already applies
+  // (that method publishes no event at all).
+  REVIEW_REJECTED: 'review.rejected',
+  // Notifies moderators/admins, not the review's author — see
+  // `notificationListener.js`'s own subscription.
+  REVIEW_REPORTED: 'review.reported',
 });
 
 export default EVENT_TYPES;

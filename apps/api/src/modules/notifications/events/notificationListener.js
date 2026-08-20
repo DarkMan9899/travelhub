@@ -32,6 +32,7 @@ export function registerNotificationListeners({
   notificationService,
   partnerService,
   conversationService,
+  userService,
 }) {
   async function notify(
     event,
@@ -323,6 +324,43 @@ export function registerNotificationListeners({
       },
     }),
   );
+
+  // P1.5 (Master Roadmap, Review Trust & Safety): the review's own
+  // author — see `eventTypes.js`'s comment for why only this one outcome
+  // is notification-worthy.
+  eventBus.subscribe(EVENT_TYPES.REVIEW_REJECTED, (event) =>
+    notify(event, {
+      recipientUserId: event.payload.customerUserId,
+      categoryCode: 'REVIEW',
+      priorityCode: PRIORITY.NORMAL,
+      payload: { notes: event.payload.notes },
+    }),
+  );
+
+  // Fans out to every MODERATOR/ADMIN/SUPER_ADMIN, not the review's
+  // author — same `listUserIdsByRole` audience-resolution `admin
+  // .announcement`'s own controller already uses, just reached from a
+  // domain event instead of a direct admin action.
+  eventBus.subscribe(EVENT_TYPES.REVIEW_REPORTED, async (event) => {
+    const recipientUserIds = await userService.listUserIdsByRole([
+      'MODERATOR',
+      'ADMIN',
+      'SUPER_ADMIN',
+    ]);
+    await Promise.all(
+      recipientUserIds.map((recipientUserId) =>
+        notify(event, {
+          recipientUserId,
+          categoryCode: 'ADMIN',
+          priorityCode: PRIORITY.NORMAL,
+          payload: {
+            reviewId: event.payload.reviewId,
+            reasonName: event.payload.reasonName,
+          },
+        }),
+      ),
+    );
+  });
 }
 
 export default registerNotificationListeners;

@@ -17,10 +17,24 @@ import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
 
+// P1.5 (Master Roadmap) — the outcome APPROVED/REJECTED/FLAGGED/PENDING
+// is only notification-worthy on REJECTED (see eventTypes.js's own
+// comment); this is the full set `PATCH /reviews/admin/:id
+// /moderation-status` accepts, mirroring `listingService.js`'s
+// `LISTING_MODERATION_STATUSES`.
+const REVIEW_MODERATION_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'FLAGGED',
+];
+
 export class ReviewService {
   #reviewRepository;
 
   #bookingService;
+
+  #permissionResolver;
 
   #auditLogger;
 
@@ -29,13 +43,25 @@ export class ReviewService {
   constructor({
     reviewRepository,
     bookingService,
+    permissionResolver,
     auditLogger,
     eventBus = createNoOpEventBus(),
   }) {
     this.#reviewRepository = reviewRepository;
     this.#bookingService = bookingService;
+    this.#permissionResolver = permissionResolver;
     this.#auditLogger = auditLogger;
     this.#eventBus = eventBus;
+  }
+
+  /** Mirrors `listingService.js`/`partnerService.js`'s identical private helper. */
+  async #assertPermission(principal, permissionKey) {
+    if (!principal) throw new AuthenticationError();
+    const granted = await this.#permissionResolver.hasPermission(
+      principal.roles,
+      permissionKey,
+    );
+    if (!granted) throw new AuthorizationError();
   }
 
   /**
@@ -122,6 +148,132 @@ export class ReviewService {
   /** Public — bulk lookup for a grid of cards (search results, company listing grid). */
   async getSummariesForListingIds(listingIds) {
     return this.#reviewRepository.getSummariesForListingIds(listingIds);
+  }
+
+  /**
+   * P1.5 (Master Roadmap) — `GET /reviews/admin`, the moderation queue.
+   * Requires `review.moderate` outright (no owner fallback — a
+   * moderator queuing every listing's reviews is never "the owner"),
+   * mirroring `listingService.js#listListingsAdmin` exactly.
+   */
+  async listReviewsAdmin(principal, filters = {}, paginationOpts = {}) {
+    await this.#assertPermission(principal, 'review.moderate');
+    return this.#reviewRepository.listAdmin({ ...filters, ...paginationOpts });
+  }
+
+  /** `GET /reviews/admin/:id` — full detail plus every report filed against it. */
+  async getReviewAdminDetail(principal, id) {
+    await this.#assertPermission(principal, 'review.moderate');
+    const review = await this.#reviewRepository.findByIdAdmin(id);
+    if (!review) throw new NotFoundError('Review not found.');
+    const reports = await this.#reviewRepository.listReportsForReview(id);
+    return { ...review, reports };
+  }
+
+  /**
+   * `PATCH /reviews/admin/:id/moderation-status` — the first real write
+   * to `reviews.status_id` since auto-approval at submission time.
+   * `notes` is optional free text (e.g. a removal reason), surfaced to
+   * the review's author on REJECTED.
+   */
+  async updateModerationStatus(principal, id, statusCode, notes = null) {
+    if (!REVIEW_MODERATION_STATUSES.includes(statusCode)) {
+      throw new ValidationError('Invalid moderation status.');
+    }
+    await this.#assertPermission(principal, 'review.moderate');
+
+    const before = await this.#reviewRepository.findByIdAdmin(id);
+    if (!before) throw new NotFoundError('Review not found.');
+
+    const updated = await this.#reviewRepository.updateModerationStatus(
+      id,
+      statusCode,
+      notes,
+      principal.userId,
+    );
+
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'review.moderation_status_changed',
+      targetType: 'review',
+      targetId: id,
+      beforeSnapshot: { statusCode: before.statusCode },
+      afterSnapshot: { statusCode, notes },
+    });
+
+    if (statusCode === 'REJECTED') {
+      await this.#eventBus.publish(
+        createDomainEvent({
+          eventType: EVENT_TYPES.REVIEW_REJECTED,
+          actorId: principal.userId,
+          resourceType: 'review',
+          resourceId: id,
+          payload: {
+            reviewId: id,
+            customerUserId: before.customerUserId,
+            notes,
+          },
+        }),
+      );
+    }
+
+    return updated;
+  }
+
+  /**
+   * P1.5 (Master Roadmap) — a customer reports a review. Any
+   * authenticated user (not just the listing's other reviewers or
+   * bookers — reporting abusive/spam content should never be gated
+   * behind having bought something, same "open by design" reasoning
+   * `partnerService.js#applyToBecomePartner` already applies to a
+   * different action). The table's own unique constraint is the final
+   * guarantee against a duplicate report from the same customer; the
+   * pre-check below only exists to return a friendly 409 instead of a
+   * raw duplicate-key error, matching `submitReview`'s own idiom.
+   */
+  async reportReview(principal, reviewId, { reasonCode, details }) {
+    if (!principal) throw new AuthenticationError();
+
+    const review = await this.#reviewRepository.findById(reviewId);
+    if (!review) throw new NotFoundError('Review not found.');
+
+    const reasonId =
+      await this.#reviewRepository.findReasonIdByCode(reasonCode);
+    if (!reasonId) {
+      throw new ValidationError('Invalid report reason.', [
+        { field: 'reasonCode', issue: 'INVALID' },
+      ]);
+    }
+
+    const report = await this.#reviewRepository.createReport({
+      reviewId,
+      reporterUserId: principal.userId,
+      reasonId,
+      details: details?.trim() || null,
+    });
+
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'review.reported',
+      targetType: 'review',
+      targetId: reviewId,
+      afterSnapshot: { reasonCode },
+    });
+
+    await this.#eventBus.publish(
+      createDomainEvent({
+        eventType: EVENT_TYPES.REVIEW_REPORTED,
+        actorId: principal.userId,
+        resourceType: 'review',
+        resourceId: reviewId,
+        payload: {
+          reviewId,
+          reasonName: report.reasonName,
+        },
+      }),
+    );
+
+    return report;
   }
 }
 

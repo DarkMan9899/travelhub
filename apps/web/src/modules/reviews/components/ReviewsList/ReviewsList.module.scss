@@ -12,3 +12,9 @@
   font-weight: 600;
   color: tokens.$color-gray-900;
 }
+
+// P1.5 (Master Roadmap) — a partner's response, nested visually under
+// its review via the shared Card's own background token.
+.vendorResponse {
+  background-color: tokens.$color-gray-100;
+}

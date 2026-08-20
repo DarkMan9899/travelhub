@@ -223,6 +223,38 @@ const TEMPLATES = {
       body: `Теперь вы ${roleName ?? 'участник команды'} в «${partnerName ?? 'вашей новой команде'}».`,
     }),
   },
+  // P1.5 (Master Roadmap) — the review author, notified only when a
+  // moderator hides an already-live review (see eventTypes.js's own
+  // comment on why there is no APPROVED/FLAGGED equivalent).
+  'review.rejected': {
+    en: ({ notes }) => ({
+      subject: 'Your review was removed',
+      body: `A moderator removed your review because it didn't meet our guidelines.${notes ? ` Note: ${notes}` : ''}`,
+    }),
+    hy: ({ notes }) => ({
+      subject: 'Ձեր կարծիքը հեռացվել է',
+      body: `Մոդերատորը հեռացրել է ձեր կարծիքը, քանի որ այն չի համապատասխանում մեր կանոններին։${notes ? ` Նշում. ${notes}` : ''}`,
+    }),
+    ru: ({ notes }) => ({
+      subject: 'Ваш отзыв был удалён',
+      body: `Модератор удалил ваш отзыв, так как он не соответствует нашим правилам.${notes ? ` Примечание: ${notes}` : ''}`,
+    }),
+  },
+  // Sent to moderators/admins, not the review's author.
+  'review.reported': {
+    en: ({ reasonName }) => ({
+      subject: 'A review was reported',
+      body: `A customer reported a review (reason: ${reasonName ?? 'unspecified'}). Please review it in the moderation queue.`,
+    }),
+    hy: ({ reasonName }) => ({
+      subject: 'Կարծիք է հայտնվել',
+      body: `Հաճախորդը հայտնվել է կարծիքի մասին (պատճառ՝ ${reasonName ?? 'չնշված'})։ Խնդրում ենք ստուգել այն մոդերացիայի հերթում։`,
+    }),
+    ru: ({ reasonName }) => ({
+      subject: 'На отзыв поступила жалоба',
+      body: `Клиент пожаловался на отзыв (причина: ${reasonName ?? 'не указана'}). Пожалуйста, проверьте его в очереди модерации.`,
+    }),
+  },
   'admin.announcement': {
     en: ({ title, body }) => ({
       subject: title ?? 'Announcement',

@@ -5,7 +5,12 @@
  * shape response. No business logic, no direct database access.
  */
 
-import { toReviewResponse, toReviewSummaryResponse } from '../dto/reviewDto.js';
+import {
+  toReviewResponse,
+  toReviewSummaryResponse,
+  toReviewAdminResponse,
+  toReviewReportResponse,
+} from '../dto/reviewDto.js';
 
 export function createReviewController(reviewService) {
   return {
@@ -62,6 +67,88 @@ export function createReviewController(reviewService) {
             ...meta,
             ...toReviewSummaryResponse({ listingId, ...summary }),
           },
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    // P1.5 (Master Roadmap) — Review Trust & Safety.
+    async listAdmin(req, res, next) {
+      try {
+        const { moderationStatus, hasReports, cursor, limit } =
+          req.validated.query;
+        const { rows, meta } = await reviewService.listReviewsAdmin(
+          req.principal,
+          { moderationStatus, hasReports },
+          { cursor, limit },
+        );
+        res.status(200).json({
+          success: true,
+          data: rows.map(toReviewAdminResponse),
+          meta,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async getAdminDetail(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const review = await reviewService.getReviewAdminDetail(
+          req.principal,
+          id,
+        );
+        res.status(200).json({
+          success: true,
+          data: {
+            ...toReviewAdminResponse(review),
+            reports: review.reports.map(toReviewReportResponse),
+          },
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async updateModerationStatus(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const { status, notes } = req.validated.body;
+        const review = await reviewService.updateModerationStatus(
+          req.principal,
+          id,
+          status,
+          notes,
+        );
+        res.status(200).json({
+          success: true,
+          data: toReviewAdminResponse(review),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async report(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const report = await reviewService.reportReview(
+          req.principal,
+          id,
+          req.validated.body,
+        );
+        res.status(201).json({
+          success: true,
+          data: toReviewReportResponse(report),
+          meta: null,
           error: null,
         });
       } catch (err) {

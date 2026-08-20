@@ -5,6 +5,9 @@
  * `routes/v1.js` after the Bookings container) — never a second
  * Repository over `bookings`, the same cross-module rule every other
  * module in this codebase already follows.
+ *
+ * P1.5 (Master Roadmap): also takes `permissionResolver` — the
+ * module's first permission-gated mutations (admin moderation).
  */
 
 import { MySqlReviewRepository } from './repositories/mysqlReviewRepository.js';
@@ -13,6 +16,7 @@ import { createReviewController } from './controllers/reviewController.js';
 
 export default function createReviewsContainer({
   bookingService,
+  permissionResolver,
   auditLogger,
   eventBus,
 }) {
@@ -20,6 +24,7 @@ export default function createReviewsContainer({
   const reviewService = new ReviewService({
     reviewRepository,
     bookingService,
+    permissionResolver,
     auditLogger,
     eventBus,
   });

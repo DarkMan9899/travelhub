@@ -80,6 +80,12 @@ export default function AdminLayout() {
       requiredPermission: 'listing.moderate',
     },
     {
+      id: 'reviews',
+      label: t('admin.nav.reviews'),
+      href: `/${locale}/admin/reviews`,
+      requiredPermission: 'review.moderate',
+    },
+    {
       id: 'inventory',
       label: t('admin.nav.inventory'),
       href: `/${locale}/admin/inventory`,
