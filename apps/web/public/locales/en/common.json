@@ -675,6 +675,7 @@
       "calendar": "Calendar",
       "connections": "Connections",
       "profile": "Company profile",
+      "staff": "Staff",
       "messages": "Messages",
       "notifications": "Notifications",
       "aiUsage": "AI Usage"
@@ -723,6 +724,61 @@
       "saveAction": "Save changes",
       "saveSuccess": "Company profile updated.",
       "saveError": "Something went wrong. Please try again."
+    },
+    "staff": {
+      "heading": "Staff",
+      "inviteAction": "Invite staff member",
+      "inviteSuccess": "Invitation sent.",
+      "inviteError": "Something went wrong. Please try again.",
+      "roleChangeSuccess": "Role updated.",
+      "roleChangeError": "Something went wrong. Please try again.",
+      "removeAction": "Remove",
+      "removeConfirmTitle": "Remove {{name}}?",
+      "removeConfirmDescription": "They will immediately lose access to this company's dashboard. This can't be undone.",
+      "removeConfirmAction": "Yes, remove",
+      "removeSuccess": "Staff member removed.",
+      "removeError": "Something went wrong. Please try again.",
+      "revokeAction": "Revoke",
+      "revokeConfirmTitle": "Revoke the invitation to {{email}}?",
+      "revokeConfirmDescription": "The invitation link will no longer work.",
+      "revokeConfirmAction": "Yes, revoke",
+      "revokeSuccess": "Invitation revoked.",
+      "revokeError": "Something went wrong. Please try again.",
+      "emptyStaff": "No staff members yet",
+      "emptyInvitations": "No pending invitations",
+      "pendingInvitationsHeading": "Pending invitations",
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "expires": "Expires"
+      },
+      "roles": {
+        "MANAGER": "Manager",
+        "BOOKING_MANAGER": "Booking Manager",
+        "EDITOR": "Editor",
+        "ANALYTICS_VIEWER": "Analytics Viewer"
+      },
+      "inviteModal": {
+        "title": "Invite a staff member",
+        "emailLabel": "Email address",
+        "emailRequired": "Email address is required.",
+        "emailInvalid": "Enter a valid email address.",
+        "roleLabel": "Role",
+        "submitAction": "Send invitation"
+      }
+    },
+    "acceptInvitation": {
+      "heading": "Join {{partnerName}}",
+      "description": "You've been invited to join \"{{partnerName}}\" as {{roleName}}.",
+      "acceptAction": "Accept invitation",
+      "success": "Welcome to the team.",
+      "error": "Something went wrong. Please try again.",
+      "emailMismatch": "This invitation was sent to {{invitedEmail}}. Log in with that email address to accept it.",
+      "notFoundTitle": "Invitation not found",
+      "notFoundDescription": "This invitation link is invalid or has already been used.",
+      "expiredTitle": "This invitation has expired",
+      "expiredDescription": "Ask the company to send you a new invitation."
     },
     "dashboard": {
       "greeting": "Welcome back, {{name}}",

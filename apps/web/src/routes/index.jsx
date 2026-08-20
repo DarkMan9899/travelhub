@@ -110,6 +110,12 @@ const PartnerConnectionsPage = lazy(
 const PartnerProfilePage = lazy(
   () => import('../pages/partner/PartnerProfilePage.jsx'),
 );
+const PartnerStaffPage = lazy(
+  () => import('../pages/partner/PartnerStaffPage.jsx'),
+);
+const AcceptInvitationPage = lazy(
+  () => import('../pages/partner/AcceptInvitationPage.jsx'),
+);
 const PartnerNotificationsPage = lazy(
   () => import('../pages/partner/PartnerNotificationsPage.jsx'),
 );
@@ -326,6 +332,14 @@ export default function AppRoutes() {
             }
           >
             <Route path="partner/apply" element={<PartnerApplicationPage />} />
+            {/* P1.4 (Master Roadmap) — accepted by the INVITEE, who has
+                no partnership yet (that's the whole point), so this is
+                RequireAuth only, same grouping reason as `partner/apply`
+                above. */}
+            <Route
+              path="partner/invitations/:token"
+              element={<AcceptInvitationPage />}
+            />
           </Route>
 
           {/* Partner (§4.2/§5.4) — RequireAuth + RequirePartner (Phase 5:
@@ -364,6 +378,7 @@ export default function AppRoutes() {
               element={<PartnerConnectionsPage />}
             />
             <Route path="partner/profile" element={<PartnerProfilePage />} />
+            <Route path="partner/staff" element={<PartnerStaffPage />} />
             <Route
               path="partner/notifications"
               element={<PartnerNotificationsPage />}

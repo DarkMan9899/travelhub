@@ -28,20 +28,39 @@ afterAll(async () => {
 
 describe('GET /partners (Companies directory)', () => {
   test('is public, no auth required, and lists the seeded approved partner', async () => {
-    const res = await request(app).get('/api/v1/partners');
+    // `ORDER BY p.id DESC` (mysqlPartnerRepository.js#listPublic) — the
+    // seeded partner has a low, fixed id, so it is NOT necessarily on
+    // page 1 once other integration test files (each creating their own
+    // real, APPROVED partners via the P1.2 onboarding flow) have run
+    // first in the same suite. Paginating to the end instead of
+    // asserting page-1 membership is what actually verifies the
+    // endpoint works, independent of run order/how many partners other
+    // files created before this one.
+    let found;
+    let cursor;
+    let meta;
+    do {
+      // eslint-disable-next-line no-await-in-loop -- sequential pagination walk, not a hot path
+      const res = await request(app)
+        .get('/api/v1/partners')
+        .query({ limit: 100, ...(cursor ? { cursor } : {}) });
+      expect(res.status).toBe(200);
+      found = res.body.data.find(
+        (row) => row.slug === 'yerevan-boutique-hospitality',
+      );
+      meta = res.body.meta;
+      cursor = meta.next_cursor;
+    } while (!found && meta.has_more);
 
-    expect(res.status).toBe(200);
-    expect(res.body.data).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          slug: 'yerevan-boutique-hospitality',
-          display_name: 'Yerevan Boutique Hospitality',
-          is_verified: true,
-          listing_count: expect.any(Number),
-        }),
-      ]),
+    expect(found).toEqual(
+      expect.objectContaining({
+        slug: 'yerevan-boutique-hospitality',
+        display_name: 'Yerevan Boutique Hospitality',
+        is_verified: true,
+        listing_count: expect.any(Number),
+      }),
     );
-    expect(res.body.meta).toEqual(
+    expect(meta).toEqual(
       expect.objectContaining({
         has_more: expect.any(Boolean),
         limit: expect.any(Number),

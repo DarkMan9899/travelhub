@@ -30,6 +30,12 @@ export const PARTNER_CAPABILITIES = Object.freeze({
   // extended to BOOKING_MANAGER/EDITOR: those roles operate day-to-day
   // inventory, not the org's public-facing identity.
   MANAGE_COMPANY_PROFILE: 'MANAGE_COMPANY_PROFILE',
+  // P1.4 (Master Roadmap): inviting/removing staff and changing their
+  // role — deliberately the same OWNER/MANAGER-only trust tier as
+  // MANAGE_COMPANY_PROFILE/MANAGE_CONNECTIONS (a role that can grant or
+  // revoke other people's access to the org is at least as sensitive as
+  // one that can edit connector credentials or the public profile).
+  MANAGE_STAFF: 'MANAGE_STAFF',
 });
 
 // Role -> the set of capabilities it grants, beyond OWNER's implicit
@@ -48,6 +54,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     PARTNER_CAPABILITIES.MANAGE_CONNECTIONS,
     PARTNER_CAPABILITIES.VIEW_SYNC_LOGS,
     PARTNER_CAPABILITIES.MANAGE_COMPANY_PROFILE,
+    PARTNER_CAPABILITIES.MANAGE_STAFF,
   ]),
   BOOKING_MANAGER: Object.freeze([
     PARTNER_CAPABILITIES.VIEW_AVAILABILITY,

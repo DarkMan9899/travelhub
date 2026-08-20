@@ -675,6 +675,7 @@
       "calendar": "Календарь",
       "connections": "Подключения",
       "profile": "Профиль компании",
+      "staff": "Сотрудники",
       "messages": "Сообщения",
       "notifications": "Уведомления",
       "aiUsage": "Использование ИИ"
@@ -723,6 +724,61 @@
       "saveAction": "Сохранить изменения",
       "saveSuccess": "Профиль компании обновлён.",
       "saveError": "Что-то пошло не так. Пожалуйста, попробуйте снова."
+    },
+    "staff": {
+      "heading": "Сотрудники",
+      "inviteAction": "Пригласить сотрудника",
+      "inviteSuccess": "Приглашение отправлено.",
+      "inviteError": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+      "roleChangeSuccess": "Роль обновлена.",
+      "roleChangeError": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+      "removeAction": "Удалить",
+      "removeConfirmTitle": "Удалить {{name}}?",
+      "removeConfirmDescription": "Он(а) немедленно потеряет доступ к панели этой компании. Это действие нельзя отменить.",
+      "removeConfirmAction": "Да, удалить",
+      "removeSuccess": "Сотрудник удалён.",
+      "removeError": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+      "revokeAction": "Отозвать",
+      "revokeConfirmTitle": "Отозвать приглашение для {{email}}?",
+      "revokeConfirmDescription": "Ссылка-приглашение больше не будет работать.",
+      "revokeConfirmAction": "Да, отозвать",
+      "revokeSuccess": "Приглашение отозвано.",
+      "revokeError": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+      "emptyStaff": "Пока нет сотрудников",
+      "emptyInvitations": "Нет ожидающих приглашений",
+      "pendingInvitationsHeading": "Ожидающие приглашения",
+      "table": {
+        "name": "Имя",
+        "email": "Email",
+        "role": "Роль",
+        "expires": "Истекает"
+      },
+      "roles": {
+        "MANAGER": "Менеджер",
+        "BOOKING_MANAGER": "Менеджер бронирований",
+        "EDITOR": "Редактор",
+        "ANALYTICS_VIEWER": "Просмотр аналитики"
+      },
+      "inviteModal": {
+        "title": "Пригласить сотрудника",
+        "emailLabel": "Email-адрес",
+        "emailRequired": "Email-адрес обязателен.",
+        "emailInvalid": "Введите корректный email-адрес.",
+        "roleLabel": "Роль",
+        "submitAction": "Отправить приглашение"
+      }
+    },
+    "acceptInvitation": {
+      "heading": "Присоединиться к {{partnerName}}",
+      "description": "Вас пригласили присоединиться к «{{partnerName}}» в качестве {{roleName}}.",
+      "acceptAction": "Принять приглашение",
+      "success": "Добро пожаловать в команду.",
+      "error": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+      "emailMismatch": "Это приглашение было отправлено на {{invitedEmail}}. Войдите под этим email-адресом, чтобы принять его.",
+      "notFoundTitle": "Приглашение не найдено",
+      "notFoundDescription": "Эта ссылка-приглашение недействительна или уже использована.",
+      "expiredTitle": "Срок действия приглашения истёк",
+      "expiredDescription": "Попросите компанию отправить новое приглашение."
     },
     "dashboard": {
       "greeting": "С возвращением, {{name}}",

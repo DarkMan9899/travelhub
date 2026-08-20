@@ -67,6 +67,11 @@ export default function PartnerLayout() {
       href: `/${locale}/partner/profile`,
     },
     {
+      id: 'staff',
+      label: t('partner.nav.staff'),
+      href: `/${locale}/partner/staff`,
+    },
+    {
       id: 'messages',
       label: t('partner.nav.messages'),
       href: `/${locale}/partner/messages`,

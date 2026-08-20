@@ -675,6 +675,7 @@
       "calendar": "Օրացույց",
       "connections": "Կապակցումներ",
       "profile": "Ընկերության պրոֆիլ",
+      "staff": "Անձնակազմ",
       "messages": "Հաղորդագրություններ",
       "notifications": "Ծանուցումներ",
       "aiUsage": "AI օգտագործում"
@@ -723,6 +724,61 @@
       "saveAction": "Պահպանել փոփոխությունները",
       "saveSuccess": "Ընկերության պրոֆիլը թարմացվել է։",
       "saveError": "Ինչ-որ բան այն չգնաց։ Խնդրում ենք կրկին փորձել։"
+    },
+    "staff": {
+      "heading": "Անձնակազմ",
+      "inviteAction": "Հրավիրել աշխատակցի",
+      "inviteSuccess": "Հրավերն ուղարկվել է։",
+      "inviteError": "Ինչ-որ բան այն չգնաց։ Խնդրում ենք կրկին փորձել։",
+      "roleChangeSuccess": "Դերը թարմացվել է։",
+      "roleChangeError": "Ինչ-որ բան այն չգնաց։ Խնդրում ենք կրկին փորձել։",
+      "removeAction": "Հեռացնել",
+      "removeConfirmTitle": "Հեռացնե՞լ {{name}}֊ին։",
+      "removeConfirmDescription": "Նրանք անմիջապես կկորցնեն մուտքը այս ընկերության վահանակ։ Սա հնարավոր չէ հետարկել։",
+      "removeConfirmAction": "Այո, հեռացնել",
+      "removeSuccess": "Աշխատակիցը հեռացվել է։",
+      "removeError": "Ինչ-որ բան այն չգնաց։ Խնդրում ենք կրկին փորձել։",
+      "revokeAction": "Չեղարկել",
+      "revokeConfirmTitle": "Չեղարկե՞լ {{email}}֊ի հրավերը։",
+      "revokeConfirmDescription": "Հրավերի հղումն այլևս չի աշխատի։",
+      "revokeConfirmAction": "Այո, չեղարկել",
+      "revokeSuccess": "Հրավերը չեղարկվել է։",
+      "revokeError": "Ինչ-որ բան այն չգնաց։ Խնդրում ենք կրկին փորձել։",
+      "emptyStaff": "Աշխատակիցներ դեռ չկան",
+      "emptyInvitations": "Սպասող հրավերներ չկան",
+      "pendingInvitationsHeading": "Սպասող հրավերներ",
+      "table": {
+        "name": "Անուն",
+        "email": "Էլ. փոստ",
+        "role": "Դեր",
+        "expires": "Ժամկետը"
+      },
+      "roles": {
+        "MANAGER": "Ղեկավար",
+        "BOOKING_MANAGER": "Ամրագրումների ղեկավար",
+        "EDITOR": "Խմբագիր",
+        "ANALYTICS_VIEWER": "Վերլուծությունների դիտող"
+      },
+      "inviteModal": {
+        "title": "Հրավիրել աշխատակցի",
+        "emailLabel": "Էլ. փոստի հասցե",
+        "emailRequired": "Էլ. փոստի հասցեն պարտադիր է։",
+        "emailInvalid": "Մուտքագրեք վավեր էլ. փոստի հասցե։",
+        "roleLabel": "Դեր",
+        "submitAction": "Ուղարկել հրավերը"
+      }
+    },
+    "acceptInvitation": {
+      "heading": "Միացեք {{partnerName}}֊ին",
+      "description": "Ձեզ հրավիրել են միանալու «{{partnerName}}»֊ին որպես {{roleName}}։",
+      "acceptAction": "Ընդունել հրավերը",
+      "success": "Բարի գալուստ թիմ։",
+      "error": "Ինչ-որ բան այն չգնաց։ Խնդրում ենք կրկին փորձել։",
+      "emailMismatch": "Այս հրավերն ուղարկվել է {{invitedEmail}} հասցեին։ Այն ընդունելու համար մուտք գործեք այդ էլ. փոստով։",
+      "notFoundTitle": "Հրավերը չի գտնվել",
+      "notFoundDescription": "Այս հրավերի հղումն անվավեր է կամ արդեն օգտագործվել է։",
+      "expiredTitle": "Հրավերի ժամկետը լրացել է",
+      "expiredDescription": "Խնդրեք ընկերությանը ուղարկել նոր հրավեր։"
     },
     "dashboard": {
       "greeting": "Բարի վերադարձ, {{name}}",

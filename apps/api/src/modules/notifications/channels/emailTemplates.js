@@ -189,6 +189,40 @@ const TEMPLATES = {
       body: `Ваше объявление «${listingTitle ?? ''}» отклонено.${notes ? ` Примечание: ${notes}` : ''}`,
     }),
   },
+  // P1.4 (Master Roadmap) — sent directly via `emailAdapter` from
+  // `partnerStaffService.js`, bypassing the notification pipeline: the
+  // invitee may not have a `users` row (and therefore no
+  // `recipientUserId`) yet, which every other template here assumes.
+  'partner.staff_invited': {
+    en: ({ partnerName, roleName, inviteUrl }) => ({
+      subject: `You've been invited to join ${partnerName ?? 'a company'} on Desavii`,
+      body: `You've been invited to join "${partnerName ?? 'a company'}" as ${roleName ?? 'a team member'}. Accept the invitation: ${inviteUrl ?? ''}`,
+    }),
+    hy: ({ partnerName, roleName, inviteUrl }) => ({
+      subject: `Ձեզ հրավիրել են միանալու «${partnerName ?? 'ընկերությանը'}»-ին Desavii-ում`,
+      body: `Ձեզ հրավիրել են միանալու «${partnerName ?? 'ընկերությանը'}»-ին որպես ${roleName ?? 'թիմի անդամ'}: Ընդունեք հրավերը՝ ${inviteUrl ?? ''}`,
+    }),
+    ru: ({ partnerName, roleName, inviteUrl }) => ({
+      subject: `Вас пригласили присоединиться к «${partnerName ?? 'компании'}» на Desavii`,
+      body: `Вас пригласили присоединиться к «${partnerName ?? 'компании'}» в качестве ${roleName ?? 'участника команды'}. Примите приглашение: ${inviteUrl ?? ''}`,
+    }),
+  },
+  // Sent via the normal event-driven pipeline once the invitation above
+  // is actually accepted (a real `recipientUserId` exists by then).
+  'partner.staff_added': {
+    en: ({ partnerName, roleName }) => ({
+      subject: 'Welcome to the team',
+      body: `You are now a ${roleName ?? 'team member'} at "${partnerName ?? 'your new team'}".`,
+    }),
+    hy: ({ partnerName, roleName }) => ({
+      subject: 'Բարի գալուստ թիմ',
+      body: `Այժմ դուք «${partnerName ?? 'ձեր նոր թիմի'}» ${roleName ?? 'թիմի անդամն'} եք:`,
+    }),
+    ru: ({ partnerName, roleName }) => ({
+      subject: 'Добро пожаловать в команду',
+      body: `Теперь вы ${roleName ?? 'участник команды'} в «${partnerName ?? 'вашей новой команде'}».`,
+    }),
+  },
   'admin.announcement': {
     en: ({ title, body }) => ({
       subject: title ?? 'Announcement',

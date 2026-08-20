@@ -101,10 +101,15 @@ export default function createV1Router({
   // Partners' public `getOwnerUserId` to resolve who a customer can
   // message about a booking (Phase 14.9's "message the partner about
   // this booking" entry point).
+  // P1.4 (Master Roadmap): also depends on Users' public Service
+  // interface (`userService`) — resolving the accepting user's email
+  // against an invitation, never a second Repository over `users`
+  // (BACKEND_ARCHITECTURE.md §4), same cross-module rule as Auth above.
   const partnersContainer = createPartnersContainer({
     permissionResolver,
     auditLogger,
     eventBus,
+    userService: usersContainer.userService,
   });
   const bookingsContainer = createBookingsContainer({
     availabilityService: availabilityContainer.availabilityService,
@@ -245,6 +250,7 @@ export default function createV1Router({
     '/partners',
     createPartnerRoutes({
       partnerController: partnersContainer.partnerController,
+      partnerStaffController: partnersContainer.partnerStaffController,
       guards,
     }),
   );

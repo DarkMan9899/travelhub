@@ -24,7 +24,11 @@ import { createNotificationDeliveryQueue } from './jobs/notificationDeliveryQueu
 import { createNotificationController } from './controllers/notificationController.js';
 import config from '../../config/index.js';
 
-function createEmailAdapter() {
+// P1.4 (Master Roadmap) — exported so `partnersContainer` can send a
+// staff-invitation email directly (no `recipientUserId` exists yet for
+// an invitee who may not have an account), reusing the exact same
+// provider-selection logic rather than a second copy of it.
+export function createEmailAdapter() {
   if (config.email.provider === 'resend') {
     return new ResendEmailProvider(config.email.resend);
   }

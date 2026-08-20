@@ -74,6 +74,12 @@ const env = cleanEnv(process.env, {
   // CORS (BACKEND_ARCHITECTURE.md §47)
   CORS_ALLOWED_ORIGINS: str({ default: 'http://localhost:5173' }),
 
+  // P1.4 (Master Roadmap) — the frontend origin a staff-invitation email
+  // links back to (`{WEB_APP_URL}/{locale}/partner/invitations/{token}`).
+  // Same default as the first CORS origin above; a real deployment sets
+  // both to the actual public web app URL.
+  WEB_APP_URL: str({ default: 'http://localhost:5173' }),
+
   // Connector credential encryption (P0.6, Master Roadmap) — encrypts
   // inventory_connections.config (may hold a real iCal/PMS/OTA API key)
   // at rest. Same "always has a working dev default, production MUST
@@ -228,6 +234,8 @@ const config = Object.freeze({
       origin.trim(),
     ),
   }),
+
+  webAppUrl: env.WEB_APP_URL,
 
   security: Object.freeze({
     connectorConfigEncryptionKey: env.CONNECTOR_CONFIG_ENCRYPTION_KEY,

@@ -307,6 +307,22 @@ export function registerNotificationListeners({
       },
     }),
   );
+
+  // P1.4 (Master Roadmap): the new employee, not the inviter/owner — the
+  // invitation email itself was already sent directly (see
+  // `partnerStaffService.js`), so this is the "you're in" welcome signal
+  // once acceptance actually created their `partner_employees` row.
+  eventBus.subscribe(EVENT_TYPES.PARTNER_STAFF_ADDED, (event) =>
+    notify(event, {
+      recipientUserId: event.payload.newEmployeeUserId,
+      categoryCode: 'PARTNER',
+      priorityCode: PRIORITY.NORMAL,
+      payload: {
+        partnerName: event.payload.partnerName,
+        roleName: event.payload.roleName,
+      },
+    }),
+  );
 }
 
 export default registerNotificationListeners;

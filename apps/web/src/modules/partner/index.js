@@ -11,6 +11,8 @@ export { default as PartnerBookingDetailContent } from './components/PartnerBook
 export { default as PartnerCalendarPageContent } from './components/PartnerCalendarPageContent/PartnerCalendarPageContent.jsx';
 export { default as PartnerConnectionsPageContent } from './components/PartnerConnectionsPageContent/PartnerConnectionsPageContent.jsx';
 export { default as PartnerProfilePageContent } from './components/PartnerProfilePageContent/PartnerProfilePageContent.jsx';
+export { default as PartnerStaffPageContent } from './components/PartnerStaffPageContent/PartnerStaffPageContent.jsx';
+export { default as AcceptInvitationPageContent } from './components/AcceptInvitationPageContent/AcceptInvitationPageContent.jsx';
 export { default as useMyPartnershipsQuery } from './queries/useMyPartnershipsQuery.js';
 export { default as useMyCompanyProfileQuery } from './queries/useMyCompanyProfileQuery.js';
 export { default as partnerKeys } from './constants/queryKeys.js';

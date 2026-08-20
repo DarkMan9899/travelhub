@@ -16,6 +16,9 @@ export const PARTNER_CAPABILITIES = Object.freeze({
   // P1.3 (Master Roadmap) — mirrors the backend's own addition
   // (`apps/api/src/core/domain/partnerCapabilities.js`) exactly.
   MANAGE_COMPANY_PROFILE: 'MANAGE_COMPANY_PROFILE',
+  // P1.4 (Master Roadmap) — mirrors the backend's own addition
+  // (`apps/api/src/core/domain/partnerCapabilities.js`) exactly.
+  MANAGE_STAFF: 'MANAGE_STAFF',
 });
 
 const ROLE_CAPABILITIES = Object.freeze({

@@ -25,8 +25,19 @@ import {
   updateApplicationSchema,
   updateProfileSchema,
 } from './validators/partnerValidators.js';
+import {
+  partnerStaffParamsSchema,
+  inviteStaffSchema,
+  updateStaffRoleSchema,
+  invitationIdParamsSchema,
+  invitationTokenParamsSchema,
+} from './validators/partnerStaffValidators.js';
 
-export default function createPartnerRoutes({ partnerController, guards }) {
+export default function createPartnerRoutes({
+  partnerController,
+  partnerStaffController,
+  guards,
+}) {
   const router = Router();
   const { requireAuth, requirePermission } = guards;
 
@@ -71,6 +82,25 @@ export default function createPartnerRoutes({ partnerController, guards }) {
     partnerController.submitMyApplication,
   );
 
+  // P1.4 (Master Roadmap) — acted on by the INVITEE, not an existing
+  // partner staff member, so these are never nested under `/:id/staff*`
+  // below. Registered before `/:slug` for the usual collision-avoidance
+  // reason. `GET` requires no auth (possession of the raw token is
+  // itself the proof — see `partnerStaffService.js#previewInvitation`);
+  // `POST .../accept` does, since it creates a real `partner_employees`
+  // row under the CURRENT signed-in user.
+  router.get(
+    '/invitations/:token',
+    validate(invitationTokenParamsSchema),
+    partnerStaffController.previewInvitation,
+  );
+  router.post(
+    '/invitations/:token/accept',
+    requireAuth,
+    validate(invitationTokenParamsSchema),
+    partnerStaffController.acceptInvitation,
+  );
+
   // P1.3 (Master Roadmap) — owner/staff company-profile management, for
   // an already-APPROVED partner (unlike `/applications/*` above, which
   // is scoped to an in-progress application). `PartnerService#assertCan
@@ -105,6 +135,49 @@ export default function createPartnerRoutes({ partnerController, guards }) {
     express.raw({ type: ALLOWED_IMAGE_MIME_TYPES, limit: '10mb' }),
     validate(partnerIdParamsSchema),
     partnerController.uploadCompanyCover,
+  );
+
+  // P1.4 (Master Roadmap) — staff roster and invitations for an existing
+  // partner org. `PartnerStaffService`'s own `assertIsPartnerMember`
+  // (list) / `assertPartnerCapability(MANAGE_STAFF)` (everything else)
+  // does the real authorization; `requireAuth` here is just the
+  // fast-fail layer, same defense-in-depth convention as `/:id/profile`
+  // above. Registered before `/:slug` for the usual reason.
+  router.get(
+    '/:id/staff',
+    requireAuth,
+    validate(partnerIdParamsSchema),
+    partnerStaffController.listStaff,
+  );
+  router.patch(
+    '/:id/staff/:employeeId',
+    requireAuth,
+    validate(updateStaffRoleSchema),
+    partnerStaffController.updateStaffRole,
+  );
+  router.delete(
+    '/:id/staff/:employeeId',
+    requireAuth,
+    validate(partnerStaffParamsSchema),
+    partnerStaffController.removeStaff,
+  );
+  router.get(
+    '/:id/staff/invitations',
+    requireAuth,
+    validate(partnerIdParamsSchema),
+    partnerStaffController.listInvitations,
+  );
+  router.post(
+    '/:id/staff/invitations',
+    requireAuth,
+    validate(inviteStaffSchema),
+    partnerStaffController.inviteStaff,
+  );
+  router.delete(
+    '/:id/staff/invitations/:invitationId',
+    requireAuth,
+    validate(invitationIdParamsSchema),
+    partnerStaffController.revokeInvitation,
   );
 
   // Phase 11 Admin Platform — registered before `/:slug` (same reason

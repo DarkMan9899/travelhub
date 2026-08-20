@@ -4,11 +4,22 @@
  * validation mirrors `registerSchema` (apps/api's auth validators)
  * field-for-field per FRONTEND_ARCHITECTURE.md §15.2, including the
  * password-strength policy (`schemas/passwordPolicy.js`).
+ *
+ * P1.4 (Master Roadmap): honors `?redirect=` the same way `LoginForm.jsx`
+ * already does — `RequireAuth` sets it when it bounced a signed-out
+ * visitor here, e.g. a staff-invitation link
+ * (`partner/invitations/:token`) opened by someone with no account yet.
+ * Falls back to `/account` when absent, unchanged from before.
  */
 
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+  Link,
+} from 'react-router-dom';
 import { Input } from '@travelhub/ui/components/form-controls';
 import { Button } from '@travelhub/ui/components/primitives';
 import { Alert } from '@travelhub/ui/components/feedback-overlays';
@@ -20,6 +31,7 @@ export default function RegisterForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { locale } = useParams();
+  const [searchParams] = useSearchParams();
   const { mutateAsync, isPending, error } = useRegisterMutation();
 
   const {
@@ -39,7 +51,8 @@ export default function RegisterForm() {
   async function onSubmit(values) {
     try {
       await mutateAsync({ ...values, phone: values.phone || undefined });
-      navigate(`/${locale}/account`, { replace: true });
+      const redirect = searchParams.get('redirect');
+      navigate(redirect || `/${locale}/account`, { replace: true });
     } catch {
       // Surfaced below via the mutation's `error` state.
     }

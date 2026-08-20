@@ -9,14 +9,12 @@ import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
 import { withTransaction } from '../../../infrastructure/database/transaction.js';
+import { isPartnerOwner } from '../../../infrastructure/database/repositories/partnerEmployeeRepository.js';
+import { PARTNER_CAPABILITIES } from '../../../core/domain/partnerCapabilities.js';
 import {
-  isPartnerOwner,
-  getPartnerEmployeeRoleCode,
-} from '../../../infrastructure/database/repositories/partnerEmployeeRepository.js';
-import {
-  roleHasCapability,
-  PARTNER_CAPABILITIES,
-} from '../../../core/domain/partnerCapabilities.js';
+  assertIsPartnerMember,
+  assertPartnerCapability,
+} from '../authorization/partnerAuthorization.js';
 import { resolveLocaleIds } from '../../../infrastructure/database/repositories/languageRepository.js';
 import {
   classifyMimeType,
@@ -183,14 +181,7 @@ export class PartnerService {
    * though only OWNER/MANAGER may change it.
    */
   async #assertIsMember(principal, partnerId) {
-    if (!principal) throw new AuthenticationError();
-    if (await isPartnerOwner(principal.userId, partnerId)) return;
-    const roleCode = await getPartnerEmployeeRoleCode(
-      principal.userId,
-      partnerId,
-    );
-    if (roleCode) return;
-    throw new AuthorizationError();
+    return assertIsPartnerMember(principal, partnerId);
   }
 
   /**
@@ -203,18 +194,11 @@ export class PartnerService {
    * — only the ability to edit it is restricted here.
    */
   async #assertCanManageProfile(principal, partnerId) {
-    if (!principal) throw new AuthenticationError();
-    if (await isPartnerOwner(principal.userId, partnerId)) return;
-    const roleCode = await getPartnerEmployeeRoleCode(
-      principal.userId,
+    return assertPartnerCapability(
+      principal,
       partnerId,
+      PARTNER_CAPABILITIES.MANAGE_COMPANY_PROFILE,
     );
-    if (
-      roleHasCapability(roleCode, PARTNER_CAPABILITIES.MANAGE_COMPANY_PROFILE)
-    ) {
-      return;
-    }
-    throw new AuthorizationError();
   }
 
   /**

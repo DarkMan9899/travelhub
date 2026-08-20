@@ -156,6 +156,84 @@ export function uploadCompanyCover(id, file) {
 }
 
 /**
+ * P1.4 (Master Roadmap) — staff roster and invitations for an
+ * already-APPROVED partner, all under `/partners/:id/staff*`. Any active
+ * `partner_employees` member may list staff; everything else requires
+ * OWNER or a role granted `MANAGE_STAFF` (enforced server-side in
+ * `partnerStaffService.js` — never just by hiding a button here).
+ */
+
+/** `GET /partners/:id/staff` — the active roster. */
+export function getPartnerStaff(id) {
+  return apiClient
+    .get(`/partners/${id}/staff`)
+    .then((response) => response.data);
+}
+
+/** `PATCH /partners/:id/staff/:employeeId` — change a staff member's role. Never the owner (409/403 server-side). */
+export function updatePartnerStaffRole(id, employeeId, roleCode) {
+  return apiClient
+    .patch(`/partners/${id}/staff/${employeeId}`, { roleCode })
+    .then((response) => response.data);
+}
+
+/** `DELETE /partners/:id/staff/:employeeId` — revoke a staff member's access. Never the owner. */
+export function removePartnerStaff(id, employeeId) {
+  return apiClient
+    .delete(`/partners/${id}/staff/${employeeId}`)
+    .then((response) => response.data);
+}
+
+/** `GET /partners/:id/staff/invitations` — every still-pending invitation. */
+export function getPartnerStaffInvitations(id) {
+  return apiClient
+    .get(`/partners/${id}/staff/invitations`)
+    .then((response) => response.data);
+}
+
+/**
+ * `POST /partners/:id/staff/invitations` — invites someone by email.
+ * `locale` is the dashboard's own current UI locale (same explicit-locale
+ * convention `updateMyCompanyProfile` already uses) — there is no
+ * recipient preferred-language to resolve for an invitee who may not
+ * have an account yet. The response's `invite_url` is shown once, as a
+ * "copy link" fallback (see `partnerStaffDto.js`'s own comment).
+ */
+export function invitePartnerStaff(id, { email, roleCode, locale }) {
+  return apiClient
+    .post(`/partners/${id}/staff/invitations`, { email, roleCode, locale })
+    .then((response) => response.data);
+}
+
+/** `DELETE /partners/:id/staff/invitations/:invitationId` — revoke a pending invitation before it's accepted. */
+export function revokePartnerStaffInvitation(id, invitationId) {
+  return apiClient
+    .delete(`/partners/${id}/staff/invitations/${invitationId}`)
+    .then((response) => response.data);
+}
+
+/**
+ * `GET /partners/invitations/:token` — unauthenticated preview (company
+ * name, role, invited email), so the accept page can show "You've been
+ * invited to join X" before the visitor has signed in.
+ */
+export function previewPartnerStaffInvitation(token) {
+  return apiClient
+    .get(`/partners/invitations/${token}`)
+    .then((response) => response.data);
+}
+
+/**
+ * `POST /partners/invitations/:token/accept` — requires authentication;
+ * 403 if the signed-in user's email doesn't match the invited address.
+ */
+export function acceptPartnerStaffInvitation(token) {
+  return apiClient
+    .post(`/partners/invitations/${token}/accept`)
+    .then((response) => response.data);
+}
+
+/**
  * Stage 11.2 (Partner Management) — admin-scoped endpoints, all under
  * `/partners/admin/*`. Requires `partner.verify` or `partner.moderate`
  * for reads, the specific one for each write (see
