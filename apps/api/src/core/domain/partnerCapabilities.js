@@ -36,6 +36,13 @@ export const PARTNER_CAPABILITIES = Object.freeze({
   // revoke other people's access to the org is at least as sensitive as
   // one that can edit connector credentials or the public profile).
   MANAGE_STAFF: 'MANAGE_STAFF',
+  // P1.5 (Master Roadmap): replying to a customer review — a public,
+  // permanent, brand-facing statement attributed to the organization,
+  // same OWNER/MANAGER-only trust tier as MANAGE_COMPANY_PROFILE (the
+  // org's other public-facing identity surface), not extended to
+  // BOOKING_MANAGER/EDITOR: those roles operate day-to-day inventory,
+  // not public brand voice.
+  RESPOND_TO_REVIEWS: 'RESPOND_TO_REVIEWS',
 });
 
 // Role -> the set of capabilities it grants, beyond OWNER's implicit
@@ -55,6 +62,7 @@ const ROLE_CAPABILITIES = Object.freeze({
     PARTNER_CAPABILITIES.VIEW_SYNC_LOGS,
     PARTNER_CAPABILITIES.MANAGE_COMPANY_PROFILE,
     PARTNER_CAPABILITIES.MANAGE_STAFF,
+    PARTNER_CAPABILITIES.RESPOND_TO_REVIEWS,
   ]),
   BOOKING_MANAGER: Object.freeze([
     PARTNER_CAPABILITIES.VIEW_AVAILABILITY,

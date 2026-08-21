@@ -86,3 +86,12 @@ export const reportReviewSchema = z.object({
     details: z.string().trim().max(1000).optional(),
   }),
 });
+
+// P1.5 (Master Roadmap) — a partner's reply to a review.
+export const replyToReviewSchema = z.object({
+  params: z.object({ id: z.coerce.number().int().positive() }),
+  query: passthroughQuery,
+  body: z.object({
+    response: z.string().trim().min(1).max(2000),
+  }),
+});

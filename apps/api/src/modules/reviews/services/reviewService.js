@@ -16,6 +16,8 @@ import {
 import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
+import { assertPartnerCapability } from '../../partners/authorization/partnerAuthorization.js';
+import { PARTNER_CAPABILITIES } from '../../../core/domain/partnerCapabilities.js';
 
 // P1.5 (Master Roadmap) — the outcome APPROVED/REJECTED/FLAGGED/PENDING
 // is only notification-worthy on REJECTED (see eventTypes.js's own
@@ -34,6 +36,8 @@ export class ReviewService {
 
   #bookingService;
 
+  #listingService;
+
   #permissionResolver;
 
   #auditLogger;
@@ -43,12 +47,14 @@ export class ReviewService {
   constructor({
     reviewRepository,
     bookingService,
+    listingService,
     permissionResolver,
     auditLogger,
     eventBus = createNoOpEventBus(),
   }) {
     this.#reviewRepository = reviewRepository;
     this.#bookingService = bookingService;
+    this.#listingService = listingService;
     this.#permissionResolver = permissionResolver;
     this.#auditLogger = auditLogger;
     this.#eventBus = eventBus;
@@ -274,6 +280,85 @@ export class ReviewService {
     );
 
     return report;
+  }
+
+  /**
+   * P1.5 (Master Roadmap) — resolves the partner that owns a review's
+   * listing, and asserts the caller has `RESPOND_TO_REVIEWS` for it.
+   * `getListing(null, ...)` (no principal): a review only ever exists on
+   * a listing that was PUBLISHED when the underlying booking happened,
+   * which `getListing` returns to any caller including `null` — the
+   * rare case of a since-unpublished/archived listing correctly falls
+   * back to `NotFoundError` here rather than silently granting access.
+   */
+  async #assertCanRespondToReview(principal, review) {
+    if (!principal) throw new AuthenticationError();
+    const listing = await this.#listingService.getListing(
+      null,
+      review.listingId,
+    );
+    await assertPartnerCapability(
+      principal,
+      listing.partnerId,
+      PARTNER_CAPABILITIES.RESPOND_TO_REVIEWS,
+    );
+    return listing;
+  }
+
+  /**
+   * `PUT /reviews/:id/reply` — only ever on a currently-public
+   * (APPROVED, non-deleted) review, matching `findById`'s own visibility
+   * rule: replying to a review nobody can see would be pointless, and a
+   * review an admin has since REJECTED/FLAGGED is exactly the case that
+   * should read as "not found" here too.
+   */
+  async replyToReview(principal, reviewId, responseText) {
+    const review = await this.#reviewRepository.findById(reviewId);
+    if (!review) throw new NotFoundError('Review not found.');
+
+    await this.#assertCanRespondToReview(principal, review);
+
+    const updated = await this.#reviewRepository.setVendorResponse(
+      reviewId,
+      responseText,
+      principal.userId,
+    );
+
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'review.replied',
+      targetType: 'review',
+      targetId: reviewId,
+      beforeSnapshot: { vendorResponse: review.vendorResponse },
+      afterSnapshot: { vendorResponse: responseText },
+    });
+
+    return updated;
+  }
+
+  /** `DELETE /reviews/:id/reply` — clears an existing reply. Same authorization as writing one. */
+  async deleteReviewReply(principal, reviewId) {
+    const review = await this.#reviewRepository.findById(reviewId);
+    if (!review) throw new NotFoundError('Review not found.');
+
+    await this.#assertCanRespondToReview(principal, review);
+
+    const updated = await this.#reviewRepository.setVendorResponse(
+      reviewId,
+      null,
+      principal.userId,
+    );
+
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'review.reply_deleted',
+      targetType: 'review',
+      targetId: reviewId,
+      beforeSnapshot: { vendorResponse: review.vendorResponse },
+      afterSnapshot: { vendorResponse: null },
+    });
+
+    return updated;
   }
 }
 

@@ -678,6 +678,41 @@ test.describe('Phase 17 — Inventory flow F: car-rental conflict', () => {
       exact: true,
     });
     await expect(dayCell).toBeDisabled({ timeout: 10_000 });
+
+    // Root cause of this flow's flakiness (confirmed by live reproduction
+    // with network inspection, not a UI/timing race): the external
+    // reservation created above is real, persistent state with capacity
+    // 1 (a single-VIN vehicle) — nothing ever released it. `iso` is
+    // salted by `RUN_SALT_DAYS_NARROW = Date.now() % 20`, only 20
+    // possible values, so repeated same-window runs (e.g. iterating on
+    // this file locally) land on an already-exhausted date and get a
+    // real backend 409 on `POST .../external-reservations`, which this
+    // test never asserted for — it just timed out waiting for a success
+    // toast that never came. Cancelling here — mirroring the "restore
+    // shared fixture" cleanup this suite already uses elsewhere (e.g.
+    // reviewModeration.spec.js) — releases the capacity this run
+    // consumed so the NEXT run on the same salted date starts clean,
+    // regardless of the salt's limited entropy.
+    await login(page, VENDOR, /\/en\/partner$/);
+    await openPartnerCalendarDay(page, {
+      listingLabel: 'Ararat Valley Fleet',
+      unitLabel: 'Nissan X-Trail (03 CC 789)',
+      iso,
+    });
+    await page.getByRole('tab', { name: /^External reservations/ }).click();
+    const externalRow = page.getByRole('row').filter({ hasText: iso });
+    // eslint-disable-next-line no-await-in-loop -- sequential by necessity: each iteration waits for the previous cancel's toast/refetch before re-checking the row count
+    while (await externalRow.count()) {
+      // eslint-disable-next-line no-await-in-loop -- same reason as above
+      await externalRow
+        .first()
+        .getByRole('button', { name: 'Cancel', exact: true })
+        .click();
+      // eslint-disable-next-line no-await-in-loop -- same reason as above
+      await expect(page.getByText('Reservation cancelled.')).toBeVisible({
+        timeout: 10_000,
+      });
+    }
   });
 });
 

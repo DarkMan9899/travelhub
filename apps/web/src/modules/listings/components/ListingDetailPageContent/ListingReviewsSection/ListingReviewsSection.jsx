@@ -19,6 +19,7 @@ import { ReviewsList } from '../../../../reviews/index.js';
 
 export default function ListingReviewsSection({
   listingId,
+  partnerId = undefined,
   ratingAverage = null,
   reviewCount = 0,
   sectionId = undefined,
@@ -31,13 +32,16 @@ export default function ListingReviewsSection({
       {ratingAverage !== null && (
         <ReviewSummary average={ratingAverage} reviewCount={reviewCount} />
       )}
-      <ReviewsList listingId={listingId} />
+      <ReviewsList listingId={listingId} partnerId={partnerId} />
     </Stack>
   );
 }
 
 ListingReviewsSection.propTypes = {
   listingId: PropTypes.number.isRequired,
+  // The listing's owning partner — lets `ReviewsList` show Reply/Edit/
+  // Delete affordances to that partner's OWNER/MANAGER staff.
+  partnerId: PropTypes.number,
   ratingAverage: PropTypes.number,
   reviewCount: PropTypes.number,
   sectionId: PropTypes.string,

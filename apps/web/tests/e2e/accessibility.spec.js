@@ -368,6 +368,21 @@ test.describe('Phase 18 accessibility', () => {
     await expect(page.getByRole('heading', { name: 'Itinerary' })).toBeVisible({
       timeout: 10_000,
     });
+    // This flagship tour listing has no seeded reviews, so
+    // ListingReviewsSection renders a real EmptyState ("No reviews
+    // yet") — EmptyState.module.scss fades its whole container in via
+    // `animation: empty-state-in` (opacity 0 -> 1). Waiting for the
+    // Itinerary heading says nothing about whether THIS LATER section
+    // has mounted yet, let alone finished fading in: a scan that lands
+    // mid-fade blends the title's real, settled `$color-gray-900`
+    // toward the white background, reading as a real (not spurious)
+    // sub-4.5:1 ratio at that instant — same root cause the Mobile
+    // booking-drawer test above already documents for the Overlay
+    // backdrop's fade, and empirically confirmed here too (reproduced
+    // in ~3/8 repeated runs before this fix, 0/8 after). Waiting past
+    // the transition — not excluding the element or weakening the
+    // assertion below — avoids the timing false positive.
+    await page.waitForTimeout(350);
 
     const violations = await seriousOrCriticalViolations(page);
     expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);

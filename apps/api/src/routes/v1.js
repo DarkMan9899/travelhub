@@ -124,6 +124,7 @@ export default function createV1Router({
   // over `bookings`/`listings` (BACKEND_ARCHITECTURE.md §4).
   const reviewsContainer = createReviewsContainer({
     bookingService: bookingsContainer.bookingService,
+    listingService: listingsContainer.listingService,
     permissionResolver,
     auditLogger,
     eventBus,

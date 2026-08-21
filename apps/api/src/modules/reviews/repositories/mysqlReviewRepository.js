@@ -285,6 +285,25 @@ export class MySqlReviewRepository {
     return this.findByIdAdmin(id);
   }
 
+  /**
+   * P1.5 (Master Roadmap) — a partner's reply to a review.
+   * `responseText === null` clears an existing reply (delete), matching
+   * `vendor_responded_at`'s own nullability. `updatedBy` reuses the
+   * table's existing generic audit column — no dedicated
+   * `vendor_responded_by` column exists, and none is needed.
+   */
+  async setVendorResponse(id, responseText, updatedBy) {
+    await this.#pool.query(
+      `UPDATE reviews
+       SET vendor_response = ?,
+           vendor_responded_at = ?,
+           updated_by = ?
+       WHERE id = ?`,
+      [responseText, responseText === null ? null : new Date(), updatedBy, id],
+    );
+    return this.findById(id);
+  }
+
   /** Every report filed against one review, oldest first — the admin detail page's own list. */
   async listReportsForReview(reviewId) {
     const [rows] = await this.#pool.query(

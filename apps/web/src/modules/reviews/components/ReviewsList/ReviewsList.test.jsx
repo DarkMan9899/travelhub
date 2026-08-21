@@ -6,24 +6,36 @@ import ToastProvider from '../../../../providers/ToastProvider.jsx';
 import ReviewsList from './ReviewsList.jsx';
 import { listListingReviews } from '../../../../api/reviews.js';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
+import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useReportReviewMutation } from '../../mutations/useReportReviewMutation.js';
+import { useReplyToReviewMutation } from '../../mutations/useReplyToReviewMutation.js';
+import { useDeleteReviewReplyMutation } from '../../mutations/useDeleteReviewReplyMutation.js';
 
 vi.mock('../../../../api/reviews.js', () => ({
   listListingReviews: vi.fn(),
 }));
 vi.mock('../../../../contexts/AuthContext.jsx', () => ({ useAuth: vi.fn() }));
+vi.mock('../../../../contexts/ConfirmContext.jsx', () => ({
+  useConfirm: vi.fn(),
+}));
 vi.mock('../../mutations/useReportReviewMutation.js', () => ({
   useReportReviewMutation: vi.fn(),
 }));
+vi.mock('../../mutations/useReplyToReviewMutation.js', () => ({
+  useReplyToReviewMutation: vi.fn(),
+}));
+vi.mock('../../mutations/useDeleteReviewReplyMutation.js', () => ({
+  useDeleteReviewReplyMutation: vi.fn(),
+}));
 
-function renderList(listingId = 3) {
+function renderList(listingId = 3, partnerId = undefined) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <ReviewsList listingId={listingId} />
+        <ReviewsList listingId={listingId} partnerId={partnerId} />
       </ToastProvider>
     </QueryClientProvider>,
   );
@@ -41,13 +53,28 @@ const REVIEW_ROW = {
 
 describe('ReviewsList (apps/web/src/modules/reviews)', () => {
   let reportMutateAsync;
+  let replyMutateAsync;
+  let deleteReplyMutateAsync;
+  let confirmMock;
 
   beforeEach(() => {
     listListingReviews.mockReset();
     reportMutateAsync = vi.fn().mockResolvedValue({});
-    useAuth.mockReturnValue({ isAuthenticated: false });
+    replyMutateAsync = vi.fn().mockResolvedValue({});
+    deleteReplyMutateAsync = vi.fn().mockResolvedValue({});
+    confirmMock = vi.fn().mockResolvedValue(true);
+    useAuth.mockReturnValue({ isAuthenticated: false, partnerships: [] });
+    useConfirm.mockReturnValue(confirmMock);
     useReportReviewMutation.mockReturnValue({
       mutateAsync: reportMutateAsync,
+      isPending: false,
+    });
+    useReplyToReviewMutation.mockReturnValue({
+      mutateAsync: replyMutateAsync,
+      isPending: false,
+    });
+    useDeleteReviewReplyMutation.mockReturnValue({
+      mutateAsync: deleteReplyMutateAsync,
       isPending: false,
     });
   });
@@ -110,7 +137,7 @@ describe('ReviewsList (apps/web/src/modules/reviews)', () => {
   });
 
   test('a signed-in visitor can report a review', async () => {
-    useAuth.mockReturnValue({ isAuthenticated: true });
+    useAuth.mockReturnValue({ isAuthenticated: true, partnerships: [] });
     listListingReviews.mockResolvedValue({
       data: [REVIEW_ROW],
       meta: { has_more: false, rating_average: 5, review_count: 1 },
@@ -127,6 +154,89 @@ describe('ReviewsList (apps/web/src/modules/reviews)', () => {
       expect(reportMutateAsync).toHaveBeenCalledWith(
         expect.objectContaining({ id: 1, reasonCode: 'SPAM' }),
       );
+    });
+  });
+
+  test('a customer with no partnership sees no Reply action, even when authenticated', async () => {
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      partnerships: [{ partner_id: 9, role: 'OWNER' }],
+    });
+    listListingReviews.mockResolvedValue({
+      data: [REVIEW_ROW],
+      meta: { has_more: false, rating_average: 5, review_count: 1 },
+    });
+    renderList(3, 42);
+
+    await screen.findByText('Anna K.');
+    expect(
+      screen.queryByRole('button', { name: 'Պատասխանել' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('a BOOKING_MANAGER of the owning partner sees no Reply action (below the required trust tier)', async () => {
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      partnerships: [{ partner_id: 42, role: 'BOOKING_MANAGER' }],
+    });
+    listListingReviews.mockResolvedValue({
+      data: [REVIEW_ROW],
+      meta: { has_more: false, rating_average: 5, review_count: 1 },
+    });
+    renderList(3, 42);
+
+    await screen.findByText('Anna K.');
+    expect(
+      screen.queryByRole('button', { name: 'Պատասխանել' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('an OWNER of the owning partner can post a reply', async () => {
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      partnerships: [{ partner_id: 42, role: 'OWNER' }],
+    });
+    listListingReviews.mockResolvedValue({
+      data: [REVIEW_ROW],
+      meta: { has_more: false, rating_average: 5, review_count: 1 },
+    });
+    const user = userEvent.setup();
+    renderList(3, 42);
+
+    await user.click(await screen.findByRole('button', { name: 'Պատասխանել' }));
+    const textarea = screen.getByLabelText('Ձեր պատասխանը');
+    await user.type(textarea, 'Thanks for staying with us!');
+    await user.click(
+      screen.getByRole('button', { name: 'Հրապարակել պատասխանը' }),
+    );
+
+    await waitFor(() => {
+      expect(replyMutateAsync).toHaveBeenCalledWith({
+        id: 1,
+        response: 'Thanks for staying with us!',
+      });
+    });
+  });
+
+  test('a MANAGER of the owning partner can delete an existing reply after confirming', async () => {
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      partnerships: [{ partner_id: 42, role: 'MANAGER' }],
+    });
+    listListingReviews.mockResolvedValue({
+      data: [{ ...REVIEW_ROW, vendor_response: 'Thank you for staying!' }],
+      meta: { has_more: false, rating_average: 5, review_count: 1 },
+    });
+    const user = userEvent.setup();
+    renderList(3, 42);
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Ջնջել պատասխանը' }),
+    );
+
+    await waitFor(() => {
+      expect(confirmMock).toHaveBeenCalled();
+      expect(deleteReplyMutateAsync).toHaveBeenCalledWith(1);
     });
   });
 });

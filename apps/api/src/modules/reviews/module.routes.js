@@ -15,6 +15,7 @@ import {
   listReviewsAdminQuerySchema,
   updateReviewModerationStatusSchema,
   reportReviewSchema,
+  replyToReviewSchema,
 } from './validators/reviewValidators.js';
 
 export default function createReviewRoutes({ reviewController, guards }) {
@@ -77,6 +78,26 @@ export default function createReviewRoutes({ reviewController, guards }) {
     requireAuth,
     validate(reportReviewSchema),
     reviewController.report,
+  );
+
+  // P1.5 (Master Roadmap) — a partner's reply to a review. No
+  // `requirePermission` here: unlike admin moderation (a global
+  // permission), this is a partner-scoped capability resolved from the
+  // review's own listing/partner, enforced inside `ReviewService`
+  // (`#assertCanRespondToReview`) — `requireAuth` is the fast-fail gate,
+  // the same "service enforces the real check" split every other
+  // partner-scoped write in this codebase uses.
+  router.put(
+    '/:id/reply',
+    requireAuth,
+    validate(replyToReviewSchema),
+    reviewController.reply,
+  );
+  router.delete(
+    '/:id/reply',
+    requireAuth,
+    validate(reviewIdParamsSchema),
+    reviewController.deleteReply,
   );
 
   return router;

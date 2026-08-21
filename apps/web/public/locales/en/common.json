@@ -2622,6 +2622,19 @@
       "success": "Thanks — we'll take a look.",
       "alreadyReported": "You've already reported this review.",
       "error": "Something went wrong. Please try again."
+    },
+    "reply": {
+      "action": "Reply",
+      "editAction": "Edit reply",
+      "deleteAction": "Delete reply",
+      "title": "Reply to this review",
+      "responseLabel": "Your reply",
+      "submitAction": "Post reply",
+      "success": "Reply posted.",
+      "error": "Something went wrong. Please try again.",
+      "deleteConfirmTitle": "Delete this reply?",
+      "deleteConfirmDescription": "This removes your reply from this review. You can add a new one later.",
+      "deleteSuccess": "Reply deleted."
     }
   },
   "ai": {

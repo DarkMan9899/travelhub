@@ -62,3 +62,21 @@ export function reportReview(id, { reasonCode, details }) {
     .post(`/reviews/${id}/report`, { reasonCode, details })
     .then((response) => response.data);
 }
+
+/**
+ * `PUT /reviews/:id/reply` — `{ response }`. Requires
+ * `RESPOND_TO_REVIEWS` on the review's own listing's partner
+ * (`reviewService.js#assertCanRespondToReview`), enforced server-side.
+ */
+export function replyToReview(id, response) {
+  return apiClient
+    .put(`/reviews/${id}/reply`, { response })
+    .then((res) => res.data);
+}
+
+/** `DELETE /reviews/:id/reply` — clears an existing reply. Same authorization as writing one. */
+export function deleteReviewReply(id) {
+  return apiClient
+    .delete(`/reviews/${id}/reply`)
+    .then((response) => response.data);
+}

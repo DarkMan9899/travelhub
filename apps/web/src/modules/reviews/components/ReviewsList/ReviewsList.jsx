@@ -12,6 +12,16 @@
  * and adds a "Report" action per review, same `isAuthenticated` ?
  * render : null gate `FavoriteButton.jsx` already establishes for a
  * logged-out visitor acting on public content.
+ *
+ * Partner reply: `partnerId` (the listing's own, passed by
+ * `ListingReviewsSection`) is optional on purpose — every OTHER caller
+ * of this component (none currently exist, but the prop must stay
+ * backward-compatible) simply never shows the Reply/Edit/Delete
+ * affordances. Visibility here is a convenience only — the real
+ * authorization is server-side (`reviewService.js
+ * #assertCanRespondToReview`); `canRespond` below just avoids showing a
+ * control that would 403 on click. Matches OWNER/MANAGER, the same
+ * trust tier `RESPOND_TO_REVIEWS` grants server-side.
  */
 
 import { useState, useMemo } from 'react';
@@ -31,11 +41,68 @@ import {
 } from '@travelhub/ui/components/feedback-overlays';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
+import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useListingReviewsQuery } from '../../queries/useListingReviewsQuery.js';
 import { useReportReviewMutation } from '../../mutations/useReportReviewMutation.js';
+import { useReplyToReviewMutation } from '../../mutations/useReplyToReviewMutation.js';
+import { useDeleteReviewReplyMutation } from '../../mutations/useDeleteReviewReplyMutation.js';
 import styles from './ReviewsList.module.scss';
 
 const REPORT_REASON_CODES = ['SPAM', 'ABUSIVE', 'OFF_TOPIC', 'FAKE', 'OTHER'];
+const RESPOND_ROLES = ['OWNER', 'MANAGER'];
+
+function ReplyToReviewModal({
+  isOpen,
+  onClose,
+  onSubmitReply,
+  isSaving,
+  initialValue = '',
+}) {
+  const { t } = useTranslation();
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: { response: initialValue ?? '' },
+  });
+
+  async function onSubmit(values) {
+    const ok = await onSubmitReply(values.response);
+    if (ok) reset();
+  }
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={t('reviews.reply.title')}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack gap="4">
+          <Controller
+            name="response"
+            control={control}
+            rules={{ required: true, maxLength: 2000 }}
+            render={({ field }) => (
+              <Textarea
+                label={t('reviews.reply.responseLabel')}
+                rows={4}
+                // eslint-disable-next-line react/jsx-props-no-spreading
+                {...field}
+              />
+            )}
+          />
+          <Inline justify="flex-end">
+            <Button type="submit" variant="primary" loading={isSaving}>
+              {t('reviews.reply.submitAction')}
+            </Button>
+          </Inline>
+        </Stack>
+      </form>
+    </Modal>
+  );
+}
+
+ReplyToReviewModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSubmitReply: PropTypes.func.isRequired,
+  isSaving: PropTypes.bool.isRequired,
+  initialValue: PropTypes.string,
+};
 
 function ReportReviewModal({ isOpen, onClose, onSubmitReport, isSaving }) {
   const { t } = useTranslation();
@@ -110,11 +177,13 @@ function ReviewsListSkeleton() {
   );
 }
 
-export default function ReviewsList({ listingId }) {
+export default function ReviewsList({ listingId, partnerId = undefined }) {
   const { t, i18n } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, partnerships } = useAuth();
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [reportTarget, setReportTarget] = useState(null);
+  const [replyTarget, setReplyTarget] = useState(null);
   const {
     data,
     isPending,
@@ -125,6 +194,20 @@ export default function ReviewsList({ listingId }) {
     isFetchingNextPage,
   } = useListingReviewsQuery(listingId);
   const reportMutation = useReportReviewMutation();
+  const replyMutation = useReplyToReviewMutation(listingId);
+  const deleteReplyMutation = useDeleteReviewReplyMutation(listingId);
+
+  const canRespond = useMemo(
+    () =>
+      isAuthenticated &&
+      Boolean(partnerId) &&
+      (partnerships ?? []).some(
+        (membership) =>
+          membership.partner_id === partnerId &&
+          RESPOND_ROLES.includes(membership.role),
+      ),
+    [isAuthenticated, partnerId, partnerships],
+  );
 
   const reviews = useMemo(
     () => data?.pages.flatMap((page) => page.results) ?? [],
@@ -153,6 +236,38 @@ export default function ReviewsList({ listingId }) {
         { variant: 'danger' },
       );
       return false;
+    }
+  }
+
+  async function handleSubmitReply(responseText) {
+    try {
+      await replyMutation.mutateAsync({
+        id: replyTarget.id,
+        response: responseText,
+      });
+      showToast(t('reviews.reply.success'), { variant: 'success' });
+      setReplyTarget(null);
+      return true;
+    } catch {
+      showToast(t('reviews.reply.error'), { variant: 'danger' });
+      return false;
+    }
+  }
+
+  async function handleDeleteReply(review) {
+    const confirmed = await confirm({
+      title: t('reviews.reply.deleteConfirmTitle'),
+      description: t('reviews.reply.deleteConfirmDescription'),
+      confirmLabel: t('reviews.reply.deleteAction'),
+      cancelLabel: t('common.cancel'),
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    try {
+      await deleteReplyMutation.mutateAsync(review.id);
+      showToast(t('reviews.reply.deleteSuccess'), { variant: 'success' });
+    } catch {
+      showToast(t('reviews.reply.error'), { variant: 'danger' });
     }
   }
 
@@ -208,8 +323,28 @@ export default function ReviewsList({ listingId }) {
                   </Stack>
                 </Card>
               )}
-              {isAuthenticated && (
-                <Inline justify="flex-end">
+              <Inline justify="flex-end" gap="2" wrap>
+                {canRespond && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReplyTarget(review)}
+                  >
+                    {review.vendor_response
+                      ? t('reviews.reply.editAction')
+                      : t('reviews.reply.action')}
+                  </Button>
+                )}
+                {canRespond && review.vendor_response && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteReply(review)}
+                  >
+                    {t('reviews.reply.deleteAction')}
+                  </Button>
+                )}
+                {isAuthenticated && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -217,8 +352,8 @@ export default function ReviewsList({ listingId }) {
                   >
                     {t('reviews.report.action')}
                   </Button>
-                </Inline>
-              )}
+                )}
+              </Inline>
             </Stack>
           </Card>
         ))}
@@ -244,10 +379,22 @@ export default function ReviewsList({ listingId }) {
           isSaving={reportMutation.isPending}
         />
       )}
+      {replyTarget && (
+        <ReplyToReviewModal
+          isOpen
+          onClose={() => setReplyTarget(null)}
+          onSubmitReply={(responseText) => handleSubmitReply(responseText)}
+          isSaving={replyMutation.isPending}
+          initialValue={replyTarget.vendor_response ?? ''}
+        />
+      )}
     </Stack>
   );
 }
 
 ReviewsList.propTypes = {
   listingId: PropTypes.number.isRequired,
+  // Optional: only present when rendered on a listing detail page that
+  // knows the listing's owning partner (see the header comment above).
+  partnerId: PropTypes.number,
 };

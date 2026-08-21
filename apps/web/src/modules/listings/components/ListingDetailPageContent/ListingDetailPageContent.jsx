@@ -336,6 +336,7 @@ export default function ListingDetailPageContent() {
     [SECTION_REVIEWS]: (
       <ListingReviewsSection
         listingId={listing.id}
+        partnerId={listing.partner_id}
         ratingAverage={listing.rating_average}
         reviewCount={listing.review_count}
         sectionId={SECTION_REVIEWS}

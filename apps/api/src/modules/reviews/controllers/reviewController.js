@@ -155,6 +155,41 @@ export function createReviewController(reviewService) {
         next(err);
       }
     },
+
+    async reply(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const { response } = req.validated.body;
+        const review = await reviewService.replyToReview(
+          req.principal,
+          id,
+          response,
+        );
+        res.status(200).json({
+          success: true,
+          data: toReviewResponse(review),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async deleteReply(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const review = await reviewService.deleteReviewReply(req.principal, id);
+        res.status(200).json({
+          success: true,
+          data: toReviewResponse(review),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
   };
 }
 
