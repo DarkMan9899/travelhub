@@ -8,6 +8,13 @@
  * importing src/config/index.js's singleton, since globalSetup does not
  * share module state with the test files it precedes.
  *
+ * `import 'dotenv/config'` is still needed despite not importing the
+ * config singleton itself — this process never otherwise loads `.env`
+ * (Jest's globalSetup runs in its own isolated process, before any test
+ * file's own `src/config/index.js` import would trigger it), so without
+ * this line every DATABASE_* default below silently falls back to the
+ * bogus 'travelhub'/'' placeholder instead of the real local credentials.
+ *
  * Fail-fast safety net: `package.json`'s `test:integration`/`test:contract`
  * scripts now explicitly set NODE_ENV=test (rather than relying on Jest's
  * own implicit default), and this file asserts that landed correctly
@@ -17,6 +24,7 @@
  * only surface once a test file starts running real queries.
  */
 
+import 'dotenv/config';
 import mysql from 'mysql2/promise';
 
 const IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
