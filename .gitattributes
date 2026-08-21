@@ -1,0 +1,22 @@
+# Force LF line endings for all text files, regardless of a contributor's
+# local core.autocrlf setting. Without this, Windows' common
+# `core.autocrlf=true` global default silently checks every text file out
+# with CRLF line endings, which every ESLint/Prettier config in this repo
+# (both apps/api and apps/web) rejects as a `prettier/prettier` "Delete
+# `␍`" error — on a fresh Windows clone this makes `npm run lint` fail
+# with thousands of line-ending-only errors across virtually every file,
+# none of them a real defect.
+* text=auto eol=lf
+
+# Binary assets must never go through EOL normalization.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
