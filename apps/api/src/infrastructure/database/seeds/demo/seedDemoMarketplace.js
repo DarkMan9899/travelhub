@@ -441,14 +441,13 @@ export default async function seedDemoMarketplace(connection) {
     // eslint-disable-next-line no-await-in-loop -- sequential by design
     const [partnerResult] = await connection.query(
       `INSERT INTO partners
-        (legal_name, display_name, slug, description, email,
+        (legal_name, display_name, slug, email,
          verification_status_id, moderation_status_id, owner_user_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         legalName,
         displayName,
         slug,
-        `${displayName} is one of desavii's demo partner organizations, showcasing ${category.noun.toLowerCase()} listings across Armenia.`,
         email,
         approvedStatusId,
         approvedStatusId,
@@ -456,6 +455,19 @@ export default async function seedDemoMarketplace(connection) {
       ],
     );
     const partnerId = partnerResult.insertId;
+    // P1.3 (migration 0031) moved `description` off `partners` and onto
+    // `partner_translations`, one row per locale — this seed only ever
+    // authors the English copy, same as every other demo-content string
+    // here.
+    // eslint-disable-next-line no-await-in-loop -- sequential by design
+    await connection.query(
+      'INSERT INTO partner_translations (partner_id, language_id, description) VALUES (?, ?, ?)',
+      [
+        partnerId,
+        enLanguageId,
+        `${displayName} is one of desavii's demo partner organizations, showcasing ${category.noun.toLowerCase()} listings across Armenia.`,
+      ],
+    );
     // eslint-disable-next-line no-await-in-loop -- sequential by design
     await connection.query(
       'INSERT INTO partner_employees (partner_id, user_id, role_id) VALUES (?, ?, ?)',
