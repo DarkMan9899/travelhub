@@ -16,7 +16,11 @@
  * destructive check keeps it fully independent of the rest of the suite.
  */
 
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, test, expect, afterAll } from '@jest/globals';
+import mysql from 'mysql2/promise';
 import config from '../../../src/config/index.js';
 import {
   recreateDatabase,
@@ -30,6 +34,11 @@ import {
   getMysqlPool,
   closeMysqlPool,
 } from '../../../src/infrastructure/database/mysqlPool.js';
+
+const MIGRATIONS_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../src/infrastructure/database/migrations',
+);
 
 const MIGRATION_CHECK_DATABASE = 'travelhub_test_migration_check';
 
@@ -116,5 +125,61 @@ describe('Fresh migration from an empty database (Sprint 5 Quality Gate #4)', ()
       `SELECT COUNT(*) AS count FROM \`${MIGRATION_CHECK_DATABASE}\`.schema_migrations`,
     );
     expect(Number(rows[0].count)).toBe(listMigrations().length);
+  });
+
+  // P2.2A review: `migrate.js`'s own `down(steps)` has no `{databaseName}`
+  // option (unlike `up`) — it always targets `config.database.name`, so it
+  // cannot be pointed at this file's disposable database the way `up` is
+  // above. Rather than inventing a new down-migration mechanism, this
+  // opens one raw connection scoped to the disposable database (the same
+  // `mysql2` package `migrate.js` itself uses) and runs 0034's own
+  // `.down.sql` file content directly — proving THIS migration's down
+  // script is valid, reversible SQL, without adding a general capability
+  // this repository's tooling doesn't already have.
+  test('migration 0034 down.sql cleanly reverses the four new bookable_units columns', async () => {
+    const connection = await mysql.createConnection({
+      host: config.database.host,
+      port: config.database.port,
+      database: MIGRATION_CHECK_DATABASE,
+      user: config.database.user,
+      password: config.database.password,
+      multipleStatements: true,
+    });
+    try {
+      const downSql = readFileSync(
+        path.join(
+          MIGRATIONS_DIR,
+          '0034_bookable_unit_pricing_occupancy.down.sql',
+        ),
+        'utf8',
+      );
+      await expect(connection.query(downSql)).resolves.not.toThrow();
+
+      const [columns] = await connection.query(
+        `SELECT column_name FROM information_schema.columns
+         WHERE table_schema = ? AND table_name = 'bookable_units'`,
+        [MIGRATION_CHECK_DATABASE],
+      );
+      const columnNames = new Set(
+        columns.map((row) => row.column_name ?? row.COLUMN_NAME),
+      );
+      expect(columnNames.has('max_guests')).toBe(false);
+      expect(columnNames.has('bed_configuration')).toBe(false);
+      expect(columnNames.has('base_price_amount')).toBe(false);
+      expect(columnNames.has('base_price_currency_id')).toBe(false);
+      // The pre-0034 columns this migration never touched are untouched.
+      expect(columnNames.has('capacity')).toBe(true);
+      expect(columnNames.has('unit_label')).toBe(true);
+
+      // Restore this disposable database to fully-migrated state so this
+      // test doesn't leave it in a half-reverted condition for anything
+      // that might run after it within this same file.
+      await connection.query(
+        `DELETE FROM schema_migrations WHERE version = '0034'`,
+      );
+    } finally {
+      await connection.end();
+    }
+    await up(undefined, { databaseName: MIGRATION_CHECK_DATABASE });
   });
 });
