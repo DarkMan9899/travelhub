@@ -157,6 +157,20 @@ export function toListingResponse(listing) {
   };
 }
 
+/**
+ * P2.1: admin-only variant of `toListingResponse` — adds
+ * `moderation_notes` (already fetched by the repository, but never
+ * exposed by the shared response, since that DTO also serves the public
+ * `GET /listings/:id` route and a rejection/moderation note is internal
+ * admin-facing content, not something to leak to a public visitor).
+ */
+export function toListingAdminDetailResponse(listing) {
+  return {
+    ...toListingResponse(listing),
+    moderation_notes: listing.moderationNotes ?? null,
+  };
+}
+
 export function toListingSummaryResponse(listing) {
   return {
     id: listing.id,

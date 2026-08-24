@@ -228,3 +228,39 @@ describe('PATCH /listings/admin/:id/moderation-status (approve/reject with notes
     expect(res.status).toBe(422);
   });
 });
+
+/**
+ * P2.1 (Admin Listing Detail): `moderation_notes` was already fetched by
+ * the repository but never exposed by any DTO — the admin detail page
+ * this section verifies had no data source for it. Confirms it's now
+ * present on the admin response, and deliberately absent from the
+ * public one (a moderation/rejection note is internal admin content,
+ * not something a public visitor should see).
+ */
+describe('GET /listings/admin/:id exposes moderation_notes (P2.1)', () => {
+  test('a note set via reject is returned on the admin detail response, never on the public one', async () => {
+    const rejectRes = await request(app)
+      .patch(`/api/v1/listings/admin/${listingId}/moderation-status`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ status: 'REJECTED', notes: 'Please add exterior photos.' });
+    expect(rejectRes.status).toBe(200);
+
+    const adminDetailRes = await request(app)
+      .get(`/api/v1/listings/admin/${listingId}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(adminDetailRes.status).toBe(200);
+    expect(adminDetailRes.body.data.moderation_notes).toBe(
+      'Please add exterior photos.',
+    );
+
+    // The vendor owns this listing, so the public route's owner-fallback
+    // visibility rule lets them see it despite it being DRAFT/REJECTED —
+    // the point here is only that `moderation_notes` itself is absent
+    // from this response shape, regardless of who can reach it.
+    const publicRes = await request(app)
+      .get(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(publicRes.status).toBe(200);
+    expect(publicRes.body.data.moderation_notes).toBeUndefined();
+  });
+});

@@ -32,6 +32,7 @@ import { DataTable } from '@travelhub/ui/components/dashboard';
 import { Modal, ErrorState } from '@travelhub/ui/components/feedback-overlays';
 import { Search } from 'lucide-react';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import RouterLink from '../../../../components/RouterLink.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useAdminListFilters } from '../../hooks/useAdminListFilters.js';
@@ -190,7 +191,14 @@ export default function AdminListingModerationPageContent() {
     {
       key: 'title',
       header: t('admin.listingModeration.table.title'),
-      render: (listing) => listing.title ?? '—',
+      render: (listing) =>
+        listing.title ? (
+          <RouterLink href={`/${locale}/admin/listings/${listing.id}`}>
+            {listing.title}
+          </RouterLink>
+        ) : (
+          '—'
+        ),
     },
     {
       key: 'partner',

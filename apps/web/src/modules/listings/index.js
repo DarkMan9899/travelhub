@@ -6,6 +6,7 @@
 
 export { default as useListingQuery } from './queries/useListingQuery.js';
 export { default as useListingMetadataQuery } from './queries/useListingMetadataQuery.js';
+export { default as useListingCategoriesQuery } from './queries/useListingCategoriesQuery.js';
 export { default as useListingBookableUnitsQuery } from './queries/useListingBookableUnitsQuery.js';
 export { default as listingKeys } from './constants/queryKeys.js';
 export { default as ListingDetailPageContent } from './components/ListingDetailPageContent/ListingDetailPageContent.jsx';
@@ -28,3 +29,17 @@ export { default as useListingCalendarQuery } from './queries/useListingCalendar
 export { default as useSetAvailabilityMutation } from './mutations/useSetAvailabilityMutation.js';
 export { default as ListingStatusBadge } from './components/ListingStatusBadge/ListingStatusBadge.jsx';
 export { LISTING_STATUS_KEYS } from './constants/listingStatuses.js';
+
+// P2.1 (Admin Listing Detail): the read-only Listing Detail sections,
+// exposed so the admin module can render the same metadata-driven
+// attribute/amenity/policy/itinerary/content display a customer sees,
+// rather than a second, duplicated rendering of the same data.
+export { default as ListingAttributesSection } from './components/ListingDetailPageContent/ListingAttributesSection/ListingAttributesSection.jsx';
+export { default as ListingAmenitiesSection } from './components/ListingDetailPageContent/ListingAmenitiesSection/ListingAmenitiesSection.jsx';
+export { default as ListingPoliciesSection } from './components/ListingDetailPageContent/ListingPoliciesSection/ListingPoliciesSection.jsx';
+export { default as ListingItinerarySection } from './components/ListingDetailPageContent/ListingItinerarySection/ListingItinerarySection.jsx';
+export { default as ListingIncludedSection } from './components/ListingDetailPageContent/ListingIncludedSection/ListingIncludedSection.jsx';
+export { default as ListingFaqSection } from './components/ListingDetailPageContent/ListingFaqSection/ListingFaqSection.jsx';
+export { default as ListingLocationSection } from './components/ListingDetailPageContent/ListingLocationSection/ListingLocationSection.jsx';
+export { default as ListingAboutSection } from './components/ListingDetailPageContent/ListingAboutSection/ListingAboutSection.jsx';
+export { default as getLocalizedTranslation } from './utils/getLocalizedTranslation.js';

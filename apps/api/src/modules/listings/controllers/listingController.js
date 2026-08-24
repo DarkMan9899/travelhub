@@ -12,6 +12,7 @@ import {
   toListingResponse,
   toListingSummaryResponse,
   toAdminListingSummaryResponse,
+  toListingAdminDetailResponse,
   toMediaResponse,
   toListingMetadataResponse,
   toHighlightResponse,
@@ -106,7 +107,7 @@ export function createListingController(
         );
         res.status(200).json({
           success: true,
-          data: toListingResponse(listing),
+          data: toListingAdminDetailResponse(listing),
           meta: null,
           error: null,
         });

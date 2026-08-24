@@ -13,6 +13,7 @@ export { default as AdminUserDetailContent } from './components/AdminUserDetailC
 export { default as AdminPartnersPageContent } from './components/AdminPartnersPageContent/AdminPartnersPageContent.jsx';
 export { default as AdminPartnerDetailContent } from './components/AdminPartnerDetailContent/AdminPartnerDetailContent.jsx';
 export { default as AdminListingModerationPageContent } from './components/AdminListingModerationPageContent/AdminListingModerationPageContent.jsx';
+export { default as AdminListingDetailContent } from './components/AdminListingDetailContent/AdminListingDetailContent.jsx';
 export { default as AdminBookingsPageContent } from './components/AdminBookingsPageContent/AdminBookingsPageContent.jsx';
 export { default as AdminBookingDetailContent } from './components/AdminBookingDetailContent/AdminBookingDetailContent.jsx';
 export { default as AdminMarketplaceConfigPageContent } from './components/AdminMarketplaceConfigPageContent/AdminMarketplaceConfigPageContent.jsx';

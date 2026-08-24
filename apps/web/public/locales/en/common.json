@@ -1660,6 +1660,20 @@
       "rejectSuccess": "Listing rejected.",
       "statusError": "Something went wrong. Please try again."
     },
+    "listingDetail": {
+      "loading": "Loading…",
+      "typeLabel": "Type",
+      "slugLabel": "Slug",
+      "moderationNotesLabel": "Moderation notes",
+      "partner": {
+        "heading": "Company",
+        "error": "We couldn't load this listing's company."
+      },
+      "pricing": {
+        "heading": "Pricing",
+        "empty": "No pricing configured yet."
+      }
+    },
     "reviewModeration": {
       "heading": "Review Moderation",
       "loadMore": "Load more",

@@ -1672,6 +1672,20 @@
       "rejectSuccess": "Объявление отклонено.",
       "statusError": "Что-то пошло не так. Пожалуйста, попробуйте снова."
     },
+    "listingDetail": {
+      "loading": "Загрузка…",
+      "typeLabel": "Тип",
+      "slugLabel": "Слаг",
+      "moderationNotesLabel": "Примечания модерации",
+      "partner": {
+        "heading": "Компания",
+        "error": "Не удалось загрузить компанию этого объявления."
+      },
+      "pricing": {
+        "heading": "Цены",
+        "empty": "Цены ещё не настроены."
+      }
+    },
     "reviewModeration": {
       "heading": "Модерация отзывов",
       "loadMore": "Показать ещё",
