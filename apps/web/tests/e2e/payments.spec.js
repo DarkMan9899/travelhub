@@ -7,36 +7,64 @@
  * persona real payment states to assert against).
  *
  * `AuthProvider` attempts `POST /auth/refresh` on every full page load
- * (mount) — doubled by React StrictMode's dev-only double-invoke of
- * mount effects — and `/auth/login`/`/auth/refresh` share the
+ * (mount), and `/auth/login`/`/auth/refresh` share the
  * `sensitiveRateLimiter` tier's tight 10/min ceiling with every other
  * spec file hitting the same IP. A first version of this file used a
  * raw `page.goto()` per sub-page and tripped that ceiling mid-run — the
  * exact class of problem the Phase 15 lesson already named. The fix:
  * log in once per persona, then reach every other in-app page via a
  * client-side `<Link>` click (no full reload, no extra `/auth/refresh`
- * call) instead of a second `page.goto()`. Even so, four logins packed
- * into under 20 seconds (this file completes fast — no heavy rendering
- * to wait on) can still land on the exact edge of that 10/min ceiling;
- * `retries: 1` here is the test-execution-strategy fix the shared window
- * calls for, not a weakening of the limiter itself — by the time a retry
- * runs, the window has partially drained.
+ * call) instead of a second `page.goto()`. `retries: 1` here is the
+ * test-execution-strategy fix the shared window calls for, not a
+ * weakening of the limiter itself — by the time a retry runs, the window
+ * has partially drained. (Until the P2.1 stabilization fix to
+ * `AuthProvider.jsx`, React StrictMode's dev-only double-invoke of mount
+ * effects doubled every one of these refresh calls, silently doubling
+ * this file's real rate-limit consumption — fixed at the source, not
+ * worked around here.)
  */
 
 import { test, expect } from './fixtures.js';
 
 const API_BASE_URL = 'http://localhost:4000/api/v1';
 const DEMO_PASSWORD = 'DemoPass!2024';
+const ADMIN = { email: 'admin@travelhub.dev', password: 'DevAdmin!2024' };
+
+// A reliably high-capacity, always-available unit — never depleted by
+// other specs (inventory.spec.js's own capacity-consuming flows use the
+// tour/fleet/guide fixtures, never this hotel).
+const HOTEL_SLUG = 'demo-vendor-boutique-yerevan-hotel';
+
+// A per-process salt (mirrors `inventory.spec.js`'s identical fix) so
+// repeated runs land on different dates instead of repeatedly booking
+// the same day — confirmed: without this, a handful of successive local
+// runs exhausted the Standard Room's 5-unit capacity for one fixed date,
+// reintroducing the exact finite-resource problem this helper exists to
+// avoid, just self-inflicted instead of seed-inflicted.
+const RUN_SALT_DAYS = Date.now() % 200;
+
+function futureISO(daysFromNow) {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + daysFromNow + RUN_SALT_DAYS);
+  return d.toISOString().slice(0, 10);
+}
 
 // Logs in as the given demo customer, capturing the access token from
-// the UI login's own `POST /auth/login` network response, then uses
-// that token to find a CONFIRMED booking (payable, per `PaymentService`'s
-// `PAYABLE_BOOKING_STATUSES`) with no existing payment yet — i.e. one
-// where the real UI shows `PayNowPanel`, not `PaymentSummaryCard`.
-// Looked up directly via the API rather than guessing an id, since the
-// demo seed only attaches payments to a deterministic subset of
-// CONFIRMED/COMPLETED bookings — plenty of real unpaid ones remain.
-async function loginAndFindUnpaidConfirmedBooking(page, request, email) {
+// the UI login's own `POST /auth/login` network response, then creates
+// a real, fresh CONFIRMED booking for them via the same hold -> booking
+// -> confirm endpoints the real checkout/vendor-confirmation UI calls —
+// never a direct DB write, never a fabricated payment.
+//
+// This replaces an earlier version that searched the demo seed for an
+// existing unpaid CONFIRMED booking. That assumed the seed's supply was
+// effectively infinite; it isn't — a successful SUCCESS-payment run
+// permanently pays whichever booking it finds, so repeated runs (this
+// file's own retry, or repeated local runs between reseeds) eventually
+// exhaust it, exactly like `inventory.spec.js`'s own documented
+// finite-capacity flows. Building the precondition here instead makes
+// this test infinitely re-runnable without depending on reseed timing.
+async function loginAndCreateConfirmedBooking(page, request, email) {
   await page.goto('/en/auth/login');
   // The frontend dev server proxies `/api/v1/*` to the backend (see
   // `vite.config.js`), so the login request the browser actually makes
@@ -58,27 +86,79 @@ async function loginAndFindUnpaidConfirmedBooking(page, request, email) {
   const { data: authData } = await loginResponse.json();
   const headers = { Authorization: `Bearer ${authData.access_token}` };
 
-  const bookingsResponse = await request.get(
-    `${API_BASE_URL}/bookings?status=CONFIRMED&limit=50`,
-    { headers },
+  const searchResponse = await request.get(
+    `${API_BASE_URL}/search?keyword=${encodeURIComponent(HOTEL_SLUG)}`,
   );
-  expect(bookingsResponse.ok()).toBe(true);
-  const { data: bookings } = await bookingsResponse.json();
-
-  // eslint-disable-next-line no-restricted-syntax -- sequential lookup over a small candidate list
-  for (const booking of bookings) {
-    // eslint-disable-next-line no-await-in-loop -- sequential by design
-    const paymentsResponse = await request.get(
-      `${API_BASE_URL}/payments?bookingId=${booking.id}`,
-      { headers },
-    );
-    // eslint-disable-next-line no-await-in-loop -- sequential by design
-    const { data: payments } = await paymentsResponse.json();
-    if (payments.length === 0) {
-      return booking;
-    }
+  const { data: searchResults } = await searchResponse.json();
+  const listing = (searchResults ?? []).find((l) => l.slug === HOTEL_SLUG);
+  if (!listing) {
+    throw new Error(`Fixture listing "${HOTEL_SLUG}" not found via search.`);
   }
-  throw new Error(`No unpaid CONFIRMED booking found for ${email}.`);
+  const unitsResponse = await request.get(
+    `${API_BASE_URL}/availability/${listing.id}/units`,
+  );
+  const { data: units } = await unitsResponse.json();
+  const unit = units.find((u) => u.unit_label === 'Standard Room');
+  if (!unit) {
+    throw new Error(`"Standard Room" unit not found on listing ${listing.id}.`);
+  }
+
+  // A 1-night stay, comfortably far out to avoid any other spec's
+  // date-specific fixtures on this same listing.
+  const dateFrom = futureISO(140);
+  const dateTo = futureISO(141);
+
+  const holdResponse = await request.post(`${API_BASE_URL}/booking-holds`, {
+    headers,
+    data: {
+      items: [{ bookableUnitId: unit.id, dateFrom, dateTo, quantity: 1 }],
+    },
+  });
+  if (!holdResponse.ok()) {
+    throw new Error(
+      `Creating a reservation hold failed: ${holdResponse.status()} ${await holdResponse.text()}`,
+    );
+  }
+  const { data: holdBatch } = await holdResponse.json();
+  const holdIds = holdBatch.items[0].hold_ids;
+
+  const bookingResponse = await request.post(`${API_BASE_URL}/bookings`, {
+    headers,
+    data: {
+      items: [{ holdIds, guests: [{ fullName: 'Elena Simonyan' }] }],
+      guestContactSnapshot: {
+        fullName: 'Elena Simonyan',
+        email,
+      },
+    },
+  });
+  if (!bookingResponse.ok()) {
+    throw new Error(
+      `Creating the booking failed: ${bookingResponse.status()} ${await bookingResponse.text()}`,
+    );
+  }
+  const { data: booking } = await bookingResponse.json();
+
+  // Confirmed via the same `booking.confirm` permission the real vendor-
+  // confirmation UI relies on (`admin.spec.js`'s own confirm flow uses
+  // the identical permission) — a direct API call, not a second UI login/
+  // page load, to keep this within the file's own documented rate-limit
+  // budget.
+  const adminLoginResponse = await request.post(`${API_BASE_URL}/auth/login`, {
+    data: ADMIN,
+  });
+  const { data: adminAuth } = await adminLoginResponse.json();
+  const confirmResponse = await request.post(
+    `${API_BASE_URL}/bookings/${booking.id}/confirm`,
+    { headers: { Authorization: `Bearer ${adminAuth.access_token}` } },
+  );
+  if (!confirmResponse.ok()) {
+    throw new Error(
+      `Confirming the booking failed: ${confirmResponse.status()} ${await confirmResponse.text()}`,
+    );
+  }
+
+  return booking;
 }
 
 // Client-side navigation to a specific booking's detail page — reuses
@@ -99,7 +179,7 @@ test.describe.serial('Payments', () => {
     page,
     request,
   }) => {
-    const booking = await loginAndFindUnpaidConfirmedBooking(
+    const booking = await loginAndCreateConfirmedBooking(
       page,
       request,
       'elena.simonyan@example.com',
@@ -142,7 +222,7 @@ test.describe.serial('Payments', () => {
     page,
     request,
   }) => {
-    const booking = await loginAndFindUnpaidConfirmedBooking(
+    const booking = await loginAndCreateConfirmedBooking(
       page,
       request,
       'tigran.vardanyan@example.com',
