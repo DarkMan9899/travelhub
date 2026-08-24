@@ -27,7 +27,12 @@
  * (no-reply) state at the end of this test.
  */
 
-import { test, expect, resetRateLimits } from './fixtures.js';
+import {
+  test,
+  expect,
+  resetRateLimits,
+  resolveSeededReview,
+} from './fixtures.js';
 
 const REVIEW_OWNER = {
   email: 'partner.tours@example.com',
@@ -44,15 +49,17 @@ const CUSTOMER = {
 const ADMIN = { email: 'admin@travelhub.dev', password: 'DevAdmin!2024' };
 
 const API_BASE = 'http://localhost:4000/api/v1/';
-const REVIEW_ID = 1;
 const REVIEW_LISTING_ID = 37;
 const REVIEW_LISTING_TITLE = 'Modern Sevan Tour';
-// This exact sentence is a templated fragment shared by several other
-// seeded reviews (on unrelated listings) — unique only combined with the
-// listing title (see `adminRow` below, which needs both).
-const REVIEW_TEXT =
-  'Everything was exactly as described, and the host was very responsive';
 const REPLY_TEXT = `E2E reply ${Date.now()}`;
+
+// The review's own id/content aren't hardcoded — `resolveSeededReview`
+// (see `fixtures.js`) resolves them from the real API at test start,
+// since the demo seed doesn't guarantee this listing keeps the same
+// review across reseeds (found via a P2.1 acceptance-verification
+// reseed). Module-scoped so `test.afterEach`'s teardown can reach the id
+// resolved inside the test body.
+let resolvedReviewId;
 
 async function login(page, { email, password }, expectedUrlPattern) {
   await resetRateLimits();
@@ -70,8 +77,8 @@ async function logout(page) {
 }
 
 /** Scoped to this one review's own card, not any other review on the same listing. */
-function reviewCard(page) {
-  return page.locator('div').filter({ hasText: REVIEW_TEXT }).last();
+function reviewCard(page, reviewText) {
+  return page.locator('div').filter({ hasText: reviewText }).last();
 }
 
 // Single test, not split by concern: every step shares one review
@@ -94,26 +101,34 @@ test.describe('Partner reply to a review — end to end', () => {
   // `resetRateLimits` fail-open pattern) — a cleanup failure must never
   // mask the real test result.
   test.afterEach(async ({ request }) => {
+    if (!resolvedReviewId) return;
     try {
       const loginRes = await request.post(`${API_BASE}auth/login`, {
         data: { email: REVIEW_OWNER.email, password: REVIEW_OWNER.password },
       });
       if (!loginRes.ok()) return;
       const { data } = await loginRes.json();
-      await request.delete(`${API_BASE}reviews/${REVIEW_ID}/reply`, {
+      await request.delete(`${API_BASE}reviews/${resolvedReviewId}/reply`, {
         headers: { Authorization: `Bearer ${data.access_token}` },
       });
     } catch {
       // Best-effort teardown only — never fail the run over this.
+    } finally {
+      resolvedReviewId = undefined;
     }
   });
 
   test('the owning partner can reply, it is public, and no one else can act on it', async ({
     page,
+    request,
   }) => {
+    const seededReview = await resolveSeededReview(request, REVIEW_LISTING_ID);
+    resolvedReviewId = seededReview.id;
+    const REVIEW_TEXT = seededReview.text;
+
     await login(page, REVIEW_OWNER, /\/en\/partner$/);
     await page.goto(`/en/listings/${REVIEW_LISTING_ID}`);
-    await expect(reviewCard(page)).toBeVisible();
+    await expect(reviewCard(page, REVIEW_TEXT)).toBeVisible();
 
     // i18n, checked before any reply exists so the button still reads
     // plain "Reply" (not "Edit reply") in every locale. Switched via the
@@ -127,29 +142,33 @@ test.describe('Partner reply to a review — end to end', () => {
     // landed on an unexpectedly logged-out page for exactly this reason).
     await page.getByRole('button', { name: 'ՀՅ', exact: true }).click();
     await expect(
-      reviewCard(page).getByRole('button', { name: 'Պատասխանել' }),
+      reviewCard(page, REVIEW_TEXT).getByRole('button', { name: 'Պատասխանել' }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'РУ', exact: true }).click();
     await expect(
-      reviewCard(page).getByRole('button', { name: 'Ответить' }),
+      reviewCard(page, REVIEW_TEXT).getByRole('button', { name: 'Ответить' }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'EN', exact: true }).click();
     await expect(
-      reviewCard(page).getByRole('button', { name: 'Reply' }),
+      reviewCard(page, REVIEW_TEXT).getByRole('button', { name: 'Reply' }),
     ).toBeVisible();
 
     // Mobile viewport, same loaded page (no reload) — the affordance is
     // reachable and the reply form opens and is usable at a phone width.
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(
-      reviewCard(page).getByRole('button', { name: 'Reply' }),
+      reviewCard(page, REVIEW_TEXT).getByRole('button', { name: 'Reply' }),
     ).toBeVisible();
-    await reviewCard(page).getByRole('button', { name: 'Reply' }).click();
+    await reviewCard(page, REVIEW_TEXT)
+      .getByRole('button', { name: 'Reply' })
+      .click();
     await expect(page.getByLabel('Your reply')).toBeVisible();
     await page.keyboard.press('Escape');
     await page.setViewportSize({ width: 1280, height: 800 });
 
-    await reviewCard(page).getByRole('button', { name: 'Reply' }).click();
+    await reviewCard(page, REVIEW_TEXT)
+      .getByRole('button', { name: 'Reply' })
+      .click();
     await expect(
       page.getByRole('heading', { name: 'Reply to this review' }),
     ).toBeVisible();
@@ -170,15 +189,19 @@ test.describe('Partner reply to a review — end to end', () => {
     await logout(page);
     await resetRateLimits();
     await page.goto(`/en/listings/${REVIEW_LISTING_ID}`);
-    await expect(reviewCard(page).getByText(REPLY_TEXT)).toBeVisible();
+    await expect(
+      reviewCard(page, REVIEW_TEXT).getByText(REPLY_TEXT),
+    ).toBeVisible();
 
     // A CUSTOMER (no partnership at all) never sees reply/edit/delete
     // controls, even on a review they can otherwise Report.
     await login(page, CUSTOMER, /\/en\/account$/);
     await page.goto(`/en/listings/${REVIEW_LISTING_ID}`);
-    await expect(reviewCard(page).getByText(REPLY_TEXT)).toBeVisible();
     await expect(
-      reviewCard(page).getByRole('button', {
+      reviewCard(page, REVIEW_TEXT).getByText(REPLY_TEXT),
+    ).toBeVisible();
+    await expect(
+      reviewCard(page, REVIEW_TEXT).getByRole('button', {
         name: /Reply|Edit reply|Delete reply/,
       }),
     ).toHaveCount(0);
@@ -190,9 +213,11 @@ test.describe('Partner reply to a review — end to end', () => {
     // holds a partner role, just not this one.
     await login(page, OTHER_PARTNER, /\/en\/partner$/);
     await page.goto(`/en/listings/${REVIEW_LISTING_ID}`);
-    await expect(reviewCard(page).getByText(REPLY_TEXT)).toBeVisible();
     await expect(
-      reviewCard(page).getByRole('button', {
+      reviewCard(page, REVIEW_TEXT).getByText(REPLY_TEXT),
+    ).toBeVisible();
+    await expect(
+      reviewCard(page, REVIEW_TEXT).getByRole('button', {
         name: /Reply|Edit reply|Delete reply/,
       }),
     ).toHaveCount(0);
@@ -219,14 +244,18 @@ test.describe('Partner reply to a review — end to end', () => {
     // test (and reviewModeration.spec.js) found it.
     await login(page, REVIEW_OWNER, /\/en\/partner$/);
     await page.goto(`/en/listings/${REVIEW_LISTING_ID}`);
-    await reviewCard(page).getByRole('button', { name: 'Edit reply' }).click();
+    await reviewCard(page, REVIEW_TEXT)
+      .getByRole('button', { name: 'Edit reply' })
+      .click();
     await expect(page.getByLabel('Your reply')).toHaveValue(REPLY_TEXT);
     await page.keyboard.press('Escape');
-    await reviewCard(page)
+    await reviewCard(page, REVIEW_TEXT)
       .getByRole('button', { name: 'Delete reply' })
       .click();
     await page.getByRole('button', { name: 'Delete reply' }).last().click();
     await expect(page.getByText('Reply deleted.')).toBeVisible();
-    await expect(reviewCard(page).getByText(REPLY_TEXT)).not.toBeVisible();
+    await expect(
+      reviewCard(page, REVIEW_TEXT).getByText(REPLY_TEXT),
+    ).not.toBeVisible();
   });
 });

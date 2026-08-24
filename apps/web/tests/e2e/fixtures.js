@@ -52,4 +52,26 @@ export const test = base.extend({
   },
 });
 
+const API_BASE = 'http://localhost:4000/api/v1/';
+
+/**
+ * Resolves a listing's seeded review id/content at test-run time instead
+ * of hardcoding them. `seedDemoMarketplace.js` assigns each review's
+ * template by the reviewed booking's position in a loop over ALL
+ * completed demo bookings, not by listing identity — a reseed can
+ * therefore attach a different template (different id, different body
+ * text) to the same listing than an earlier reseed did (found via a P2.1
+ * acceptance-verification reseed: listing 37's review body and id both
+ * changed between runs). Mirrors `inventory.spec.js`'s own
+ * `resolveListingId` pattern for the identical reason — resolve the
+ * unstable value from the real API instead of assuming it.
+ */
+export async function resolveSeededReview(requestContext, listingId) {
+  const res = await requestContext.get(
+    `${API_BASE}reviews?listingId=${listingId}&limit=1`,
+  );
+  const { data } = await res.json();
+  return { id: data[0].id, text: data[0].content };
+}
+
 export { expect, request };
