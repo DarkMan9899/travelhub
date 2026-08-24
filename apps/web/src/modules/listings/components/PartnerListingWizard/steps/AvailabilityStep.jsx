@@ -1,5 +1,7 @@
 /**
- * AvailabilityStep — step 8. Registering a bookable unit and managing
+ * AvailabilityStep — step 8. Room/unit registration (P2.2A: including
+ * occupancy/bed configuration/base price, and — unlike the old version —
+ * NOT limited to a single unit; see `BookableUnitsManager`) and managing
  * blackout dates both come from the `availability` module's public
  * exports (`modules/listings` depending on `modules/availability` is the
  * allowed direction — FRONTEND_ARCHITECTURE.md §6.3: "listings may
@@ -18,23 +20,17 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import {
-  Input,
-  Select,
-  DatePicker,
-} from '@travelhub/ui/components/form-controls';
+import { Input, DatePicker } from '@travelhub/ui/components/form-controls';
 import { Button } from '@travelhub/ui/components/primitives';
 import { Alert } from '@travelhub/ui/components/feedback-overlays';
 import { Stack } from '@travelhub/ui/components/layout';
 import {
-  BOOKABLE_UNIT_TYPES,
-  useBookableUnitsQuery,
   useBlackoutsQuery,
-  useRegisterBookableUnitMutation,
   useCreateBlackoutMutation,
   useRemoveBlackoutMutation,
 } from '../../../../availability/index.js';
 import { useUpdateListingMutation } from '../../../mutations/useUpdateListingMutation.js';
+import BookableUnitsManager from '../../BookableUnitsManager/BookableUnitsManager.jsx';
 import WizardStepActions from '../WizardStepActions.jsx';
 
 function toOptionalInt(value) {
@@ -49,14 +45,11 @@ export default function AvailabilityStep({
 }) {
   const { t } = useTranslation();
   const { locale } = useParams();
-  const unitsQuery = useBookableUnitsQuery(listingId);
   const blackoutsQuery = useBlackoutsQuery(listingId);
-  const registerUnitMutation = useRegisterBookableUnitMutation();
   const createBlackoutMutation = useCreateBlackoutMutation();
   const removeBlackoutMutation = useRemoveBlackoutMutation();
   const updateListingMutation = useUpdateListingMutation();
 
-  const [unitType, setUnitType] = useState(BOOKABLE_UNIT_TYPES[0]);
   const [blackoutRange, setBlackoutRange] = useState({
     start: null,
     end: null,
@@ -68,15 +61,10 @@ export default function AvailabilityStep({
     advanceBookingMaxDays: initialValues.advanceBookingMaxDays ?? '',
   });
 
-  const units = unitsQuery.data ?? [];
   const blackouts = blackoutsQuery.data ?? [];
 
   function setRule(field, value) {
     setRules((current) => ({ ...current, [field]: value }));
-  }
-
-  function handleRegisterUnit() {
-    registerUnitMutation.mutate({ listingId, bookableUnitType: unitType });
   }
 
   function handleAddBlackout() {
@@ -116,36 +104,7 @@ export default function AvailabilityStep({
 
       <section>
         <h3>{t('partner.listingWizard.availability.units')}</h3>
-        {units.length > 0 ? (
-          <p>
-            {t('partner.listingWizard.availability.unitsRegistered', {
-              count: units.length,
-            })}
-          </p>
-        ) : (
-          <Stack gap="2">
-            <Select
-              label={t('partner.listingWizard.availability.unitType')}
-              placeholder={t('partner.listingWizard.selectPlaceholder')}
-              options={BOOKABLE_UNIT_TYPES.map((code) => ({
-                value: code,
-                label: t(
-                  `partner.listingWizard.bookableUnitTypes.${code}`,
-                  code,
-                ),
-              }))}
-              value={unitType}
-              onChange={setUnitType}
-            />
-            <Button
-              variant="secondary"
-              loading={registerUnitMutation.isPending}
-              onClick={() => handleRegisterUnit()}
-            >
-              {t('partner.listingWizard.availability.registerUnit')}
-            </Button>
-          </Stack>
-        )}
+        <BookableUnitsManager listingId={listingId} />
       </section>
 
       <section>

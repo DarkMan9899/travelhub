@@ -12,10 +12,27 @@
 
 import apiClient from './client.js';
 
-/** `POST /availability/units` — `{ listingId, bookableUnitType, capacity? }`. */
+/**
+ * `POST /availability/units` — `{ listingId, bookableUnitType, capacity?,
+ * unitLabel?, maxGuests?, bedConfiguration?, basePriceAmount?,
+ * basePriceCurrency? }` (the last four are P2.2A additions — occupancy/
+ * bed structure/base price, separate from `capacity`'s existing meaning
+ * of "how many rooms of this type exist").
+ */
 export function registerBookableUnit(payload) {
   return apiClient
     .post('/availability/units', payload)
+    .then((response) => response.data);
+}
+
+/**
+ * `PATCH /availability/units/:id` (P2.2A) — partial edit of an
+ * already-registered unit's label/capacity/occupancy/bed configuration/
+ * base price. `bookableUnitType` is not editable post-creation.
+ */
+export function updateBookableUnit(id, payload) {
+  return apiClient
+    .patch(`/availability/units/${id}`, payload)
     .then((response) => response.data);
 }
 

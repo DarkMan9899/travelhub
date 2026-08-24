@@ -1016,7 +1016,8 @@
         "SCHEDULED": "Scheduled"
       },
       "conflictTypes": {
-        "AMBIGUOUS_MAPPING": "No unit mapped"
+        "AMBIGUOUS_MAPPING": "No unit mapped",
+        "CAPACITY_CONFLICT": "Already booked on Desavii"
       },
       "exportFeed": {
         "label": "iCal export feed URL"
@@ -1041,10 +1042,6 @@
           "type": "Type",
           "createdAt": "Detected"
         }
-      },
-      "conflictTypes": {
-        "AMBIGUOUS_MAPPING": "No unit mapped",
-        "CAPACITY_CONFLICT": "Already booked on Desavii"
       },
       "mapping": {
         "tabLabel": "Mapping",
@@ -1088,7 +1085,8 @@
         "publish": "Publish",
         "unpublish": "Unpublish",
         "archive": "Archive",
-        "delete": "Delete"
+        "delete": "Delete",
+        "manageRooms": "Manage rooms"
       },
       "publishSuccess": "Your listing has been published.",
       "publishError": "This listing isn't ready to publish yet.",
@@ -1335,7 +1333,6 @@
       },
       "availability": {
         "units": "Bookable units",
-        "unitsRegistered": "{{count}} bookable units registered",
         "unitType": "Unit type",
         "registerUnit": "Register unit",
         "blackoutDates": "Blackout dates",
@@ -1346,7 +1343,30 @@
         "minimumStayNights": "Minimum stay (nights)",
         "maximumStayNights": "Maximum stay (nights)",
         "advanceBookingMinHours": "Minimum advance booking (hours)",
-        "advanceBookingMaxDays": "Maximum advance booking (days)"
+        "advanceBookingMaxDays": "Maximum advance booking (days)",
+        "unitLabel": "Room/unit name",
+        "unitLabelPlaceholder": "e.g. Standard Room, Deluxe Suite",
+        "capacity": "Inventory quantity",
+        "capacityHint": "How many rooms of this type exist",
+        "maxGuests": "Max guests per room",
+        "maxGuestsHint": "How many guests one room accommodates",
+        "bedConfiguration": "Bed configuration",
+        "bedType": "Bed type",
+        "bedCount": "Count",
+        "removeBed": "Remove",
+        "addBed": "Add bed",
+        "basePriceAmount": "Base price per night",
+        "basePriceCurrency": "Currency",
+        "basePriceIncomplete": "Enter both an amount and a currency, or leave both blank.",
+        "loading": "Loading rooms…",
+        "errorTitle": "Couldn't load rooms",
+        "editUnit": "Edit",
+        "capacitySummary": "{{count}} available",
+        "maxGuestsSummary": "Sleeps {{count}}",
+        "bedSummaryItem": "{{count}} × {{type}}",
+        "basePriceSummary": "{{amount}} {{currency}} / night",
+        "saveUnit": "Save changes",
+        "addAnotherUnit": "Add another room type"
       },
       "bookableUnitTypes": {
         "HOTEL_ROOM": "Hotel room",
@@ -1412,7 +1432,22 @@
         "amenities": "Amenities",
         "amenitiesCount": "{{count}} selected",
         "pricing": "Pricing"
-      }
+      },
+      "bedTypes": {
+        "SINGLE": "Single",
+        "DOUBLE": "Double",
+        "QUEEN": "Queen",
+        "KING": "King",
+        "TWIN": "Twin",
+        "SOFA_BED": "Sofa bed",
+        "BUNK": "Bunk bed"
+      },
+      "cancel": "Cancel"
+    },
+    "listingRooms": {
+      "heading": "Rooms — {{title}}",
+      "loading": "Loading listing…",
+      "errorTitle": "Couldn't load this listing"
     }
   },
   "admin": {

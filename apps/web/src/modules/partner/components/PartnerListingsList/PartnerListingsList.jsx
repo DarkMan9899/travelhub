@@ -203,6 +203,15 @@ export default function PartnerListingsList({
                 >
                   {t('partner.listings.actions.edit')}
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    navigate(`/${locale}/partner/listings/${listing.id}/rooms`)
+                  }
+                >
+                  {t('partner.listings.actions.manageRooms')}
+                </Button>
                 {PUBLISHABLE_STATUSES.includes(listing.status) && (
                   <Button
                     variant="secondary"

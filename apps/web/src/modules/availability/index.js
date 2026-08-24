@@ -11,9 +11,11 @@
  */
 export { default as availabilityKeys } from './constants/queryKeys.js';
 export { default as BOOKABLE_UNIT_TYPES } from './constants/bookableUnitTypes.js';
+export { default as BED_TYPES } from './constants/bedTypes.js';
 export { default as useBookableUnitsQuery } from './queries/useBookableUnitsQuery.js';
 export { default as useBlackoutsQuery } from './queries/useBlackoutsQuery.js';
 export { default as useRegisterBookableUnitMutation } from './mutations/useRegisterBookableUnitMutation.js';
+export { default as useUpdateBookableUnitMutation } from './mutations/useUpdateBookableUnitMutation.js';
 export { default as useCreateBlackoutMutation } from './mutations/useCreateBlackoutMutation.js';
 export { default as useRemoveBlackoutMutation } from './mutations/useRemoveBlackoutMutation.js';
 

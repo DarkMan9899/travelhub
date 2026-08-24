@@ -95,6 +95,9 @@ const PartnerListingWizardPage = lazy(
 const PartnerListingsPage = lazy(
   () => import('../pages/partner/PartnerListingsPage.jsx'),
 );
+const PartnerListingRoomsPage = lazy(
+  () => import('../pages/partner/PartnerListingRoomsPage.jsx'),
+);
 const PartnerBookingsPage = lazy(
   () => import('../pages/partner/PartnerBookingsPage.jsx'),
 );
@@ -372,6 +375,10 @@ export default function AppRoutes() {
             <Route
               path="partner/listings/new"
               element={<PartnerListingWizardPage />}
+            />
+            <Route
+              path="partner/listings/:id/rooms"
+              element={<PartnerListingRoomsPage />}
             />
             <Route path="partner/bookings" element={<PartnerBookingsPage />} />
             <Route

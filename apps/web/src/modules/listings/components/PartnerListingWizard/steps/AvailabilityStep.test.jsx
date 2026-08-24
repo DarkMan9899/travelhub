@@ -7,6 +7,7 @@ import {
   useBookableUnitsQuery,
   useBlackoutsQuery,
   useRegisterBookableUnitMutation,
+  useUpdateBookableUnitMutation,
   useCreateBlackoutMutation,
   useRemoveBlackoutMutation,
 } from '../../../../availability/index.js';
@@ -14,9 +15,11 @@ import { useUpdateListingMutation } from '../../../mutations/useUpdateListingMut
 
 vi.mock('../../../../availability/index.js', () => ({
   BOOKABLE_UNIT_TYPES: ['HOTEL_ROOM', 'PROPERTY_UNIT'],
+  BED_TYPES: ['SINGLE', 'DOUBLE', 'QUEEN', 'KING', 'TWIN', 'SOFA_BED', 'BUNK'],
   useBookableUnitsQuery: vi.fn(),
   useBlackoutsQuery: vi.fn(),
   useRegisterBookableUnitMutation: vi.fn(),
+  useUpdateBookableUnitMutation: vi.fn(),
   useCreateBlackoutMutation: vi.fn(),
   useRemoveBlackoutMutation: vi.fn(),
 }));
@@ -44,12 +47,14 @@ function renderStep(props) {
 
 describe('AvailabilityStep (PartnerListingWizard)', () => {
   let registerUnitMutate;
+  let updateUnitMutate;
   let createBlackoutMutate;
   let removeBlackoutMutate;
   let updateListingMutateAsync;
 
   beforeEach(() => {
     registerUnitMutate = vi.fn();
+    updateUnitMutate = vi.fn();
     createBlackoutMutate = vi.fn();
     removeBlackoutMutate = vi.fn();
     updateListingMutateAsync = vi.fn().mockResolvedValue({ data: {} });
@@ -59,6 +64,12 @@ describe('AvailabilityStep (PartnerListingWizard)', () => {
     useRegisterBookableUnitMutation.mockReturnValue({
       mutate: registerUnitMutate,
       isPending: false,
+      error: null,
+    });
+    useUpdateBookableUnitMutation.mockReturnValue({
+      mutate: updateUnitMutate,
+      isPending: false,
+      error: null,
     });
     useCreateBlackoutMutation.mockReturnValue({
       mutate: createBlackoutMutate,
@@ -79,25 +90,68 @@ describe('AvailabilityStep (PartnerListingWizard)', () => {
     const user = userEvent.setup();
     renderStep({ listingId: 7, onNext: vi.fn() });
 
+    // Reveals the registration form (P2.2A: no longer an immediate
+    // mutation — the button now opens `BookableUnitForm`).
     await user.click(
       screen.getByRole('button', {
         name: 'Գրանցել միավոր',
       }),
     );
-    expect(registerUnitMutate).toHaveBeenCalledWith({
-      listingId: 7,
-      bookableUnitType: 'HOTEL_ROOM',
+    // The form's own submit button shares the same label — `.last()`
+    // equivalent via querying all matches and taking the one inside the
+    // now-visible form.
+    const submitButtons = screen.getAllByRole('button', {
+      name: 'Գրանցել միավոր',
     });
+    await user.click(submitButtons[submitButtons.length - 1]);
+
+    expect(registerUnitMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ listingId: 7, bookableUnitType: 'HOTEL_ROOM' }),
+      expect.anything(),
+    );
   });
 
-  test('shows a registered-unit summary instead of the register form once a unit exists', () => {
-    useBookableUnitsQuery.mockReturnValue({ data: [{ id: 1 }] });
+  // P2.2A regression proof: this is the exact behavior the audit found
+  // broken (the register form used to permanently disappear once one
+  // unit existed, making a real multi-room-type hotel impossible to
+  // build). This test proves the fix, not the old bug.
+  test('still offers "add another room type" once a unit already exists, and a second unit can be registered', async () => {
+    const user = userEvent.setup();
+    useBookableUnitsQuery.mockReturnValue({
+      data: [
+        {
+          id: 1,
+          unit_label: 'Standard Room',
+          bookable_unit_type: 'HOTEL_ROOM',
+          capacity: 5,
+          max_guests: 2,
+          bed_configuration: null,
+          base_price_amount: null,
+          base_price_currency: null,
+        },
+      ],
+    });
     renderStep({ listingId: 7, onNext: vi.fn() });
-    expect(
-      screen.queryByRole('button', {
-        name: 'Գրանցել միավոր',
-      }),
-    ).not.toBeInTheDocument();
+
+    // The existing unit is shown, not hidden behind a bare count.
+    expect(screen.getByText('Standard Room')).toBeInTheDocument();
+
+    // The old bug: this button did not exist once a unit was registered.
+    const addAnotherButton = screen.getByRole('button', {
+      name: 'Ավելացնել սենյակի նոր տեսակ',
+    });
+    expect(addAnotherButton).toBeInTheDocument();
+
+    await user.click(addAnotherButton);
+    const submitButtons = screen.getAllByRole('button', {
+      name: 'Գրանցել միավոր',
+    });
+    await user.click(submitButtons[submitButtons.length - 1]);
+
+    expect(registerUnitMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ listingId: 7, bookableUnitType: 'HOTEL_ROOM' }),
+      expect.anything(),
+    );
   });
 
   test('lists existing blackout ranges and removes one on click', async () => {

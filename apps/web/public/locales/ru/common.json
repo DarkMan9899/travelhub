@@ -1016,7 +1016,8 @@
         "SCHEDULED": "По расписанию"
       },
       "conflictTypes": {
-        "AMBIGUOUS_MAPPING": "Не сопоставлен блок"
+        "AMBIGUOUS_MAPPING": "Единица не сопоставлена",
+        "CAPACITY_CONFLICT": "Уже забронировано на Desavii"
       },
       "exportFeed": {
         "label": "URL ленты экспорта iCal"
@@ -1041,10 +1042,6 @@
           "type": "Тип",
           "createdAt": "Обнаружено"
         }
-      },
-      "conflictTypes": {
-        "AMBIGUOUS_MAPPING": "Единица не сопоставлена",
-        "CAPACITY_CONFLICT": "Уже забронировано на Desavii"
       },
       "mapping": {
         "tabLabel": "Сопоставление",
@@ -1088,7 +1085,8 @@
         "publish": "Опубликовать",
         "unpublish": "Снять с публикации",
         "archive": "В архив",
-        "delete": "Удалить"
+        "delete": "Удалить",
+        "manageRooms": "Управление номерами"
       },
       "publishSuccess": "Ваше объявление опубликовано.",
       "publishError": "Это объявление ещё не готово к публикации.",
@@ -1347,7 +1345,6 @@
       },
       "availability": {
         "units": "Бронируемые единицы",
-        "unitsRegistered": "Зарегистрировано единиц: {{count}}",
         "unitType": "Тип единицы",
         "registerUnit": "Зарегистрировать единицу",
         "blackoutDates": "Заблокированные даты",
@@ -1358,7 +1355,30 @@
         "minimumStayNights": "Минимальный срок проживания (ночей)",
         "maximumStayNights": "Максимальный срок проживания (ночей)",
         "advanceBookingMinHours": "Минимальный срок предварительного бронирования (часов)",
-        "advanceBookingMaxDays": "Максимальный срок предварительного бронирования (дней)"
+        "advanceBookingMaxDays": "Максимальный срок предварительного бронирования (дней)",
+        "unitLabel": "Название номера/юнита",
+        "unitLabelPlaceholder": "например, Стандартный номер, Люкс",
+        "capacity": "Количество в наличии",
+        "capacityHint": "Сколько номеров этого типа существует",
+        "maxGuests": "Макс. гостей в номере",
+        "maxGuestsHint": "Сколько гостей вмещает один номер",
+        "bedConfiguration": "Конфигурация кроватей",
+        "bedType": "Тип кровати",
+        "bedCount": "Количество",
+        "removeBed": "Удалить",
+        "addBed": "Добавить кровать",
+        "basePriceAmount": "Базовая цена за ночь",
+        "basePriceCurrency": "Валюта",
+        "basePriceIncomplete": "Укажите и сумму, и валюту, либо оставьте оба поля пустыми.",
+        "loading": "Загрузка номеров…",
+        "errorTitle": "Не удалось загрузить номера",
+        "editUnit": "Изменить",
+        "capacitySummary": "Доступно: {{count}}",
+        "maxGuestsSummary": "Вмещает {{count}}",
+        "bedSummaryItem": "{{count}} × {{type}}",
+        "basePriceSummary": "{{amount}} {{currency}} / ночь",
+        "saveUnit": "Сохранить изменения",
+        "addAnotherUnit": "Добавить ещё один тип номера"
       },
       "bookableUnitTypes": {
         "HOTEL_ROOM": "Номер отеля",
@@ -1424,7 +1444,22 @@
         "amenities": "Удобства",
         "amenitiesCount": "Выбрано: {{count}}",
         "pricing": "Цены"
-      }
+      },
+      "bedTypes": {
+        "SINGLE": "Односпальная",
+        "DOUBLE": "Двуспальная",
+        "QUEEN": "Queen",
+        "KING": "King",
+        "TWIN": "Две отдельные кровати",
+        "SOFA_BED": "Диван-кровать",
+        "BUNK": "Двухъярусная кровать"
+      },
+      "cancel": "Отмена"
+    },
+    "listingRooms": {
+      "heading": "Номера — {{title}}",
+      "loading": "Загрузка объявления…",
+      "errorTitle": "Не удалось загрузить это объявление"
     }
   },
   "admin": {

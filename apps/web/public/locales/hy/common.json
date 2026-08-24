@@ -1016,7 +1016,8 @@
         "SCHEDULED": "Ըստ ժամանակացույցի"
       },
       "conflictTypes": {
-        "AMBIGUOUS_MAPPING": "Միավոր չի համապատասխանեցված"
+        "AMBIGUOUS_MAPPING": "Կապակցված միավոր չկա",
+        "CAPACITY_CONFLICT": "Արդեն ամրագրված է Desavii-ում"
       },
       "exportFeed": {
         "label": "iCal արտահանման հոսքի URL"
@@ -1041,10 +1042,6 @@
           "type": "Տեսակ",
           "createdAt": "Հայտնաբերվել է"
         }
-      },
-      "conflictTypes": {
-        "AMBIGUOUS_MAPPING": "Կապակցված միավոր չկա",
-        "CAPACITY_CONFLICT": "Արդեն ամրագրված է Desavii-ում"
       },
       "mapping": {
         "tabLabel": "Համապատասխանեցում",
@@ -1088,7 +1085,8 @@
         "publish": "Հրապարակել",
         "unpublish": "Հանել հրապարակումից",
         "archive": "Արխիվացնել",
-        "delete": "Ջնջել"
+        "delete": "Ջնջել",
+        "manageRooms": "Կառավարել սենյակները"
       },
       "publishSuccess": "Ձեր հայտարարությունը հրապարակվել է։",
       "publishError": "Այս հայտարարությունը դեռ պատրաստ չէ հրապարակման համար։",
@@ -1335,7 +1333,6 @@
       },
       "availability": {
         "units": "Ամրագրվող միավորներ",
-        "unitsRegistered": "Գրանցված է {{count}} միավոր",
         "unitType": "Միավորի տեսակ",
         "registerUnit": "Գրանցել միավոր",
         "blackoutDates": "Արգելափակված ամսաթվեր",
@@ -1346,7 +1343,30 @@
         "minimumStayNights": "Նվազագույն մնալու տևողություն (գիշեր)",
         "maximumStayNights": "Առավելագույն մնալու տևողություն (գիշեր)",
         "advanceBookingMinHours": "Ամրագրման նվազագույն ժամկետ (ժամ)",
-        "advanceBookingMaxDays": "Ամրագրման առավելագույն ժամկետ (օր)"
+        "advanceBookingMaxDays": "Ամրագրման առավելագույն ժամկետ (օր)",
+        "unitLabel": "Սենյակի/միավորի անվանում",
+        "unitLabelPlaceholder": "օր.՝ Ստանդարտ սենյակ, Դելյուքս համար",
+        "capacity": "Գույքագրման քանակ",
+        "capacityHint": "Քանի սենյակ կա այս տեսակից",
+        "maxGuests": "Առավելագույն հյուրեր մեկ սենյակում",
+        "maxGuestsHint": "Քանի հյուր է տեղավորվում մեկ սենյակում",
+        "bedConfiguration": "Մահճակալների կազմաձևում",
+        "bedType": "Մահճակալի տեսակ",
+        "bedCount": "Քանակ",
+        "removeBed": "Հեռացնել",
+        "addBed": "Ավելացնել մահճակալ",
+        "basePriceAmount": "Հիմնական գին մեկ գիշերվա համար",
+        "basePriceCurrency": "Արժույթ",
+        "basePriceIncomplete": "Նշեք և՛ գումարը, և՛ արժույթը, կամ թողեք երկուսն էլ դատարկ։",
+        "loading": "Սենյակները բեռնվում են…",
+        "errorTitle": "Չհաջողվեց բեռնել սենյակները",
+        "editUnit": "Խմբագրել",
+        "capacitySummary": "{{count}} հասանելի",
+        "maxGuestsSummary": "Ընդունում է {{count}} հյուր",
+        "bedSummaryItem": "{{count}} × {{type}}",
+        "basePriceSummary": "{{amount}} {{currency}} / գիշեր",
+        "saveUnit": "Պահպանել փոփոխությունները",
+        "addAnotherUnit": "Ավելացնել սենյակի նոր տեսակ"
       },
       "bookableUnitTypes": {
         "HOTEL_ROOM": "Հյուրանոցի սենյակ",
@@ -1412,7 +1432,22 @@
         "amenities": "Հարմարություններ",
         "amenitiesCount": "ընտրված է {{count}}",
         "pricing": "Գնագոյացում"
-      }
+      },
+      "bedTypes": {
+        "SINGLE": "Մեկտեղանոց",
+        "DOUBLE": "Երկտեղանոց",
+        "QUEEN": "Քուին",
+        "KING": "Քինգ",
+        "TWIN": "Երկու առանձին մահճակալ",
+        "SOFA_BED": "Բազմոց-մահճակալ",
+        "BUNK": "Երկհարկանի մահճակալ"
+      },
+      "cancel": "Չեղարկել"
+    },
+    "listingRooms": {
+      "heading": "Սենյակներ — {{title}}",
+      "loading": "Հայտարարությունը բեռնվում է…",
+      "errorTitle": "Չհաջողվեց բեռնել այս հայտարարությունը"
     }
   },
   "admin": {
