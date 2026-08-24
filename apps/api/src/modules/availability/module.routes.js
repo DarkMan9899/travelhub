@@ -35,6 +35,7 @@ import { validate } from '../../validation/validate.js';
 import {
   registerUnitSchema,
   unitIdParamsSchema,
+  updateUnitSchema,
   listUnitsQuerySchema,
   setAvailabilitySchema,
   updateCalendarEntrySchema,
@@ -78,6 +79,12 @@ export default function createAvailabilityRoutes({
     requireAuth,
     validate(listUnitsQuerySchema),
     availabilityController.listUnits,
+  );
+  router.patch(
+    '/units/:id',
+    requireAuth,
+    validate(updateUnitSchema),
+    availabilityController.updateUnit,
   );
   router.delete(
     '/units/:id',

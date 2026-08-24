@@ -192,6 +192,218 @@ describe('POST /availability/units — inventory-agnostic unit registration', ()
   });
 });
 
+describe('POST /availability/units — P2.2A occupancy/bed/base-price fields', () => {
+  test('registers a unit with maxGuests, bedConfiguration, and a base price', async () => {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: `Deluxe Suite ${Date.now()}`,
+        capacity: 3,
+        maxGuests: 4,
+        bedConfiguration: [
+          { type: 'KING', count: 1 },
+          { type: 'SOFA_BED', count: 1 },
+        ],
+        basePriceAmount: 150,
+        basePriceCurrency: 'usd',
+      });
+
+    expect(res.status).toBe(201);
+    // `capacity` (inventory quantity) is untouched by the new fields —
+    // confirms max_guests never overloads/aliases it.
+    expect(res.body.data.capacity).toBe(3);
+    expect(res.body.data.max_guests).toBe(4);
+    expect(res.body.data.bed_configuration).toEqual([
+      { type: 'KING', count: 1 },
+      { type: 'SOFA_BED', count: 1 },
+    ]);
+    expect(res.body.data.base_price_amount).toBe('150.00');
+    // Currency code is normalized upper-case regardless of input case.
+    expect(res.body.data.base_price_currency).toBe('USD');
+  });
+
+  test('a unit registered without the new fields has safe, honest null values (backward compatibility)', async () => {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'RESTAURANT_TABLE',
+        unitLabel: `Legacy-shaped table ${Date.now()}`,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.max_guests).toBeNull();
+    expect(res.body.data.bed_configuration).toBeNull();
+    expect(res.body.data.base_price_amount).toBeNull();
+    expect(res.body.data.base_price_currency).toBeNull();
+  });
+
+  test('rejects basePriceAmount without basePriceCurrency (both-or-neither)', async () => {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: `Incomplete price ${Date.now()}`,
+        basePriceAmount: 90,
+      });
+    expect(res.status).toBe(422);
+  });
+
+  test('rejects an unknown bed type', async () => {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: `Bad bed type ${Date.now()}`,
+        bedConfiguration: [{ type: 'HAMMOCK', count: 1 }],
+      });
+    expect(res.status).toBe(422);
+  });
+});
+
+describe('P2.2A — multiple independent room types on one HOTEL listing', () => {
+  test('a hotel can register two room types with independent capacity, occupancy, and base price', async () => {
+    const standardRes = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: `Standard Room ${Date.now()}`,
+        capacity: 5,
+        maxGuests: 2,
+        basePriceAmount: 80,
+        basePriceCurrency: 'AMD',
+      });
+    const deluxeRes = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: `Deluxe Room ${Date.now()}`,
+        capacity: 2,
+        maxGuests: 4,
+        basePriceAmount: 200,
+        basePriceCurrency: 'AMD',
+      });
+
+    expect(standardRes.status).toBe(201);
+    expect(deluxeRes.status).toBe(201);
+    // Two distinct rows, same listing, same bookable_unit_type, both real
+    // — not a find-or-create collapse (the labels differ).
+    expect(standardRes.body.data.id).not.toBe(deluxeRes.body.data.id);
+    expect(standardRes.body.data.listing_id).toBe(listingId);
+    expect(deluxeRes.body.data.listing_id).toBe(listingId);
+    expect(standardRes.body.data.capacity).toBe(5);
+    expect(deluxeRes.body.data.capacity).toBe(2);
+    expect(standardRes.body.data.max_guests).toBe(2);
+    expect(deluxeRes.body.data.max_guests).toBe(4);
+    expect(standardRes.body.data.base_price_amount).toBe('80.00');
+    expect(deluxeRes.body.data.base_price_amount).toBe('200.00');
+
+    const listRes = await request(app)
+      .get(`/api/v1/availability/units?listingId=${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    const ids = listRes.body.data.map((u) => u.id);
+    expect(ids).toContain(standardRes.body.data.id);
+    expect(ids).toContain(deluxeRes.body.data.id);
+  });
+});
+
+describe('PATCH /availability/units/:id — edit an existing unit (P2.2A)', () => {
+  let editableUnitId;
+
+  beforeAll(async () => {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: `Editable Room ${Date.now()}`,
+        capacity: 1,
+      });
+    editableUnitId = res.body.data.id;
+  });
+
+  test('the owner can update label, capacity, occupancy, bed configuration, and base price', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/availability/units/${editableUnitId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        unitLabel: 'Renamed Room',
+        capacity: 6,
+        maxGuests: 3,
+        bedConfiguration: [{ type: 'QUEEN', count: 1 }],
+        basePriceAmount: 120,
+        basePriceCurrency: 'EUR',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.unit_label).toBe('Renamed Room');
+    expect(res.body.data.capacity).toBe(6);
+    expect(res.body.data.max_guests).toBe(3);
+    expect(res.body.data.bed_configuration).toEqual([
+      { type: 'QUEEN', count: 1 },
+    ]);
+    expect(res.body.data.base_price_amount).toBe('120.00');
+    expect(res.body.data.base_price_currency).toBe('EUR');
+  });
+
+  test('a partial update only touches the given fields', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/availability/units/${editableUnitId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ maxGuests: 5 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.max_guests).toBe(5);
+    // Untouched by this request — still the value the previous test set.
+    expect(res.body.data.unit_label).toBe('Renamed Room');
+    expect(res.body.data.base_price_amount).toBe('120.00');
+  });
+
+  test('rejects an empty body', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/availability/units/${editableUnitId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({});
+    expect(res.status).toBe(422);
+  });
+
+  test('a non-owner cannot update it (403)', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/availability/units/${editableUnitId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({ maxGuests: 9 });
+    expect(res.status).toBe(403);
+  });
+
+  test('a nonexistent unit id 404s', async () => {
+    const res = await request(app)
+      .patch('/api/v1/availability/units/9999999')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ maxGuests: 2 });
+    expect(res.status).toBe(404);
+  });
+
+  test('requires authentication', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/availability/units/${editableUnitId}`)
+      .send({ maxGuests: 2 });
+    expect(res.status).toBe(401);
+  });
+});
+
 describe('GET /availability/units — management list', () => {
   test("the owner sees their listing's units", async () => {
     const res = await request(app)

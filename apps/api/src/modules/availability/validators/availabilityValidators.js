@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { CALENDAR_DAY_STATUSES } from '../../../core/domain/calendarExpansion.js';
 import { BOOKABLE_UNIT_TYPES } from '../../../core/domain/bookableUnitTypes.js';
+import { BED_TYPES } from '../../../core/domain/bedTypes.js';
 import { isoDateSchema } from '../../../validation/isoDate.js';
 import {
   BLOCK_REASON_CODES,
@@ -35,35 +36,92 @@ const paginationShape = {
 // availabilityService.js's header comment: unit creation is always an
 // explicit call, never a side effect of a calendar write) ---
 
+// P2.2A — a room/unit type's occupancy structure: e.g. `[{type: 'KING',
+// count: 1}, {type: 'TWIN', count: 2}]`. Optional and unbounded-but-small
+// (a real room has a handful of beds, not hundreds) — `max(12)` is a
+// sanity ceiling, not a real product constraint.
+const bedConfigurationSchema = z
+  .array(
+    z.object({
+      type: z.enum(BED_TYPES),
+      count: z.coerce.number().int().positive().max(20),
+    }),
+  )
+  .max(12)
+  .optional();
+
+/** Both-or-neither: a base price is meaningless without its currency — mirrors `refinePriceOverridePair` below. */
+function refineBasePricePair(data, ctx) {
+  const hasAmount = data.basePriceAmount !== undefined;
+  const hasCurrency = data.basePriceCurrency !== undefined;
+  if (hasAmount !== hasCurrency) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'basePriceAmount and basePriceCurrency must be provided together.',
+      path: ['basePriceCurrency'],
+    });
+  }
+}
+
 export const registerUnitSchema = z.object({
   params: passthroughParams,
   query: passthroughQuery,
-  body: z.object({
-    listingId: z.coerce.number().int().positive(),
-    bookableUnitType: z.enum(BOOKABLE_UNIT_TYPES),
-    capacity: z.coerce.number().int().positive().optional(),
-    // Phase 17 §Service-Specific Flows — an Activity/Guide-style listing
-    // registers one unit per distinct time slot (e.g. a "09:00" and a
-    // "14:00" departure), distinguished by `unitLabel` (see
-    // `mysqlBookableUnitRepository.findMatching`'s idempotency key).
-    // `timeSlotStart`/`timeSlotEnd` are display-only (`TIME` columns,
-    // `HH:MM`) — capacity/date logic never branches on them.
-    timeSlotStart: z
-      .string()
-      .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Invalid time.')
-      .optional(),
-    timeSlotEnd: z
-      .string()
-      .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Invalid time.')
-      .optional(),
-    unitLabel: z.string().trim().min(1).max(120).optional(),
-  }),
+  body: z
+    .object({
+      listingId: z.coerce.number().int().positive(),
+      bookableUnitType: z.enum(BOOKABLE_UNIT_TYPES),
+      capacity: z.coerce.number().int().positive().optional(),
+      // Phase 17 §Service-Specific Flows — an Activity/Guide-style listing
+      // registers one unit per distinct time slot (e.g. a "09:00" and a
+      // "14:00" departure), distinguished by `unitLabel` (see
+      // `mysqlBookableUnitRepository.findMatching`'s idempotency key).
+      // `timeSlotStart`/`timeSlotEnd` are display-only (`TIME` columns,
+      // `HH:MM`) — capacity/date logic never branches on them.
+      timeSlotStart: z
+        .string()
+        .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Invalid time.')
+        .optional(),
+      timeSlotEnd: z
+        .string()
+        .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Invalid time.')
+        .optional(),
+      unitLabel: z.string().trim().min(1).max(120).optional(),
+      // P2.2A: guest occupancy — deliberately separate from `capacity`
+      // (inventory quantity of this room/unit TYPE, unchanged meaning).
+      maxGuests: z.coerce.number().int().positive().max(100).optional(),
+      bedConfiguration: bedConfigurationSchema,
+      basePriceAmount: z.coerce.number().positive().optional(),
+      basePriceCurrency: z.string().trim().length(3).toUpperCase().optional(),
+    })
+    .superRefine(refineBasePricePair),
 });
 
 export const unitIdParamsSchema = z.object({
   params: idParams,
   query: passthroughQuery,
   body: z.any(),
+});
+
+// P2.2A — partial edit of an already-registered unit. `bookableUnitType`
+// is intentionally not editable here (see `bookableUnitService.updateUnit`'s
+// own comment: booking-history implications are out of this slice's scope).
+export const updateUnitSchema = z.object({
+  params: idParams,
+  query: passthroughQuery,
+  body: z
+    .object({
+      unitLabel: z.string().trim().min(1).max(120).optional(),
+      capacity: z.coerce.number().int().positive().optional(),
+      maxGuests: z.coerce.number().int().positive().max(100).optional(),
+      bedConfiguration: bedConfigurationSchema,
+      basePriceAmount: z.coerce.number().positive().optional(),
+      basePriceCurrency: z.string().trim().length(3).toUpperCase().optional(),
+    })
+    .refine((data) => Object.keys(data).length > 0, {
+      message: 'At least one field must be provided.',
+    })
+    .superRefine(refineBasePricePair),
 });
 
 export const listUnitsQuerySchema = z.object({

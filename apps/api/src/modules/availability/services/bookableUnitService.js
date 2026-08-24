@@ -41,6 +41,10 @@ export class BookableUnitService {
     timeSlotStart,
     timeSlotEnd,
     unitLabel,
+    maxGuests,
+    bedConfiguration,
+    basePriceAmount,
+    basePriceCurrencyId,
     createdBy,
   }) {
     const resolvedSourceId = sourceId ?? listingId;
@@ -71,6 +75,10 @@ export class BookableUnitService {
       timeSlotStart,
       timeSlotEnd,
       unitLabel,
+      maxGuests,
+      bedConfiguration,
+      basePriceAmount,
+      basePriceCurrencyId,
       createdBy,
     });
   }
@@ -85,6 +93,18 @@ export class BookableUnitService {
 
   async retireUnit(id, deletedBy) {
     await this.#bookableUnitRepository.softDelete(id, deletedBy);
+  }
+
+  /**
+   * Editable fields for an already-existing unit — label, capacity
+   * (inventory quantity), occupancy/bed structure, and base price.
+   * `bookableUnitTypeCode`/`sourceTable`/`sourceId` are deliberately not
+   * editable here: changing a unit's TYPE post-creation has real
+   * booking-history implications (`bookings.booking_type_id` is resolved
+   * from it) that are out of P2.2A's scope.
+   */
+  async updateUnit(id, fields) {
+    return this.#bookableUnitRepository.update(id, fields);
   }
 }
 

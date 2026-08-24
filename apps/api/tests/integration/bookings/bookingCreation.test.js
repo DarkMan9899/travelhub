@@ -23,6 +23,7 @@ let vendor;
 let customer;
 let partnerId;
 let languageId;
+let hotelCategoryId;
 
 async function login(email, password) {
   const res = await request(app)
@@ -146,6 +147,10 @@ beforeAll(async () => {
     "SELECT id FROM languages WHERE code = 'en'",
   );
   languageId = language.id;
+  const [[hotelCategory]] = await pool.query(
+    "SELECT id FROM listing_categories WHERE slug = 'hotels'",
+  );
+  hotelCategoryId = hotelCategory.id;
 }, 60_000);
 
 afterAll(async () => {
@@ -271,6 +276,138 @@ describe('POST /bookings — converts holds into a booking', () => {
     expect(
       res.body.error.details.some((d) => d.issue === 'PRICING_INCOMPLETE'),
     ).toBe(true);
+  });
+});
+
+describe('P2.2A — accommodation price-resolution precedence (date override -> unit base -> listing base)', () => {
+  async function registerUnitWithBasePrice(
+    listingId,
+    { amount, currency = 'AMD', label } = {},
+  ) {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: label ?? `P2.2A price unit ${Date.now()}`,
+        basePriceAmount: amount,
+        basePriceCurrency: currency,
+      });
+    return res.body.data.id;
+  }
+
+  async function setListingBasePrice(listingId, amount, currencyCode = 'AMD') {
+    // A listing's pricing is validated against its category's allowed
+    // pricing models (`category_pricing_models`) — `createListing` above
+    // never sets one, so it must be set here first.
+    await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ categoryIds: [hotelCategoryId] });
+    const res = await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ pricing: { modelCode: 'PER_NIGHT', amount, currencyCode } });
+    if (res.status !== 200) {
+      throw new Error(
+        `setListingBasePrice failed: ${res.status} ${JSON.stringify(res.body)}`,
+      );
+    }
+  }
+
+  test("a unit's own base price is used when no calendar override exists", async () => {
+    const listingId = await createListing(
+      `P2.2A Unit Base Price ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithBasePrice(listingId, { amount: 75 });
+    const dateFrom = '2027-04-01';
+    const dateTo = '2027-04-02';
+    const holdIds = await createHold(customer, unitId, dateFrom, dateTo, 1);
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+    // 1 occupied night at the unit's own base price (75), not the (absent)
+    // listing price.
+    expect(res.body.data.total_amount).toBe('75.00');
+  });
+
+  test("a date-specific calendar override takes precedence over the unit's base price", async () => {
+    const listingId = await createListing(
+      `P2.2A Override Beats Unit Base ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithBasePrice(listingId, { amount: 100 });
+    const dateFrom = '2027-04-05';
+    const dateTo = '2027-04-06';
+    await setPrice(unitId, dateFrom, dateTo, 150);
+    const holdIds = await createHold(customer, unitId, dateFrom, dateTo, 1);
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+    // The override (150) wins, not the unit's own base price (100).
+    expect(res.body.data.total_amount).toBe('150.00');
+  });
+
+  test("the unit's base price takes precedence over the listing's fallback price", async () => {
+    const listingId = await createListing(
+      `P2.2A Unit Base Beats Listing Fallback ${Date.now()}`,
+    );
+    await setListingBasePrice(listingId, 40);
+    const unitId = await registerUnitWithBasePrice(listingId, { amount: 60 });
+    const dateFrom = '2027-04-10';
+    const dateTo = '2027-04-11';
+    const holdIds = await createHold(customer, unitId, dateFrom, dateTo, 1);
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+    // The unit's own base price (60) wins over the listing's flat
+    // fallback (40).
+    expect(res.body.data.total_amount).toBe('60.00');
+  });
+
+  test('a legacy unit with no base price still falls back to the listing price — pre-P2.2A behavior unchanged', async () => {
+    const listingId = await createListing(
+      `P2.2A Legacy Unit Listing Fallback ${Date.now()}`,
+    );
+    await setListingBasePrice(listingId, 40);
+    // registerUnit (no base price fields) — the exact shape of a unit
+    // created before this slice existed.
+    const unitId = await registerUnit(listingId);
+    const dateFrom = '2027-04-15';
+    const dateTo = '2027-04-16';
+    const holdIds = await createHold(customer, unitId, dateFrom, dateTo, 1);
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.total_amount).toBe('40.00');
   });
 
   test('requires authentication', async () => {

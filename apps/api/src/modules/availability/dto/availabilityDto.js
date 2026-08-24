@@ -20,12 +20,16 @@ export function toBookableUnitResponse(unit) {
     time_slot_start: unit.timeSlotStart,
     time_slot_end: unit.timeSlotEnd,
     unit_label: unit.unitLabel,
+    max_guests: unit.maxGuests,
+    bed_configuration: unit.bedConfiguration,
+    base_price_amount: unit.basePriceAmount,
+    base_price_currency: unit.basePriceCurrencyCode,
     created_at: unit.createdAt,
     updated_at: unit.updatedAt,
   };
 }
 
-/** Public: no `listing_id`/`created_at`/`updated_at` — a customer picking a unit to book needs only its identity, type, capacity, and (for a time-slot unit) its label/time window. */
+/** Public: no `listing_id`/`created_at`/`updated_at` — a customer picking a unit to book needs its identity, type, capacity, occupancy/bed structure, base price, and (for a time-slot unit) its label/time window. */
 export function toPublicBookableUnitResponse(unit) {
   return {
     id: unit.id,
@@ -34,6 +38,10 @@ export function toPublicBookableUnitResponse(unit) {
     time_slot_start: unit.timeSlotStart,
     time_slot_end: unit.timeSlotEnd,
     unit_label: unit.unitLabel,
+    max_guests: unit.maxGuests,
+    bed_configuration: unit.bedConfiguration,
+    base_price_amount: unit.basePriceAmount,
+    base_price_currency: unit.basePriceCurrencyCode,
   };
 }
 

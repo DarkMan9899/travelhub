@@ -205,7 +205,7 @@ describe('GET /availability/:listingId — public blackout range view', () => {
 });
 
 describe('GET /availability/:listingId/units — public bookable units view (Phase 7)', () => {
-  test('returns id/bookable_unit_type/capacity/time-slot fields, never listing_id or timestamps', async () => {
+  test('returns id/bookable_unit_type/capacity/time-slot/occupancy/price fields, never listing_id or timestamps', async () => {
     const res = await request(app).get(
       `/api/v1/availability/${listingId}/units`,
     );
@@ -218,6 +218,12 @@ describe('GET /availability/:listingId/units — public bookable units view (Pha
       time_slot_start: null,
       time_slot_end: null,
       unit_label: null,
+      // P2.2A: a unit registered without occupancy/bed/price fields
+      // exposes honest nulls, never fabricated values.
+      max_guests: null,
+      bed_configuration: null,
+      base_price_amount: null,
+      base_price_currency: null,
     });
     expect(res.body.data[0]).not.toHaveProperty('listing_id');
     expect(res.body.data[0]).not.toHaveProperty('created_at');

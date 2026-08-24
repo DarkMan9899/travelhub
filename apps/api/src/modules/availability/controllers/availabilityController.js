@@ -42,6 +42,25 @@ export function createAvailabilityController(availabilityService) {
       }
     },
 
+    async updateUnit(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const unit = await availabilityService.updateUnit(
+          req.principal,
+          id,
+          req.validated.body,
+        );
+        res.status(200).json({
+          success: true,
+          data: toBookableUnitResponse(unit),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
     async retireUnit(req, res, next) {
       try {
         const { id } = req.validated.params;

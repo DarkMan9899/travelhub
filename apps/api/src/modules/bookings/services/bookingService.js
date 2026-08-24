@@ -152,6 +152,16 @@ export class BookingService {
    * server-resolved (never client-supplied), still throws
    * `PRICING_INCOMPLETE` for a date with neither an override nor a base
    * price to fall back to.
+   *
+   * P2.2A adds one more rung between those two: the bookable UNIT's own
+   * `base_price_amount` (a real per-room-type base rate — Standard Room
+   * and Deluxe Suite can now genuinely differ in price without a partner
+   * populating a calendar override for every date). Full precedence,
+   * per date: date-specific unit override -> unit base price -> listing
+   * base price fallback. A unit created before this slice has no base
+   * price (`NULL`, untouched by the migration) and transparently falls
+   * through to the listing price exactly as it did before this change —
+   * no legacy unit's resolved price changes.
    */
   async #resolveItem(item, userId, connection, principal) {
     const holds = await this.#availabilityService.consumeHold(
@@ -200,6 +210,23 @@ export class BookingService {
       price === undefined ||
       price.amount === null ||
       price.currencyCode === null;
+    // Rung 2: the unit's own base price, for whatever dates the calendar
+    // had no override for. A legacy/unpriced unit (basePriceAmount NULL)
+    // simply leaves every date still missing, unchanged.
+    if (unit.basePriceAmount !== null && unit.basePriceAmount !== undefined) {
+      dates.forEach((date) => {
+        if (isPriceMissing(priceByDate.get(date))) {
+          priceByDate.set(date, {
+            date,
+            amount: unit.basePriceAmount,
+            currencyCode: unit.basePriceCurrencyCode,
+          });
+        }
+      });
+    }
+
+    // Rung 3: the listing's flat base price, for whatever dates are
+    // still missing after rungs 1-2.
     const needsFallback = dates.some((date) =>
       isPriceMissing(priceByDate.get(date)),
     );

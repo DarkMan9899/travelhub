@@ -335,6 +335,14 @@ describe('Cross-partner isolation — Partner A cannot touch Partner B inventory
     expect(res.status).toBe(403);
   });
 
+  test('Partner A owner cannot update a Partner B bookable unit (P2.2A: label/capacity/occupancy/price)', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/availability/units/${unitBId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ maxGuests: 4 });
+    expect(res.status).toBe(403);
+  });
+
   test('Partner A owner cannot create an inventory connection for Partner B', async () => {
     const res = await request(app)
       .post('/api/v1/inventory-connections')

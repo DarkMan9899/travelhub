@@ -349,6 +349,9 @@ export class AvailabilityService {
       principal,
       input.listingId,
     );
+    const basePriceCurrencyId = await this.#resolveCurrencyId(
+      input.basePriceCurrency,
+    );
     const unit = await this.#bookableUnitService.registerUnit({
       listingId: listing.id,
       bookableUnitTypeCode: input.bookableUnitType,
@@ -356,6 +359,10 @@ export class AvailabilityService {
       timeSlotStart: input.timeSlotStart,
       timeSlotEnd: input.timeSlotEnd,
       unitLabel: input.unitLabel,
+      maxGuests: input.maxGuests,
+      bedConfiguration: input.bedConfiguration,
+      basePriceAmount: input.basePriceAmount,
+      basePriceCurrencyId,
       createdBy: principal.userId,
     });
     await this.#auditLogger.record({
@@ -366,6 +373,41 @@ export class AvailabilityService {
       afterSnapshot: { listingId: listing.id, capacity: input.capacity },
     });
     return unit;
+  }
+
+  /**
+   * P2.2A: partner-facing edit of an already-registered unit's label,
+   * capacity, occupancy/bed structure, or base price — the same
+   * owner-or-permission authorization `retireUnit` already uses (never
+   * this Service inventing a second ownership check).
+   */
+  async updateUnit(principal, id, fields) {
+    if (!principal) throw new AuthenticationError();
+    const unit = await this.#bookableUnitService.findById(id);
+    if (!unit) throw new NotFoundError('Bookable unit not found.');
+    await this.#loadListingForManagement(principal, unit.listingId);
+
+    const basePriceCurrencyId = await this.#resolveCurrencyId(
+      fields.basePriceCurrency,
+    );
+
+    const updated = await this.#bookableUnitService.updateUnit(id, {
+      unitLabel: fields.unitLabel,
+      capacity: fields.capacity,
+      maxGuests: fields.maxGuests,
+      bedConfiguration: fields.bedConfiguration,
+      basePriceAmount: fields.basePriceAmount,
+      basePriceCurrencyId,
+      updatedBy: principal.userId,
+    });
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'bookable_unit.updated',
+      targetType: 'bookable_unit',
+      targetId: id,
+      afterSnapshot: fields,
+    });
+    return updated;
   }
 
   async retireUnit(principal, id) {
