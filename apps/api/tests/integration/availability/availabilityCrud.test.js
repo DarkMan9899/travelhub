@@ -404,6 +404,120 @@ describe('PATCH /availability/units/:id — edit an existing unit (P2.2A)', () =
   });
 });
 
+describe('PATCH /availability/units/:id — lowering capacity cannot corrupt existing consumption (P2.2A)', () => {
+  // `lockForCapacity`'s own INSERT is `ON DUPLICATE KEY UPDATE id = id` —
+  // once a date has a real availability_calendar row, it is governed
+  // entirely by its own `quantity_available`, forever independent of
+  // `bookable_units.capacity` (capacity is only ever read to seed a
+  // date's FIRST row, never to recompute an existing one). This proves
+  // that invariant holds end-to-end: lowering capacity after real
+  // consumption already exists neither corrupts that consumption nor
+  // permits overselling on the already-touched date, and correctly
+  // takes effect for a genuinely untouched future date.
+  test('an already-consumed date keeps its own correct availability and conflict protection after capacity is lowered', async () => {
+    const capacityUnitId = await registerUnit(listingId, 'HOTEL_ROOM');
+    await request(app)
+      .patch(`/api/v1/availability/units/${capacityUnitId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ capacity: 5 });
+
+    const consumedDate = '2027-05-01';
+    const untouchedDate = '2027-06-01';
+
+    // Consume 4 of the 5 via a real hold on the already-declared date —
+    // materializes a real availability_calendar row.
+    const holdRes = await request(app)
+      .post('/api/v1/booking-holds')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [
+          {
+            bookableUnitId: capacityUnitId,
+            dateFrom: consumedDate,
+            dateTo: consumedDate,
+            quantity: 4,
+          },
+        ],
+      });
+    expect(holdRes.status).toBe(201);
+
+    // Lower capacity below the already-consumed amount.
+    const lowerRes = await request(app)
+      .patch(`/api/v1/availability/units/${capacityUnitId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ capacity: 2 });
+    expect(lowerRes.status).toBe(200);
+    expect(lowerRes.body.data.capacity).toBe(2);
+
+    // The consumed date's own real state is untouched: still exactly 1
+    // of the original 5 remains (never recomputed from the new capacity,
+    // never negative).
+    const calendarRes = await request(app)
+      .get(
+        `/api/v1/availability?listingId=${listingId}&from=${consumedDate}&to=${consumedDate}`,
+      )
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    const consumedEntry = calendarRes.body.data.find(
+      (entry) => entry.bookable_unit_id === capacityUnitId,
+    );
+    expect(consumedEntry.quantity_available).toBe(1);
+
+    // The real conflict-protection choke point (never `capacity`
+    // directly) still correctly allows exactly the 1 remaining unit —
+    // proving no overselling became possible.
+    const exactFitRes = await request(app)
+      .post('/api/v1/booking-holds')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [
+          {
+            bookableUnitId: capacityUnitId,
+            dateFrom: consumedDate,
+            dateTo: consumedDate,
+            quantity: 1,
+          },
+        ],
+      });
+    expect(exactFitRes.status).toBe(201);
+
+    // ...and one more (which the OLD capacity of 5 would still nominally
+    // allow, but nothing is left) is correctly rejected.
+    const overRes = await request(app)
+      .post('/api/v1/booking-holds')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [
+          {
+            bookableUnitId: capacityUnitId,
+            dateFrom: consumedDate,
+            dateTo: consumedDate,
+            quantity: 1,
+          },
+        ],
+      });
+    expect(overRes.status).toBe(409);
+    expect(overRes.body.error.code).toBe('AVAILABILITY_CONFLICT');
+
+    // A genuinely untouched future date correctly reflects the NEW,
+    // lower capacity as its default.
+    const untouchedHoldRes = await request(app)
+      .post('/api/v1/booking-holds')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [
+          {
+            bookableUnitId: capacityUnitId,
+            dateFrom: untouchedDate,
+            dateTo: untouchedDate,
+            quantity: 3,
+          },
+        ],
+      });
+    expect(untouchedHoldRes.status).toBe(409);
+    expect(untouchedHoldRes.body.error.code).toBe('AVAILABILITY_CONFLICT');
+  });
+});
+
 describe('GET /availability/units — management list', () => {
   test("the owner sees their listing's units", async () => {
     const res = await request(app)

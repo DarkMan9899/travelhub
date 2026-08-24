@@ -362,6 +362,46 @@ describe('P2.2A — accommodation price-resolution precedence (date override -> 
     expect(res.body.data.total_amount).toBe('150.00');
   });
 
+  test('a currency mismatch between a date override and the unit base price is rejected, never silently combined', async () => {
+    // The pre-existing, generic currency-consistency check (every
+    // resolved per-date price in one item must share one currencyCode,
+    // regardless of which rung produced it) already covers this new
+    // combination transparently — proving it here, not re-implementing
+    // it, per the P2.2A review's explicit currency-correctness question.
+    const listingId = await createListing(
+      `P2.2A Currency Mismatch Rejected ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithBasePrice(listingId, {
+      amount: 70,
+      currency: 'EUR',
+    });
+    const day1 = '2027-04-20';
+    // Checkout-exclusive: this hold occupies day1 (2027-04-20) and
+    // 2027-04-21 — only day1 gets an override below, in a DIFFERENT
+    // currency than the unit's own EUR base price, so 2027-04-21 falls
+    // through to rung 2 (unit base, EUR). This one item's two occupied
+    // nights would resolve to two different currencies if nothing
+    // caught it.
+    const checkout = '2027-04-22';
+    await setPrice(unitId, day1, day1, 50, 'AMD');
+    const holdIds = await createHold(customer, unitId, day1, checkout, 1);
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(422);
+    expect(
+      res.body.error.details.some(
+        (d) => d.issue === 'PRICING_CURRENCY_MISMATCH',
+      ),
+    ).toBe(true);
+  });
+
   test("the unit's base price takes precedence over the listing's fallback price", async () => {
     const listingId = await createListing(
       `P2.2A Unit Base Beats Listing Fallback ${Date.now()}`,
