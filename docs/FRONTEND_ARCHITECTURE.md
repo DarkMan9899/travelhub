@@ -23,6 +23,25 @@ by the Booking Engine (`BOOKING_ENGINE_ARCHITECTURE.md`).
 No React source code, no CSS, and no page-level visual design appear in this
 document — it defines structure, boundaries, and rules, not implementation.
 
+---
+
+> ### ⚠️ IMPLEMENTATION STATUS ADDENDUM (added P2.1, 2026-08-24)
+>
+> This document is the **original pre-implementation engineering
+> contract**, written before Sprint 1. A P2 forensic audit of the
+> running codebase found that the real, shipped frontend diverges from
+> **§4.2's per-vertical route tree and §6.1's 23-module list** — there
+> is no `/hotels/:slug`, `/vacation-houses/:slug`, `/spa/:slug`, or
+> `/events/:slug` route, and the `hotels`, `vacation-houses`,
+> `restaurants`, `spa`, `car-rentals`, `tours`, `events`, and
+> `properties` "modules" are empty, unwired Sprint-1 folder scaffolds.
+> What was actually built — one generic, metadata-driven listing
+> detail/search/wizard system serving every vertical — is described in
+> the new **§4.2A** below. Every other chapter in this document was
+> verified against the real code during that audit and is accurate.
+
+---
+
 ## Table of Contents
 
 1. Frontend Architecture Philosophy
@@ -474,6 +493,10 @@ explicitly declares as language alternates of one another.
 
 ### 4.2 Route Tree Overview
 
+> ⚠️ **NOT IMPLEMENTED AS DESCRIBED** — the per-vertical detail routes
+> below (`/hotels/:slug`, `/vacation-houses/:slug`, etc.) do not exist.
+> See **§4.2A** for the real route.
+
 ```
 /:locale/
 ├── (Customer Website — PublicLayout)
@@ -549,6 +572,32 @@ explicitly declares as language alternates of one another.
     ├── /404
     └── /500
 ```
+
+### 4.2A. As-Built Reality: One Generic Listing Route (added P2.1)
+
+There is **one route for every listing, regardless of vertical**:
+`/:locale/listings/:id` (`ListingDetailPage`, wrapping
+`ListingDetailPageContent`). It is not a per-category component
+switch — it is a single, metadata-driven layout whose **section order**
+and **booking-CTA copy** vary by the listing's `listing_type`
+(resolved via `resolvePresentationGroup()`/`categoryPresentation.js`:
+`HOTEL`/`PROPERTY`→accommodation grouping, `TOUR`/`ATTRACTION`→
+experience grouping, `CAR_RENTAL`→transport grouping, `RESTAURANT`→
+generic), while every section itself (attributes, amenities, policies,
+itinerary, FAQ) renders generically from real listing data and is
+simply omitted when a listing/vertical has none — never hardcoded per
+type. The Partner Listing Wizard is likewise one fixed 11-step
+sequence for every vertical; type-specificity happens entirely inside
+the attributes/pricing/policy steps via the same metadata engine
+described in `BACKEND_ARCHITECTURE.md` §7A, not via separate wizard
+routes. See §7A there for the full `listing_type`/`listing_category`/
+`bookable_unit_type` model and current per-vertical status.
+
+The `hotels`, `vacation-houses`, `restaurants`, `spa`, `car-rentals`,
+`tours`, `events`, and `properties` module folders referenced in §6.1
+below exist in the codebase only as empty, unwired Sprint-1 scaffolds
+(an `index.js` exporting nothing and a boilerplate README) — no route,
+component, or import ever references them.
 
 ### 4.3 Lazy Loading and Route-Level Code Splitting
 
@@ -704,6 +753,15 @@ breakpoint; it consumes the shared SCSS breakpoint tokens (Chapter 9).
 ## 6. Feature Module Architecture
 
 ### 6.1 The 23 Modules
+
+> ⚠️ **NOT IMPLEMENTED AS DESCRIBED** — `properties`, `hotels`,
+> `vacation-houses`, `restaurants`, `spa`, `car-rentals`, `tours`, and
+> `events` exist only as empty Sprint-1 scaffolds (see §4.2A); every
+> real vertical's frontend logic lives in the generic `listings`
+> module instead. The remaining modules listed here (`auth`, `home`,
+> `search`, `favorites`, `reviews`, `availability`, `booking-holds`,
+> `bookings`, `payments`, `notifications`, `profile`, `partner`,
+> `admin`, `cms`) are real and accurately described below.
 
 `auth` · `home` · `search` · `listings` · `properties` · `hotels` ·
 `vacation-houses` · `restaurants` · `spa` · `car-rentals` · `tours` ·

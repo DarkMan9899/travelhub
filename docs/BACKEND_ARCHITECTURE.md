@@ -25,6 +25,27 @@ structure that makes all three real, correct, and scalable.
 
 No source code, SQL, or endpoint definitions appear in this document.
 
+---
+
+> ### ⚠️ IMPLEMENTATION STATUS ADDENDUM (added P2.1, 2026-08-24)
+>
+> This document is the **original pre-implementation engineering contract**
+> ("Status: Final" above reflects the contract being finalized before
+> Sprint 1, not that every module it describes was later built as
+> specified). A P2 forensic audit of the actual codebase found that the
+> real, shipped system diverges substantially from **Module 7's
+> per-vertical extension plan (§8–14) and the Pricing module (§16)** —
+> the simpler, unified architecture that was actually built is described
+> in the new **§7A** below. Every other chapter in this document (Clean
+> Architecture layers, RBAC, Availability's locking model, Booking Holds,
+> Reviews, Payments provider abstraction, etc.) was verified against the
+> real code during that audit and is accurate. Only §8–14 and §16 are
+> aspirational/unbuilt; both now carry an inline notice pointing here.
+> Do not treat "Status: Final" on this document as evidence any specific
+> module was implemented — check §7A or the running code.
+
+---
+
 ## Table of Contents
 
 **Part I — Foundations**
@@ -1595,7 +1616,92 @@ Strategy:** Layer 2 validates core fields; `type_specific` payload
 delegated to the owning module-type's own Validator (composed, not
 duplicated).
 
+## 7A. As-Built Reality: The Generic Listing/Vertical System (added P2.1)
+
+**This section describes what was actually implemented, replacing the
+per-vertical-module plan in §8–14 and the rate-plan/tax/commission
+pricing engine in §16.** Verified against running code and migrations as
+of P2's forensic audit (2026-08-24).
+
+Instead of one dedicated module per vertical (each with its own
+extension tables), the shipped system is **one generic `Listings`
+module plus a metadata-driven attribute engine**, differentiated at
+three independent layers that a reader must not conflate:
+
+- **`listing_type`** (`listings.listing_type_id`) — the real
+  booking-engine vertical. Six values exist: `HOTEL`, `PROPERTY`,
+  `RESTAURANT`, `TOUR`, `CAR_RENTAL`, `ATTRACTION`. This drives
+  presentation-section ordering, booking-CTA copy, and SEO
+  structured-data type selection.
+- **`listing_category`** (many-to-many via `listing_category_listing`)
+  — the marketing/attribute-scoping taxonomy: `hotels`, `apartments`,
+  `villas`, `guest-houses`, `restaurants`, `tours`, `car-rentals`,
+  `attractions`. This drives which attributes, pricing models, and
+  search filters apply to a listing via `category_attributes` and
+  `category_pricing_models`.
+- **`bookable_unit_type`** (drives the booking/inventory engine) — only
+  five values exist: `HOTEL_ROOM`, `PROPERTY_UNIT`, `RESTAURANT_TABLE`,
+  `TOUR_DEPARTURE`, `VEHICLE`. There is **no dedicated `ATTRACTION`
+  unit type** (a known, intentional gap — see Current Vertical Status
+  below); apartments, villas, and guest-houses all share
+  `PROPERTY_UNIT` with no structural distinction between them.
+
+There are **no per-type extension tables** (`hotel_rooms`,
+`tour_departures`, `vehicles`, etc. do not exist). Vertical-specific
+fields — vehicle specs, tour duration/itinerary, room counts, cuisine,
+star rating — live in a generic EAV attribute engine instead:
+`attribute_definitions`, typed value tables
+(`listing_attribute_values_{integer,decimal,boolean,string,date}`),
+and `category_attributes` (which attributes apply to which category).
+`ListingService#resolveAttributeValues` is the write path;
+`mysqlSearchRepository.js`'s `attr_{code}` filter resolution is the
+read path. Rich generic content (itinerary steps, highlights, FAQs,
+included/excluded items — added Phase 18) lives in dedicated but
+category-agnostic tables, deliberately built generic rather than
+tour-specific so any vertical can adopt them.
+
+Every listing, regardless of vertical, is booked through one unified
+engine: `bookable_units` → `availability_calendar` →
+`reservation_holds` → `bookings`, with real transactional
+(`SELECT ... FOR UPDATE`) capacity locking, manual blocks, external
+reservations, and iCal import/export. This engine is genuinely shared
+and vertical-agnostic — extending a vertical means adding
+`attribute_definitions`/lookup rows, not building a parallel module.
+
+**Current vertical status (as-built, not as originally planned):**
+
+| Vertical | Status |
+|---|---|
+| Hotels | Real, complete, well-tested |
+| Tours | Real, complete, well-tested |
+| Car Rentals | Real, complete |
+| Restaurants | Real, complete (backend), thin frontend test coverage |
+| Apartments / Villas / Guest Houses | Real, but structurally undifferentiated — all share `listing_type=PROPERTY`/`bookable_unit_type=PROPERTY_UNIT`; differentiated only via `listing_category` + attributes. This is the accepted architecture going forward, not a defect to fix by adding separate types. |
+| Attractions | `listing_type=ATTRACTION` is seeded, but **no matching `bookable_unit_type` exists**. Demo data registers attraction inventory as `TOUR_DEPARTURE`/`TOUR_BOOKING` as a documented interim workaround. **Owner decision (2026-08): Attractions will become a real distinct vertical**, implemented later by extending this same generic engine (new `bookable_unit_type`/`booking_type` lookup rows) — not by building a dedicated module per the original §8–14 plan, and not by remaining on the `TOUR_DEPARTURE` masquerade long-term. |
+| "Experiences" | Not a backend concept. Marketing/presentation terminology only, currently used for Tours. No `EXPERIENCE` listing type exists or is planned. |
+| Vacation Houses (as a type distinct from Property) / SPA / Events | No backend reality beyond an empty, unwired Sprint-1 module-folder scaffold (see §8–14's status notice below). Not planned as separate verticals. |
+
+Pricing, similarly, is a single flat rate per listing
+(`listing_pricing`, one row per `listing_id`) plus real per-date price
+overrides on `availability_calendar` — not the rate-plan/seasonal/
+tax/commission engine §16 describes. `bookings.fees_amount`,
+`discount_amount`, and `payments.tax_amount` are real schema columns
+that are honestly never computed (always `0.00`) — there is no tax or
+commission engine in the running system. Building that (and any
+adult/child/tiered pricing or add-ons) is out of scope until a
+dedicated Financial Engine phase.
+
+---
+
 ## 8–14. Hotels · Vacation Houses · Restaurants · SPA · Cars · Tours · Events
+
+> ⚠️ **NOT IMPLEMENTED AS DESCRIBED.** This section is the original
+> pre-Sprint-1 plan. None of the per-module tables/services below exist
+> in the running system — see **§7A** for what was actually built.
+> Module folders for these seven verticals exist in the codebase only
+> as empty, unwired Sprint-1 scaffolds (README + placeholder files, no
+> logic, never imported by any route). Do not treat any content below
+> as evidence of what the running application supports.
 
 These seven modules share one structural template — each is a thin
 extension of `Listings` (Module 7) plus its own inventory sub-resource —
@@ -1653,6 +1759,13 @@ only — availability cannot be validated from a request payload alone;
 it always requires a live table read under lock (Ch. 42).
 
 ## 16. Pricing
+
+> ⚠️ **NOT IMPLEMENTED AS DESCRIBED.** The rate-plan/tax/commission
+> engine below was not built. The real pricing model — a single flat
+> rate per listing plus per-date overrides, with `fees_amount`/
+> `discount_amount`/`tax_amount` honestly always `0.00` — is described
+> in **§7A**. Tax/commission calculation, seasonal rate plans, and
+> dynamic pricing belong to a later Financial Engine phase, not P2.
 
 **Purpose:** The full pricing pipeline
 (`BOOKING_ENGINE_ARCHITECTURE.md` §7, Ch. 28). **Responsibilities:**
