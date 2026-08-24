@@ -43,4 +43,34 @@ describe('ListingPoliciesSection (Listing Details)', () => {
     );
     expect(screen.getByText('14:00')).toBeInTheDocument();
   });
+
+  // P2.1 integrity check: a bare "Flexible"/"Moderate"/"Strict" label
+  // could read as an automatically-enforced refund promise, which the
+  // backend does not provide (`cancellationRefundPolicy.js` — every
+  // customer-initiated cancellation is reviewed manually regardless of
+  // this value). Only this one policy code gets the disclaimer appended.
+  test('appends a truthful disclaimer only to the cancellation_policy card, not other policies', () => {
+    render(
+      <ListingPoliciesSection
+        policies={[
+          {
+            code: 'cancellation_policy',
+            data_type: 'ENUM',
+            options: [{ value: 1, code: 'FLEXIBLE' }],
+          },
+          { code: 'check_in_time', data_type: 'STRING' },
+        ]}
+        listing={{
+          policy_values: [
+            { code: 'cancellation_policy', value: '1' },
+            { code: 'check_in_time', value: '14:00' },
+          ],
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(/վերադարձի հայտերը դիտարկվում են առանձին-առանձին/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('14:00')).toBeInTheDocument();
+  });
 });

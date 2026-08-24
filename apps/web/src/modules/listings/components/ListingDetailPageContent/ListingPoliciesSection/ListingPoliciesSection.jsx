@@ -7,6 +7,17 @@
  * `MetadataValueDisplay.jsx` for exactly this reuse) so the value
  * formatting itself is identical to before — only the presentation
  * changed.
+ *
+ * P2.1 integrity check: `cancellation_policy`'s bare enum label
+ * (Flexible/Moderate/Strict) is the one policy value here that could
+ * read as a concrete, automatically-enforced refund promise — it isn't;
+ * `cancellationRefundPolicy.js` confirms this value is collected and
+ * displayed only, never consulted by the actual refund decision (every
+ * customer-initiated cancellation is reviewed manually regardless of
+ * the stated policy). The `cancellation_policy` card below appends one
+ * honest, non-numeric clarifying sentence — no refund percentage/window
+ * is invented here; real policy-driven enforcement is a later, dedicated
+ * P2 slice.
  */
 
 import PropTypes from 'prop-types';
@@ -38,13 +49,19 @@ export default function ListingPoliciesSection({
     .filter(
       ({ value }) => value !== undefined && value !== null && value !== '',
     )
-    .map(({ definition, value }) => ({
-      icon: resolvePolicyIcon(definition.code),
-      title: t(`partner.listingWizard.policies.${definition.code}`, {
-        defaultValue: definition.code,
-      }),
-      description: formatMetadataValue(definition, value, t),
-    }));
+    .map(({ definition, value }) => {
+      const formatted = formatMetadataValue(definition, value, t);
+      return {
+        icon: resolvePolicyIcon(definition.code),
+        title: t(`partner.listingWizard.policies.${definition.code}`, {
+          defaultValue: definition.code,
+        }),
+        description:
+          definition.code === 'cancellation_policy'
+            ? `${formatted} — ${t('pages.listingDetail.policies.cancellationDisclaimer')}`
+            : formatted,
+      };
+    });
 
   if (cards.length === 0) return null;
 

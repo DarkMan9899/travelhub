@@ -2330,7 +2330,8 @@
         "heading": "Details"
       },
       "policies": {
-        "heading": "Policies"
+        "heading": "Policies",
+        "cancellationDisclaimer": "refund requests are reviewed individually, not calculated automatically from this label"
       },
       "amenities": {
         "heading": "Amenities",
