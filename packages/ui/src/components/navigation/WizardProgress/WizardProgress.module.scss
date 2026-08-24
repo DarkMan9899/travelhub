@@ -1,4 +1,15 @@
 // WizardProgress — Phase 5. Tokens only.
+//
+// P2.1: `.steps` has no fixed/known step count (11 in the Partner
+// Listing Wizard) and no wrap/scroll handling existed at all below
+// `tablet` — an 11-step nowrap row overflowed unusably under ~768px,
+// worst at ~390px. Made horizontally scrollable at every width instead
+// of breakpoint-gated: harmless on desktop (everything fits, no visible
+// scrollbar), and correctly usable on mobile via a real horizontal swipe
+// rather than shrinking step labels to illegible sizes. `.summary`
+// above it (e.g. "Step 3 of 11: Pricing") already states the current
+// step in full regardless of scroll position, so scrolling the step
+// row itself is never the only way to know where you are.
 
 @use '../../../tokens/colors' as colors;
 @use '../../../tokens/spacing' as spacing;
@@ -24,16 +35,15 @@
   padding: 0;
   margin: 0;
   list-style: none;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .step {
   display: flex;
   align-items: center;
-  flex: 1;
-
-  &:last-child {
-    flex: 0 0 auto;
-  }
+  flex: 0 0 auto;
 }
 
 .stepButton {
@@ -96,7 +106,11 @@
 }
 
 .connector {
-  flex: 1;
+  // Fixed width, not `flex: 1` — `.step` no longer stretches to fill
+  // available space (it's `flex: 0 0 auto` now, for horizontal
+  // scrolling), so an unconstrained `flex: 1` connector would grow
+  // without bound instead of reading as a short link between steps.
+  flex: 0 0 32px;
   height: 2px;
   margin: 0 spacing.$space-2;
   background-color: colors.$color-gray-200;

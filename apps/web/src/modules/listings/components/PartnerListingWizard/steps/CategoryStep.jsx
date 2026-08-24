@@ -16,7 +16,6 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Grid } from '@travelhub/ui/components/layout';
 import {
   Spinner,
   ErrorState,
@@ -58,7 +57,7 @@ export default function CategoryStep({ value = null, onChange, onNext }) {
         role="radiogroup"
         aria-label={t('partner.listingWizard.steps.category')}
       >
-        <Grid columns={3} gap="4">
+        <div className={styles.categoryGrid}>
           {categories.map((category) => {
             const isSelected = value === category.id;
             return (
@@ -76,7 +75,7 @@ export default function CategoryStep({ value = null, onChange, onNext }) {
               </button>
             );
           })}
-        </Grid>
+        </div>
       </div>
       <WizardStepActions
         onContinue={onNext}

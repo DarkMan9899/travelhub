@@ -1,12 +1,33 @@
 // CategoryStep — tokens only, consumed from @travelhub/ui.
 
 @use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
 
 .title {
   margin: 0 0 tokens.$space-4;
   font-size: 1.25rem;
   font-weight: 600;
   color: tokens.$color-gray-900;
+}
+
+// P2.1: was `<Grid columns={3}>`, which pins the column count at every
+// breakpoint (that primitive has no responsive-fixed-count mode) — 3
+// columns of category cards was unusably cramped at ~390px. A plain
+// responsive grid here instead: 1 column on mobile, 2 from
+// `mobile-large`, 3 from `tablet` up (unchanged from before at desktop
+// widths).
+.categoryGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-4;
+
+  @include respond.respond(mobile-large) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond.respond(tablet) {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .card {
