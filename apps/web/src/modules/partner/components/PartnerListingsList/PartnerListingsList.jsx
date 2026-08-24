@@ -33,6 +33,8 @@ import {
   useUnpublishListingMutation,
   useArchiveListingMutation,
   useDeleteListingMutation,
+  PRESENTATION_GROUPS,
+  resolvePresentationGroup,
 } from '../../../listings/index.js';
 import styles from './PartnerListingsList.module.scss';
 
@@ -203,15 +205,20 @@ export default function PartnerListingsList({
                 >
                   {t('partner.listings.actions.edit')}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    navigate(`/${locale}/partner/listings/${listing.id}/rooms`)
-                  }
-                >
-                  {t('partner.listings.actions.manageRooms')}
-                </Button>
+                {resolvePresentationGroup(listing.listing_type) ===
+                  PRESENTATION_GROUPS.ACCOMMODATION && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      navigate(
+                        `/${locale}/partner/listings/${listing.id}/rooms`,
+                      )
+                    }
+                  >
+                    {t('partner.listings.actions.manageRooms')}
+                  </Button>
+                )}
                 {PUBLISHABLE_STATUSES.includes(listing.status) && (
                   <Button
                     variant="secondary"

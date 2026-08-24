@@ -13,17 +13,37 @@ import {
   useDeleteListingMutation,
 } from '../../../listings/index.js';
 
+// `resolvePresentationGroup`/`PRESENTATION_GROUPS` are real, pure domain
+// logic (no hooks, no side effects) reused as-is here — mirrors the real
+// `categoryPresentation.js` mapping exactly (P2.2A: this is the
+// "accommodation-only Manage Rooms" gate's actual condition under test).
 vi.mock('../../../listings/index.js', () => {
   function MockListingStatusBadge({ status }) {
     return <span>{status}</span>;
   }
   MockListingStatusBadge.propTypes = { status: PropTypes.string.isRequired };
+  const PRESENTATION_GROUPS = Object.freeze({
+    ACCOMMODATION: 'ACCOMMODATION',
+    EXPERIENCE: 'EXPERIENCE',
+    TRANSPORT: 'TRANSPORT',
+    GENERIC: 'GENERIC',
+  });
+  const GROUP_BY_LISTING_TYPE = {
+    HOTEL: PRESENTATION_GROUPS.ACCOMMODATION,
+    PROPERTY: PRESENTATION_GROUPS.ACCOMMODATION,
+    TOUR: PRESENTATION_GROUPS.EXPERIENCE,
+    ATTRACTION: PRESENTATION_GROUPS.EXPERIENCE,
+    CAR_RENTAL: PRESENTATION_GROUPS.TRANSPORT,
+  };
   return {
     usePublishListingMutation: vi.fn(),
     useUnpublishListingMutation: vi.fn(),
     useArchiveListingMutation: vi.fn(),
     useDeleteListingMutation: vi.fn(),
     ListingStatusBadge: MockListingStatusBadge,
+    PRESENTATION_GROUPS,
+    resolvePresentationGroup: (code) =>
+      GROUP_BY_LISTING_TYPE[code] ?? PRESENTATION_GROUPS.GENERIC,
   };
 });
 
@@ -289,6 +309,31 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
     expect(
       await screen.findByText('Հայտարարությունը ջնջվել է։'),
     ).toBeInTheDocument();
+  });
+
+  // P2.2A: "Manage rooms" reuses bookable_units, a generic mechanism
+  // every listing_type technically has — but the label/action only
+  // makes sense for accommodation. Confirms the fix without redesigning
+  // the row itself.
+  test('shows Manage rooms for HOTEL and PROPERTY, not for TOUR/CAR_RENTAL/ATTRACTION', () => {
+    renderList({
+      listings: [
+        listingFixture({ id: 1, listing_type: 'HOTEL' }),
+        listingFixture({ id: 2, listing_type: 'PROPERTY' }),
+        listingFixture({ id: 3, listing_type: 'TOUR' }),
+        listingFixture({ id: 4, listing_type: 'CAR_RENTAL' }),
+        listingFixture({ id: 5, listing_type: 'ATTRACTION' }),
+      ],
+      isPending: false,
+      isError: false,
+      onRetry: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      onLoadMore: vi.fn(),
+    });
+    expect(
+      screen.getAllByRole('button', { name: 'Կառավարել սենյակները' }),
+    ).toHaveLength(2);
   });
 
   test('renders a Load More button when hasNextPage is true', () => {

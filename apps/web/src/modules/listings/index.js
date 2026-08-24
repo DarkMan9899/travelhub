@@ -12,6 +12,10 @@ export { default as listingKeys } from './constants/queryKeys.js';
 export { default as ListingDetailPageContent } from './components/ListingDetailPageContent/ListingDetailPageContent.jsx';
 export { default as PartnerListingWizard } from './components/PartnerListingWizard/PartnerListingWizard.jsx';
 export { default as PartnerListingRoomsPageContent } from './components/PartnerListingRoomsPageContent/PartnerListingRoomsPageContent.jsx';
+export {
+  PRESENTATION_GROUPS,
+  resolvePresentationGroup,
+} from './utils/categoryPresentation.js';
 
 // Phase 5 (Partner Listing Wizard) mutations.
 export { default as useCreateListingMutation } from './mutations/useCreateListingMutation.js';
