@@ -49,6 +49,30 @@ const EMPTY_SESSION = {
   partnerships: [],
 };
 
+// Module-scoped (not component state) so it survives React 18 StrictMode's
+// dev-mode mount->cleanup->mount double-invocation of the bootstrap effect
+// below: both invocations call this, but only the first actually issues
+// `POST /auth/refresh` — the second reuses that same in-flight promise.
+// Without this, every page load fired two real refresh calls against the
+// single-use rotating refresh-token cookie (confirmed via network
+// inspection), racing each other and silently doubling this app's real
+// `sensitiveRateLimiter` consumption on every navigation. Mirrors
+// `client.js`'s own `refreshPromise` dedup pattern (§10.3) — kept
+// separate rather than reused, since that one's failure path emits
+// `emitSessionExpired` (meant for a mid-session refresh definitively
+// failing), which firing on every anonymous user's initial bootstrap
+// would be a much bigger behavior change than this fix needs.
+let bootstrapRefreshPromise = null;
+
+function getBootstrapRefresh() {
+  if (!bootstrapRefreshPromise) {
+    bootstrapRefreshPromise = authApi.refresh().finally(() => {
+      bootstrapRefreshPromise = null;
+    });
+  }
+  return bootstrapRefreshPromise;
+}
+
 export default function AuthProvider({ children }) {
   const [session, setSession] = useState(EMPTY_SESSION);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
@@ -85,7 +109,7 @@ export default function AuthProvider({ children }) {
 
     async function bootstrap() {
       try {
-        const { data } = await authApi.refresh();
+        const { data } = await getBootstrapRefresh();
         setAccessToken(data.access_token);
         if (!cancelled) await hydrateFromMe();
       } catch {
