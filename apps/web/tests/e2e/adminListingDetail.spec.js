@@ -130,10 +130,42 @@ test.describe('Admin Listing Detail — read-only view', () => {
 });
 
 test.describe('Admin Listing Detail — moderation workflow', () => {
+  let createdListingId;
+
+  // Unconditional cleanup — this test creates a real listing owned by
+  // the shared seeded vendor's partner. Left uncleaned, repeated runs
+  // (e.g. while iterating on this file, or in CI reruns) accumulate
+  // real listings under that one partner and flood every OTHER spec's
+  // "Listing" picker on the Partner Calendar page with them — confirmed:
+  // this exact thing broke inventory.spec.js's Flow A/B/C/E/F (the
+  // seeded "Ararat Valley Fleet" option became unreachable once enough
+  // throwaway listings from earlier iterations of this test piled up
+  // ahead of it in the picker). Best-effort, matching this suite's own
+  // `reviewReply.spec.js` teardown pattern — a cleanup failure must
+  // never mask the real test result.
+  test.afterEach(async ({ request }) => {
+    if (!createdListingId) return;
+    try {
+      const loginRes = await request.post(`${API_BASE}auth/login`, {
+        data: VENDOR,
+      });
+      if (!loginRes.ok()) return;
+      const { data } = await loginRes.json();
+      await request.delete(`${API_BASE}listings/${createdListingId}`, {
+        headers: { Authorization: `Bearer ${data.access_token}` },
+      });
+    } catch {
+      // Best-effort teardown only — never fail the run over this.
+    } finally {
+      createdListingId = undefined;
+    }
+  });
+
   test('approve and reject-with-notes both work from the detail page', async ({
     page,
   }) => {
     const listingId = await createThrowawayListing();
+    createdListingId = listingId;
 
     await login(page, ADMIN, /\/en\/admin$/);
     await page.goto(`/en/admin/listings/${listingId}`);
