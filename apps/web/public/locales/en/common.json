@@ -263,6 +263,7 @@
       },
       "reference": "Reference",
       "status": "Status",
+      "roomType": "Room / unit type",
       "dates": "Dates",
       "quantity": "Quantity",
       "notes": "Notes to the host",
@@ -311,9 +312,11 @@
       "successToast": "Your booking request has been sent to the host.",
       "summary": {
         "heading": "Order summary",
+        "roomType": "Room / unit type",
         "dates": "Dates",
         "nights": "Nights",
         "quantity": "Quantity",
+        "guests": "Guests",
         "total": "Estimated total",
         "estimateSuffix": "(estimate)",
         "unavailable": "Calculated at booking"
@@ -2436,6 +2439,8 @@
         "unitPlaceholder": "Select a unit",
         "datesLabel": "Dates",
         "quantityLabel": "Quantity",
+        "guestsLabel": "Guests",
+        "guestsHint": "Up to {{max}} guests for the selected room(s)",
         "estimatedTotal": "estimated total",
         "requestToBook": "Request to book",
         "requestToBookByGroup": {

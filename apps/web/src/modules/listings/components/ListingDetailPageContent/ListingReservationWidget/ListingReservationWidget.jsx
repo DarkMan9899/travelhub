@@ -54,6 +54,7 @@ import {
   resolveBookingCtaLabel,
   resolvePricingModelLabel,
 } from '../../../utils/reservationLabels.js';
+import { formatBedConfiguration } from '../../../utils/bedConfigurationDisplay.js';
 import styles from './ListingReservationWidget.module.scss';
 
 const CALENDAR_WINDOW_DAYS = 180;
@@ -72,6 +73,7 @@ export default function ListingReservationWidget({
   const [selectedUnitId, setSelectedUnitId] = useState(null);
   const [dateRange, setDateRange] = useState({ start: null, end: null });
   const [quantity, setQuantity] = useState(1);
+  const [guestCount, setGuestCount] = useState(1);
 
   const {
     data: units,
@@ -84,6 +86,19 @@ export default function ListingReservationWidget({
     selectedUnitId ?? (units?.length === 1 ? units[0].id : null);
   const selectedUnit =
     units?.find((unit) => unit.id === effectiveUnitId) ?? null;
+
+  // P2.2B: the unit's own real `unit_label` (e.g. "Deluxe King") when a
+  // partner set one, falling back to the generic type label only for a
+  // legacy unit with no label — never a bare "Type #N" ordinal anymore.
+  function resolveUnitDisplayLabel(unit) {
+    if (!unit) return null;
+    return (
+      unit.unit_label ||
+      t(`partner.listingWizard.bookableUnitTypes.${unit.bookable_unit_type}`, {
+        defaultValue: unit.bookable_unit_type,
+      })
+    );
+  }
 
   const today = toISODate(new Date());
   const windowEnd = addDays(today, CALENDAR_WINDOW_DAYS);
@@ -123,11 +138,44 @@ export default function ListingReservationWidget({
   );
 
   const estimatedTotal = useMemo(
-    () => computeEstimatedTotal(dateRange, priceByDate, quantity),
-    [dateRange, priceByDate, quantity],
+    () =>
+      computeEstimatedTotal(
+        dateRange,
+        priceByDate,
+        quantity,
+        selectedUnit?.bookable_unit_type,
+      ),
+    [dateRange, priceByDate, quantity, selectedUnit],
   );
 
   const pricingModelLabel = resolvePricingModelLabel(t, pricing);
+
+  // P2.2B: once a unit is selected, its own real base price (P2.2A rung 2
+  // of the same date-override -> unit-base -> listing-fallback precedence
+  // `bookingService.js#resolveItem` resolves server-side) replaces the
+  // static listing-level headline price — a listing whose room types
+  // carry different base prices no longer shows one misleading number
+  // regardless of which unit the customer picked. A unit with no base
+  // price of its own (legacy, or never set) truthfully falls back to the
+  // listing price server-side too, so the headline keeps showing exactly
+  // that here. Before any unit is selected, behavior is unchanged.
+  const headlinePricing =
+    selectedUnit?.base_price_amount !== undefined &&
+    selectedUnit?.base_price_amount !== null
+      ? {
+          amount: selectedUnit.base_price_amount,
+          currency: selectedUnit.base_price_currency,
+        }
+      : pricing;
+
+  const allowedGuests =
+    selectedUnit?.max_guests !== undefined && selectedUnit?.max_guests !== null
+      ? selectedUnit.max_guests * quantity
+      : null;
+
+  const bedConfigurationSummary = selectedUnit
+    ? formatBedConfiguration(t, selectedUnit.bed_configuration)
+    : null;
 
   const createHoldMutation = useCreateBookingHoldMutation();
   const canSubmit =
@@ -139,6 +187,35 @@ export default function ListingReservationWidget({
     setSelectedUnitId(Number(value));
     setDateRange({ start: null, end: null });
     setQuantity(1);
+    setGuestCount(1);
+  }
+
+  function handleChangeQuantity(nextQuantity) {
+    const clampedQuantity = Math.max(
+      1,
+      Math.min(selectedUnit.capacity, nextQuantity || 1),
+    );
+    setQuantity(clampedQuantity);
+    // A shrinking quantity can shrink the allowed guest cap
+    // (max_guests x quantity) below the guest count already entered —
+    // re-clamp so the two fields never drift into an invalid combination.
+    if (
+      selectedUnit?.max_guests !== undefined &&
+      selectedUnit?.max_guests !== null
+    ) {
+      setGuestCount((current) =>
+        Math.min(current, selectedUnit.max_guests * clampedQuantity),
+      );
+    }
+  }
+
+  function handleChangeGuestCount(nextGuestCount) {
+    const raw = Number(nextGuestCount) || 1;
+    setGuestCount(
+      allowedGuests !== null
+        ? Math.min(allowedGuests, Math.max(1, raw))
+        : Math.max(1, raw),
+    );
   }
 
   async function handleRequestToBook() {
@@ -162,8 +239,19 @@ export default function ListingReservationWidget({
         // Phase 12 (Product Polish): the already-computed client estimate
         // rides along so checkout can show a real price summary card
         // without a new backend endpoint — still explicitly labeled an
-        // estimate there too, same as here.
-        state: { listingId, holdBatch: data, estimatedTotal },
+        // estimate there too, same as here. P2.2B additive: `unitLabel`
+        // (this widget's own real-label resolution, so checkout never has
+        // to re-derive it) and `guestCount` — both ephemeral, display/
+        // payload-only hand-off, same category as `estimatedTotal`; the
+        // persisted, authoritative unit identity checkout/history read
+        // afterward always comes from the real booking response instead.
+        state: {
+          listingId,
+          holdBatch: data,
+          estimatedTotal,
+          unitLabel: resolveUnitDisplayLabel(selectedUnit),
+          guestCount,
+        },
       });
     } catch (err) {
       // Phase 17 §Checkout Revalidation — the authoritative capacity
@@ -232,27 +320,30 @@ export default function ListingReservationWidget({
     );
   }
 
-  const unitOptions = units.map((unit, index) => {
-    const typeLabel = t(
-      `partner.listingWizard.bookableUnitTypes.${unit.bookable_unit_type}`,
-      { defaultValue: unit.bookable_unit_type },
-    );
-    const sameTypeCount = units.filter(
-      (candidate) => candidate.bookable_unit_type === unit.bookable_unit_type,
-    ).length;
+  // P2.2B: real `unit_label` (never a bare "Type #N" ordinal when the
+  // partner actually named the unit), with the unit's own known
+  // `max_guests` appended — reuses the same `maxGuestsSummary` string the
+  // partner-side BookableUnitsManager already shows for the identical
+  // data, rather than inventing new copy for it.
+  const unitOptions = units.map((unit) => {
+    const baseLabel = resolveUnitDisplayLabel(unit);
+    const guestsSuffix =
+      unit.max_guests !== undefined && unit.max_guests !== null
+        ? ` — ${t('partner.listingWizard.availability.maxGuestsSummary', { count: unit.max_guests })}`
+        : '';
     return {
       value: unit.id,
-      label: sameTypeCount > 1 ? `${typeLabel} #${index + 1}` : typeLabel,
+      label: `${baseLabel}${guestsSuffix}`,
     };
   });
 
   return (
     <Section spacing="none" className={styles.widget}>
       <Stack gap="4">
-        {pricing && (
+        {headlinePricing && (
           <PriceTag
-            amount={pricing.amount}
-            currencyCode={pricing.currency}
+            amount={headlinePricing.amount}
+            currencyCode={headlinePricing.currency}
             locale={locale}
             suffix={pricingModelLabel}
             size="lg"
@@ -268,6 +359,8 @@ export default function ListingReservationWidget({
             placeholder={t('pages.listingDetail.reservation.unitPlaceholder')}
           />
         )}
+
+        {bedConfigurationSummary && <p>{bedConfigurationSummary}</p>}
 
         <DatePicker
           mode="range"
@@ -292,15 +385,27 @@ export default function ListingReservationWidget({
             min={1}
             max={selectedUnit.capacity}
             onChange={(event) =>
-              setQuantity(
-                Math.max(
-                  1,
-                  Math.min(
-                    selectedUnit.capacity,
-                    Number(event.target.value) || 1,
-                  ),
-                ),
-              )
+              handleChangeQuantity(Number(event.target.value))
+            }
+          />
+        )}
+
+        {selectedUnit && (
+          <Input
+            type="number"
+            label={t('pages.listingDetail.reservation.guestsLabel')}
+            value={guestCount}
+            min={1}
+            max={allowedGuests ?? undefined}
+            helperText={
+              allowedGuests !== null
+                ? t('pages.listingDetail.reservation.guestsHint', {
+                    max: allowedGuests,
+                  })
+                : undefined
+            }
+            onChange={(event) =>
+              handleChangeGuestCount(Number(event.target.value))
             }
           />
         )}

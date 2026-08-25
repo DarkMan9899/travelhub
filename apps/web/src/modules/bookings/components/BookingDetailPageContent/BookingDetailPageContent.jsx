@@ -193,6 +193,11 @@ export default function BookingDetailPageContent() {
             <Stack gap="3">
               {booking.items.map((item) => (
                 <div key={item.id}>
+                  {item.unit_label && (
+                    <p>
+                      {t('bookings.detail.roomType')}: {item.unit_label}
+                    </p>
+                  )}
                   <p>
                     {t('bookings.detail.dates')}:{' '}
                     {dateFormatter.format(new Date(item.date_from))} –{' '}

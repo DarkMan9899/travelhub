@@ -70,6 +70,14 @@ export default function BookingCheckoutPageContent() {
   const holdIds = holdItem?.hold_ids ?? [];
   const expiresAt = holdState?.holdBatch?.expires_at;
   const estimatedTotal = holdState?.estimatedTotal;
+  // P2.2B: `ListingReservationWidget`'s own real-label resolution and the
+  // customer's entered guest count, both carried through router state the
+  // same way `estimatedTotal` already is — ephemeral, display/payload-only,
+  // lost on a refresh same as everything else on this page (the persisted,
+  // authoritative unit identity a customer sees afterward always comes
+  // from the real booking response, not this hand-off).
+  const unitLabel = holdState?.unitLabel;
+  const guestCount = holdState?.guestCount;
   const nights =
     holdItem?.date_from && holdItem?.date_to
       ? Math.round(
@@ -118,7 +126,7 @@ export default function BookingCheckoutPageContent() {
   async function onSubmit(values) {
     try {
       const { data } = await createBookingMutation.mutateAsync({
-        items: [{ holdIds, guests: [] }],
+        items: [{ holdIds, guests: [], guestCount }],
         guestContactSnapshot: {
           fullName: values.fullName,
           email: values.email,
@@ -172,6 +180,12 @@ export default function BookingCheckoutPageContent() {
           <Stack gap="3">
             <h2>{t('bookings.checkout.summary.heading')}</h2>
             {translation && <p>{translation.title ?? listing.slug}</p>}
+            {unitLabel && (
+              <Inline justify="space-between">
+                <span>{t('bookings.checkout.summary.roomType')}</span>
+                <span>{unitLabel}</span>
+              </Inline>
+            )}
             <Inline justify="space-between">
               <span>{t('bookings.checkout.summary.dates')}</span>
               <span>
@@ -188,6 +202,12 @@ export default function BookingCheckoutPageContent() {
               <Inline justify="space-between">
                 <span>{t('bookings.checkout.summary.quantity')}</span>
                 <span>{holdItem.quantity}</span>
+              </Inline>
+            )}
+            {guestCount && (
+              <Inline justify="space-between">
+                <span>{t('bookings.checkout.summary.guests')}</span>
+                <span>{guestCount}</span>
               </Inline>
             )}
             <Inline justify="space-between" align="center">

@@ -107,6 +107,37 @@ describe('BookingDetailPageContent (apps/web/src/modules/bookings)', () => {
     expect(screen.getByText(/ana@example.com/)).toBeInTheDocument();
   });
 
+  test('P2.2B: shows the booked room/unit type when the item response includes one', () => {
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        items: [{ ...BASE_BOOKING.items[0], unit_label: 'Deluxe Suite' }],
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(screen.getByText(/Deluxe Suite/)).toBeInTheDocument();
+  });
+
+  test('P2.2B: omits the room type line for an item with no unit_label (e.g. a legacy booking predating this field)', () => {
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(
+      screen.queryByText(/Սենյակի\/միավորի տեսակ/),
+    ).not.toBeInTheDocument();
+  });
+
   test('shows the Cancel action for CONFIRMED, hides it for a terminal status', () => {
     useBookingQuery.mockReturnValue({
       data: BASE_BOOKING,

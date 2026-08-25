@@ -56,4 +56,75 @@ describe('computeEstimatedTotal', () => {
     );
     expect(result).toBeNull();
   });
+
+  describe('P2.2B — checkout-exclusive accommodation semantics', () => {
+    const threeNightPrices = {
+      '2026-08-10': { price_amount: '100.00', price_currency: 'AMD' },
+      '2026-08-11': { price_amount: '100.00', price_currency: 'AMD' },
+      '2026-08-12': { price_amount: '100.00', price_currency: 'AMD' },
+      // Checkout day — deliberately priced differently so a leaked
+      // inclusive-both-ends bug would be caught immediately (400, not
+      // 300, if this day's price ever got summed in).
+      '2026-08-13': { price_amount: '100.00', price_currency: 'AMD' },
+    };
+
+    test('a HOTEL_ROOM check-in Aug 10 / checkout Aug 13 charges exactly 3 nights, not 4', () => {
+      const result = computeEstimatedTotal(
+        { start: '2026-08-10', end: '2026-08-13' },
+        threeNightPrices,
+        1,
+        'HOTEL_ROOM',
+      );
+      expect(result).toEqual({ amount: 300, currency: 'AMD' });
+    });
+
+    test('a PROPERTY_UNIT gets the same checkout-exclusive treatment as HOTEL_ROOM', () => {
+      const result = computeEstimatedTotal(
+        { start: '2026-08-10', end: '2026-08-13' },
+        threeNightPrices,
+        1,
+        'PROPERTY_UNIT',
+      );
+      expect(result).toEqual({ amount: 300, currency: 'AMD' });
+    });
+
+    test('a same-day accommodation selection is a genuine 1-day charge, not zero', () => {
+      const result = computeEstimatedTotal(
+        { start: '2026-08-10', end: '2026-08-10' },
+        threeNightPrices,
+        1,
+        'HOTEL_ROOM',
+      );
+      expect(result).toEqual({ amount: 100, currency: 'AMD' });
+    });
+
+    test('a non-accommodation type (e.g. VEHICLE) stays inclusive of the return day', () => {
+      const result = computeEstimatedTotal(
+        { start: '2026-08-10', end: '2026-08-13' },
+        threeNightPrices,
+        1,
+        'VEHICLE',
+      );
+      expect(result).toEqual({ amount: 400, currency: 'AMD' });
+    });
+
+    test('an omitted bookableUnitTypeCode defaults to the original inclusive behavior', () => {
+      const result = computeEstimatedTotal(
+        { start: '2026-08-10', end: '2026-08-13' },
+        threeNightPrices,
+        1,
+      );
+      expect(result).toEqual({ amount: 400, currency: 'AMD' });
+    });
+
+    test('multiplies the checkout-exclusive sum by quantity', () => {
+      const result = computeEstimatedTotal(
+        { start: '2026-08-10', end: '2026-08-13' },
+        threeNightPrices,
+        2,
+        'HOTEL_ROOM',
+      );
+      expect(result).toEqual({ amount: 600, currency: 'AMD' });
+    });
+  });
 });

@@ -107,6 +107,22 @@ describe('BookingCheckoutPageContent (apps/web/src/modules/bookings)', () => {
     expect(screen.getByDisplayValue('+37411000000')).toBeInTheDocument();
   });
 
+  test('P2.2B: shows the selected room/unit label and guest count when the reservation widget passed them through', () => {
+    renderPage({
+      ...HOLD_STATE,
+      unitLabel: 'Deluxe Suite',
+      guestCount: 3,
+    });
+    expect(screen.getByText('Deluxe Suite')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  test('P2.2B: omits the room type / guests rows entirely when the hand-off never carried them (e.g. a very old client)', () => {
+    renderPage();
+    expect(screen.queryByText('Սենյակի/միավորի տեսակ')).not.toBeInTheDocument();
+    expect(screen.queryByText('Հյուրեր')).not.toBeInTheDocument();
+  });
+
   test('submitting the form creates a booking and navigates to its detail page with a success toast', async () => {
     const mutateAsync = vi.fn().mockResolvedValue({ data: { id: 42 } });
     useCreateBookingMutation.mockReturnValue({ mutateAsync, isPending: false });
@@ -133,6 +149,24 @@ describe('BookingCheckoutPageContent (apps/web/src/modules/bookings)', () => {
         'Ձեր ամրագրման հայտն ուղարկվել է հյուրընկալողին։',
       ),
     ).toBeInTheDocument();
+  });
+
+  test('P2.2B: forwards the guest count entered on the reservation widget through to POST /bookings', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({ data: { id: 42 } });
+    useCreateBookingMutation.mockReturnValue({ mutateAsync, isPending: false });
+    const user = userEvent.setup();
+    renderPage({ ...HOLD_STATE, guestCount: 2 });
+
+    await user.click(
+      screen.getByRole('button', { name: 'Հաստատել ամրագրման հայտը' }),
+    );
+
+    await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
+    expect(mutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [{ holdIds: [55], guests: [], guestCount: 2 }],
+      }),
+    );
   });
 
   test('shows an error toast and does not navigate when booking creation fails', async () => {

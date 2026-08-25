@@ -263,6 +263,7 @@
       },
       "reference": "Номер",
       "status": "Статус",
+      "roomType": "Тип номера/единицы",
       "dates": "Даты",
       "quantity": "Количество",
       "notes": "Комментарий хозяину",
@@ -311,9 +312,11 @@
       "successToast": "Ваш запрос на бронирование отправлен хозяину.",
       "summary": {
         "heading": "Сводка заказа",
+        "roomType": "Тип номера/единицы",
         "dates": "Даты",
         "nights": "Ночи",
         "quantity": "Количество",
+        "guests": "Гости",
         "total": "Примерная сумма",
         "estimateSuffix": "(примерно)",
         "unavailable": "Будет рассчитано при бронировании"
@@ -2458,6 +2461,8 @@
         "unitPlaceholder": "Выберите единицу",
         "datesLabel": "Даты",
         "quantityLabel": "Количество",
+        "guestsLabel": "Гости",
+        "guestsHint": "До {{max}} гостей для выбранных номеров",
         "estimatedTotal": "примерная сумма",
         "requestToBook": "Отправить запрос на бронирование",
         "requestToBookByGroup": {

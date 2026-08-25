@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PropTypes from 'prop-types';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -76,6 +76,30 @@ const SINGLE_UNIT = [
 const MULTI_UNIT = [
   { id: 1, bookable_unit_type: 'HOTEL_ROOM', capacity: 2 },
   { id: 2, bookable_unit_type: 'HOTEL_ROOM', capacity: 4 },
+];
+// P2.2B fixtures: real unit_label/max_guests/base_price/bed_configuration,
+// the same shape the public units DTO actually returns.
+const MULTI_UNIT_LABELED = [
+  {
+    id: 1,
+    bookable_unit_type: 'HOTEL_ROOM',
+    capacity: 2,
+    unit_label: 'Standard Room',
+    max_guests: 2,
+    base_price_amount: '50000.00',
+    base_price_currency: 'AMD',
+    bed_configuration: [{ type: 'QUEEN', count: 1 }],
+  },
+  {
+    id: 2,
+    bookable_unit_type: 'HOTEL_ROOM',
+    capacity: 1,
+    unit_label: 'Deluxe Suite',
+    max_guests: 4,
+    base_price_amount: '90000.00',
+    base_price_currency: 'AMD',
+    bed_configuration: [{ type: 'KING', count: 1 }],
+  },
 ];
 const CALENDAR_DAYS = [
   {
@@ -221,7 +245,7 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
     ).toBeDisabled();
   });
 
-  test('selecting dates enables submit and shows an estimated total', async () => {
+  test('selecting dates enables submit and shows a checkout-exclusive estimated total', async () => {
     useListingBookableUnitsQuery.mockReturnValue({
       data: SINGLE_UNIT,
       isPending: false,
@@ -235,8 +259,123 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
     expect(
       screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
     ).toBeEnabled();
-    // 100 + 120 = 220 estimated total for the two selected days.
+    // P2.2B: SINGLE_UNIT is a PROPERTY_UNIT (accommodation) — the picked
+    // range (2026-08-01 -> 2026-08-02) is a genuine 1-night stay, so only
+    // the check-in day's price (100) is charged, matching the backend's
+    // own checkout-exclusive `resolveConsumedRange`. The old inclusive-
+    // both-ends sum (100 + 120 = 220) double-charged the checkout day —
+    // this is the exact bug P2.2B fixes, not a weakened assertion.
+    expect(screen.getByText(/100\.00/)).toBeInTheDocument();
+    expect(screen.queryByText(/220/)).not.toBeInTheDocument();
+  });
+
+  test('a non-accommodation unit type keeps the original inclusive-both-ends estimate', async () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: [{ id: 1, bookable_unit_type: 'VEHICLE', capacity: 1 }],
+      isPending: false,
+      isError: false,
+    });
+    const user = userEvent.setup();
+    renderWidget();
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+
+    // A VEHICLE rental is billed inclusive of the return day — 100 + 120.
     expect(screen.getByText(/220/)).toBeInTheDocument();
+  });
+
+  test('the unit selector shows each real unit_label with its known max guests, not a generic "Type #N" ordinal', async () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: MULTI_UNIT_LABELED,
+      isPending: false,
+      isError: false,
+    });
+    const user = userEvent.setup();
+    renderWidget();
+
+    await user.click(screen.getByTestId('select-trigger'));
+
+    expect(
+      screen.getByRole('option', {
+        name: 'Standard Room — Ընդունում է 2 հյուր',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', {
+        name: 'Deluxe Suite — Ընդունում է 4 հյուր',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Type #1/)).not.toBeInTheDocument();
+  });
+
+  test("selecting a different room type switches the headline price to that unit's own resolved price and shows its bed configuration", async () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: MULTI_UNIT_LABELED,
+      isPending: false,
+      isError: false,
+    });
+    const user = userEvent.setup();
+    renderWidget({ pricing: { amount: '85000.00', currency: 'AMD' } });
+
+    // Before any explicit selection, the static listing price is
+    // unchanged (P2.2B: "before explicit selection, preserve existing
+    // behavior").
+    expect(screen.getByText(/85[.,]?000/)).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('select-trigger'));
+    await user.click(
+      screen.getByRole('option', {
+        name: 'Deluxe Suite — Ընդունում է 4 հյուր',
+      }),
+    );
+
+    // The headline now reflects the SELECTED unit's own base price, not
+    // the static listing price.
+    expect(screen.getByText(/90[.,]?000/)).toBeInTheDocument();
+    expect(screen.queryByText(/85[.,]?000/)).not.toBeInTheDocument();
+    expect(screen.getByText('1 × Քինգ')).toBeInTheDocument();
+  });
+
+  test('guest count is clamped to max_guests × quantity, both directly and when a shrinking quantity lowers the cap', () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: [
+        { id: 1, bookable_unit_type: 'HOTEL_ROOM', capacity: 3, max_guests: 2 },
+      ],
+      isPending: false,
+      isError: false,
+    });
+    renderWidget();
+
+    const guestsInput = screen.getByLabelText('Հյուրեր');
+    fireEvent.change(guestsInput, { target: { value: '99' } });
+    // 2 max_guests x 1 (default) quantity.
+    expect(guestsInput).toHaveValue(2);
+
+    const quantityInput = screen.getByLabelText('Քանակ');
+    fireEvent.change(quantityInput, { target: { value: '3' } });
+    expect(quantityInput).toHaveValue(3);
+
+    fireEvent.change(guestsInput, { target: { value: '99' } });
+    // 2 max_guests x 3 quantity.
+    expect(guestsInput).toHaveValue(6);
+
+    fireEvent.change(quantityInput, { target: { value: '1' } });
+    // Shrinking quantity back down re-clamps the already-entered guest
+    // count so the two fields never drift into an invalid combination.
+    expect(guestsInput).toHaveValue(2);
+  });
+
+  test('a legacy unit with no max_guests never invents a guest-count limit', () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: [{ id: 1, bookable_unit_type: 'HOTEL_ROOM', capacity: 2 }],
+      isPending: false,
+      isError: false,
+    });
+    renderWidget();
+
+    const guestsInput = screen.getByLabelText('Հյուրեր');
+    fireEvent.change(guestsInput, { target: { value: '99' } });
+    expect(guestsInput).toHaveValue(99);
   });
 
   test('clicking Request to Book while unauthenticated redirects to login without creating a hold', async () => {
@@ -298,6 +437,63 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
       '/en/booking/checkout',
       expect.objectContaining({
         state: expect.objectContaining({ listingId: 10 }),
+      }),
+    );
+  });
+
+  test('a quantity greater than 1 is sent through in the hold request, along with the resolved unit label and guest count', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({
+      data: {
+        items: [{ hold_ids: [1, 2] }],
+        expires_at: '2026-08-01T00:15:00Z',
+      },
+    });
+    useCreateBookingHoldMutation.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: [
+        {
+          id: 1,
+          bookable_unit_type: 'HOTEL_ROOM',
+          capacity: 3,
+          unit_label: 'Standard Room',
+          max_guests: 2,
+        },
+      ],
+      isPending: false,
+      isError: false,
+    });
+    const user = userEvent.setup();
+    renderWidget();
+
+    const quantityInput = screen.getByLabelText('Քանակ');
+    fireEvent.change(quantityInput, { target: { value: '2' } });
+
+    const guestsInput = screen.getByLabelText('Հյուրեր');
+    fireEvent.change(guestsInput, { target: { value: '3' } });
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    );
+
+    expect(mutateAsync).toHaveBeenCalledWith([
+      {
+        bookableUnitId: 1,
+        dateFrom: '2026-08-01',
+        dateTo: '2026-08-02',
+        quantity: 2,
+      },
+    ]);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/en/booking/checkout',
+      expect.objectContaining({
+        state: expect.objectContaining({
+          unitLabel: 'Standard Room',
+          guestCount: 3,
+        }),
       }),
     );
   });
