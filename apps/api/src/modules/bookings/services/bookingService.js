@@ -186,6 +186,32 @@ export class BookingService {
       firstHold.bookableUnitId,
     );
 
+    const quantity = holds.length;
+
+    // P2.2B guest-capacity enforcement — the real, authoritative gate;
+    // the client's own pre-submit check (ListingReservationWidget) is UX
+    // only. `guestCount` is optional (existing callers, and any item
+    // where the customer never entered one, are left unenforced — never
+    // blocking a request that doesn't claim a guest count at all).
+    // A unit with `maxGuests === null` (a legacy unit, or any
+    // non-accommodation type that never populates it) has no truthful
+    // capacity to check against, so no limit is invented for it either —
+    // this mirrors `#resolveItem`'s own "a legacy unit's resolved price
+    // is unchanged" precedent for `basePriceAmount` above.
+    if (
+      item.guestCount !== undefined &&
+      unit.maxGuests !== null &&
+      unit.maxGuests !== undefined
+    ) {
+      const allowedGuests = unit.maxGuests * quantity;
+      if (item.guestCount > allowedGuests) {
+        throw new ValidationError(
+          `Guest count (${item.guestCount}) exceeds this unit's capacity of ${allowedGuests} (${unit.maxGuests} guest(s) x ${quantity} unit(s)).`,
+          [{ field: 'items', issue: 'GUEST_CAPACITY_EXCEEDED' }],
+        );
+      }
+    }
+
     // Prices (and the capacity `reserveCapacity` already consumed for
     // this hold) cover only the actually-occupied range — for lodging
     // (HOTEL_ROOM/PROPERTY_UNIT) that's checkout-exclusive nights, not
@@ -272,7 +298,7 @@ export class BookingService {
       bookableUnitId: firstHold.bookableUnitId,
       dateFrom: firstHold.dateFrom,
       dateTo: firstHold.dateTo,
-      quantity: holds.length,
+      quantity,
       unitPrice,
       currencyCode,
       listingId: unit.listingId,

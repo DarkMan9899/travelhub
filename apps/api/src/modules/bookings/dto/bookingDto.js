@@ -6,6 +6,16 @@ function toBookingItemResponse(item) {
   return {
     id: item.id,
     bookable_unit_id: item.bookableUnitId,
+    // P2.2B: live-joined from `bookable_units`/`bookable_unit_types`
+    // (`mysqlBookingRepository.js#findItemsForBooking`) — lets customer,
+    // partner, and admin consumers of this same shape all identify which
+    // room/unit type was actually booked, without a second round-trip to
+    // `GET /availability/:listingId/units`. No booking-time snapshot: a
+    // unit later renamed by its partner will show its CURRENT label here,
+    // not what it was called at booking time (see P2.2B implementation
+    // report — deliberately deferred, no migration in this slice).
+    unit_label: item.unitLabel ?? null,
+    bookable_unit_type: item.bookableUnitTypeCode ?? null,
     date_from: item.dateFrom,
     date_to: item.dateTo,
     quantity: item.quantity,

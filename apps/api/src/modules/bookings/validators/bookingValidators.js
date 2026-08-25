@@ -26,6 +26,13 @@ const bookingItemInputSchema = z.object({
       message: 'holdIds must not contain duplicates.',
     }),
   guests: z.array(guestSchema).default([]),
+  // P2.2B: optional so existing callers submitting no guest count at all
+  // stay compatible (BookingService#resolveItem only enforces the
+  // max_guests x quantity cap when this is present). Structural
+  // validation only — `guestCount` positive integer; whether it's
+  // actually within capacity is a Layer 3 (database-dependent) concern,
+  // same split this file's own header comment documents.
+  guestCount: z.coerce.number().int().positive().optional(),
 });
 
 const guestContactSnapshotSchema = z.object({

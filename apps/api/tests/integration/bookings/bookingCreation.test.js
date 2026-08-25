@@ -460,3 +460,182 @@ describe('P2.2A — accommodation price-resolution precedence (date override -> 
     expect(res.status).toBe(401);
   });
 });
+
+describe('P2.2B — booking-item unit identity and guest-capacity enforcement', () => {
+  async function registerUnitWithGuestsAndLabel(
+    listingId,
+    { maxGuests, label, capacity = 1 } = {},
+  ) {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: label ?? `P2.2B guest unit ${Date.now()}`,
+        capacity,
+        ...(maxGuests !== undefined ? { maxGuests } : {}),
+      });
+    return res.body.data.id;
+  }
+
+  test('a booking-item response includes the real unit_label and bookable_unit_type', async () => {
+    const listingId = await createListing(`P2.2B Unit Identity ${Date.now()}`);
+    const unitId = await registerUnitWithGuestsAndLabel(listingId, {
+      label: 'Deluxe Suite',
+    });
+    await setPrice(unitId, '2027-05-01', '2027-05-02', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-05-01',
+      '2027-05-02',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.items[0].unit_label).toBe('Deluxe Suite');
+    expect(res.body.data.items[0].bookable_unit_type).toBe('HOTEL_ROOM');
+    expect(res.body.data.items[0].bookable_unit_id).toBe(unitId);
+  });
+
+  test('a guest count within max_guests × quantity succeeds', async () => {
+    const listingId = await createListing(`P2.2B Guest OK ${Date.now()}`);
+    const unitId = await registerUnitWithGuestsAndLabel(listingId, {
+      maxGuests: 2,
+    });
+    await setPrice(unitId, '2027-05-05', '2027-05-06', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-05-05',
+      '2027-05-06',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [], guestCount: 2 }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+  });
+
+  test('a guest count above max_guests × quantity is rejected with 422 GUEST_CAPACITY_EXCEEDED', async () => {
+    const listingId = await createListing(`P2.2B Guest Over ${Date.now()}`);
+    const unitId = await registerUnitWithGuestsAndLabel(listingId, {
+      maxGuests: 2,
+    });
+    await setPrice(unitId, '2027-05-10', '2027-05-11', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-05-10',
+      '2027-05-11',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [], guestCount: 3 }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(422);
+    expect(
+      res.body.error.details.some((d) => d.issue === 'GUEST_CAPACITY_EXCEEDED'),
+    ).toBe(true);
+  });
+
+  test('the allowed guest count scales with quantity (max_guests × quantity, not max_guests alone)', async () => {
+    const listingId = await createListing(`P2.2B Guest Quantity ${Date.now()}`);
+    const unitId = await registerUnitWithGuestsAndLabel(listingId, {
+      maxGuests: 2,
+      capacity: 2,
+    });
+    await setPrice(unitId, '2027-05-15', '2027-05-16', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-05-15',
+      '2027-05-16',
+      2,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        // 4 guests would exceed max_guests (2) alone, but not 2 x quantity(2).
+        items: [{ holdIds, guests: [], guestCount: 4 }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+  });
+
+  test('a legacy unit with no max_guests never invents a limit — any guest count is accepted', async () => {
+    const listingId = await createListing(
+      `P2.2B Legacy No Max Guests ${Date.now()}`,
+    );
+    const unitId = await registerUnit(listingId); // no maxGuests field at all
+    await setPrice(unitId, '2027-05-20', '2027-05-21', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-05-20',
+      '2027-05-21',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [], guestCount: 999 }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+  });
+
+  test('an old caller that never submits guestCount at all stays fully compatible — no capacity claim, no enforcement', async () => {
+    const listingId = await createListing(
+      `P2.2B No GuestCount Field ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithGuestsAndLabel(listingId, {
+      maxGuests: 1,
+    });
+    await setPrice(unitId, '2027-05-25', '2027-05-26', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-05-25',
+      '2027-05-26',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+  });
+});

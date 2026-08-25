@@ -69,6 +69,13 @@ function toItemDomain(row) {
     id: row.id,
     bookingId: row.booking_id,
     bookableUnitId: row.bookable_unit_id,
+    // P2.2B: joined in from `bookable_units`/`bookable_unit_types` by
+    // `findItemsForBooking` below — `null` for a unit that no longer
+    // exists (the LEFT JOIN makes that possible in principle even though
+    // no code path in this repository hard-deletes a `bookable_units` row
+    // today; see that method's own comment).
+    unitLabel: row.unit_label ?? null,
+    bookableUnitTypeCode: row.bookable_unit_type_code ?? null,
     dateFrom: toDateString(row.date_from),
     dateTo: toDateString(row.date_to),
     quantity: row.quantity,
@@ -327,9 +334,22 @@ export class MySqlBookingRepository {
     return result.insertId;
   }
 
+  /**
+   * P2.2B: LEFT JOINs `bookable_units`/`bookable_unit_types` purely to
+   * enrich the response with `unit_label`/`bookable_unit_type` (same
+   * "join to enrich, never a second write-owner" convention this
+   * repository already follows elsewhere) — read-only, no new capability,
+   * no migration; `booking_items.bookable_unit_id` already carries the
+   * live FK this joins through.
+   */
   async findItemsForBooking(bookingId, connection = this.#pool) {
     const [rows] = await connection.query(
-      'SELECT * FROM booking_items WHERE booking_id = ? ORDER BY id ASC',
+      `SELECT bi.*, bu.unit_label, but.code AS bookable_unit_type_code
+       FROM booking_items bi
+       LEFT JOIN bookable_units bu ON bu.id = bi.bookable_unit_id
+       LEFT JOIN bookable_unit_types but ON but.id = bu.bookable_unit_type_id
+       WHERE bi.booking_id = ?
+       ORDER BY bi.id ASC`,
       [bookingId],
     );
     return rows.map(toItemDomain);
