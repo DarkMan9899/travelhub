@@ -39,6 +39,7 @@ import { withTransaction } from '../../../infrastructure/database/transaction.js
 import { Money } from '../../../core/domain/money.js';
 import { enumerateDates } from '../../../core/domain/calendarExpansion.js';
 import { resolveConsumedRange } from '../../../core/domain/accommodationDateSemantics.js';
+import { resolvePriceForDate } from '../../../core/domain/accommodationPriceResolution.js';
 import { resolveBookingTypeCode } from '../../../core/domain/bookableUnitTypeToBookingType.js';
 import { isValidBookingStatusTransition } from '../../../core/domain/bookingStatusTransitions.js';
 import { generateBookingReference } from '../../../core/domain/bookingReference.js';
@@ -162,6 +163,13 @@ export class BookingService {
    * price (`NULL`, untouched by the migration) and transparently falls
    * through to the listing price exactly as it did before this change —
    * no legacy unit's resolved price changes.
+   *
+   * P2.2B: the actual rung-by-rung decision now lives in the shared
+   * `resolvePriceForDate` (`core/domain/accommodationPriceResolution.js`)
+   * — `availabilityService.js#getCalendar` (the customer-facing estimate
+   * `ListingReservationWidget` reads) calls the exact same function, so
+   * the estimate a customer sees can never silently diverge from what
+   * this method actually charges.
    */
   async #resolveItem(item, userId, connection, principal) {
     const holds = await this.#availabilityService.consumeHold(
@@ -231,54 +239,37 @@ export class BookingService {
       connection,
     );
     const dates = enumerateDates(consumedRange.dateFrom, consumedRange.dateTo);
-    const priceByDate = new Map(prices.map((price) => [price.date, price]));
-    const isPriceMissing = (price) =>
-      price === undefined ||
-      price.amount === null ||
-      price.currencyCode === null;
-    // Rung 2: the unit's own base price, for whatever dates the calendar
-    // had no override for. A legacy/unpriced unit (basePriceAmount NULL)
-    // simply leaves every date still missing, unchanged.
-    if (unit.basePriceAmount !== null && unit.basePriceAmount !== undefined) {
-      dates.forEach((date) => {
-        if (isPriceMissing(priceByDate.get(date))) {
-          priceByDate.set(date, {
-            date,
-            amount: unit.basePriceAmount,
-            currencyCode: unit.basePriceCurrencyCode,
-          });
-        }
-      });
-    }
+    const overrideByDate = new Map(prices.map((price) => [price.date, price]));
 
-    // Rung 3: the listing's flat base price, for whatever dates are
-    // still missing after rungs 1-2.
-    const needsFallback = dates.some((date) =>
-      isPriceMissing(priceByDate.get(date)),
+    // Rung 3 needs the listing's own flat price — fetched once up front
+    // (same eager-fetch shape `availabilityService.js#getCalendar` uses
+    // for the identical precedence chain, P2.2B) rather than only when a
+    // date turns out to need it; simpler control flow, and `getListing`
+    // is cheap next to the per-date work already happening here.
+    const listing = await this.#listingService.getListing(
+      principal,
+      unit.listingId,
     );
-    if (needsFallback) {
-      const listing = await this.#listingService.getListing(
-        principal,
-        unit.listingId,
-      );
-      const basePrice = listing.pricing;
-      if (!basePrice) {
+    const listingBasePrice = listing.pricing;
+
+    const resolvedPrices = dates.map((date) => {
+      const override = overrideByDate.get(date);
+      const resolved = resolvePriceForDate({
+        overrideAmount: override?.amount,
+        overrideCurrencyCode: override?.currencyCode,
+        unitBaseAmount: unit.basePriceAmount,
+        unitBaseCurrencyCode: unit.basePriceCurrencyCode,
+        listingBaseAmount: listingBasePrice?.amount,
+        listingBaseCurrencyCode: listingBasePrice?.currencyCode,
+      });
+      if (!resolved) {
         throw new ValidationError(
           'One or more requested dates has no price set for this unit.',
           [{ field: 'items', issue: 'PRICING_INCOMPLETE' }],
         );
       }
-      dates.forEach((date) => {
-        if (isPriceMissing(priceByDate.get(date))) {
-          priceByDate.set(date, {
-            date,
-            amount: basePrice.amount,
-            currencyCode: basePrice.currencyCode,
-          });
-        }
-      });
-    }
-    const resolvedPrices = dates.map((date) => priceByDate.get(date));
+      return resolved;
+    });
     const { currencyCode } = resolvedPrices[0];
     if (resolvedPrices.some((price) => price.currencyCode !== currencyCode)) {
       throw new ValidationError(

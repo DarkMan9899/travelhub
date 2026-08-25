@@ -639,3 +639,361 @@ describe('P2.2B — booking-item unit identity and guest-capacity enforcement', 
     expect(res.status).toBe(201);
   });
 });
+
+describe('P2.2B final review — mixed-price stay: UI estimate must equal the real booking total', () => {
+  async function registerUnitWithBasePrice(
+    listingId,
+    amount,
+    currency = 'AMD',
+  ) {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: `Mixed Price Unit ${Date.now()}`,
+        basePriceAmount: amount,
+        basePriceCurrency: currency,
+      });
+    return res.body.data.id;
+  }
+
+  test("night 1 = unit base, night 2 = override, night 3 = unit base, checkout day uncharged — the customer-facing calendar (the widget's own price source) resolves every consumed night, and its checkout-exclusive sum equals the real booking total", async () => {
+    const listingId = await createListing(
+      `P2.2B Mixed Price Stay ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithBasePrice(listingId, 80);
+    const checkIn = '2027-06-01';
+    const night2 = '2027-06-02';
+    const night3 = '2027-06-03';
+    const checkout = '2027-06-04';
+    // Only the middle night gets an explicit override.
+    await setPrice(unitId, night2, night2, 150);
+    // The checkout day gets a deliberately different price, so a leaked
+    // inclusive-both-ends bug (charging/estimating it) would be caught
+    // immediately rather than coincidentally matching.
+    await setPrice(unitId, checkout, checkout, 999);
+
+    // Before this review's fix, GET /calendar only ever returned an
+    // explicit override — a day resolvable purely via the unit's own
+    // base price (nights 1 and 3 here) silently came back
+    // price_amount: null, making the customer's estimate go blank rather
+    // than merely wrong. This is the direct proof that gap is closed.
+    const calendarRes = await request(app).get(
+      `/api/v1/availability/${listingId}/calendar?from=${checkIn}&to=${checkout}&unitId=${unitId}`,
+    );
+    expect(calendarRes.status).toBe(200);
+    const byDate = Object.fromEntries(
+      calendarRes.body.data.map((day) => [day.date, day]),
+    );
+    expect(byDate[checkIn].price_amount).toBe('80.00');
+    expect(byDate[night2].price_amount).toBe('150.00');
+    expect(byDate[night3].price_amount).toBe('80.00');
+
+    // Checkout-exclusive sum, exactly mirroring reservationEstimate.js's
+    // own computeEstimatedTotal for an accommodation unit type — the
+    // checkout day (with its deliberately-mismatched 999 override) is
+    // never included.
+    const uiEstimatedTotal =
+      Number(byDate[checkIn].price_amount) +
+      Number(byDate[night2].price_amount) +
+      Number(byDate[night3].price_amount);
+    expect(uiEstimatedTotal).toBe(310);
+
+    const holdIds = await createHold(customer, unitId, checkIn, checkout, 1);
+    const bookingRes = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(bookingRes.status).toBe(201);
+    // 80 + 150 + 80 = 310 — the checkout day's 999 override never applies.
+    expect(bookingRes.body.data.total_amount).toBe('310.00');
+    expect(Number(bookingRes.body.data.total_amount)).toBe(uiEstimatedTotal);
+  });
+});
+
+describe('P2.2B final review — listing-fallback stay: UI estimate must equal the real booking total', () => {
+  async function setListingBasePrice(listingId, amount, currencyCode = 'AMD') {
+    await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ categoryIds: [hotelCategoryId] });
+    const res = await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ pricing: { modelCode: 'PER_NIGHT', amount, currencyCode } });
+    if (res.status !== 200) {
+      throw new Error(
+        `setListingBasePrice failed: ${res.status} ${JSON.stringify(res.body)}`,
+      );
+    }
+  }
+
+  test('a unit with no base price of its own, no calendar override, and a listing fallback price — calendar and booking total agree', async () => {
+    const listingId = await createListing(
+      `P2.2B Listing Fallback Stay ${Date.now()}`,
+    );
+    await setListingBasePrice(listingId, 45);
+    // registerUnit — no basePriceAmount field at all, the legacy shape.
+    const unitId = await registerUnit(listingId);
+    const dateFrom = '2027-06-15';
+    const dateTo = '2027-06-17';
+
+    const calendarRes = await request(app).get(
+      `/api/v1/availability/${listingId}/calendar?from=${dateFrom}&to=${dateTo}&unitId=${unitId}`,
+    );
+    expect(calendarRes.status).toBe(200);
+    const byDate = Object.fromEntries(
+      calendarRes.body.data.map((day) => [day.date, day]),
+    );
+    // Rung 3's amount comes from `listing.pricing.amount`, which (unlike
+    // rungs 1/2's MySQL DECIMAL-as-string values) `ListingService` returns
+    // as a bare JS number — the same type ambiguity
+    // `bookingService.js#resolveItem` already defends against by
+    // stringifying before `Money.fromDecimalString`. Compare numerically,
+    // exactly as both that Money conversion and the frontend's own
+    // `Number(day.price_amount)` already do — never a brittle exact-string
+    // match on a value this method never promised a specific type for.
+    expect(Number(byDate['2027-06-15'].price_amount)).toBe(45);
+    expect(Number(byDate['2027-06-16'].price_amount)).toBe(45);
+    const uiEstimatedTotal =
+      Number(byDate['2027-06-15'].price_amount) +
+      Number(byDate['2027-06-16'].price_amount);
+    expect(uiEstimatedTotal).toBe(90);
+
+    const holdIds = await createHold(customer, unitId, dateFrom, dateTo, 1);
+    const bookingRes = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(bookingRes.status).toBe(201);
+    expect(bookingRes.body.data.total_amount).toBe('90.00');
+    expect(Number(bookingRes.body.data.total_amount)).toBe(uiEstimatedTotal);
+  });
+});
+
+describe('P2.2B final review — booking identity after unit retirement', () => {
+  test("a retired (soft-deleted) unit's label remains resolvable on an existing booking — no snapshot needed, the LEFT JOIN finds it regardless of deleted_at", async () => {
+    const listingId = await createListing(
+      `P2.2B Retired Unit Identity ${Date.now()}`,
+    );
+    const unitRes = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: 'Soon Retired Room',
+        basePriceAmount: 30,
+        basePriceCurrency: 'AMD',
+      });
+    const unitId = unitRes.body.data.id;
+    const dateFrom = '2027-06-20';
+    const dateTo = '2027-06-21';
+    const holdIds = await createHold(customer, unitId, dateFrom, dateTo, 1);
+    const bookingRes = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+    expect(bookingRes.status).toBe(201);
+    const bookingId = bookingRes.body.data.id;
+    expect(bookingRes.body.data.items[0].unit_label).toBe('Soon Retired Room');
+
+    // A second, always-on unit keeps the listing valid (publish readiness
+    // requires >=1 unit) — retiring the booked unit doesn't touch this.
+    await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ listingId, bookableUnitType: 'HOTEL_ROOM' });
+
+    const retireRes = await request(app)
+      .delete(`/api/v1/availability/units/${unitId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(retireRes.status).toBe(200);
+    expect(retireRes.body.data).toEqual({ deleted: true });
+
+    const detailRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body.data.items[0].unit_label).toBe('Soon Retired Room');
+    expect(detailRes.body.data.items[0].bookable_unit_type).toBe('HOTEL_ROOM');
+
+    // The same shared DTO the partner/admin views use — one fetch proves
+    // all three audiences see the identical, still-resolvable identity.
+    const partnerRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(partnerRes.status).toBe(200);
+    expect(partnerRes.body.data.items[0].unit_label).toBe('Soon Retired Room');
+  });
+});
+
+describe('P2.2B final review — guestCount schema validation edge cases', () => {
+  // A unique `unitLabel` is required here, not optional decoration:
+  // `mysqlBookableUnitRepository.findMatching`'s idempotency key is
+  // `(listingId, bookableUnitTypeId, sourceTable, sourceId, unitLabel)`.
+  // `createListing` above already registers its own plain, unlabeled
+  // HOTEL_ROOM unit for every listing it creates — omitting `unitLabel`
+  // here would silently match and reuse THAT unit (max_guests still
+  // null) instead of creating a fresh one with this call's own
+  // `maxGuests`, exactly the mistake this comment exists to prevent
+  // re-introducing.
+  async function registerUnitWithMaxGuests(listingId, maxGuests) {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: `GuestCount Schema Unit ${Date.now()}-${Math.random()}`,
+        maxGuests,
+      });
+    return res.body.data.id;
+  }
+
+  test('guestCount: 0 is rejected at the schema layer (structural, not the business capacity rule)', async () => {
+    const listingId = await createListing(
+      `P2.2B GuestCount Zero ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithMaxGuests(listingId, 2);
+    await setPrice(unitId, '2027-06-25', '2027-06-26', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-06-25',
+      '2027-06-26',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [], guestCount: 0 }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_FAILED');
+  });
+
+  test('guestCount: a negative value is rejected at the schema layer', async () => {
+    const listingId = await createListing(
+      `P2.2B GuestCount Negative ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithMaxGuests(listingId, 2);
+    await setPrice(unitId, '2027-06-27', '2027-06-28', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-06-27',
+      '2027-06-28',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [], guestCount: -3 }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_FAILED');
+  });
+
+  test('guestCount: a fractional value is rejected at the schema layer', async () => {
+    const listingId = await createListing(
+      `P2.2B GuestCount Fractional ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithMaxGuests(listingId, 2);
+    await setPrice(unitId, '2027-06-29', '2027-06-30', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-06-29',
+      '2027-06-30',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [], guestCount: 1.5 }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_FAILED');
+  });
+
+  test('guestCount: a non-numeric string is rejected at the schema layer', async () => {
+    const listingId = await createListing(
+      `P2.2B GuestCount NonNumeric ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithMaxGuests(listingId, 2);
+    await setPrice(unitId, '2027-07-01', '2027-07-02', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-07-01',
+      '2027-07-02',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [], guestCount: 'abc' }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(422);
+    expect(res.body.error.code).toBe('VALIDATION_FAILED');
+  });
+
+  test("guestCount: a numeric string is coerced (consistent with quantity's own existing convention) and still enforced against capacity", async () => {
+    const listingId = await createListing(
+      `P2.2B GuestCount StringCoerce ${Date.now()}`,
+    );
+    const unitId = await registerUnitWithMaxGuests(listingId, 2);
+    await setPrice(unitId, '2027-07-03', '2027-07-04', 60);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-07-03',
+      '2027-07-04',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        // "5" coerces to 5, which exceeds 2 max_guests x 1 quantity.
+        items: [{ holdIds, guests: [], guestCount: '5' }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(422);
+    expect(
+      res.body.error.details.some((d) => d.issue === 'GUEST_CAPACITY_EXCEEDED'),
+    ).toBe(true);
+  });
+});

@@ -72,6 +72,7 @@ import {
   PARTNER_CAPABILITIES,
 } from '../../../core/domain/partnerCapabilities.js';
 import { resolveConsumedRange } from '../../../core/domain/accommodationDateSemantics.js';
+import { resolvePriceForDate } from '../../../core/domain/accommodationPriceResolution.js';
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
 import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
@@ -679,12 +680,25 @@ export class AvailabilityService {
    * the caller must pass `unitId` explicitly, since "which calendar do
    * you mean" is a real question once multiple units exist and
    * Availability has no inventory-type knowledge to answer it on its own.
+   *
+   * P2.2B fix: every day's price now resolves through the same
+   * `resolvePriceForDate` precedence `bookingService.js#resolveItem` uses
+   * to charge a booking (date override -> unit base price -> listing
+   * fallback) — previously this only ever returned an explicit calendar
+   * override, so a day resolvable purely via a unit's own base price or
+   * the listing's fallback (i.e. any day without its own override, which
+   * is the common case) silently came back with `price_amount: null`,
+   * making `ListingReservationWidget`'s customer-facing estimate go blank
+   * rather than merely differ from what booking creation would actually
+   * charge. Reuses the listing object this method already fetches above
+   * (previously discarded) and the unit object already resolved below
+   * (previously narrowed to just its id) — no new query added.
    */
   async getCalendar(principal, listingId, from, to, unitId) {
-    await this.#listingService.getListing(principal, listingId);
+    const listing = await this.#listingService.getListing(principal, listingId);
 
-    let resolvedUnitId = unitId;
-    if (resolvedUnitId === undefined) {
+    let resolvedUnit;
+    if (unitId === undefined) {
       const units =
         await this.#bookableUnitService.listUnitsForListing(listingId);
       if (units.length > 1) {
@@ -693,16 +707,17 @@ export class AvailabilityService {
           [{ field: 'unitId', issue: 'AMBIGUOUS_UNIT' }],
         );
       }
-      resolvedUnitId = units[0]?.id;
+      [resolvedUnit] = units;
     } else {
-      const unit = await this.#bookableUnitService.findById(resolvedUnitId);
-      if (!unit || unit.listingId !== listingId) {
+      resolvedUnit = await this.#bookableUnitService.findById(unitId);
+      if (!resolvedUnit || resolvedUnit.listingId !== listingId) {
         throw new NotFoundError('Bookable unit not found for this listing.');
       }
     }
+    const resolvedUnitId = resolvedUnit?.id;
 
     let calendarByDate = {};
-    let priceByDate = {};
+    let overrideByDate = {};
     if (resolvedUnitId !== undefined) {
       const [rows, priceRows] = await Promise.all([
         this.#availabilityCalendarRepository.listForUnit(resolvedUnitId, {
@@ -717,7 +732,7 @@ export class AvailabilityService {
       calendarByDate = Object.fromEntries(
         rows.map((row) => [row.date, row.statusCode]),
       );
-      priceByDate = Object.fromEntries(
+      overrideByDate = Object.fromEntries(
         priceRows.map((row) => [
           row.date,
           { amount: row.amount, currencyCode: row.currencyCode },
@@ -734,11 +749,24 @@ export class AvailabilityService {
     );
 
     return expandCalendarDays(from, to, { calendarByDate, blockedRanges }).map(
-      (day) => ({
-        ...day,
-        priceAmount: priceByDate[day.date]?.amount ?? null,
-        priceCurrencyCode: priceByDate[day.date]?.currencyCode ?? null,
-      }),
+      (day) => {
+        const override = overrideByDate[day.date];
+        const resolved = resolvedUnit
+          ? resolvePriceForDate({
+              overrideAmount: override?.amount,
+              overrideCurrencyCode: override?.currencyCode,
+              unitBaseAmount: resolvedUnit.basePriceAmount,
+              unitBaseCurrencyCode: resolvedUnit.basePriceCurrencyCode,
+              listingBaseAmount: listing.pricing?.amount,
+              listingBaseCurrencyCode: listing.pricing?.currencyCode,
+            })
+          : null;
+        return {
+          ...day,
+          priceAmount: resolved?.amount ?? null,
+          priceCurrencyCode: resolved?.currencyCode ?? null,
+        };
+      },
     );
   }
 
