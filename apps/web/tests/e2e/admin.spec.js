@@ -454,6 +454,15 @@ test.describe.serial('Admin CMS (Stage 11.6)', () => {
     await page.reload();
     await page.getByRole('tab', { name: 'EN' }).click();
     await expect(page.getByLabel('Title')).toHaveValue(uniqueTitle);
+
+    // Restores the real seeded title (008_cms_pages.js) so this test
+    // stays idempotent across repeated local/dev runs — the `faq` page
+    // is real, shared content `public.spec.js`'s own `/faq` check reads,
+    // not a throwaway fixture this test owns.
+    await titleInput.fill('');
+    await titleInput.fill('Frequently Asked Questions');
+    await saveButtons.last().click();
+    await expect(page.getByText('Content saved.')).toBeVisible();
   });
 
   test('creating and deleting a page works end-to-end', async ({ page }) => {
