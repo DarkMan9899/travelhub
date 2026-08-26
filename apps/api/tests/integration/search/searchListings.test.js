@@ -10,7 +10,14 @@
  * own business logic.
  */
 
-import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
+import {
+  describe,
+  test,
+  expect,
+  beforeAll,
+  beforeEach,
+  afterAll,
+} from '@jest/globals';
 import request from 'supertest';
 import { up } from '../../../src/infrastructure/database/migrate.js';
 import { seedAll } from '../../../src/infrastructure/database/seeds/index.js';
@@ -55,7 +62,19 @@ async function login(email, password) {
   };
 }
 
-async function createListing({ title, listingType, categoryId, cityId }) {
+// `description` defaults to the original fixed text every pre-existing
+// fixture in this file relies on (the "sorting and cursor pagination"
+// describe block scopes itself to exactly these 3 listings via
+// `keyword=lovely`) — P2.2D's own new pricing fixtures below pass a
+// distinct description so they don't leak into that same FULLTEXT match
+// (MATCH() searches both title AND description).
+async function createListing({
+  title,
+  listingType,
+  categoryId,
+  cityId,
+  description = `${title} — a lovely place to stay.`,
+}) {
   const res = await request(app)
     .post('/api/v1/listings')
     .set('Authorization', `Bearer ${vendor.accessToken}`)
@@ -66,11 +85,38 @@ async function createListing({ title, listingType, categoryId, cityId }) {
         {
           languageId,
           title,
-          description: `${title} — a lovely place to stay.`,
+          description,
         },
       ],
       categoryIds: [categoryId],
       location: { cityId },
+    });
+  return res.body.data.id;
+}
+
+// `unitLabel` is required (never omitted) here: `findMatching`'s
+// idempotency key is (listingId, bookableUnitTypeId, sourceTable,
+// sourceId, unitLabel) — an unlabeled call silently reuses/re-matches
+// `publishListing`'s own auto-created plain unit instead of creating a
+// genuinely new, separately-priced one (a real gotcha hit during P2.2B).
+async function registerUnit(
+  listingId,
+  {
+    unitLabel,
+    basePriceAmount,
+    basePriceCurrency,
+    bookableUnitType = 'HOTEL_ROOM',
+  },
+) {
+  const res = await request(app)
+    .post('/api/v1/availability/units')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({
+      listingId,
+      bookableUnitType,
+      unitLabel,
+      ...(basePriceAmount !== undefined ? { basePriceAmount } : {}),
+      ...(basePriceCurrency !== undefined ? { basePriceCurrency } : {}),
     });
   return res.body.data.id;
 }
@@ -189,6 +235,17 @@ beforeAll(async () => {
   listingGyumri = gyumriId;
 }, 60_000);
 
+// P2.2D added a whole new fixture-creating describe block (each test:
+// create + publish [4 requests] + 1-2 unit registrations + a search
+// call), enough extra volume across this file's shared rate-limit
+// budget that a single `beforeAll` reset is no longer sufficient — the
+// last few tests in the file started seeing real 429s. Mirrors
+// `partnerOnboarding.test.js`/`paymentLifecycle.test.js`'s identical,
+// already-documented reasoning for the same fix.
+beforeEach(async () => {
+  await resetRateLimits();
+});
+
 afterAll(async () => {
   await closeMysqlPool();
   await closeRedisConnection();
@@ -271,6 +328,132 @@ describe('GET /search/listings — filtering', () => {
     );
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual([]);
+  });
+});
+
+describe('GET /search/listings — P2.2D unit-level "from" price', () => {
+  test('a multi-unit HOTEL with no listing_pricing row shows the cheapest real unit base price', async () => {
+    const listingId = await createListing({
+      title: `Multi Room Pricing Fixture ${Date.now()}`,
+      listingType: 'HOTEL',
+      categoryId: hotelsCategoryId,
+      cityId: yerevanCityId,
+      description: 'A P2.2D pricing fixture.',
+    });
+    await publishListing(listingId); // auto-creates one unpriced unit
+    await registerUnit(listingId, {
+      unitLabel: 'Standard Room',
+      basePriceAmount: 25000,
+      basePriceCurrency: 'AMD',
+    });
+    await registerUnit(listingId, {
+      unitLabel: 'Deluxe Suite',
+      basePriceAmount: 45000,
+      basePriceCurrency: 'AMD',
+    });
+
+    const res = await request(app).get(
+      `/api/v1/search/listings?keyword=Multi+Room+Pricing+Fixture`,
+    );
+    expect(res.status).toBe(200);
+    const row = res.body.data.find((r) => r.id === listingId);
+    expect(row).toEqual(
+      expect.objectContaining({
+        price_amount: '25000.00',
+        price_currency_code: 'AMD',
+      }),
+    );
+  });
+
+  test('unit-level pricing takes precedence over a legacy listing_pricing row', async () => {
+    const listingId = await createListing({
+      title: `Unit Overrides Listing Pricing Fixture ${Date.now()}`,
+      listingType: 'HOTEL',
+      categoryId: hotelsCategoryId,
+      cityId: yerevanCityId,
+      description: 'A P2.2D pricing fixture.',
+    });
+    await publishListing(listingId);
+    await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        pricing: { modelCode: 'PER_NIGHT', amount: 99999, currencyCode: 'AMD' },
+      });
+    await registerUnit(listingId, {
+      unitLabel: 'Standard Room',
+      basePriceAmount: 30000,
+      basePriceCurrency: 'AMD',
+    });
+
+    const res = await request(app).get(
+      `/api/v1/search/listings?keyword=Unit+Overrides+Listing+Pricing`,
+    );
+    expect(res.status).toBe(200);
+    const row = res.body.data.find((r) => r.id === listingId);
+    expect(row.price_amount).toBe('30000.00');
+  });
+
+  test('a listing with only legacy listing_pricing (no unit base price) still falls back to it', async () => {
+    const listingId = await createListing({
+      title: `Listing Pricing Fallback Fixture ${Date.now()}`,
+      listingType: 'HOTEL',
+      categoryId: hotelsCategoryId,
+      cityId: yerevanCityId,
+      description: 'A P2.2D pricing fixture.',
+    });
+    await publishListing(listingId); // its one auto-created unit has no base price
+    await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        pricing: { modelCode: 'PER_NIGHT', amount: 18000, currencyCode: 'AMD' },
+      });
+
+    const res = await request(app).get(
+      `/api/v1/search/listings?keyword=Listing+Pricing+Fallback+Fixture`,
+    );
+    expect(res.status).toBe(200);
+    const row = res.body.data.find((r) => r.id === listingId);
+    expect(row).toEqual(
+      expect.objectContaining({
+        price_amount: '18000.00',
+        price_currency_code: 'AMD',
+      }),
+    );
+  });
+
+  // The bug this guards against: naively taking MIN(amount) across units
+  // priced in different currencies would compare raw numbers that mean
+  // nothing next to each other (e.g. "30000 AMD" vs "80 USD" — 80 is
+  // numerically smaller but is actually the far more expensive room).
+  test('mixed-currency unit pricing never produces a fabricated cross-currency minimum', async () => {
+    const listingId = await createListing({
+      title: `Mixed Currency Fixture ${Date.now()}`,
+      listingType: 'HOTEL',
+      categoryId: hotelsCategoryId,
+      cityId: yerevanCityId,
+      description: 'A P2.2D pricing fixture.',
+    });
+    await publishListing(listingId);
+    await registerUnit(listingId, {
+      unitLabel: 'AMD Room',
+      basePriceAmount: 30000,
+      basePriceCurrency: 'AMD',
+    });
+    await registerUnit(listingId, {
+      unitLabel: 'USD Room',
+      basePriceAmount: 80,
+      basePriceCurrency: 'USD',
+    });
+
+    const res = await request(app).get(
+      `/api/v1/search/listings?keyword=Mixed+Currency+Fixture`,
+    );
+    expect(res.status).toBe(200);
+    const row = res.body.data.find((r) => r.id === listingId);
+    expect(row.price_amount).toBeNull();
+    expect(row.price_currency_code).toBeNull();
   });
 });
 

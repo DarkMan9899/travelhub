@@ -43,16 +43,20 @@ function previousDateString(dateStr) {
 
 /**
  * Turns `dateFrom`/`dateTo`/`guests` into the shape the Repository's query
- * builder needs to filter on real Inventory Engine availability — never
- * category-specific (Hotel/Tour/Activity/Car/Guide all reuse this).
- *
- * `dateFrom === dateTo` is a single-day request (Tour departure/Activity
- * slot/Car pickup-day/Guide booking): checked as that one inclusive day.
- * `dateFrom < dateTo` is a "stay" request (Hotel/Apartment): checked as
- * checkout-exclusive nights `[dateFrom, dateTo)`, mirroring
- * `resolveConsumedRange`'s accommodation semantics. Computing `lastNight`
- * here (not naively always `dateTo - 1`) is what keeps a single-day search
- * from collapsing into an empty, vacuously-passing date range.
+ * builder needs to filter on real Inventory Engine availability — the
+ * Repository itself (not this function) now decides, per candidate unit's
+ * own `bookable_unit_types.code`, whether that unit's consumed range is
+ * checkout-exclusive (`HOTEL_ROOM`/`PROPERTY_UNIT`, via
+ * `accommodationDateSemantics.js`) or inclusive-both-ends (every other
+ * type) — see `mysqlSearchRepository.js`'s availability EXISTS block for
+ * the actual per-type branching. This function only ever computes the two
+ * candidate end-dates a unit might need: `availabilityDateTo` (the raw
+ * requested end date, used as-is for inclusive-duration types and as the
+ * date-series' own upper bound) and `availabilityLastNight` (one day
+ * earlier, used for checkout-exclusive types — equal to `dateTo` itself
+ * when `dateFrom === dateTo`, so a genuine single-day request is never
+ * collapsed into an empty, vacuously-passing range for either kind of
+ * type).
  */
 function resolveAvailabilityFilter({ dateFrom, dateTo, guests }) {
   if (!dateFrom || !dateTo) {
@@ -61,8 +65,9 @@ function resolveAvailabilityFilter({ dateFrom, dateTo, guests }) {
   const lastNight = dateFrom === dateTo ? dateTo : previousDateString(dateTo);
   return {
     availabilityDateFrom: dateFrom,
+    availabilityDateTo: dateTo,
     availabilityLastNight: lastNight,
-    availabilityQuantity: guests ? Number(guests) : 1,
+    availabilityGuests: guests ? Number(guests) : 1,
   };
 }
 

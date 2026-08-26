@@ -34,18 +34,24 @@ let partnerId;
 let languageId;
 let hotelsCategoryId;
 let toursCategoryId;
+let carsCategoryId;
 let yerevanCityId;
 
 let listingRoomy; // HOTEL_ROOM, capacity 3, no blocks — available
 let listingSoldOut; // HOTEL_ROOM, capacity 1, fully blocked for the search range
 let listingBlackout; // HOTEL_ROOM, capacity 3, listing-level blackout over the search range
 let listingTour; // TOUR_DEPARTURE, capacity 2 — single-day, non-accommodation
+let listingSingleOccupancy; // HOTEL_ROOM, capacity 4, max_guests 1 — P2.2D occupancy fix
+let listingCar; // VEHICLE (CAR_RENTAL), capacity 1 — P2.2D inclusive-final-day fix
 let blackoutId;
 let soldOutUnitId;
+let carUnitId;
 
 const STAY_FROM = '2026-09-10';
 const STAY_TO = '2026-09-12'; // checkout-exclusive: consumed nights are 09-10, 09-11
 const TOUR_DAY = '2026-09-15';
+const CAR_FROM = '2026-09-20';
+const CAR_TO = '2026-09-22'; // VEHICLE keeps inclusive-both-ends: the rental spans 09-20, 09-21, AND 09-22
 
 async function login(email, password) {
   const res = await request(app)
@@ -73,7 +79,10 @@ async function createListing({ title, listingType, categoryId, cityId }) {
   return res.body.data.id;
 }
 
-async function publishListing(listingId, { bookableUnitType, capacity }) {
+async function publishListing(
+  listingId,
+  { bookableUnitType, capacity, maxGuests, unitLabel },
+) {
   await request(app)
     .patch(`/api/v1/listings/${listingId}`)
     .set('Authorization', `Bearer ${vendor.accessToken}`)
@@ -93,7 +102,13 @@ async function publishListing(listingId, { bookableUnitType, capacity }) {
   const unitRes = await request(app)
     .post('/api/v1/availability/units')
     .set('Authorization', `Bearer ${vendor.accessToken}`)
-    .send({ listingId, bookableUnitType, capacity });
+    .send({
+      listingId,
+      bookableUnitType,
+      capacity,
+      ...(maxGuests !== undefined ? { maxGuests } : {}),
+      ...(unitLabel !== undefined ? { unitLabel } : {}),
+    });
   await request(app)
     .post(`/api/v1/listings/${listingId}/publish`)
     .set('Authorization', `Bearer ${vendor.accessToken}`);
@@ -127,6 +142,10 @@ beforeAll(async () => {
     "SELECT id FROM listing_categories WHERE slug = 'tours'",
   );
   toursCategoryId = toursCategory.id;
+  const [[carsCategory]] = await pool.query(
+    "SELECT id FROM listing_categories WHERE slug = 'car-rentals'",
+  );
+  carsCategoryId = carsCategory.id;
   const [[yerevan]] = await pool.query(
     "SELECT id FROM cities WHERE slug = 'yerevan'",
   );
@@ -156,6 +175,18 @@ beforeAll(async () => {
     categoryId: toursCategoryId,
     cityId: yerevanCityId,
   });
+  listingSingleOccupancy = await createListing({
+    title: 'Availability Single Occupancy Rooms',
+    listingType: 'HOTEL',
+    categoryId: hotelsCategoryId,
+    cityId: yerevanCityId,
+  });
+  listingCar = await createListing({
+    title: 'Availability Sedan Rental',
+    listingType: 'CAR_RENTAL',
+    categoryId: carsCategoryId,
+    cityId: yerevanCityId,
+  });
 
   await publishListing(listingRoomy, {
     bookableUnitType: 'HOTEL_ROOM',
@@ -172,6 +203,17 @@ beforeAll(async () => {
   await publishListing(listingTour, {
     bookableUnitType: 'TOUR_DEPARTURE',
     capacity: 2,
+  });
+  // P2.2D: 4 identical rooms (plenty of inventory), each sleeping only 1
+  // guest — the exact shape the audited bug missed (capacity != max_guests).
+  await publishListing(listingSingleOccupancy, {
+    bookableUnitType: 'HOTEL_ROOM',
+    capacity: 4,
+    maxGuests: 1,
+  });
+  carUnitId = await publishListing(listingCar, {
+    bookableUnitType: 'VEHICLE',
+    capacity: 1,
   });
 
   // Fully consume the sold-out hotel's only unit for the search's stay
@@ -193,6 +235,21 @@ beforeAll(async () => {
     .set('Authorization', `Bearer ${vendor.accessToken}`)
     .send({ listingId: listingBlackout, dateFrom: STAY_FROM, dateTo: STAY_TO });
   blackoutId = blackoutRes.body.data.id;
+
+  // P2.2D: blocks ONLY the car rental's final day (`CAR_TO` itself, the
+  // day VEHICLE's inclusive-both-ends semantics still counts as rented).
+  // Under the pre-fix uniform checkout-exclusive collapse, this day would
+  // never have been checked at all for a non-accommodation type.
+  await request(app)
+    .post('/api/v1/availability/blocks')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({
+      unitId: carUnitId,
+      dateFrom: CAR_TO,
+      dateTo: CAR_TO,
+      quantity: 1,
+      reasonCode: 'MAINTENANCE',
+    });
 }, 60_000);
 
 afterAll(async () => {
@@ -249,6 +306,74 @@ describe('GET /search — availability filtering (Inventory Engine)', () => {
     );
     expect(overCapacity.status).toBe(200);
     expect(overCapacity.body.data.map((r) => r.id)).not.toContain(listingTour);
+  });
+
+  // P2.2D fix: previously `guests` was compared against room INVENTORY
+  // quantity (`capacity`), never against `max_guests` (real per-room
+  // occupancy) — a listing with plenty of single-occupancy rooms wrongly
+  // satisfied a large party search. `listingSingleOccupancy` has 4 rooms
+  // (`capacity=4`, plenty of inventory) but each sleeps only 1 guest
+  // (`max_guests=1`).
+  test("guests is checked against a room type's real max_guests, not raw room inventory (P2.2D)", async () => {
+    const fitsOneGuest = await request(app).get(
+      `/api/v1/search?keyword=Availability&dateFrom=${STAY_FROM}&dateTo=${STAY_TO}&guests=1`,
+    );
+    expect(fitsOneGuest.status).toBe(200);
+    expect(fitsOneGuest.body.data.map((r) => r.id)).toContain(
+      listingSingleOccupancy,
+    );
+
+    // Pre-fix, this would have wrongly passed: capacity=4 >= 3, even
+    // though no single room can actually sleep 3 people.
+    const tooManyGuests = await request(app).get(
+      `/api/v1/search?keyword=Availability&dateFrom=${STAY_FROM}&dateTo=${STAY_TO}&guests=3`,
+    );
+    expect(tooManyGuests.status).toBe(200);
+    expect(tooManyGuests.body.data.map((r) => r.id)).not.toContain(
+      listingSingleOccupancy,
+    );
+  });
+
+  // A unit with no `max_guests` set (the common case for every fixture
+  // predating P2.2A, and for any non-accommodation type) must never be
+  // vetoed on occupancy — mirrors `bookingService.js#resolveItem`'s own
+  // NULL-safety for the identical check at booking time.
+  test('a unit with no max_guests set is never vetoed on occupancy, regardless of guest count (P2.2D)', async () => {
+    const res = await request(app).get(
+      `/api/v1/search?keyword=Availability&dateFrom=${STAY_FROM}&dateTo=${STAY_TO}&guests=10`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((r) => r.id)).toContain(listingRoomy);
+  });
+
+  // P2.2D fix: search previously collapsed every multi-day request to
+  // checkout-exclusive nights regardless of type, so a CAR_RENTAL's own
+  // inclusive-both-ends final day was never actually checked. Blocking
+  // exactly `CAR_TO` (the rental's last, still-occupied day) must now
+  // exclude the listing; a HOTEL blocked only on its own checkout day
+  // (never occupied) must NOT be excluded by the same mechanism.
+  test('a multi-day CAR_RENTAL search checks the inclusive final day, unlike a HOTEL checkout day (P2.2D)', async () => {
+    const carRes = await request(app).get(
+      `/api/v1/search?keyword=Availability&dateFrom=${CAR_FROM}&dateTo=${CAR_TO}&guests=1`,
+    );
+    expect(carRes.status).toBe(200);
+    expect(carRes.body.data.map((r) => r.id)).not.toContain(listingCar);
+
+    // Sanity check the same fixture is bookable for a range that never
+    // touches its one blocked day — proves the exclusion above is really
+    // about the final-day check, not the vehicle being permanently gone.
+    const clearRangeRes = await request(app).get(
+      `/api/v1/search?keyword=Availability&dateFrom=${CAR_FROM}&dateTo=2026-09-21&guests=1`,
+    );
+    expect(clearRangeRes.status).toBe(200);
+    expect(clearRangeRes.body.data.map((r) => r.id)).toContain(listingCar);
+
+    // The existing HOTEL stay-range assertions above (`STAY_FROM`/
+    // `STAY_TO`) already prove the symmetric case: `listingRoomy` stays
+    // included for that exact range with no block on it at all, and
+    // `listingSoldOut`/`listingBlackout`'s own blocks are scoped to the
+    // consumed nights, never to their own checkout day — checkout-
+    // exclusivity for accommodation is unchanged by this fix.
   });
 
   test('without dateFrom/dateTo, availability is not filtered at all (every fixture listing appears)', async () => {

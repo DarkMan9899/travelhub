@@ -31,6 +31,22 @@ import {
   decodeCursor,
   buildPageMeta,
 } from '../../../infrastructure/database/pagination.js';
+import { ACCOMMODATION_BOOKABLE_UNIT_TYPES } from '../../../core/domain/accommodationDateSemantics.js';
+
+/** `IN (?, ?)`-shaped placeholder list matching `ACCOMMODATION_BOOKABLE_UNIT_TYPES`'s length — reused everywhere the query needs to branch by accommodation-vs-not without a second, independent type list. */
+const ACCOMMODATION_TYPE_PLACEHOLDERS = ACCOMMODATION_BOOKABLE_UNIT_TYPES.map(
+  () => '?',
+).join(', ');
+
+/**
+ * P2.2D: search has no "how many rooms" input yet (unlike booking-time,
+ * which takes a real `quantity` from the rooms a customer actually
+ * held) — the smallest correct interpretation is quantity=1: does at
+ * least one available unit of a type exist, and can that one unit's own
+ * `max_guests` hold the requested party. Never conflated with occupancy
+ * — see the availability EXISTS block below.
+ */
+const SEARCH_REQUESTED_QUANTITY = 1;
 
 /**
  * A `created_at`-sorted cursor's `sortValue` is a `DATETIME(3)` column,
@@ -220,8 +236,9 @@ export function buildSearchListingsQuery(
     amenityIds,
     attributeFilters,
     availabilityDateFrom,
+    availabilityDateTo,
     availabilityLastNight,
-    availabilityQuantity,
+    availabilityGuests,
   } = filters;
 
   const innerConditions = [scopeActive('l')];
@@ -295,39 +312,98 @@ export function buildSearchListingsQuery(
   }
 
   // Real Inventory Engine availability filtering (Phase 17 §Search
-  // integration) — shared across every `bookable_unit_types` code, no
-  // category branching. `availability_search_dates` is a recursive
-  // date-series CTE bound as the FIRST two params in the final `params`
-  // array (see below), since its `WITH RECURSIVE` text is prepended
-  // before everything else in the assembled SQL string.
+  // integration; P2.2D fix) — shared across every `bookable_unit_types`
+  // code, no category branching in WHICH units are considered, but two
+  // real per-unit-type distinctions apply, both reusing
+  // `accommodationDateSemantics.js`'s single canonical type list rather
+  // than a second, independent one:
+  //
+  // 1. Checkout-exclusive vs. inclusive date range. `availability_search_
+  //    dates` always spans the FULL requested `[dateFrom, dateTo]`
+  //    (bound as the first two params, since its `WITH RECURSIVE` text is
+  //    prepended before everything else) — the per-unit check below then
+  //    caps which dates actually apply to THAT unit via
+  //    `IF(but.code IN (accommodation types), lastNight, dateTo)`,
+  //    matching `resolveConsumedRange`'s own `HOTEL_ROOM`/`PROPERTY_UNIT`
+  //    (checkout-exclusive) vs. `RESTAURANT_TABLE`/`TOUR_DEPARTURE`/
+  //    `VEHICLE` (inclusive-both-ends) split exactly — previously this
+  //    was collapsed by date-shape alone (any multi-day request became
+  //    checkout-exclusive for every type), silently under-checking a
+  //    non-accommodation booking's final inclusive day.
+  //
+  // 2. Occupancy vs. inventory quantity, never conflated. `bu.capacity`/
+  //    `ac.quantity_available` answer "is at least one unit of this type
+  //    free" — for accommodation types that's compared against a fixed
+  //    `SEARCH_REQUESTED_QUANTITY` (1; search has no "how many rooms"
+  //    input yet, unlike booking-time's real held-room count), never
+  //    against the guest count. `bu.max_guests` separately answers "can
+  //    ONE such unit hold this party" — mirrors `bookingService.js
+  //    #resolveItem`'s proven `guestCount > maxGuests * quantity` check
+  //    exactly (quantity=1 here), including its NULL-safety (a unit with
+  //    no `max_guests` set is never vetoed on occupancy, same as
+  //    booking-time). For non-accommodation types, `capacity` keeps its
+  //    pre-existing meaning of a direct occupancy ceiling (e.g. a Tour
+  //    departure's total seats) compared straight against the requested
+  //    party size — proven by `searchAvailability.test.js`'s existing
+  //    TOUR_DEPARTURE case — so the quantity/guest bound is itself
+  //    type-gated the same way.
   const hasAvailabilityFilter = Boolean(
-    availabilityDateFrom && availabilityLastNight,
+    availabilityDateFrom && availabilityDateTo,
   );
   if (hasAvailabilityFilter) {
+    // One unit must satisfy EVERY condition together (occupancy, every
+    // consumed date's capacity/status, and the listing-level blackout
+    // veto) — all four live inside this single EXISTS over `bu`, never
+    // split across independent EXISTS blocks that could each be
+    // satisfied by a different, unrelated unit.
     innerConditions.push(`
       EXISTS (
         SELECT 1 FROM bookable_units bu
+        JOIN bookable_unit_types but ON but.id = bu.bookable_unit_type_id
         WHERE bu.listing_id = l.id AND bu.deleted_at IS NULL
+        AND (
+          but.code NOT IN (${ACCOMMODATION_TYPE_PLACEHOLDERS})
+          OR bu.max_guests IS NULL
+          OR bu.max_guests >= ?
+        )
         AND NOT EXISTS (
           SELECT 1 FROM availability_search_dates sd
           LEFT JOIN availability_calendar ac ON ac.bookable_unit_id = bu.id AND ac.date = sd.d
           LEFT JOIN availability_statuses ast ON ast.id = ac.status_id
-          WHERE COALESCE(ast.code, 'AVAILABLE') = 'BLOCKED'
-             OR COALESCE(ac.quantity_available, bu.capacity) < ?
+          WHERE sd.d <= IF(but.code IN (${ACCOMMODATION_TYPE_PLACEHOLDERS}), ?, ?)
+            AND (
+              COALESCE(ast.code, 'AVAILABLE') = 'BLOCKED'
+              OR COALESCE(ac.quantity_available, bu.capacity)
+                 < IF(but.code IN (${ACCOMMODATION_TYPE_PLACEHOLDERS}), ?, ?)
+            )
+        )
+        -- Mirrors MySqlBlackoutRepository's established
+        -- bookable_unit_id IS NULL (listing-level veto) convention
+        -- exactly; the same per-unit-type date bound as above so an
+        -- accommodation unit's checkout morning is never wrongly
+        -- vetoed by a blackout that starts fresh that same day.
+        AND NOT EXISTS (
+          SELECT 1 FROM blackout_dates bd
+          WHERE bd.listing_id = l.id AND bd.bookable_unit_id IS NULL
+            AND bd.date_from <= IF(but.code IN (${ACCOMMODATION_TYPE_PLACEHOLDERS}), ?, ?)
+            AND bd.date_to >= ?
         )
       )
     `);
-    innerParams.push(availabilityQuantity);
-    // Mirrors `MySqlBlackoutRepository`'s established
-    // `bookable_unit_id IS NULL` (listing-level veto) convention exactly.
-    innerConditions.push(`
-      NOT EXISTS (
-        SELECT 1 FROM blackout_dates bd
-        WHERE bd.listing_id = l.id AND bd.bookable_unit_id IS NULL
-          AND bd.date_from <= ? AND bd.date_to >= ?
-      )
-    `);
-    innerParams.push(availabilityLastNight, availabilityDateFrom);
+    innerParams.push(
+      ...ACCOMMODATION_BOOKABLE_UNIT_TYPES,
+      availabilityGuests,
+      ...ACCOMMODATION_BOOKABLE_UNIT_TYPES,
+      availabilityLastNight,
+      availabilityDateTo,
+      ...ACCOMMODATION_BOOKABLE_UNIT_TYPES,
+      SEARCH_REQUESTED_QUANTITY,
+      availabilityGuests,
+      ...ACCOMMODATION_BOOKABLE_UNIT_TYPES,
+      availabilityLastNight,
+      availabilityDateTo,
+      availabilityDateFrom,
+    );
   }
 
   const hasKeyword = Boolean(keyword);
@@ -348,11 +424,15 @@ export function buildSearchListingsQuery(
   // second copy of `keyword`, for the WHERE's `matchExpression > 0`).
   const selectKeywordParam = hasKeyword ? [keyword] : [];
 
-  // The recursive CTE's own two params (`dateFrom`, `lastNight`) bind
+  // The recursive CTE's own two params (`dateFrom`, `dateTo`) bind
   // before every other placeholder in the query, since its `WITH
-  // RECURSIVE` text is physically the first thing in `innerSql`.
+  // RECURSIVE` text is physically the first thing in `innerSql`. Always
+  // the FULL requested range (never pre-collapsed to `lastNight`) since
+  // the per-unit-type checkout-exclusive/inclusive split now happens
+  // inside the per-unit EXISTS above, not at the date-series level —
+  // a non-accommodation unit needs `dateTo` itself in the series too.
   const availabilityCteParams = hasAvailabilityFilter
-    ? [availabilityDateFrom, availabilityLastNight]
+    ? [availabilityDateFrom, availabilityDateTo]
     : [];
   const availabilityCtePrefix = hasAvailabilityFilter
     ? `
@@ -375,7 +455,42 @@ export function buildSearchListingsQuery(
       COALESCE(lt.summary, lt2.summary) AS summary,
       loc.city_id, c.name AS city_name, r.country_id,
       m.url AS cover_image_url,
-      lp.amount AS price_amount, cur.code AS price_currency_code,
+      -- P2.2D: a "from" price -- the cheapest real per-unit base price
+      -- (P2.2A) when the listing's priced units all share one currency,
+      -- falling back to the legacy listing-level listing_pricing row
+      -- when no unit pricing exists. Deliberately does NOT fall back to
+      -- a cross-currency numeric MIN when a listing's units are priced
+      -- in more than one currency (never comparable as raw numbers) --
+      -- the HAVING guard makes both subqueries return NULL together in
+      -- that case, falling through to listing_pricing untouched. Both
+      -- subqueries share the identical WHERE/HAVING scope, so amount and
+      -- currency always come from the same set of rows, never mixed.
+      COALESCE(
+        (SELECT MIN(bu_price.base_price_amount)
+           FROM bookable_units bu_price
+           WHERE bu_price.listing_id = l.id AND bu_price.deleted_at IS NULL
+             AND bu_price.base_price_amount IS NOT NULL
+           HAVING COUNT(DISTINCT bu_price.base_price_currency_id) = 1
+        ),
+        lp.amount
+      ) AS price_amount,
+      COALESCE(
+        -- MAX(), not GROUP BY: a GROUP BY on code would let the HAVING
+        -- guard pass once per distinct currency instead of once for the
+        -- whole listing (each single-currency group trivially satisfies
+        -- "1 distinct currency" on its own), which is exactly backwards
+        -- and can return more than one row. Aggregating over the whole
+        -- unfiltered set means MAX() only ever sees the single shared
+        -- code once HAVING has already confirmed there's just one.
+        (SELECT MAX(cur_price.code)
+           FROM bookable_units bu_price
+           JOIN currencies cur_price ON cur_price.id = bu_price.base_price_currency_id
+           WHERE bu_price.listing_id = l.id AND bu_price.deleted_at IS NULL
+             AND bu_price.base_price_amount IS NOT NULL
+           HAVING COUNT(DISTINCT bu_price.base_price_currency_id) = 1
+        ),
+        cur.code
+      ) AS price_currency_code,
       (SELECT COUNT(*) FROM media gm
          WHERE gm.mediable_type = 'listing' AND gm.mediable_id = l.id AND gm.deleted_at IS NULL
       ) AS media_count,

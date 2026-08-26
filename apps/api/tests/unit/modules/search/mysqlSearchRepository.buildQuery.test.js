@@ -10,12 +10,16 @@
 import { describe, test, expect } from '@jest/globals';
 import { buildSearchListingsQuery } from '../../../../src/modules/search/repositories/mysqlSearchRepository.js';
 import { resolveSortOption } from '../../../../src/core/domain/sortOptions.js';
+import { ACCOMMODATION_BOOKABLE_UNIT_TYPES } from '../../../../src/core/domain/accommodationDateSemantics.js';
 
 function countPlaceholders(sql) {
   return (sql.match(/\?/g) ?? []).length;
 }
 
 const baseFilters = { localeId: 1, defaultLocaleId: 1 };
+
+/** `ACCOMMODATION_BOOKABLE_UNIT_TYPES` bound once per `IN (...)` occurrence in the availability EXISTS block — see `mysqlSearchRepository.js`'s own comment on why this repeats rather than being reused. */
+const TYPES = ACCOMMODATION_BOOKABLE_UNIT_TYPES;
 
 describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
   test('no filters, no keyword: placeholder count matches params length', () => {
@@ -163,37 +167,74 @@ describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
       {
         ...baseFilters,
         availabilityDateFrom: '2026-09-10',
+        availabilityDateTo: '2026-09-10',
         availabilityLastNight: '2026-09-10',
-        availabilityQuantity: 2,
+        availabilityGuests: 2,
       },
       resolveSortOption('newest'),
     );
     expect(sql).toContain('WITH RECURSIVE availability_search_dates');
     expect(sql).toContain('bookable_units');
+    expect(sql).toContain('bookable_unit_types');
     expect(sql).toContain('blackout_dates');
     expect(countPlaceholders(sql)).toBe(params.length);
-    // CTE's (dateFrom, lastNight) bind first, then localeId/defaultLocaleId,
-    // then the capacity EXISTS's quantity, then the blackout NOT EXISTS's
-    // (lastNight, dateFrom), then LIMIT.
+    // CTE's (dateFrom, dateTo) bind first, then localeId/defaultLocaleId,
+    // then the single EXISTS-over-bu block's four placeholder groups in
+    // physical order: max_guests's IN(...) + bound, the date IF's IN(...)
+    // + (lastNight, dateTo), the quantity IF's IN(...) + (requestedQty,
+    // guests), the blackout IF's IN(...) + (lastNight, dateTo), then the
+    // blackout's own dateFrom bound, then LIMIT.
     expect(params).toEqual([
       '2026-09-10',
       '2026-09-10',
       1,
       1,
+      ...TYPES,
       2,
+      ...TYPES,
+      '2026-09-10',
+      '2026-09-10',
+      ...TYPES,
+      1,
+      2,
+      ...TYPES,
+      '2026-09-10',
       '2026-09-10',
       '2026-09-10',
       21,
     ]);
   });
 
-  test('availability filter (multi-night stay request) uses distinct dateFrom/lastNight', () => {
+  test('availability filter joins bookable_unit_types and gates both the date and quantity bounds by accommodation type (P2.2D)', () => {
+    const { sql } = buildSearchListingsQuery(
+      {
+        ...baseFilters,
+        availabilityDateFrom: '2026-09-10',
+        availabilityDateTo: '2026-09-12',
+        availabilityLastNight: '2026-09-11',
+        availabilityGuests: 2,
+      },
+      resolveSortOption('newest'),
+    );
+    const typePlaceholders = TYPES.map(() => '?').join(', ');
+    expect(sql).toContain(
+      'JOIN bookable_unit_types but ON but.id = bu.bookable_unit_type_id',
+    );
+    expect(sql).toContain('bu.max_guests IS NULL');
+    expect(sql).toContain(
+      `sd.d <= IF(but.code IN (${typePlaceholders}), ?, ?)`,
+    );
+    expect(sql).toContain(`< IF(but.code IN (${typePlaceholders}), ?, ?)`);
+  });
+
+  test('availability filter (multi-night stay request) uses distinct dateFrom/lastNight for the checkout-exclusive branch', () => {
     const { sql, params } = buildSearchListingsQuery(
       {
         ...baseFilters,
         availabilityDateFrom: '2026-09-10',
-        availabilityLastNight: '2026-09-12',
-        availabilityQuantity: 1,
+        availabilityDateTo: '2026-09-12',
+        availabilityLastNight: '2026-09-11',
+        availabilityGuests: 1,
       },
       resolveSortOption('newest'),
     );
@@ -203,20 +244,35 @@ describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
       '2026-09-12',
       1,
       1,
+      ...TYPES,
       1,
+      ...TYPES,
+      '2026-09-11',
+      '2026-09-12',
+      ...TYPES,
+      1,
+      1,
+      ...TYPES,
+      '2026-09-11',
       '2026-09-12',
       '2026-09-10',
       21,
     ]);
   });
 
-  test('no availability filter when dates are absent: no CTE emitted', () => {
+  test('no availability filter when dates are absent: no CTE/date-aware EXISTS emitted', () => {
     const { sql, params } = buildSearchListingsQuery(
       baseFilters,
       resolveSortOption('newest'),
     );
     expect(sql).not.toContain('WITH RECURSIVE');
-    expect(sql).not.toContain('bookable_units');
+    expect(sql).not.toContain('bookable_unit_types');
+    expect(sql).not.toContain('blackout_dates');
+    // The P2.2D "from" price aggregation always references
+    // `bookable_units` (unconditionally, unlike the availability filter),
+    // so this file's presence check moved from the table name itself to
+    // the availability-specific `bookable_unit_types` join alias above.
+    expect(sql).toContain('bookable_units');
     expect(countPlaceholders(sql)).toBe(params.length);
   });
 
@@ -234,8 +290,9 @@ describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
           { attributeDefinitionId: 5, dataTypeCode: 'ENUM', optionIds: [16] },
         ],
         availabilityDateFrom: '2026-09-10',
-        availabilityLastNight: '2026-09-12',
-        availabilityQuantity: 2,
+        availabilityDateTo: '2026-09-12',
+        availabilityLastNight: '2026-09-11',
+        availabilityGuests: 2,
       },
       resolveSortOption('relevance', { hasKeyword: true }),
       { cursor, limit: 10 },
