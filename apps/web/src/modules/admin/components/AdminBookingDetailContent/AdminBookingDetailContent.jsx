@@ -44,6 +44,7 @@ import { useAdminCancelBookingMutation } from '../../mutations/useAdminCancelBoo
 import { useAdminCompleteBookingMutation } from '../../mutations/useAdminCompleteBookingMutation.js';
 import { useAdminMarkNoShowMutation } from '../../mutations/useAdminMarkNoShowMutation.js';
 import { BookingStatusBadge } from '../../../bookings/index.js';
+import { BookingPaymentSection } from '../../../payments/index.js';
 
 export default function AdminBookingDetailContent() {
   const { t, i18n } = useTranslation();
@@ -269,6 +270,11 @@ export default function AdminBookingDetailContent() {
             <Stack gap="3">
               {booking.items.map((item) => (
                 <div key={item.id}>
+                  {item.unit_label && (
+                    <p>
+                      {t('bookings.detail.roomType')}: {item.unit_label}
+                    </p>
+                  )}
                   <p>
                     {t('bookings.detail.dates')}:{' '}
                     {dateFormatter.format(new Date(item.date_from))} –{' '}
@@ -299,6 +305,8 @@ export default function AdminBookingDetailContent() {
             </Stack>
           </Stack>
         </Card>
+
+        <BookingPaymentSection booking={booking} readOnly />
 
         {booking.customer_notes && (
           <Card as="div" padding="lg">

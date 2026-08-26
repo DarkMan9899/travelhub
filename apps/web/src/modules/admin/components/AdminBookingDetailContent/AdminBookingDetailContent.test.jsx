@@ -36,6 +36,15 @@ vi.mock('../../mutations/useAdminCompleteBookingMutation.js', () => ({
 vi.mock('../../mutations/useAdminMarkNoShowMutation.js', () => ({
   useAdminMarkNoShowMutation: vi.fn(),
 }));
+/* eslint-disable react/prop-types -- test-only mock stub, not a real component */
+vi.mock('../../../payments/index.js', () => ({
+  BookingPaymentSection: ({ booking, readOnly }) => (
+    <div data-testid="booking-payment-section">
+      {booking.id}:{String(readOnly)}
+    </div>
+  ),
+}));
+/* eslint-enable react/prop-types */
 
 const BASE_BOOKING = {
   id: 7,
@@ -206,6 +215,51 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
     expect(screen.getByRole('link', { name: 'Գործընկեր #3' })).toHaveAttribute(
       'href',
       '/hy/admin/partners/3',
+    );
+  });
+
+  test('shows the booked room/unit label when an item carries one (P2.2C)', () => {
+    useAdminBookingDetailQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        items: [{ ...BASE_BOOKING.items[0], unit_label: 'Deluxe Suite' }],
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByText(/Deluxe Suite/)).toBeInTheDocument();
+  });
+
+  // Non-accommodation compatibility (P2.2C): a TOUR/CAR_RENTAL item never
+  // carries a unit_label — the room-type line must not render at all.
+  test('renders no room/unit line for a non-accommodation item with no unit_label (P2.2C)', () => {
+    useAdminBookingDetailQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.queryByText(/Սենյակի\/միավորի տեսակ/),
+    ).not.toBeInTheDocument();
+  });
+
+  test('renders the booking payment section (P2.2C)', () => {
+    useAdminBookingDetailQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByTestId('booking-payment-section')).toHaveTextContent(
+      '7:true',
     );
   });
 

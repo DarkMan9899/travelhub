@@ -10,6 +10,8 @@ import {
   useConfirmBookingMutation,
   useRejectBookingMutation,
   useCancelBookingMutation,
+  useCompleteBookingMutation,
+  useMarkNoShowMutation,
 } from '../../../bookings/index.js';
 import { useCreateConversationMutation } from '../../../messaging/index.js';
 
@@ -21,6 +23,8 @@ vi.mock('../../../bookings/index.js', async () => {
     useConfirmBookingMutation: vi.fn(),
     useRejectBookingMutation: vi.fn(),
     useCancelBookingMutation: vi.fn(),
+    useCompleteBookingMutation: vi.fn(),
+    useMarkNoShowMutation: vi.fn(),
   };
 });
 vi.mock('../../../messaging/index.js', () => ({
@@ -84,11 +88,15 @@ describe('PartnerBookingDetailContent (apps/web/src/modules/partner)', () => {
   let confirmMutateAsync;
   let rejectMutateAsync;
   let cancelMutateAsync;
+  let completeMutateAsync;
+  let noShowMutateAsync;
 
   beforeEach(() => {
     confirmMutateAsync = vi.fn().mockResolvedValue({});
     rejectMutateAsync = vi.fn().mockResolvedValue({});
     cancelMutateAsync = vi.fn().mockResolvedValue({});
+    completeMutateAsync = vi.fn().mockResolvedValue({});
+    noShowMutateAsync = vi.fn().mockResolvedValue({});
     useConfirmBookingMutation.mockReturnValue({
       mutateAsync: confirmMutateAsync,
       isPending: false,
@@ -99,6 +107,14 @@ describe('PartnerBookingDetailContent (apps/web/src/modules/partner)', () => {
     });
     useCancelBookingMutation.mockReturnValue({
       mutateAsync: cancelMutateAsync,
+      isPending: false,
+    });
+    useCompleteBookingMutation.mockReturnValue({
+      mutateAsync: completeMutateAsync,
+      isPending: false,
+    });
+    useMarkNoShowMutation.mockReturnValue({
+      mutateAsync: noShowMutateAsync,
       isPending: false,
     });
     useCreateConversationMutation.mockReturnValue({
@@ -127,7 +143,7 @@ describe('PartnerBookingDetailContent (apps/web/src/modules/partner)', () => {
     ).not.toBeInTheDocument();
   });
 
-  test('shows Cancel for CONFIRMED, hides Confirm/Reject', () => {
+  test('shows Cancel, Complete, and No-show for CONFIRMED, hides Confirm/Reject', () => {
     useBookingQuery.mockReturnValue({
       data: {
         ...BASE_BOOKING,
@@ -142,6 +158,12 @@ describe('PartnerBookingDetailContent (apps/web/src/modules/partner)', () => {
     renderPage();
     expect(
       screen.getByRole('button', { name: 'Չեղարկել ամրագրումը' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Նշել ավարտված' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Նշել չներկայացած' }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Հաստատել ամրագրումը' }),
@@ -169,6 +191,113 @@ describe('PartnerBookingDetailContent (apps/web/src/modules/partner)', () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Չեղարկել ամրագրումը' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Նշել ավարտված' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Նշել չներկայացած' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('hides Complete and No-show for PENDING_VENDOR', () => {
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.queryByRole('button', { name: 'Նշել ավարտված' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Նշել չներկայացած' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('completing calls the mutation and shows a success toast', async () => {
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        status: 'CONFIRMED',
+        confirmed_at: '2026-07-02T10:00:00.000Z',
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Նշել ավարտված' }));
+    await user.click(
+      screen.getByRole('button', { name: 'Այո, նշել ավարտված' }),
+    );
+    await waitFor(() => expect(completeMutateAsync).toHaveBeenCalledTimes(1));
+    expect(
+      await screen.findByText('Ամրագրումը նշվել է ավարտված։'),
+    ).toBeInTheDocument();
+  });
+
+  test('marking no-show requires confirmation, then calls the mutation and shows a success toast', async () => {
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        status: 'CONFIRMED',
+        confirmed_at: '2026-07-02T10:00:00.000Z',
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Նշել չներկայացած' }));
+    expect(noShowMutateAsync).not.toHaveBeenCalled();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Այո, նշել չներկայացած' }),
+    );
+    await waitFor(() => expect(noShowMutateAsync).toHaveBeenCalledTimes(1));
+    expect(
+      await screen.findByText('Ամրագրումը նշվել է որպես չներկայացած։'),
+    ).toBeInTheDocument();
+  });
+
+  test('shows the booked room/unit label when an item carries one (P2.2C)', () => {
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        items: [{ ...BASE_BOOKING.items[0], unit_label: 'Deluxe Suite' }],
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByText(/Deluxe Suite/)).toBeInTheDocument();
+  });
+
+  // Non-accommodation compatibility (P2.2C): a TOUR/CAR_RENTAL item never
+  // carries a unit_label (no bookable unit involved) — the room-type line
+  // must not render a stray label or a blank "Room / unit type:" row.
+  test('renders no room/unit line for a non-accommodation item with no unit_label (P2.2C)', () => {
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.queryByText(/Սենյակի\/միավորի տեսակ/),
     ).not.toBeInTheDocument();
   });
 

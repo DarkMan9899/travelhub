@@ -22,4 +22,8 @@ export { default as usePartnerBookingsQuery } from './queries/usePartnerBookings
 export { default as useConfirmBookingMutation } from './mutations/useConfirmBookingMutation.js';
 export { default as useRejectBookingMutation } from './mutations/useRejectBookingMutation.js';
 export { default as useCancelBookingMutation } from './mutations/useCancelBookingMutation.js';
+// P2.2C: Partner self-service Complete/No-show, reusing the same
+// already-authorized endpoints the admin surface calls.
+export { default as useCompleteBookingMutation } from './mutations/useCompleteBookingMutation.js';
+export { default as useMarkNoShowMutation } from './mutations/useMarkNoShowMutation.js';
 export { BOOKING_STATUS_KEYS } from './constants/bookingStatuses.js';

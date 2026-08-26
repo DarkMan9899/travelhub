@@ -45,6 +45,67 @@ describe('toBookingResponse', () => {
 
     expect(response.partner_owner_user_id).toBeNull();
   });
+
+  // P2.2C preflight: `toBookingItemResponse`'s `unit_label`/
+  // `bookable_unit_type` fields (P2.2B) had zero unit-level coverage —
+  // only proven indirectly through integration tests. Covering the pure
+  // mapping directly here, mirroring the two cases the frontend
+  // (Partner/Admin detail pages) actually branches on: present vs. null.
+  test('items carry unit_label/bookable_unit_type when the repository resolved a bookable unit', () => {
+    const response = toBookingResponse({
+      id: 1,
+      bookingReference: 'BK-20260101-ABCDEF23',
+      customerUserId: 2,
+      partnerId: 5,
+      listingId: 5,
+      bookingTypeCode: 'HOTEL_ROOM',
+      statusCode: 'CONFIRMED',
+      currencyCode: 'AMD',
+      totalAmount: '85000.00',
+      items: [
+        {
+          id: 10,
+          bookableUnitId: 3,
+          unitLabel: 'Deluxe Suite',
+          bookableUnitTypeCode: 'HOTEL_ROOM',
+          dateFrom: '2026-08-01',
+          dateTo: '2026-08-03',
+          quantity: 1,
+          unitPriceAmount: '85000.00',
+        },
+      ],
+    });
+
+    expect(response.items[0].unit_label).toBe('Deluxe Suite');
+    expect(response.items[0].bookable_unit_type).toBe('HOTEL_ROOM');
+  });
+
+  test('items expose null unit_label/bookable_unit_type for a non-accommodation booking (no bookable unit)', () => {
+    const response = toBookingResponse({
+      id: 2,
+      bookingReference: 'BK-20260101-TOURXYZ1',
+      customerUserId: 2,
+      partnerId: 5,
+      listingId: 6,
+      bookingTypeCode: 'TOUR',
+      statusCode: 'CONFIRMED',
+      currencyCode: 'AMD',
+      totalAmount: '30000.00',
+      items: [
+        {
+          id: 11,
+          bookableUnitId: null,
+          dateFrom: '2026-08-01',
+          dateTo: '2026-08-01',
+          quantity: 2,
+          unitPriceAmount: '15000.00',
+        },
+      ],
+    });
+
+    expect(response.items[0].unit_label).toBeNull();
+    expect(response.items[0].bookable_unit_type).toBeNull();
+  });
 });
 
 describe('toBookingSummaryResponse', () => {

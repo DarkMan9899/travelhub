@@ -28,6 +28,7 @@ let vendor;
 let customer;
 let admin;
 let otherCustomer;
+let otherVendor;
 let partnerId;
 let languageId;
 let bookingId;
@@ -50,6 +51,52 @@ async function registerCustomer() {
     lastName: 'Customer',
   });
   return { accessToken: res.body.data.access_token };
+}
+
+/**
+ * P2.2C preflight (SHOULD FIX): registers, applies, and gets a genuine
+ * SECOND, DISTINCT partner approved end-to-end (same flow
+ * `partnerOnboarding.test.js` proves) — the real ownership-boundary case
+ * the existing "unrelated customer" tests below don't cover. A plain
+ * customer has no `booking.confirm` at all; a rival partner OWNER does
+ * hold that permission (implicitly, for their own bookings), so this is
+ * the actual test of `#assertOwnerOrPermission`'s ownership predicate,
+ * not just of permission absence.
+ */
+async function registerAndApproveOtherPartner() {
+  const email = `other-vendor-${Date.now()}-${Math.floor(Math.random() * 100000)}@example.com`;
+  const registerRes = await request(app).post('/api/v1/auth/register').send({
+    email,
+    password: 'OtherVendor!2024',
+    firstName: 'Other',
+    lastName: 'Vendor',
+  });
+  const accessToken = registerRes.body.data.access_token;
+
+  const createRes = await request(app)
+    .post('/api/v1/partners/applications')
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({ displayName: 'Cross-Partner RBAC Fixture' });
+  const otherPartnerId = createRes.body.data.id;
+
+  await request(app)
+    .patch(`/api/v1/partners/applications/${otherPartnerId}`)
+    .set('Authorization', `Bearer ${accessToken}`)
+    .send({
+      legalName: 'Cross-Partner RBAC Fixture LLC',
+      email: 'contact@crosspartnerfixture.example',
+      phone: '+37400000099',
+      description: 'RBAC fixture partner — never used for real bookings.',
+    });
+  await request(app)
+    .post(`/api/v1/partners/applications/${otherPartnerId}/submit`)
+    .set('Authorization', `Bearer ${accessToken}`);
+  await request(app)
+    .patch(`/api/v1/partners/admin/${otherPartnerId}/verification-status`)
+    .set('Authorization', `Bearer ${admin.accessToken}`)
+    .send({ status: 'APPROVED' });
+
+  return { accessToken, partnerId: otherPartnerId };
 }
 
 /**
@@ -136,6 +183,7 @@ beforeAll(async () => {
     DEV_CREDENTIALS.admin.password,
   );
   otherCustomer = await registerCustomer();
+  otherVendor = await registerAndApproveOtherPartner();
 
   const pool = getMysqlPool();
   const [[partnerRow]] = await pool.query(
@@ -223,9 +271,36 @@ describe('GET /bookings/:id — visibility', () => {
     expect(res.status).toBe(404);
   });
 
+  // P2.2C preflight (SHOULD FIX): a genuine second partner OWNER, not
+  // just an unrelated customer — closes the real coverage gap the
+  // preflight identified (structurally safe per code inspection, but
+  // never proven by an actual cross-partner-owner test case).
+  test('a genuinely distinct partner owner gets 404, not the booking (masked exactly like an unrelated customer)', async () => {
+    const res = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${otherVendor.accessToken}`);
+    expect(res.status).toBe(404);
+  });
+
   test('requires authentication', async () => {
     const res = await request(app).get(`/api/v1/bookings/${bookingId}`);
     expect(res.status).toBe(401);
+  });
+});
+
+describe('Cross-partner mutation RBAC (P2.2C preflight SHOULD FIX)', () => {
+  test("a distinct partner owner cannot confirm another partner's PENDING_VENDOR booking (403)", async () => {
+    const res = await request(app)
+      .post(`/api/v1/bookings/${bookingId}/confirm`)
+      .set('Authorization', `Bearer ${otherVendor.accessToken}`);
+    expect(res.status).toBe(403);
+
+    // Proves it's a real denial, not a silent no-op: the booking's own
+    // owner can still confirm it afterward.
+    const stillPending = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(stillPending.body.data.status).toBe('PENDING_VENDOR');
   });
 });
 

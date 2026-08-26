@@ -812,7 +812,21 @@
         "cancelConfirmAction": "Yes, cancel",
         "cancelConfirmDismiss": "Keep booking",
         "cancelSuccess": "Booking cancelled.",
-        "cancelError": "Something went wrong. Please try again."
+        "cancelError": "Something went wrong. Please try again.",
+        "completeAction": "Mark completed",
+        "completeConfirmTitle": "Mark this booking as completed?",
+        "completeConfirmDescription": "This confirms the trip took place as booked.",
+        "completeConfirmAction": "Yes, mark completed",
+        "completeConfirmDismiss": "Keep booking",
+        "completeSuccess": "Booking marked completed.",
+        "completeError": "Something went wrong. Please try again.",
+        "noShowAction": "Mark no-show",
+        "noShowConfirmTitle": "Mark this booking as a no-show?",
+        "noShowConfirmDescription": "This confirms the customer did not show up for the booking.",
+        "noShowConfirmAction": "Yes, mark no-show",
+        "noShowConfirmDismiss": "Keep booking",
+        "noShowSuccess": "Booking marked as no-show.",
+        "noShowError": "Something went wrong. Please try again."
       }
     },
     "calendar": {

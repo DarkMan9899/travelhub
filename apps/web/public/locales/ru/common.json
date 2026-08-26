@@ -812,7 +812,21 @@
         "cancelConfirmAction": "Да, отменить",
         "cancelConfirmDismiss": "Оставить бронирование",
         "cancelSuccess": "Бронирование отменено.",
-        "cancelError": "Что-то пошло не так. Попробуйте ещё раз."
+        "cancelError": "Что-то пошло не так. Попробуйте ещё раз.",
+        "completeAction": "Отметить завершённым",
+        "completeConfirmTitle": "Отметить это бронирование как завершённое?",
+        "completeConfirmDescription": "Это подтверждает, что поездка состоялась согласно бронированию.",
+        "completeConfirmAction": "Да, отметить завершённым",
+        "completeConfirmDismiss": "Оставить бронирование",
+        "completeSuccess": "Бронирование отмечено завершённым.",
+        "completeError": "Что-то пошло не так. Попробуйте ещё раз.",
+        "noShowAction": "Отметить неявку",
+        "noShowConfirmTitle": "Отметить это бронирование как неявку?",
+        "noShowConfirmDescription": "Это подтверждает, что клиент не явился на бронирование.",
+        "noShowConfirmAction": "Да, отметить неявку",
+        "noShowConfirmDismiss": "Оставить бронирование",
+        "noShowSuccess": "Бронирование отмечено как неявка.",
+        "noShowError": "Что-то пошло не так. Попробуйте ещё раз."
       }
     },
     "calendar": {

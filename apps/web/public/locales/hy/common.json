@@ -812,7 +812,21 @@
         "cancelConfirmAction": "Այո, չեղարկել",
         "cancelConfirmDismiss": "Պահպանել ամրագրումը",
         "cancelSuccess": "Ամրագրումը չեղարկվել է։",
-        "cancelError": "Ինչ-որ բան այն չէ։ Խնդրում ենք փորձել կրկին։"
+        "cancelError": "Ինչ-որ բան այն չէ։ Խնդրում ենք փորձել կրկին։",
+        "completeAction": "Նշել ավարտված",
+        "completeConfirmTitle": "Նշե՞լ այս ամրագրումն ավարտված։",
+        "completeConfirmDescription": "Սա հաստատում է, որ ուղևորությունը կայացել է ըստ ամրագրման։",
+        "completeConfirmAction": "Այո, նշել ավարտված",
+        "completeConfirmDismiss": "Պահպանել ամրագրումը",
+        "completeSuccess": "Ամրագրումը նշվել է ավարտված։",
+        "completeError": "Ինչ-որ բան այն չէ։ Խնդրում ենք փորձել կրկին։",
+        "noShowAction": "Նշել չներկայացած",
+        "noShowConfirmTitle": "Նշե՞լ այս ամրագրումը որպես չներկայացած։",
+        "noShowConfirmDescription": "Սա հաստատում է, որ հաճախորդը չի ներկայացել ամրագրման համար։",
+        "noShowConfirmAction": "Այո, նշել չներկայացած",
+        "noShowConfirmDismiss": "Պահպանել ամրագրումը",
+        "noShowSuccess": "Ամրագրումը նշվել է որպես չներկայացած։",
+        "noShowError": "Ինչ-որ բան այն չէ։ Խնդրում ենք փորձել կրկին։"
       }
     },
     "calendar": {

@@ -39,6 +39,8 @@ import {
   useConfirmBookingMutation,
   useRejectBookingMutation,
   useCancelBookingMutation,
+  useCompleteBookingMutation,
+  useMarkNoShowMutation,
   BookingStatusBadge,
 } from '../../../bookings/index.js';
 import { useCreateConversationMutation } from '../../../messaging/index.js';
@@ -71,6 +73,8 @@ export default function PartnerBookingDetailContent() {
   const confirmMutation = useConfirmBookingMutation(bookingId);
   const rejectMutation = useRejectBookingMutation(bookingId);
   const cancelMutation = useCancelBookingMutation(bookingId);
+  const completeMutation = useCompleteBookingMutation(bookingId);
+  const noShowMutation = useMarkNoShowMutation(bookingId);
   const createConversationMutation = useCreateConversationMutation();
 
   if (isPending) {
@@ -115,6 +119,7 @@ export default function PartnerBookingDetailContent() {
   });
   const canConfirmOrReject = booking.status === 'PENDING_VENDOR';
   const canCancel = CANCELLABLE_STATUSES.includes(booking.status);
+  const canCompleteOrNoShow = booking.status === 'CONFIRMED';
   const timeline = TIMELINE_FIELDS.filter(({ field }) => booking[field]);
 
   async function handleConfirm() {
@@ -172,6 +177,48 @@ export default function PartnerBookingDetailContent() {
     }
   }
 
+  async function handleComplete() {
+    const confirmed = await confirm({
+      title: t('partner.bookings.detail.completeConfirmTitle'),
+      description: t('partner.bookings.detail.completeConfirmDescription'),
+      confirmLabel: t('partner.bookings.detail.completeConfirmAction'),
+      cancelLabel: t('partner.bookings.detail.completeConfirmDismiss'),
+      variant: 'primary',
+    });
+    if (!confirmed) return;
+    try {
+      await completeMutation.mutateAsync();
+      showToast(t('partner.bookings.detail.completeSuccess'), {
+        variant: 'success',
+      });
+    } catch {
+      showToast(t('partner.bookings.detail.completeError'), {
+        variant: 'danger',
+      });
+    }
+  }
+
+  async function handleNoShow() {
+    const confirmed = await confirm({
+      title: t('partner.bookings.detail.noShowConfirmTitle'),
+      description: t('partner.bookings.detail.noShowConfirmDescription'),
+      confirmLabel: t('partner.bookings.detail.noShowConfirmAction'),
+      cancelLabel: t('partner.bookings.detail.noShowConfirmDismiss'),
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    try {
+      await noShowMutation.mutateAsync();
+      showToast(t('partner.bookings.detail.noShowSuccess'), {
+        variant: 'success',
+      });
+    } catch {
+      showToast(t('partner.bookings.detail.noShowError'), {
+        variant: 'danger',
+      });
+    }
+  }
+
   // Reuses the same context-scoped conversation every time (the backend
   // makes `POST /messaging/conversations` idempotent per
   // (contextType, contextId, principal) — see `conversationService.js`),
@@ -224,6 +271,11 @@ export default function PartnerBookingDetailContent() {
             <Stack gap="3">
               {booking.items.map((item) => (
                 <div key={item.id}>
+                  {item.unit_label && (
+                    <p>
+                      {t('bookings.detail.roomType')}: {item.unit_label}
+                    </p>
+                  )}
                   <p>
                     {t('bookings.detail.dates')}:{' '}
                     {dateFormatter.format(new Date(item.date_from))} –{' '}
@@ -290,8 +342,8 @@ export default function PartnerBookingDetailContent() {
           </Button>
         </Inline>
 
-        {(canConfirmOrReject || canCancel) && (
-          <Inline gap="3">
+        {(canConfirmOrReject || canCancel || canCompleteOrNoShow) && (
+          <Inline gap="3" wrap>
             {canConfirmOrReject && (
               <Button
                 variant="primary"
@@ -308,6 +360,24 @@ export default function PartnerBookingDetailContent() {
                 loading={rejectMutation.isPending}
               >
                 {t('partner.bookings.detail.rejectAction')}
+              </Button>
+            )}
+            {canCompleteOrNoShow && (
+              <Button
+                variant="primary"
+                onClick={() => handleComplete()}
+                loading={completeMutation.isPending}
+              >
+                {t('partner.bookings.detail.completeAction')}
+              </Button>
+            )}
+            {canCompleteOrNoShow && (
+              <Button
+                variant="destructive"
+                onClick={() => handleNoShow()}
+                loading={noShowMutation.isPending}
+              >
+                {t('partner.bookings.detail.noShowAction')}
               </Button>
             )}
             {canCancel && (
