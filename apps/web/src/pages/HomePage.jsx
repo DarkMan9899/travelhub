@@ -9,7 +9,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Container } from '@travelhub/ui/components/layout';
+import { Container } from '@desavii/ui/components/layout';
 import {
   Hero,
   FeaturedDestinations,

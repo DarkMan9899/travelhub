@@ -10,8 +10,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bell } from 'lucide-react';
-import { Popover } from '@travelhub/ui/components/navigation';
-import { Icon } from '@travelhub/ui/components/primitives';
+import { Popover } from '@desavii/ui/components/navigation';
+import { Icon } from '@desavii/ui/components/primitives';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useUnreadCountQuery } from '../../queries/useUnreadCountQuery.js';
 import NotificationDropdown from '../NotificationDropdown/NotificationDropdown.jsx';

@@ -11,10 +11,10 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Card } from '@travelhub/ui/components/primitives';
-import { PriceTag } from '@travelhub/ui/components/data-display';
-import { Stack, Grid } from '@travelhub/ui/components/layout';
-import { Skeleton } from '@travelhub/ui/components/feedback-overlays';
+import { Card } from '@desavii/ui/components/primitives';
+import { PriceTag } from '@desavii/ui/components/data-display';
+import { Stack, Grid } from '@desavii/ui/components/layout';
+import { Skeleton } from '@desavii/ui/components/feedback-overlays';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import { useRecommendationsQuery } from '../../queries/useRecommendationsQuery.js';
 import styles from './RecommendationsSection.module.scss';

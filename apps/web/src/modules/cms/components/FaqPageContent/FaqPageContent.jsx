@@ -18,8 +18,8 @@
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
-import { Section, Stack } from '@travelhub/ui/components/layout';
-import { Icon } from '@travelhub/ui/components/primitives';
+import { Section, Stack } from '@desavii/ui/components/layout';
+import { Icon } from '@desavii/ui/components/primitives';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import {

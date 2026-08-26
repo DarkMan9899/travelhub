@@ -27,18 +27,15 @@ import { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PriceTag } from '@travelhub/ui/components/data-display';
-import { Button } from '@travelhub/ui/components/primitives';
+import { PriceTag } from '@desavii/ui/components/data-display';
+import { Button } from '@desavii/ui/components/primitives';
 import {
   Select,
   Input,
   DatePicker,
-} from '@travelhub/ui/components/form-controls';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import {
-  Spinner,
-  ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/form-controls';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Spinner, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import { useAuth } from '../../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../../contexts/ToastContext.jsx';
 import { useListingBookableUnitsQuery } from '../../../queries/useListingBookableUnitsQuery.js';

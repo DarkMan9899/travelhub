@@ -19,7 +19,7 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Spinner } from '@travelhub/ui/components/feedback-overlays';
+import { Spinner } from '@desavii/ui/components/feedback-overlays';
 import { useListingCompletenessQuery } from '../../queries/useListingCompletenessQuery.js';
 import styles from './ListingCompletenessWidget.module.scss';
 

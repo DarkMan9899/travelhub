@@ -9,7 +9,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section } from '@travelhub/ui/components/layout';
+import { Section } from '@desavii/ui/components/layout';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useMyBookingsQuery } from '../../queries/useMyBookingsQuery.js';
 import BookingsList from '../BookingsList/BookingsList.jsx';

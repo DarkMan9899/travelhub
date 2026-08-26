@@ -1,4 +1,4 @@
-# @travelhub/config
+# @desavii/config
 
 Shared ESLint and Prettier configuration consumed by `apps/web` and
 `apps/api`, per `SPRINT_0_IMPLEMENTATION_PLAN.md` Chapters 10–11.

@@ -21,15 +21,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import {
-  Input,
-  Select,
-  Textarea,
-} from '@travelhub/ui/components/form-controls';
-import { Button, Badge } from '@travelhub/ui/components/primitives';
-import { DataTable } from '@travelhub/ui/components/dashboard';
-import { Modal, ErrorState } from '@travelhub/ui/components/feedback-overlays';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Input, Select, Textarea } from '@desavii/ui/components/form-controls';
+import { Button, Badge } from '@desavii/ui/components/primitives';
+import { DataTable } from '@desavii/ui/components/dashboard';
+import { Modal, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import { Search } from 'lucide-react';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import RouterLink from '../../../../components/RouterLink.jsx';

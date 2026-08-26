@@ -11,8 +11,8 @@
 import { useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Avatar } from '@travelhub/ui/components/primitives';
-import { Spinner } from '@travelhub/ui/components/feedback-overlays';
+import { Avatar } from '@desavii/ui/components/primitives';
+import { Spinner } from '@desavii/ui/components/feedback-overlays';
 import styles from './AvatarUploader.module.scss';
 
 const ACCEPTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];

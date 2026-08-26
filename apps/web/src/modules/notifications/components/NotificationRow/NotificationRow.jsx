@@ -18,7 +18,7 @@ import {
   Megaphone,
   Bell,
 } from 'lucide-react';
-import { Icon, Button } from '@travelhub/ui/components/primitives';
+import { Icon, Button } from '@desavii/ui/components/primitives';
 import { getNotificationCopy } from '../../constants/notificationCopy.js';
 import { formatRelativeTime } from '../../utils/formatRelativeTime.js';
 import styles from './NotificationRow.module.scss';

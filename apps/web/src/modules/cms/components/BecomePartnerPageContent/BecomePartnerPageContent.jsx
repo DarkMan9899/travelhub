@@ -17,8 +17,8 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { TrendingUp, Users, ShieldCheck } from 'lucide-react';
-import { Section, Stack } from '@travelhub/ui/components/layout';
-import { Button, Icon } from '@travelhub/ui/components/primitives';
+import { Section, Stack } from '@desavii/ui/components/layout';
+import { Button, Icon } from '@desavii/ui/components/primitives';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';

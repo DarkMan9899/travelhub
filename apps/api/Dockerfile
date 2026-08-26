@@ -8,7 +8,7 @@ FROM node:20-alpine AS base
 WORKDIR /app
 
 # Install dependencies for the whole workspace (npm workspaces need the
-# root package.json + lockfile present to resolve @travelhub/* packages).
+# root package.json + lockfile present to resolve @desavii/* packages).
 FROM base AS deps
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json

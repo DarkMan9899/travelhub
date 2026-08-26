@@ -1,12 +1,20 @@
 {
-  "name": "@travelhub/shared",
+  "name": "@desavii/shared",
   "version": "0.0.0",
   "private": true,
   "description": "Pure, framework-free utility functions and constants shared between apps/web and apps/api.",
   "main": "src/index.js",
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "scripts": {
-    "test": "node --test src/**/*.test.js"
+    "test": "node --test src/**/*.test.js",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix"
+  },
+  "devDependencies": {
+    "@desavii/config": "*",
+    "eslint": "^8.57.1"
   },
   "license": "UNLICENSED"
 }

@@ -1,5 +1,5 @@
 /**
- * @travelhub/types — public entry point.
+ * @desavii/types — public entry point.
  *
  * Holds shared JSDoc @typedef definitions mirroring the resource shapes
  * in API_SPECIFICATION.md and OPENAPI_SCHEMA_REFERENCE.md (Booking,

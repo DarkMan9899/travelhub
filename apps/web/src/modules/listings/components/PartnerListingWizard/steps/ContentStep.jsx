@@ -24,15 +24,15 @@
 import { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
 import {
   Input,
   Textarea,
   Select,
   Switch,
-} from '@travelhub/ui/components/form-controls';
-import { Stack } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/form-controls';
+import { Stack } from '@desavii/ui/components/layout';
 import { useReplaceListingHighlightsMutation } from '../../../mutations/useReplaceListingHighlightsMutation.js';
 import { useReplaceListingItineraryMutation } from '../../../mutations/useReplaceListingItineraryMutation.js';
 import { useReplaceListingIncludedItemsMutation } from '../../../mutations/useReplaceListingIncludedItemsMutation.js';

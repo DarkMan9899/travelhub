@@ -20,10 +20,10 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Input, DatePicker } from '@travelhub/ui/components/form-controls';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
-import { Stack } from '@travelhub/ui/components/layout';
+import { Input, DatePicker } from '@desavii/ui/components/form-controls';
+import { Button } from '@desavii/ui/components/primitives';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
+import { Stack } from '@desavii/ui/components/layout';
 import {
   useBlackoutsQuery,
   useCreateBlackoutMutation,

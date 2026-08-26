@@ -26,20 +26,16 @@ import { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import {
-  Select,
-  Input,
-  Textarea,
-} from '@travelhub/ui/components/form-controls';
-import { Button, Card, Badge } from '@travelhub/ui/components/primitives';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Select, Input, Textarea } from '@desavii/ui/components/form-controls';
+import { Button, Card, Badge } from '@desavii/ui/components/primitives';
 import {
   Spinner,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { PartnerCalendarEditor } from '@travelhub/ui/components/dashboard';
-import { Tabs } from '@travelhub/ui/components/navigation';
+} from '@desavii/ui/components/feedback-overlays';
+import { PartnerCalendarEditor } from '@desavii/ui/components/dashboard';
+import { Tabs } from '@desavii/ui/components/navigation';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';

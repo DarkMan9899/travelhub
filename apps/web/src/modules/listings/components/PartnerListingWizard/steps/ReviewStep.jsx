@@ -11,8 +11,8 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
-import { Stack } from '@travelhub/ui/components/layout';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
+import { Stack } from '@desavii/ui/components/layout';
 import { usePublishListingMutation } from '../../../mutations/usePublishListingMutation.js';
 import { PartnerAiToolsPanel, AskAiButton } from '../../../../ai/index.js';
 import ListingCompletenessWidget from '../ListingCompletenessWidget.jsx';

@@ -23,7 +23,7 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Stack } from '@travelhub/ui/components/layout';
+import { Stack } from '@desavii/ui/components/layout';
 
 const NUMERIC_DATA_TYPES = ['INTEGER', 'DECIMAL'];
 

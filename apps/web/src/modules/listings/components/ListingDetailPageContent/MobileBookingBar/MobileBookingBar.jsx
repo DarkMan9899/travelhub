@@ -22,9 +22,9 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { PriceTag } from '@travelhub/ui/components/data-display';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Drawer } from '@travelhub/ui/components/feedback-overlays';
+import { PriceTag } from '@desavii/ui/components/data-display';
+import { Button } from '@desavii/ui/components/primitives';
+import { Drawer } from '@desavii/ui/components/feedback-overlays';
 import {
   resolveBookingCtaLabel,
   resolvePricingModelLabel,

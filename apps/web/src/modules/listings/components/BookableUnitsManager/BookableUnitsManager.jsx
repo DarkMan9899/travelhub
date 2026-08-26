@@ -17,13 +17,13 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Card, Button } from '@travelhub/ui/components/primitives';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
+import { Card, Button } from '@desavii/ui/components/primitives';
+import { Stack, Inline } from '@desavii/ui/components/layout';
 import {
   Spinner,
   ErrorState,
   Alert,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/feedback-overlays';
 import {
   useBookableUnitsQuery,
   useRegisterBookableUnitMutation,

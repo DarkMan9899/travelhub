@@ -15,9 +15,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Section } from '@travelhub/ui/components/layout';
-import { Tabs } from '@travelhub/ui/components/navigation';
-import { Input } from '@travelhub/ui/components/form-controls';
+import { Section } from '@desavii/ui/components/layout';
+import { Tabs } from '@desavii/ui/components/navigation';
+import { Input } from '@desavii/ui/components/form-controls';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import ConversationList from '../ConversationList/ConversationList.jsx';
 import MessageSearchResults from '../MessageSearchResults/MessageSearchResults.jsx';

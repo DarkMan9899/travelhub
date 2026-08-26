@@ -23,14 +23,14 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import {
   Spinner,
   ErrorState,
   EmptyState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button, Card } from '@travelhub/ui/components/primitives';
-import { PriceTag } from '@travelhub/ui/components/data-display';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button, Card } from '@desavii/ui/components/primitives';
+import { PriceTag } from '@desavii/ui/components/data-display';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';

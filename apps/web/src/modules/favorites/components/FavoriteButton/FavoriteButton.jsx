@@ -14,7 +14,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Heart } from 'lucide-react';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Button } from '@desavii/ui/components/primitives';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useFavoriteIdsQuery } from '../../queries/useFavoriteIdsQuery.js';
 import { useToggleFavoriteMutation } from '../../mutations/useToggleFavoriteMutation.js';

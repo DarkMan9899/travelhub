@@ -15,12 +15,12 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section } from '@travelhub/ui/components/layout';
+import { Section } from '@desavii/ui/components/layout';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/feedback-overlays';
 import { useDestinationsQuery } from '../../../search/index.js';
 import SectionHeader from '../SectionHeader/SectionHeader.jsx';
 import Showcase from '../Showcase/Showcase.jsx';

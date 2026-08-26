@@ -1,4 +1,4 @@
-# @travelhub/types
+# @desavii/types
 
 Shared JSDoc type definitions for resources defined in
 `API_SPECIFICATION.md` and `OPENAPI_SCHEMA_REFERENCE.md`, consumed by

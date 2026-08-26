@@ -34,10 +34,10 @@ import {
   useSearchParams,
   Link,
 } from 'react-router-dom';
-import { Input } from '@travelhub/ui/components/form-controls';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
-import { Stack } from '@travelhub/ui/components/layout';
+import { Input } from '@desavii/ui/components/form-controls';
+import { Button } from '@desavii/ui/components/primitives';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
+import { Stack } from '@desavii/ui/components/layout';
 import { useLoginMutation } from '../../mutations/useLoginMutation.js';
 import { getLastWorkspace } from '../../../../utils/workspacePreference.js';
 

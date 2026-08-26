@@ -83,7 +83,7 @@ rather than a rewrite of it.
 
 ## Folder contents (per FRONTEND_ARCHITECTURE.md §3.2 / §6.2)
 
-- `components/` — module-owned UI, composing `@travelhub/ui` primitives
+- `components/` — module-owned UI, composing `@desavii/ui` primitives
 - `hooks/` — module-specific custom hooks
 - `queries/` — React Query query definitions (Ch. 14)
 - `mutations/` — React Query mutation definitions (Ch. 14)

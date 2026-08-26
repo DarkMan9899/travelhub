@@ -7,7 +7,7 @@
  */
 
 import PropTypes from 'prop-types';
-import { Checkbox } from '@travelhub/ui/components/form-controls';
+import { Checkbox } from '@desavii/ui/components/form-controls';
 import styles from './CheckboxGroup.module.scss';
 
 export default function CheckboxGroup({

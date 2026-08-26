@@ -22,8 +22,8 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { PolicyList } from '@travelhub/ui/components/data-display';
-import { Section } from '@travelhub/ui/components/layout';
+import { PolicyList } from '@desavii/ui/components/data-display';
+import { Section } from '@desavii/ui/components/layout';
 import { fromPolicyValuesResponse } from '../../../utils/policyValueMapping.js';
 import { formatMetadataValue } from '../MetadataValueDisplay.jsx';
 import resolvePolicyIcon from '../../../utils/policyIcons.js';

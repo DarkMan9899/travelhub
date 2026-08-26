@@ -19,16 +19,16 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import { Select, Input } from '@travelhub/ui/components/form-controls';
-import { Button, Card, Badge } from '@travelhub/ui/components/primitives';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Select, Input } from '@desavii/ui/components/form-controls';
+import { Button, Card, Badge } from '@desavii/ui/components/primitives';
 import {
   EmptyState,
   ErrorState,
   Modal,
-} from '@travelhub/ui/components/feedback-overlays';
-import { DataTable } from '@travelhub/ui/components/dashboard';
-import { Tabs } from '@travelhub/ui/components/navigation';
+} from '@desavii/ui/components/feedback-overlays';
+import { DataTable } from '@desavii/ui/components/dashboard';
+import { Tabs } from '@desavii/ui/components/navigation';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';

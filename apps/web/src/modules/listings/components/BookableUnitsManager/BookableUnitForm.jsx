@@ -15,9 +15,9 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Input, Select } from '@travelhub/ui/components/form-controls';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
+import { Input, Select } from '@desavii/ui/components/form-controls';
+import { Button } from '@desavii/ui/components/primitives';
+import { Stack, Inline } from '@desavii/ui/components/layout';
 import { BOOKABLE_UNIT_TYPES, BED_TYPES } from '../../../availability/index.js';
 import { CURRENCY_CODES } from '../../constants/currencies.js';
 

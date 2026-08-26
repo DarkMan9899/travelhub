@@ -7,8 +7,8 @@
 
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Section, Stack } from '@travelhub/ui/components/layout';
-import { ErrorState } from '@travelhub/ui/components/feedback-overlays';
+import { Section, Stack } from '@desavii/ui/components/layout';
+import { ErrorState } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import TripPlannerForm from '../TripPlannerForm/TripPlannerForm.jsx';
 import ItineraryView from '../ItineraryView/ItineraryView.jsx';

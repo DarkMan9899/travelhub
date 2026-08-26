@@ -14,7 +14,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
-import { Card, Icon } from '@travelhub/ui/components/primitives';
+import { Card, Icon } from '@desavii/ui/components/primitives';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import styles from './CompanyCard.module.scss';
 

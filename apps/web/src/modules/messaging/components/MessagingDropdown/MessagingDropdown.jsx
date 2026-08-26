@@ -12,7 +12,7 @@ import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/feedback-overlays';
 import { useConversationsQuery } from '../../queries/useConversationsQuery.js';
 import ConversationListItem from '../ConversationListItem/ConversationListItem.jsx';
 import styles from './MessagingDropdown.module.scss';

@@ -11,10 +11,10 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Card, Button } from '@travelhub/ui/components/primitives';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
-import { Select } from '@travelhub/ui/components/form-controls';
-import { PriceTag } from '@travelhub/ui/components/data-display';
+import { Card, Button } from '@desavii/ui/components/primitives';
+import { Stack, Inline } from '@desavii/ui/components/layout';
+import { Select } from '@desavii/ui/components/form-controls';
+import { PriceTag } from '@desavii/ui/components/data-display';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useCreatePaymentMutation } from '../../mutations/useCreatePaymentMutation.js';
 import SimulatedPaymentNotice from '../SimulatedPaymentNotice/SimulatedPaymentNotice.jsx';

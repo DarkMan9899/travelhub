@@ -1,7 +1,7 @@
 /**
  * FieldWrapper — private, shared chrome for Input and Textarea.
  *
- * Not part of the public @travelhub/ui API (not re-exported from any
+ * Not part of the public @desavii/ui API (not re-exported from any
  * barrel). COMPONENT_LIBRARY.md's Textarea entry states its
  * States/Accessibility/Animation are "identical to Input" and its
  * Dependencies are "Input's shared styling base" — this component is

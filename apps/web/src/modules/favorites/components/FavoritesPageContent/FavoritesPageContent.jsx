@@ -13,13 +13,13 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Grid, Section, Stack } from '@travelhub/ui/components/layout';
+import { Grid, Section, Stack } from '@desavii/ui/components/layout';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import ListingCardBase from '../../../../components/ListingCardBase/ListingCardBase.jsx';
 import FavoriteButton from '../FavoriteButton/FavoriteButton.jsx';

@@ -26,14 +26,14 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Section, Stack, Grid, Inline } from '@travelhub/ui/components/layout';
-import { StatCard, ListingTableRow } from '@travelhub/ui/components/dashboard';
-import { Badge, Card } from '@travelhub/ui/components/primitives';
+import { Section, Stack, Grid, Inline } from '@desavii/ui/components/layout';
+import { StatCard, ListingTableRow } from '@desavii/ui/components/dashboard';
+import { Badge, Card } from '@desavii/ui/components/primitives';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';

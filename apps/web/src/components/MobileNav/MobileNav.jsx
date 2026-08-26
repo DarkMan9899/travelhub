@@ -13,8 +13,8 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Drawer } from '@travelhub/ui/components/feedback-overlays';
-import { Stack, Divider } from '@travelhub/ui/components/layout';
+import { Drawer } from '@desavii/ui/components/feedback-overlays';
+import { Stack, Divider } from '@desavii/ui/components/layout';
 import styles from './MobileNav.module.scss';
 
 export default function MobileNav({

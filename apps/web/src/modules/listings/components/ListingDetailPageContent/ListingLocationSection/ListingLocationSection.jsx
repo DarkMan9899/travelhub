@@ -22,8 +22,8 @@
 import { lazy, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Section, Stack } from '@travelhub/ui/components/layout';
-import { Spinner } from '@travelhub/ui/components/feedback-overlays';
+import { Section, Stack } from '@desavii/ui/components/layout';
+import { Spinner } from '@desavii/ui/components/feedback-overlays';
 
 const ListingMap = lazy(() => import('../ListingMap/ListingMap.jsx'));
 

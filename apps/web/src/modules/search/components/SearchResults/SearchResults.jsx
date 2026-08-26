@@ -15,8 +15,8 @@ import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
 import SearchResultCard from '../SearchResultCard/SearchResultCard.jsx';
 import styles from './SearchResults.module.scss';
 

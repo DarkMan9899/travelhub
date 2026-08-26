@@ -43,10 +43,8 @@ vi.mock('react-router-dom', async () => {
 // DatePicker's own calendar-grid UX is covered by DatePicker.test.jsx;
 // this widget's test only needs to drive its `onChange` contract to
 // exercise the widget's OWN logic (gating, estimate, submit, redirect).
-vi.mock('@travelhub/ui/components/form-controls', async () => {
-  const actual = await vi.importActual(
-    '@travelhub/ui/components/form-controls',
-  );
+vi.mock('@desavii/ui/components/form-controls', async () => {
+  const actual = await vi.importActual('@desavii/ui/components/form-controls');
   function MockDatePicker({ onChange, disabledDates = [] }) {
     return (
       <>

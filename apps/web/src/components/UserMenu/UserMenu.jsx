@@ -22,9 +22,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Button, Avatar } from '@travelhub/ui/components/primitives';
-import { Popover } from '@travelhub/ui/components/navigation';
-import { Stack, Divider } from '@travelhub/ui/components/layout';
+import { Button, Avatar } from '@desavii/ui/components/primitives';
+import { Popover } from '@desavii/ui/components/navigation';
+import { Stack, Divider } from '@desavii/ui/components/layout';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { setLastWorkspace } from '../../utils/workspacePreference.js';
 import styles from './UserMenu.module.scss';

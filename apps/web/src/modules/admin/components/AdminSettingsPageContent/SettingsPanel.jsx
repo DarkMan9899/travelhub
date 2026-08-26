@@ -9,11 +9,11 @@
 
 import { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
-import { Input, Textarea } from '@travelhub/ui/components/form-controls';
-import { Button } from '@travelhub/ui/components/primitives';
-import { DataTable } from '@travelhub/ui/components/dashboard';
-import { Modal, ErrorState } from '@travelhub/ui/components/feedback-overlays';
+import { Stack, Inline } from '@desavii/ui/components/layout';
+import { Input, Textarea } from '@desavii/ui/components/form-controls';
+import { Button } from '@desavii/ui/components/primitives';
+import { DataTable } from '@desavii/ui/components/dashboard';
+import { Modal, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 

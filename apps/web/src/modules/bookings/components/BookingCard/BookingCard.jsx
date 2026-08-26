@@ -27,9 +27,9 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Card } from '@travelhub/ui/components/primitives';
-import { PriceTag } from '@travelhub/ui/components/data-display';
-import { Spinner } from '@travelhub/ui/components/feedback-overlays';
+import { Card } from '@desavii/ui/components/primitives';
+import { PriceTag } from '@desavii/ui/components/data-display';
+import { Spinner } from '@desavii/ui/components/feedback-overlays';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import { useListingQuery } from '../../../listings/queries/useListingQuery.js';
 import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';

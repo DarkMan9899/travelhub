@@ -21,10 +21,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button, Badge } from '@travelhub/ui/components/primitives';
-import { Stack } from '@travelhub/ui/components/layout';
-import { ListingTableRow } from '@travelhub/ui/components/dashboard';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button, Badge } from '@desavii/ui/components/primitives';
+import { Stack } from '@desavii/ui/components/layout';
+import { ListingTableRow } from '@desavii/ui/components/dashboard';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import {

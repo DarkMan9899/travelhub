@@ -11,7 +11,7 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
 
 export default function SimulatedPaymentNotice({ compact = false }) {
   const { t } = useTranslation();

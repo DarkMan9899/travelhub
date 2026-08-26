@@ -1,8 +1,7 @@
 /**
  * prerender.mjs — Phase 20 (SEO) §1's architectural centerpiece.
  *
- * desavii's frontend (internal codebase name: TravelHub) is a pure
- * client-rendered Vite+React SPA
+ * Desavii's frontend is a pure client-rendered Vite+React SPA
  * (`useDocumentMeta.js`'s own removed header comment, and every layout in
  * `routes/index.jsx`, confirm there is no SSR/react-helmet anywhere). A
  * crawler requesting any route gets `dist/index.html`'s bare shell —

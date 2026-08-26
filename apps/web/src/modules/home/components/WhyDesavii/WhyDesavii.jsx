@@ -4,7 +4,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Section } from '@travelhub/ui/components/layout';
+import { Section } from '@desavii/ui/components/layout';
 import { ShieldCheck, Lock, Compass, Languages } from 'lucide-react';
 import WHY_DESAVII_ITEMS from '../../constants/whyDesavii.js';
 import SectionHeader from '../SectionHeader/SectionHeader.jsx';

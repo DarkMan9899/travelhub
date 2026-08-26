@@ -17,10 +17,10 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Input } from '@travelhub/ui/components/form-controls';
-import { FileDropzone } from '@travelhub/ui/components/listing-media';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
+import { Input } from '@desavii/ui/components/form-controls';
+import { FileDropzone } from '@desavii/ui/components/listing-media';
 import { useAttachListingMediaMutation } from '../../../mutations/useAttachListingMediaMutation.js';
 import { useUpdateListingMediaMutation } from '../../../mutations/useUpdateListingMediaMutation.js';
 import { useRemoveListingMediaMutation } from '../../../mutations/useRemoveListingMediaMutation.js';

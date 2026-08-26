@@ -28,14 +28,14 @@ import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Input, Textarea } from '@travelhub/ui/components/form-controls';
-import { Button, Card, Badge } from '@travelhub/ui/components/primitives';
+import { Input, Textarea } from '@desavii/ui/components/form-controls';
+import { Button, Card, Badge } from '@desavii/ui/components/primitives';
 import {
   Alert,
   Skeleton,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/feedback-overlays';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import useNoIndex from '../../../../seo/useNoIndex.js';

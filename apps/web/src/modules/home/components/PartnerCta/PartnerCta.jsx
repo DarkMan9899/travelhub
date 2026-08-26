@@ -6,8 +6,8 @@
 
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Section } from '@travelhub/ui/components/layout';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Section } from '@desavii/ui/components/layout';
+import { Button } from '@desavii/ui/components/primitives';
 import ScrollReveal from '../ScrollReveal/ScrollReveal.jsx';
 import styles from './PartnerCta.module.scss';
 

@@ -11,10 +11,10 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import { DataTable } from '@travelhub/ui/components/dashboard';
-import { Button, Card } from '@travelhub/ui/components/primitives';
-import { ErrorState } from '@travelhub/ui/components/feedback-overlays';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { DataTable } from '@desavii/ui/components/dashboard';
+import { Button, Card } from '@desavii/ui/components/primitives';
+import { ErrorState } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAdminAiModerationQueueQuery } from '../../queries/useAdminAiModerationQueueQuery.js';
 import { useScoreListingMutation } from '../../mutations/useScoreListingMutation.js';

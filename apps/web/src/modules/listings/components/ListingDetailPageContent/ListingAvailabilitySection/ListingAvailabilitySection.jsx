@@ -34,11 +34,8 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import {
-  Spinner,
-  ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
+import { Spinner, ErrorState } from '@desavii/ui/components/feedback-overlays';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import { useListingAvailabilityQuery } from '../../../queries/useListingAvailabilityQuery.js';
 import { useListingAvailabilitySummaryQuery } from '../../../queries/useListingAvailabilitySummaryQuery.js';
 import { useListingDayStatusQuery } from '../../../queries/useListingDayStatusQuery.js';

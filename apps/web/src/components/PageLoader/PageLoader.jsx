@@ -10,7 +10,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Spinner } from '@travelhub/ui/components/feedback-overlays';
+import { Spinner } from '@desavii/ui/components/feedback-overlays';
 import styles from './PageLoader.module.scss';
 
 export default function PageLoader() {

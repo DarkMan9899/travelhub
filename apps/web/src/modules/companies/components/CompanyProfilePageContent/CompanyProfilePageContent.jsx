@@ -24,9 +24,9 @@ import {
   Skeleton,
   ErrorState,
   EmptyState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import { Icon } from '@travelhub/ui/components/primitives';
+} from '@desavii/ui/components/feedback-overlays';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Icon } from '@desavii/ui/components/primitives';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';

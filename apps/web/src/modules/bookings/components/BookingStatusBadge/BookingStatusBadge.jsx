@@ -20,7 +20,7 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Badge } from '@travelhub/ui/components/primitives';
+import { Badge } from '@desavii/ui/components/primitives';
 
 const STATUS_VARIANTS = Object.freeze({
   DRAFT: 'neutral',

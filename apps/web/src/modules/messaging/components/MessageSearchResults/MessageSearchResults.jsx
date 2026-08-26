@@ -19,10 +19,7 @@ import { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import {
-  Skeleton,
-  EmptyState,
-} from '@travelhub/ui/components/feedback-overlays';
+import { Skeleton, EmptyState } from '@desavii/ui/components/feedback-overlays';
 import { useMessageSearchQuery } from '../../queries/useMessageSearchQuery.js';
 import { useConversationsQuery } from '../../queries/useConversationsQuery.js';
 import { getConversationTitle } from '../../utils/getParticipantDisplayName.js';

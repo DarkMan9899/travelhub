@@ -13,8 +13,8 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { ReviewSummary } from '@travelhub/ui/components/data-display';
-import { Stack } from '@travelhub/ui/components/layout';
+import { ReviewSummary } from '@desavii/ui/components/data-display';
+import { Stack } from '@desavii/ui/components/layout';
 import { ReviewsList } from '../../../../reviews/index.js';
 
 export default function ListingReviewsSection({

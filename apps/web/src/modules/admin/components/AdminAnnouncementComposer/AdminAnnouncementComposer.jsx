@@ -17,14 +17,14 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Button } from '@travelhub/ui/components/primitives';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
+import { Card, Button } from '@desavii/ui/components/primitives';
+import { Stack, Inline } from '@desavii/ui/components/layout';
 import {
   Input,
   Textarea,
   Select,
   Checkbox,
-} from '@travelhub/ui/components/form-controls';
+} from '@desavii/ui/components/form-controls';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useCreateAnnouncementMutation } from '../../mutations/useCreateAnnouncementMutation.js';

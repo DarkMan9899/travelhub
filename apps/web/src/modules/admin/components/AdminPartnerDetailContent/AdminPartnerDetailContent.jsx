@@ -38,15 +38,15 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack, Grid, Inline } from '@travelhub/ui/components/layout';
-import { Card, Badge, Button } from '@travelhub/ui/components/primitives';
-import { Textarea } from '@travelhub/ui/components/form-controls';
+import { Section, Stack, Grid, Inline } from '@desavii/ui/components/layout';
+import { Card, Badge, Button } from '@desavii/ui/components/primitives';
+import { Textarea } from '@desavii/ui/components/form-controls';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
   Modal,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';

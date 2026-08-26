@@ -16,9 +16,9 @@
 import { useForm, Controller } from 'react-hook-form';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Input } from '@travelhub/ui/components/form-controls';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
-import { Stack } from '@travelhub/ui/components/layout';
+import { Input } from '@desavii/ui/components/form-controls';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
+import { Stack } from '@desavii/ui/components/layout';
 import { useUpdateListingMutation } from '../../../mutations/useUpdateListingMutation.js';
 import WizardStepActions from '../WizardStepActions.jsx';
 

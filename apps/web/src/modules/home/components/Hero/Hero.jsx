@@ -14,8 +14,8 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Container } from '@travelhub/ui/components/layout';
+import { Button } from '@desavii/ui/components/primitives';
+import { Container } from '@desavii/ui/components/layout';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import { heroBackdrop } from '../../../../assets/images/index.js';
 import ScrollReveal from '../ScrollReveal/ScrollReveal.jsx';

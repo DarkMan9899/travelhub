@@ -12,10 +12,10 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Card } from '@travelhub/ui/components/primitives';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
-import { Skeleton } from '@travelhub/ui/components/feedback-overlays';
-import { PriceTag } from '@travelhub/ui/components/data-display';
+import { Card } from '@desavii/ui/components/primitives';
+import { Stack, Inline } from '@desavii/ui/components/layout';
+import { Skeleton } from '@desavii/ui/components/feedback-overlays';
+import { PriceTag } from '@desavii/ui/components/data-display';
 import { usePartnerBalanceQuery } from '../../queries/usePartnerBalanceQuery.js';
 
 export default function PartnerPayableBalanceCard({ partnerId }) {

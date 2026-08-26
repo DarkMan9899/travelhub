@@ -14,8 +14,8 @@ import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
 import { useConversationsQuery } from '../../queries/useConversationsQuery.js';
 import ConversationListItem from '../ConversationListItem/ConversationListItem.jsx';
 import styles from './ConversationList.module.scss';

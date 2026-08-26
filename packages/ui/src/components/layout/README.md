@@ -31,7 +31,7 @@ I's Container Widths token table.
 **Usage:**
 
 ```jsx
-import { Container } from '@travelhub/ui/components/layout';
+import { Container } from '@desavii/ui/components/layout';
 
 <Container size="wide">{/* dashboard-width content */}</Container>;
 ```
@@ -53,7 +53,7 @@ space-24 (desktop) — never arbitrary."
 **Usage:**
 
 ```jsx
-import { Section } from '@travelhub/ui/components/layout';
+import { Section } from '@desavii/ui/components/layout';
 
 <Section aria-label="Featured listings">{/* ... */}</Section>;
 ```
@@ -75,7 +75,7 @@ duplicated centering logic).
 **Usage:**
 
 ```jsx
-import { Page } from '@travelhub/ui/components/layout';
+import { Page } from '@desavii/ui/components/layout';
 
 <Page title="Search results">{/* results list */}</Page>;
 ```
@@ -104,7 +104,7 @@ also accepts `'baseline'`.
 **Usage:**
 
 ```jsx
-import { Stack, Inline } from '@travelhub/ui/components/layout';
+import { Stack, Inline } from '@desavii/ui/components/layout';
 
 <Stack as="ul" gap="2" aria-label="Amenities">
   <li>Wi-Fi</li>
@@ -134,7 +134,7 @@ default `'auto'`) · `gap` (spacing-scale key, default `'4'`) ·
 **Usage:**
 
 ```jsx
-import { Grid } from '@travelhub/ui/components/layout';
+import { Grid } from '@desavii/ui/components/layout';
 
 <Grid columns="auto" gap="6">
   {/* responsive 4/8/12-column grid */}
@@ -160,7 +160,7 @@ Thin rule separator. Always a native `<hr>` (implicit
 **Usage:**
 
 ```jsx
-import { Divider } from '@travelhub/ui/components/layout';
+import { Divider } from '@desavii/ui/components/layout';
 
 <Divider />
 <Divider orientation="vertical" />

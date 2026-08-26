@@ -20,8 +20,8 @@ import {
   Skeleton,
   ErrorState,
   EmptyState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Stack, Grid } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/feedback-overlays';
+import { Stack, Grid } from '@desavii/ui/components/layout';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';

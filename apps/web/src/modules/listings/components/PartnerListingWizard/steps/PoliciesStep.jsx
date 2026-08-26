@@ -14,8 +14,8 @@ import {
   Spinner,
   ErrorState,
   Alert,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Stack } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/feedback-overlays';
+import { Stack } from '@desavii/ui/components/layout';
 import { useListingMetadataQuery } from '../../../queries/useListingMetadataQuery.js';
 import { useUpdateListingMutation } from '../../../mutations/useUpdateListingMutation.js';
 import { toPolicyValuesPayload } from '../../../utils/policyValueMapping.js';

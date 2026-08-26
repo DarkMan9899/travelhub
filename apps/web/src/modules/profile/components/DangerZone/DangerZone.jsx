@@ -14,8 +14,8 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Stack } from '@travelhub/ui/components/layout';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
+import { Stack } from '@desavii/ui/components/layout';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
 
 export default function DangerZone() {
   const { t } = useTranslation();

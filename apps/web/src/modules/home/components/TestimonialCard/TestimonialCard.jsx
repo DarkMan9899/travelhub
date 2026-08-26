@@ -7,8 +7,8 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Quote } from 'lucide-react';
-import { Avatar } from '@travelhub/ui/components/primitives';
-import { RatingStars } from '@travelhub/ui/components/data-display';
+import { Avatar } from '@desavii/ui/components/primitives';
+import { RatingStars } from '@desavii/ui/components/data-display';
 import styles from './TestimonialCard.module.scss';
 
 export default function TestimonialCard({ testimonial }) {

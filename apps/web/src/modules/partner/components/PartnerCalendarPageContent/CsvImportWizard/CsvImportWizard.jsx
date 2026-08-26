@@ -19,12 +19,12 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
-import { Select } from '@travelhub/ui/components/form-controls';
-import { Button, Badge } from '@travelhub/ui/components/primitives';
-import { Modal } from '@travelhub/ui/components/feedback-overlays';
-import { FileDropzone } from '@travelhub/ui/components/listing-media';
-import { DataTable } from '@travelhub/ui/components/dashboard';
+import { Stack, Inline } from '@desavii/ui/components/layout';
+import { Select } from '@desavii/ui/components/form-controls';
+import { Button, Badge } from '@desavii/ui/components/primitives';
+import { Modal } from '@desavii/ui/components/feedback-overlays';
+import { FileDropzone } from '@desavii/ui/components/listing-media';
+import { DataTable } from '@desavii/ui/components/dashboard';
 import { parseCsv } from '../../../../availability/utils/csvParser.js';
 import {
   useBulkImportExternalReservationsMutation,

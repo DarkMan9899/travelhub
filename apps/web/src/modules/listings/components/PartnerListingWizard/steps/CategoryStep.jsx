@@ -16,10 +16,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import {
-  Spinner,
-  ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
+import { Spinner, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import { useListingCategoriesQuery } from '../../../queries/useListingCategoriesQuery.js';
 import WizardStepActions from '../WizardStepActions.jsx';
 import styles from './CategoryStep.module.scss';

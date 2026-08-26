@@ -14,7 +14,7 @@
 
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { Container, Grid, Stack } from '@travelhub/ui/components/layout';
+import { Container, Grid, Stack } from '@desavii/ui/components/layout';
 import styles from './Footer.module.scss';
 
 export default function Footer({ columns = [], bottomText = undefined }) {

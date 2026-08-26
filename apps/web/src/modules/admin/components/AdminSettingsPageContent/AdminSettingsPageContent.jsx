@@ -15,8 +15,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack } from '@travelhub/ui/components/layout';
-import { Tabs } from '@travelhub/ui/components/navigation';
+import { Section, Stack } from '@desavii/ui/components/layout';
+import { Tabs } from '@desavii/ui/components/navigation';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useAdminConfigResource } from '../../hooks/useAdminConfigResource.js';

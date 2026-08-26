@@ -44,14 +44,14 @@ swapping in real production photography later touches that folder only.
 
 ## Folder contents (per FRONTEND_ARCHITECTURE.md §3.2 / §6.2)
 
-- `components/` — module-owned UI, composing `@travelhub/ui` primitives.
+- `components/` — module-owned UI, composing `@desavii/ui` primitives.
   Only the sections `pages/HomePage.jsx` composes directly
   (Hero/FeaturedDestinations/FeaturedListings/PopularExperiences/
   Categories/WhyDesavii/PartnerCta/Testimonials) are exported from
   `index.js`; every card component and the shared
   `SectionHeader`/`ScrollReveal`/`SearchWidget` building blocks stay
   module-private per §6.3's cross-module rule, promoted to `components/`
-  or `@travelhub/ui` only once a second module needs one.
+  or `@desavii/ui` only once a second module needs one.
 - `queries/` — React Query query definitions (Ch. 14)
 - `mutations/` — React Query mutation definitions (Ch. 14)
 - `schemas/` — React Hook Form validation schemas (Ch. 15)

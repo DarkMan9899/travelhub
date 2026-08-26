@@ -1,5 +1,5 @@
 /**
- * @travelhub/ui — public entry point.
+ * @desavii/ui — public entry point.
  *
  * Sprint 2 shipped the eight UI Foundation components (Button, Input,
  * Textarea, Label, Checkbox, Radio, Switch, Select). Sprint 3 added

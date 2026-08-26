@@ -13,9 +13,9 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Input, Select } from '@travelhub/ui/components/form-controls';
-import { Card } from '@travelhub/ui/components/primitives';
-import { Stack } from '@travelhub/ui/components/layout';
+import { Input, Select } from '@desavii/ui/components/form-controls';
+import { Card } from '@desavii/ui/components/primitives';
+import { Stack } from '@desavii/ui/components/layout';
 import {
   useGenerateListingDescriptionMutation,
   useGenerateListingSeoMutation,

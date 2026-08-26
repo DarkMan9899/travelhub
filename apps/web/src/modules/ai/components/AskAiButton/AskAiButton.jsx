@@ -15,7 +15,7 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Sparkles } from 'lucide-react';
-import { Button, Icon } from '@travelhub/ui/components/primitives';
+import { Button, Icon } from '@desavii/ui/components/primitives';
 import AiAssistantDrawer from '../AiAssistantDrawer/AiAssistantDrawer.jsx';
 
 export default function AskAiButton({

@@ -30,7 +30,11 @@ module.exports = {
       { type: 'core', pattern: 'src/core/*' },
       { type: 'infrastructure', pattern: 'src/infrastructure/*' },
       { type: 'modules', pattern: 'src/modules/*', capture: ['moduleName'] },
-      { type: 'crosscutting', pattern: 'src/{middleware,guards,errors,validation,logging,monitoring,config,container,jobs}/*' },
+      {
+        type: 'crosscutting',
+        pattern:
+          'src/{middleware,guards,errors,validation,logging,monitoring,config,container,jobs}/*',
+      },
       { type: 'app', pattern: 'src/{app,server}.js' },
     ],
   },
@@ -44,16 +48,25 @@ module.exports = {
           // core (Domain) may depend on nothing but itself
           { from: 'core', allow: ['core'] },
           // infrastructure (adapters) may depend on core (implements its ports) and crosscutting
-          { from: 'infrastructure', allow: ['core', 'infrastructure', 'crosscutting'] },
+          {
+            from: 'infrastructure',
+            allow: ['core', 'infrastructure', 'crosscutting'],
+          },
           // modules may depend on core, infrastructure (via DI), crosscutting, and other
           // modules' public surface — the plugin enforces folder-level boundaries;
           // "public surface only" (index.js) is additionally enforced by code review
           // per BACKEND_ARCHITECTURE.md §4.
-          { from: 'modules', allow: ['core', 'infrastructure', 'crosscutting', 'modules'] },
+          {
+            from: 'modules',
+            allow: ['core', 'infrastructure', 'crosscutting', 'modules'],
+          },
           // crosscutting (middleware/guards/errors/validation/etc.) may depend on core only
           { from: 'crosscutting', allow: ['core', 'crosscutting'] },
           // the app composition root may depend on anything
-          { from: 'app', allow: ['core', 'infrastructure', 'modules', 'crosscutting'] },
+          {
+            from: 'app',
+            allow: ['core', 'infrastructure', 'modules', 'crosscutting'],
+          },
         ],
       },
     ],
@@ -67,7 +80,8 @@ module.exports = {
     'no-restricted-syntax': [
       'error',
       {
-        selector: "CallExpression[callee.object.name='mysql'][callee.property.name=/query/] TemplateLiteral",
+        selector:
+          "CallExpression[callee.object.name='mysql'][callee.property.name=/query/] TemplateLiteral",
         message:
           'No string-concatenated/template-literal SQL — use parameterized queries only (BACKEND_ARCHITECTURE.md §47).',
       },

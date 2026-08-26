@@ -2,7 +2,7 @@
  * ToastProvider — orchestrates the ephemeral notification queue
  * (FRONTEND_ARCHITECTURE.md §26): stacking, auto-dismiss timing, and the
  * imperative `showToast(...)` API are this application-level concern;
- * `@travelhub/ui`'s `Toast` stays pure presentation (see that
+ * `@desavii/ui`'s `Toast` stays pure presentation (see that
  * component's file header).
  *
  * Portal'd to `document.body` so it renders above every layout
@@ -15,7 +15,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Toast } from '@travelhub/ui/components/feedback-overlays';
+import { Toast } from '@desavii/ui/components/feedback-overlays';
 import ToastContext from '../contexts/ToastContext.jsx';
 import styles from './ToastProvider.module.scss';
 

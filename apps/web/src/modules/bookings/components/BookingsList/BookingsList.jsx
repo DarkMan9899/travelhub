@@ -11,9 +11,9 @@ import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Stack } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
+import { Stack } from '@desavii/ui/components/layout';
 import BookingCard from '../BookingCard/BookingCard.jsx';
 import styles from './BookingsList.module.scss';
 

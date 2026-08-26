@@ -1,6 +1,6 @@
 // Desavii Armenia — global stylesheet entry point.
 // Implements FRONTEND_ARCHITECTURE.md §9: design tokens are consumed from
-// @travelhub/ui exclusively (never redefined here), plus a minimal,
+// @desavii/ui exclusively (never redefined here), plus a minimal,
 // intentional global reset. All component-level styling lives in each
 // component's own .module.scss (§9.1) — this file is global/base only.
 

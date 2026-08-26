@@ -1,4 +1,4 @@
-# @travelhub/shared
+# @desavii/shared
 
 Pure, framework-free utilities usable by both `apps/web` and `apps/api`.
 Never contains React, Express, or any I/O (database, HTTP, filesystem)

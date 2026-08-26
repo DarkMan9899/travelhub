@@ -14,7 +14,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Input } from '@travelhub/ui/components/form-controls';
+import { Input } from '@desavii/ui/components/form-controls';
 import { useSuggestionsQuery } from '../../../search/index.js';
 import styles from './DestinationAutocomplete.module.scss';
 

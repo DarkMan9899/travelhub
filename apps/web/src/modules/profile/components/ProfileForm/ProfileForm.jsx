@@ -9,10 +9,10 @@
 
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Input, Select } from '@travelhub/ui/components/form-controls';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
+import { Input, Select } from '@desavii/ui/components/form-controls';
+import { Button } from '@desavii/ui/components/primitives';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
+import { Stack, Inline } from '@desavii/ui/components/layout';
 import PropTypes from 'prop-types';
 import { SUPPORTED_LOCALES } from '../../../../translations/i18n.js';
 import { LANGUAGE_ID_BY_LOCALE } from '../../../listings/constants/languageIds.js';

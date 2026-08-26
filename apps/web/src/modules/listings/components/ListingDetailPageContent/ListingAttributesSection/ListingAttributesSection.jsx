@@ -11,7 +11,7 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Section } from '@travelhub/ui/components/layout';
+import { Section } from '@desavii/ui/components/layout';
 import { fromAttributeValuesResponse } from '../../../utils/attributeValueMapping.js';
 import MetadataValueDisplay from '../MetadataValueDisplay.jsx';
 

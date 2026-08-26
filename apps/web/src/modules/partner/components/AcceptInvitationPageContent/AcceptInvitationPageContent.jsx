@@ -12,12 +12,9 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Card } from '@travelhub/ui/components/primitives';
-import {
-  ErrorState,
-  Skeleton,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Section, Stack } from '@travelhub/ui/components/layout';
+import { Button, Card } from '@desavii/ui/components/primitives';
+import { ErrorState, Skeleton } from '@desavii/ui/components/feedback-overlays';
+import { Section, Stack } from '@desavii/ui/components/layout';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useInvitationPreviewQuery } from '../../queries/useInvitationPreviewQuery.js';

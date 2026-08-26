@@ -13,7 +13,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Section } from '@travelhub/ui/components/layout';
+import { Section } from '@desavii/ui/components/layout';
 import TESTIMONIALS from '../../constants/testimonials.js';
 import SectionHeader from '../SectionHeader/SectionHeader.jsx';
 import Showcase from '../Showcase/Showcase.jsx';

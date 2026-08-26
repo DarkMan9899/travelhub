@@ -14,9 +14,9 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Card } from '@travelhub/ui/components/primitives';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
-import { PriceTag } from '@travelhub/ui/components/data-display';
+import { Card } from '@desavii/ui/components/primitives';
+import { Stack, Inline } from '@desavii/ui/components/layout';
+import { PriceTag } from '@desavii/ui/components/data-display';
 import PaymentStatusBadge from '../PaymentStatusBadge/PaymentStatusBadge.jsx';
 import SimulatedPaymentNotice from '../SimulatedPaymentNotice/SimulatedPaymentNotice.jsx';
 

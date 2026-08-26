@@ -17,8 +17,8 @@
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Mail, Clock } from 'lucide-react';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import { Icon } from '@travelhub/ui/components/primitives';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Icon } from '@desavii/ui/components/primitives';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';

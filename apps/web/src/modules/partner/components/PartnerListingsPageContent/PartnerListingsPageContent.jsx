@@ -15,9 +15,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import { Input, Select } from '@travelhub/ui/components/form-controls';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Input, Select } from '@desavii/ui/components/form-controls';
+import { Button } from '@desavii/ui/components/primitives';
 import { Search } from 'lucide-react';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';

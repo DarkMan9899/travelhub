@@ -12,15 +12,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import {
   Skeleton,
   ErrorState,
   EmptyState,
   Modal,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Input, Textarea } from '@travelhub/ui/components/form-controls';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
+import { Input, Textarea } from '@desavii/ui/components/form-controls';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';

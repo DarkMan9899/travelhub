@@ -11,7 +11,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Share2 } from 'lucide-react';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Button } from '@desavii/ui/components/primitives';
 import { useToast } from '../../contexts/ToastContext.jsx';
 
 export default function ShareButton({

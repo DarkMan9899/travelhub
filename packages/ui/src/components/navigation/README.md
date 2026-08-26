@@ -32,7 +32,7 @@ default `'a'` — inject a router's link component; it always receives an
 **Usage:**
 
 ```jsx
-import { Breadcrumbs } from '@travelhub/ui/components/navigation';
+import { Breadcrumbs } from '@desavii/ui/components/navigation';
 
 <Breadcrumbs
   items={[
@@ -74,7 +74,7 @@ given, omitted entirely otherwise) · `activeItemId` (string) ·
 
 ```jsx
 import { useState } from 'react';
-import { Sidebar } from '@travelhub/ui/components/navigation';
+import { Sidebar } from '@desavii/ui/components/navigation';
 
 function PartnerNav() {
   const [collapsed, setCollapsed] = useState(false);
@@ -136,7 +136,7 @@ ahead of validation via this control alone) · `ariaLabel` (default
 **Usage:**
 
 ```jsx
-import { WizardProgress } from '@travelhub/ui/components/navigation';
+import { WizardProgress } from '@desavii/ui/components/navigation';
 
 <WizardProgress
   steps={[

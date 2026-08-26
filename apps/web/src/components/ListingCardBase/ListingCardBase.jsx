@@ -34,8 +34,8 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Images } from 'lucide-react';
-import { Card, Badge, Icon } from '@travelhub/ui/components/primitives';
-import { PriceTag, RatingStars } from '@travelhub/ui/components/data-display';
+import { Card, Badge, Icon } from '@desavii/ui/components/primitives';
+import { PriceTag, RatingStars } from '@desavii/ui/components/data-display';
 import RouterLink from '../RouterLink.jsx';
 import styles from './ListingCardBase.module.scss';
 

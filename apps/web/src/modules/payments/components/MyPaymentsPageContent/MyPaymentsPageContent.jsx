@@ -10,14 +10,14 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Card, Button } from '@travelhub/ui/components/primitives';
-import { PriceTag } from '@travelhub/ui/components/data-display';
+} from '@desavii/ui/components/feedback-overlays';
+import { Card, Button } from '@desavii/ui/components/primitives';
+import { PriceTag } from '@desavii/ui/components/data-display';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useMyPaymentsQuery } from '../../queries/useMyPaymentsQuery.js';
 import PaymentStatusBadge from '../PaymentStatusBadge/PaymentStatusBadge.jsx';

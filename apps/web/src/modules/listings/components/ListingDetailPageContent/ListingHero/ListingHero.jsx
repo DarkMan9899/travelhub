@@ -15,9 +15,9 @@ import { MapPin } from 'lucide-react';
 import {
   HighlightsList,
   RatingStars,
-} from '@travelhub/ui/components/data-display';
-import { Gallery } from '@travelhub/ui/components/listing-media';
-import { Inline, Stack } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/data-display';
+import { Gallery } from '@desavii/ui/components/listing-media';
+import { Inline, Stack } from '@desavii/ui/components/layout';
 import resolveHighlightIcon from '../../../utils/highlightIcons.js';
 import styles from './ListingHero.module.scss';
 

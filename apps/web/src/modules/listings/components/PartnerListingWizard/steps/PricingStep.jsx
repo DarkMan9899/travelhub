@@ -18,8 +18,8 @@ import {
   Spinner,
   ErrorState,
   Alert,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Input, Select } from '@travelhub/ui/components/form-controls';
+} from '@desavii/ui/components/feedback-overlays';
+import { Input, Select } from '@desavii/ui/components/form-controls';
 import { useListingMetadataQuery } from '../../../queries/useListingMetadataQuery.js';
 import { useUpdateListingMutation } from '../../../mutations/useUpdateListingMutation.js';
 import { CURRENCY_CODES } from '../../../constants/currencies.js';

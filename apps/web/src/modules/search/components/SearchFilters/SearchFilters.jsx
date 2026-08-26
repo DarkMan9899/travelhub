@@ -23,8 +23,8 @@ import {
   Input,
   Select,
   DatePicker,
-} from '@travelhub/ui/components/form-controls';
-import { Button, Badge } from '@travelhub/ui/components/primitives';
+} from '@desavii/ui/components/form-controls';
+import { Button, Badge } from '@desavii/ui/components/primitives';
 import { useCategoriesQuery } from '../../queries/useCategoriesQuery.js';
 import {
   SORT_KEYS,

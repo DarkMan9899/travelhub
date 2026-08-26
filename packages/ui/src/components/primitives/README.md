@@ -15,7 +15,7 @@ Animation, Responsive Behaviour, Dependencies, Where it is used) exactly
 ## Button
 
 ```jsx
-import { Button } from '@travelhub/ui/components/primitives';
+import { Button } from '@desavii/ui/components/primitives';
 
 <Button variant="primary" size="md" onClick={handleBook}>
   Book now
@@ -40,7 +40,7 @@ minimum touch target regardless of the visual icon size.
 ## Badge
 
 ```jsx
-import { Badge } from '@travelhub/ui/components/primitives';
+import { Badge } from '@desavii/ui/components/primitives';
 
 <Badge variant="success" label="Confirmed" filled />
 <Badge variant="neutral" label="Draft" />
@@ -54,7 +54,7 @@ rendered as real text — color is never the only signal.
 ## Avatar
 
 ```jsx
-import { Avatar } from '@travelhub/ui/components/primitives';
+import { Avatar } from '@desavii/ui/components/primitives';
 
 <Avatar name="Ani Petrosyan" userId={user.id} src={user.avatarUrl} size="lg" />;
 ```
@@ -67,7 +67,7 @@ see `Avatar.jsx`'s file header).
 ## Tooltip
 
 ```jsx
-import { Tooltip } from '@travelhub/ui/components/primitives';
+import { Tooltip } from '@desavii/ui/components/primitives';
 
 <Tooltip content="Add to favorites" placement="top">
   <button type="button" aria-label="Add to favorites">

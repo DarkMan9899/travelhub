@@ -7,7 +7,7 @@
  * page's convention.
  */
 
-import { Stack } from '@travelhub/ui/components/layout';
+import { Stack } from '@desavii/ui/components/layout';
 import { NotificationsPageContent } from '../../../notifications/index.js';
 import AdminAnnouncementComposer from '../AdminAnnouncementComposer/AdminAnnouncementComposer.jsx';
 

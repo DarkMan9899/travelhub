@@ -26,7 +26,7 @@ FRONTEND_ARCHITECTURE.md §8.2).
 ## Usage
 
 ```jsx
-import { Input, Textarea, Checkbox, Radio, Switch, Select } from '@travelhub/ui/components/form-controls';
+import { Input, Textarea, Checkbox, Radio, Switch, Select } from '@desavii/ui/components/form-controls';
 
 <Input
   label="Email address"
@@ -66,7 +66,7 @@ values as removable chips inside the trigger and keeps the panel open
 across selections.
 
 ```jsx
-import { DatePicker } from '@travelhub/ui/components/form-controls';
+import { DatePicker } from '@desavii/ui/components/form-controls';
 
 <DatePicker
   label="Check-in date"

@@ -17,8 +17,8 @@ import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useConversationQuery } from '../../queries/useConversationQuery.js';
 import { useConversationMessagesQuery } from '../../queries/useConversationMessagesQuery.js';

@@ -1,7 +1,7 @@
 /**
  * Overlay — private, shared behaviour for Modal and Drawer.
  *
- * Not part of the public @travelhub/ui API (not re-exported from any
+ * Not part of the public @desavii/ui API (not re-exported from any
  * barrel). Centralizes exactly what COMPONENT_LIBRARY.md's Drawer entry
  * calls "identical focus-trap and dismissal behavior to Modal": a
  * portal to `document.body`, a dismissible backdrop, and

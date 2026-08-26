@@ -7,7 +7,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { EmptyState } from '@travelhub/ui/components/feedback-overlays';
+import { EmptyState } from '@desavii/ui/components/feedback-overlays';
 
 export default function ForbiddenPage() {
   const { t } = useTranslation();

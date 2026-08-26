@@ -19,13 +19,9 @@ import { useForm, Controller } from 'react-hook-form';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import {
-  Input,
-  Textarea,
-  Select,
-} from '@travelhub/ui/components/form-controls';
-import { Alert } from '@travelhub/ui/components/feedback-overlays';
-import { Stack } from '@travelhub/ui/components/layout';
+import { Input, Textarea, Select } from '@desavii/ui/components/form-controls';
+import { Alert } from '@desavii/ui/components/feedback-overlays';
+import { Stack } from '@desavii/ui/components/layout';
 import { useCreateListingMutation } from '../../../mutations/useCreateListingMutation.js';
 import { useUpdateListingMutation } from '../../../mutations/useUpdateListingMutation.js';
 import { LISTING_TYPES } from '../../../constants/listingTypes.js';

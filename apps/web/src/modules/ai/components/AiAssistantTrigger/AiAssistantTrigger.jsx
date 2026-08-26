@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
-import { Icon } from '@travelhub/ui/components/primitives';
+import { Icon } from '@desavii/ui/components/primitives';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import AiAssistantDrawer from '../AiAssistantDrawer/AiAssistantDrawer.jsx';
 import styles from './AiAssistantTrigger.module.scss';

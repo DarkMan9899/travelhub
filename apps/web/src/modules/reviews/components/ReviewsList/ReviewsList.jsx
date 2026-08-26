@@ -28,17 +28,17 @@ import { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
-import { Card, Button } from '@travelhub/ui/components/primitives';
-import { RatingStars } from '@travelhub/ui/components/data-display';
-import { Select, Textarea } from '@travelhub/ui/components/form-controls';
+import { Stack, Inline } from '@desavii/ui/components/layout';
+import { Card, Button } from '@desavii/ui/components/primitives';
+import { RatingStars } from '@desavii/ui/components/data-display';
+import { Select, Textarea } from '@desavii/ui/components/form-controls';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
   Spinner,
   Modal,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/feedback-overlays';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';

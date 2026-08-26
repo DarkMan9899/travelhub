@@ -14,8 +14,8 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack } from '@travelhub/ui/components/layout';
-import { Card } from '@travelhub/ui/components/primitives';
+import { Section, Stack } from '@desavii/ui/components/layout';
+import { Card } from '@desavii/ui/components/primitives';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';

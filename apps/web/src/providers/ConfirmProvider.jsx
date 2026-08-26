@@ -10,9 +10,9 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Modal } from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Inline } from '@travelhub/ui/components/layout';
+import { Modal } from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
+import { Inline } from '@desavii/ui/components/layout';
 import ConfirmContext from '../contexts/ConfirmContext.jsx';
 
 export default function ConfirmProvider({ children }) {

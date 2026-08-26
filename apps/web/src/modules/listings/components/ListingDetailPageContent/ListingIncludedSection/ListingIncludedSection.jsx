@@ -8,8 +8,8 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { IncludedItemsList } from '@travelhub/ui/components/data-display';
-import { Section } from '@travelhub/ui/components/layout';
+import { IncludedItemsList } from '@desavii/ui/components/data-display';
+import { Section } from '@desavii/ui/components/layout';
 
 export default function ListingIncludedSection({
   items = [],

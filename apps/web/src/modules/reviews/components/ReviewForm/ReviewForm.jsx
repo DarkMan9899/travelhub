@@ -10,13 +10,9 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Stack } from '@travelhub/ui/components/layout';
-import {
-  Input,
-  Textarea,
-  Select,
-} from '@travelhub/ui/components/form-controls';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Stack } from '@desavii/ui/components/layout';
+import { Input, Textarea, Select } from '@desavii/ui/components/form-controls';
+import { Button } from '@desavii/ui/components/primitives';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useSubmitReviewMutation } from '../../mutations/useSubmitReviewMutation.js';
 

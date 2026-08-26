@@ -18,7 +18,7 @@
 import PropTypes from 'prop-types';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Section } from '@travelhub/ui/components/layout';
+import { Section } from '@desavii/ui/components/layout';
 import {
   useSearchListingsQuery,
   SearchResultCard,

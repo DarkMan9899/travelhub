@@ -9,8 +9,8 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import { Select } from '@travelhub/ui/components/form-controls';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Select } from '@desavii/ui/components/form-controls';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';
 import {

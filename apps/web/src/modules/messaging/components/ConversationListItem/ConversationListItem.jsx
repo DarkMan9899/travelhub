@@ -9,7 +9,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Avatar, Badge } from '@travelhub/ui/components/primitives';
+import { Avatar, Badge } from '@desavii/ui/components/primitives';
 import {
   getParticipantDisplayName,
   getConversationTitle,

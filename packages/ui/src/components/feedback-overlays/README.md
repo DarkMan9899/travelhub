@@ -35,7 +35,7 @@ import {
   Alert,
   Modal,
   Drawer,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/feedback-overlays';
 
 <Spinner size="md" label="Processing payment" />
 

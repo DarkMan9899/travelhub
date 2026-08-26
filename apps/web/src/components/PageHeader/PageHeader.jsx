@@ -8,8 +8,8 @@
  */
 
 import PropTypes from 'prop-types';
-import { Breadcrumbs } from '@travelhub/ui/components/navigation';
-import { Inline } from '@travelhub/ui/components/layout';
+import { Breadcrumbs } from '@desavii/ui/components/navigation';
+import { Inline } from '@desavii/ui/components/layout';
 import RouterLink from '../RouterLink.jsx';
 import styles from './PageHeader.module.scss';
 

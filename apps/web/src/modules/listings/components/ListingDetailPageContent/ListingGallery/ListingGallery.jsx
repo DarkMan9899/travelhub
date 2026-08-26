@@ -3,7 +3,7 @@
  * `listing.media` (`listingDto.js`'s `toMediaResponse` shape). Only
  * `IMAGE`/`VIDEO` media types render here (`DOCUMENT` — the third
  * `media_types` code — has no place in a visual gallery). The lightbox
- * reuses `Modal` (`@travelhub/ui`, `size="full"`) rather than a bespoke
+ * reuses `Modal` (`@desavii/ui`, `size="full"`) rather than a bespoke
  * overlay, so it inherits that component's existing portal/focus-trap/
  * Escape/scroll-lock behavior for free; only the prev/next arrow-key
  * navigation is this component's own addition.
@@ -13,8 +13,8 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Modal } from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Modal } from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
 import styles from './ListingGallery.module.scss';
 
 const VISUAL_MEDIA_TYPES = ['IMAGE', 'VIDEO'];

@@ -24,7 +24,7 @@ selection are the composing wizard step's job, not this component's —
 it only ever sees newly-added files, never an existing media list.
 
 ```jsx
-import { FileDropzone } from '@travelhub/ui/components/listing-media';
+import { FileDropzone } from '@desavii/ui/components/listing-media';
 
 <FileDropzone
   label="Photos"

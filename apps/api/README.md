@@ -1,4 +1,4 @@
-# @travelhub/api
+# @desavii/api
 
 Desavii Armenia backend — Node.js/Express, implementing
 `BACKEND_ARCHITECTURE.md` exactly.

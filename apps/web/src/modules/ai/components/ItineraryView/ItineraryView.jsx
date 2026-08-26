@@ -8,10 +8,10 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Card } from '@travelhub/ui/components/primitives';
-import { Stack, Section } from '@travelhub/ui/components/layout';
-import { PriceTag } from '@travelhub/ui/components/data-display';
-import { EmptyState } from '@travelhub/ui/components/feedback-overlays';
+import { Card } from '@desavii/ui/components/primitives';
+import { Stack, Section } from '@desavii/ui/components/layout';
+import { PriceTag } from '@desavii/ui/components/data-display';
+import { EmptyState } from '@desavii/ui/components/feedback-overlays';
 
 export default function ItineraryView({ plan }) {
   const { t } = useTranslation();

@@ -12,19 +12,15 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import {
-  Input,
-  Switch,
-  Textarea,
-} from '@travelhub/ui/components/form-controls';
-import { Button, Card } from '@travelhub/ui/components/primitives';
-import { Tabs } from '@travelhub/ui/components/navigation';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Input, Switch, Textarea } from '@desavii/ui/components/form-controls';
+import { Button, Card } from '@desavii/ui/components/primitives';
+import { Tabs } from '@desavii/ui/components/navigation';
 import {
   Spinner,
   ErrorState,
   EmptyState,
-} from '@travelhub/ui/components/feedback-overlays';
+} from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';

@@ -2,7 +2,7 @@
  * NumberStepperField — the "Number inputs / Stepper controls" branch of
  * `MetadataFieldRenderer` (INTEGER/DECIMAL attributes — bedrooms,
  * bathrooms, seats, duration, group size, ...). Not
- * `@travelhub/ui`'s primitive registry: it's a thin composition of
+ * `@desavii/ui`'s primitive registry: it's a thin composition of
  * `Label` + `Button` (both reused as-is, no forked copies) around a
  * plain native number input, since neither primitive exposes an
  * interactive-icon slot — `Input`'s `iconLeft`/`iconRight` are wrapped
@@ -13,8 +13,8 @@
 
 import { useId } from 'react';
 import PropTypes from 'prop-types';
-import { Label } from '@travelhub/ui/components/form-controls';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Label } from '@desavii/ui/components/form-controls';
+import { Button } from '@desavii/ui/components/primitives';
 import styles from './NumberStepperField.module.scss';
 
 export default function NumberStepperField({

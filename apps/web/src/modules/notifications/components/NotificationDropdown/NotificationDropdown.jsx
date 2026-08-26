@@ -11,8 +11,8 @@ import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
 import { useNotificationsQuery } from '../../queries/useNotificationsQuery.js';
 import { useMarkNotificationReadMutation } from '../../mutations/useMarkNotificationReadMutation.js';
 import { useMarkAllNotificationsReadMutation } from '../../mutations/useMarkAllNotificationsReadMutation.js';

@@ -1,4 +1,4 @@
-# @travelhub/web
+# @desavii/web
 
 Desavii Armenia frontend — React/Vite, implementing
 `FRONTEND_ARCHITECTURE.md` exactly.
@@ -12,7 +12,7 @@ Foundation only. What exists and is verified working:
 - `PublicLayout` structural shell + one placeholder route
   (`ComingSoonPage`) — no real pages
 - i18next wired with the `common` namespace in all three locales
-- SCSS pipeline consuming `@travelhub/ui`'s design tokens
+- SCSS pipeline consuming `@desavii/ui`'s design tokens
 - `AppProviders` composing React Query + React Router (no Context
   providers yet — none has a real consumer this sprint)
 - Axios client foundation (base URL, locale header) — **no auth token

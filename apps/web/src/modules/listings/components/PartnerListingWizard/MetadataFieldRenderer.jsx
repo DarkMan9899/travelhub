@@ -38,7 +38,7 @@ import {
   Select,
   Switch,
   DatePicker,
-} from '@travelhub/ui/components/form-controls';
+} from '@desavii/ui/components/form-controls';
 import NumberStepperField from './controls/NumberStepperField.jsx';
 
 const NUMERIC_DATA_TYPES = ['INTEGER', 'DECIMAL'];

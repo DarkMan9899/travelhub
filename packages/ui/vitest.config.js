@@ -1,5 +1,5 @@
 /**
- * Vitest configuration for @travelhub/ui component tests
+ * Vitest configuration for @desavii/ui component tests
  * (FRONTEND_ARCHITECTURE.md §35 — component tests via React Testing
  * Library + Vitest, exercising rendering, keyboard interaction, and ARIA
  * attributes for every ui/ primitive).

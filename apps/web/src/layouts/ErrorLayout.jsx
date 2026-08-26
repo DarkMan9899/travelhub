@@ -8,7 +8,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import { Container } from '@travelhub/ui/components/layout';
+import { Container } from '@desavii/ui/components/layout';
 import styles from './ErrorLayout.module.scss';
 
 export default function ErrorLayout({ children }) {

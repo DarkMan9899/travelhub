@@ -1,5 +1,5 @@
 /**
- * Adapts `@travelhub/ui`'s router-agnostic `href` link contract
+ * Adapts `@desavii/ui`'s router-agnostic `href` link contract
  * (`Breadcrumbs`/`Sidebar`'s own file headers: "always given an `href`
  * prop; a router link needs a small local adapter translating
  * `href` → `to`") to react-router-dom's `Link`. The one adapter every

@@ -27,9 +27,9 @@ import {
   Skeleton,
   ErrorState,
   EmptyState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Section, Stack, Inline } from '@travelhub/ui/components/layout';
-import { Breadcrumbs } from '@travelhub/ui/components/navigation';
+} from '@desavii/ui/components/feedback-overlays';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Breadcrumbs } from '@desavii/ui/components/navigation';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import ShareButton from '../../../../components/ShareButton/ShareButton.jsx';
 import useSeo from '../../../../seo/useSeo.js';

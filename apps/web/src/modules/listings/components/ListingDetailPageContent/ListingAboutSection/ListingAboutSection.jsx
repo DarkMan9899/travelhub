@@ -11,8 +11,8 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Section, Stack } from '@travelhub/ui/components/layout';
+import { Button } from '@desavii/ui/components/primitives';
+import { Section, Stack } from '@desavii/ui/components/layout';
 import styles from './ListingAboutSection.module.scss';
 
 const COLLAPSE_LENGTH = 480;

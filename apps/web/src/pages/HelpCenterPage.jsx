@@ -1,4 +1,4 @@
-import { Container } from '@travelhub/ui/components/layout';
+import { Container } from '@desavii/ui/components/layout';
 import { HelpCenterPageContent } from '../modules/cms/index.js';
 
 export default function HelpCenterPage() {

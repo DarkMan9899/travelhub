@@ -14,11 +14,8 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section } from '@travelhub/ui/components/layout';
-import {
-  Spinner,
-  ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
+import { Section } from '@desavii/ui/components/layout';
+import { Spinner, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useListingQuery } from '../../queries/useListingQuery.js';
 import BookableUnitsManager from '../BookableUnitsManager/BookableUnitsManager.jsx';

@@ -5,12 +5,9 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import {
-  Skeleton,
-  ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Switch } from '@travelhub/ui/components/form-controls';
-import { Stack } from '@travelhub/ui/components/layout';
+import { Skeleton, ErrorState } from '@desavii/ui/components/feedback-overlays';
+import { Switch } from '@desavii/ui/components/form-controls';
+import { Stack } from '@desavii/ui/components/layout';
 import { useNotificationPreferencesQuery } from '../../queries/useNotificationPreferencesQuery.js';
 import { useUpdateNotificationPreferenceMutation } from '../../mutations/useUpdateNotificationPreferenceMutation.js';
 import styles from './NotificationPreferencesSection.module.scss';

@@ -1,7 +1,7 @@
 # components
 
 Composite components shared across more than one module or layout, but
-too domain-specific for `@travelhub/ui` — `FRONTEND_ARCHITECTURE.md`
+too domain-specific for `@desavii/ui` — `FRONTEND_ARCHITECTURE.md`
 §3.1: "shared across more than one module but too domain-specific for
 `ui/`" (e.g. `PriceBreakdown`, `ListingCard`). `Header` and `Footer`
 below are this sprint's first inhabitants: `PublicLayout` uses the full
@@ -39,7 +39,7 @@ import Header from '../components/Header/Header.jsx';
 **Accessibility notes:** renders `<header>` (the `banner` landmark) with
 a `<nav aria-label="Primary">` for `navItems` — omitted entirely (no
 empty landmark) when `navItems` is empty. Every link meets the 44px
-minimum touch-target height. Uses `@travelhub/ui`'s `focus-ring()` mixin
+minimum touch-target height. Uses `@desavii/ui`'s `focus-ring()` mixin
 throughout.
 
 ## Footer

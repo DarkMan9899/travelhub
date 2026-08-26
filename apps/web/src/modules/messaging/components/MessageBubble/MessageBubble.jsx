@@ -13,7 +13,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Paperclip } from 'lucide-react';
-import { Icon } from '@travelhub/ui/components/primitives';
+import { Icon } from '@desavii/ui/components/primitives';
 import { REACTION_CODES } from '../../constants/reactionCodes.js';
 import { formatRelativeTime } from '../../utils/formatRelativeTime.js';
 import styles from './MessageBubble.module.scss';

@@ -16,10 +16,10 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack, Grid } from '@travelhub/ui/components/layout';
-import { StatCard, DataTable } from '@travelhub/ui/components/dashboard';
-import { Card } from '@travelhub/ui/components/primitives';
-import { ErrorState } from '@travelhub/ui/components/feedback-overlays';
+import { Section, Stack, Grid } from '@desavii/ui/components/layout';
+import { StatCard, DataTable } from '@desavii/ui/components/dashboard';
+import { Card } from '@desavii/ui/components/primitives';
+import { ErrorState } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAdminSystemHealthQuery } from '../../queries/useAdminSystemHealthQuery.js';
 

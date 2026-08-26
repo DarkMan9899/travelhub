@@ -1,4 +1,4 @@
-# @travelhub/ui
+# @desavii/ui
 
 The shared design-system component library implementing
 `COMPONENT_LIBRARY.md` and `UI_UX_GUIDELINES.md`. Consumed by `apps/web`
@@ -102,7 +102,7 @@ Spinner`, `Skeleton`, `EmptyState`, `Alert`, `Modal`, `Drawer` —
 ## Usage
 
 Consuming apps import the token entry point once
-(`@use '@travelhub/ui/tokens' as tokens;`) and individual components from
+(`@use '@desavii/ui/tokens' as tokens;`) and individual components from
 their group:
 
 ```jsx
@@ -111,22 +111,18 @@ import {
   Badge,
   Avatar,
   Tooltip,
-} from '@travelhub/ui/components/primitives';
+} from '@desavii/ui/components/primitives';
 import {
   Input,
   Select,
   DatePicker,
-} from '@travelhub/ui/components/form-controls';
-import {
-  Modal,
-  Drawer,
-  Alert,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Container, Page, Stack, Grid } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/form-controls';
+import { Modal, Drawer, Alert } from '@desavii/ui/components/feedback-overlays';
+import { Container, Page, Stack, Grid } from '@desavii/ui/components/layout';
 import {
   Breadcrumbs,
   Sidebar,
   WizardProgress,
-} from '@travelhub/ui/components/navigation';
-import { FileDropzone } from '@travelhub/ui/components/listing-media';
+} from '@desavii/ui/components/navigation';
+import { FileDropzone } from '@desavii/ui/components/listing-media';
 ```

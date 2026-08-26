@@ -12,8 +12,8 @@
 
 import { Outlet, useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Sidebar } from '@travelhub/ui/components/navigation';
-import { Container } from '@travelhub/ui/components/layout';
+import { Sidebar } from '@desavii/ui/components/navigation';
+import { Container } from '@desavii/ui/components/layout';
 import AppLayout from './AppLayout.jsx';
 import Header from '../components/Header/Header.jsx';
 import UserMenu from '../components/UserMenu/UserMenu.jsx';

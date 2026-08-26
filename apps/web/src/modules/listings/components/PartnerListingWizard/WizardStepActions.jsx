@@ -7,7 +7,7 @@
  */
 
 import PropTypes from 'prop-types';
-import { Button } from '@travelhub/ui/components/primitives';
+import { Button } from '@desavii/ui/components/primitives';
 import styles from './WizardStepActions.module.scss';
 
 export default function WizardStepActions({

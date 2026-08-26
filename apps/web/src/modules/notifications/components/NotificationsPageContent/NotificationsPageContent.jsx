@@ -16,11 +16,11 @@ import {
   Skeleton,
   EmptyState,
   ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Input } from '@travelhub/ui/components/form-controls';
-import { Tabs } from '@travelhub/ui/components/navigation';
-import { Section, Stack } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
+import { Input } from '@desavii/ui/components/form-controls';
+import { Tabs } from '@desavii/ui/components/navigation';
+import { Section, Stack } from '@desavii/ui/components/layout';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useNotificationsQuery } from '../../queries/useNotificationsQuery.js';
 import { useMarkNotificationReadMutation } from '../../mutations/useMarkNotificationReadMutation.js';

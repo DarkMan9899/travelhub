@@ -31,13 +31,10 @@ import PropTypes from 'prop-types';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Input, Textarea } from '@travelhub/ui/components/form-controls';
-import { Button, Card } from '@travelhub/ui/components/primitives';
-import {
-  Skeleton,
-  ErrorState,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Section, Stack, Inline, Grid } from '@travelhub/ui/components/layout';
+import { Input, Textarea } from '@desavii/ui/components/form-controls';
+import { Button, Card } from '@desavii/ui/components/primitives';
+import { Skeleton, ErrorState } from '@desavii/ui/components/feedback-overlays';
+import { Section, Stack, Inline, Grid } from '@desavii/ui/components/layout';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';

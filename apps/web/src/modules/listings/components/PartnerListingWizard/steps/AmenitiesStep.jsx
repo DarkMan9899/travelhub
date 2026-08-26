@@ -18,9 +18,9 @@ import {
   Spinner,
   ErrorState,
   Alert,
-} from '@travelhub/ui/components/feedback-overlays';
-import { Input, Checkbox } from '@travelhub/ui/components/form-controls';
-import { Stack } from '@travelhub/ui/components/layout';
+} from '@desavii/ui/components/feedback-overlays';
+import { Input, Checkbox } from '@desavii/ui/components/form-controls';
+import { Stack } from '@desavii/ui/components/layout';
 import { useListingMetadataQuery } from '../../../queries/useListingMetadataQuery.js';
 import { useUpdateListingMutation } from '../../../mutations/useUpdateListingMutation.js';
 import WizardStepActions from '../WizardStepActions.jsx';

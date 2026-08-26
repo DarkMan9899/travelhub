@@ -7,9 +7,9 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Button } from '@travelhub/ui/components/primitives';
-import { Textarea } from '@travelhub/ui/components/form-controls';
-import { Stack, Inline } from '@travelhub/ui/components/layout';
+import { Button } from '@desavii/ui/components/primitives';
+import { Textarea } from '@desavii/ui/components/form-controls';
+import { Stack, Inline } from '@desavii/ui/components/layout';
 
 export default function PartnerAiToolRow({
   label,

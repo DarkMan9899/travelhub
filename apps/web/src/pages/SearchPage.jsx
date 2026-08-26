@@ -1,4 +1,4 @@
-import { Container } from '@travelhub/ui/components/layout';
+import { Container } from '@desavii/ui/components/layout';
 import { SearchPageContent } from '../modules/search/index.js';
 
 export default function SearchPage() {

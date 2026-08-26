@@ -1,5 +1,5 @@
 /**
- * @travelhub/shared — public entry point.
+ * @desavii/shared — public entry point.
  *
  * INTENTIONALLY MINIMAL IN SPRINT 1.
  *

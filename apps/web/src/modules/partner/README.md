@@ -12,7 +12,7 @@ filter/sort + publish/unpublish/archive/delete actions),
 `PartnerBookingsPageContent` + `PartnerBookingDetailContent`
 (status filter, list, Confirm/Reject/Cancel actions, lifecycle
 timeline), and `PartnerCalendarPageContent` (listing/unit selectors,
-`PartnerCalendarEditor` from `@travelhub/ui/components/dashboard`,
+`PartnerCalendarEditor` from `@desavii/ui/components/dashboard`,
 availability read/write). Each is a thin page-level orchestrator; the
 underlying data layer (`useMyListingsQuery`, `usePartnerBookingsQuery`,
 `useConfirmBookingMutation`/`useRejectBookingMutation`,
@@ -25,7 +25,7 @@ has been fully replaced and deleted.
 
 ## Folder contents (per FRONTEND_ARCHITECTURE.md §3.2 / §6.2)
 
-- `components/` — module-owned UI, composing `@travelhub/ui` primitives
+- `components/` — module-owned UI, composing `@desavii/ui` primitives
 - `hooks/` — module-specific custom hooks
 - `queries/` — React Query query definitions (Ch. 14)
 - `mutations/` — React Query mutation definitions (Ch. 14)

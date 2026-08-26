@@ -7,7 +7,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { EmptyState } from '@travelhub/ui/components/feedback-overlays';
+import { EmptyState } from '@desavii/ui/components/feedback-overlays';
 import useNoIndex from '../seo/useNoIndex.js';
 
 export default function NotFoundPage() {
