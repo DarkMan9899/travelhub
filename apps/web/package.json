@@ -2,7 +2,7 @@
   "name": "@desavii/web",
   "version": "0.1.0",
   "private": true,
-  "description": "Travel Hub Armenia — frontend (React/Vite), implementing FRONTEND_ARCHITECTURE.md.",
+  "description": "Desavii Armenia — frontend (React/Vite), implementing FRONTEND_ARCHITECTURE.md.",
   "type": "module",
   "scripts": {
     "dev": "vite",

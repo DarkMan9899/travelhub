@@ -634,7 +634,7 @@ bidirectional synchronization:
   same-window internal hold could be granted) and maps each imported busy
   period onto `blackout_dates` for the corresponding listing, tagged with
   its external source so partners can distinguish "blocked because of
-  Airbnb" from "blocked because of a Travel Hub booking" in the UI.
+  Airbnb" from "blocked because of a Desavii booking" in the UI.
 - **iCal Export.** Every listing exposes a generated, per-listing iCal feed
   URL reflecting its current `availability_calendar` booked/blocked ranges,
   for partners to import into external tools.
@@ -647,7 +647,7 @@ bidirectional synchronization:
   publishes and accepts standard iCal feeds); no bespoke protocol is
   required, keeping this integration low-maintenance.
 - **Booking Sync.** Internally, every confirmed, cancelled, or modified
-  Travel Hub booking is what drives the outbound iCal feed's content — this
+  Desavii booking is what drives the outbound iCal feed's content — this
   is not a separate sync process but a direct read of the same
   `availability_calendar`/`booking_items` tables already described.
 

@@ -2,7 +2,7 @@
   "name": "@desavii/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Travel Hub Armenia — backend API (Node.js/Express), implementing BACKEND_ARCHITECTURE.md.",
+  "description": "Desavii Armenia — backend API (Node.js/Express), implementing BACKEND_ARCHITECTURE.md.",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
