@@ -474,6 +474,7 @@
     },
     "results": {
       "loadMore": "Load more",
+      "count": "{{count}} results",
       "empty": {
         "title": "No results found",
         "description": "Try adjusting your search or filters."
@@ -485,7 +486,8 @@
       }
     },
     "card": {
-      "viewDetails": "View {{title}}"
+      "viewDetails": "View {{title}}",
+      "fromPrice": "From"
     }
   },
   "errors": {

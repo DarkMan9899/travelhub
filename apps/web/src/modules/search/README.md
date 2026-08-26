@@ -57,21 +57,36 @@ Deliberately **not** built, and why:
   small seeded reference table with no `GET` route. `categoryId` already
   covers materially the same "kind of place" concept via a real,
   localized, endpoint-backed list, so it isn't duplicated here.
-- **Price / rating / amenities / capacity / availability** — none of
-  these exist as either a `GET /search` filter param or a field on its
-  response DTO (`toSearchResultResponse` returns
+
+**Correction (P1.1 / Phase 4.2 / P2.2D — this section previously said
+the following were deliberately not built; they now are):**
+
+- **Dates / guests** — real `GET /search` params
+  (`dateFrom`/`dateTo`/`guests`, `SearchFilters.jsx`'s own date-range
+  picker and guest-count `Select`, backed by `useSearchFilters`/
+  `schemas/searchParams.js`), filtering against the real Inventory
+  Engine (`bookable_units`/`availability_calendar`/`blackout_dates`), not
+  a no-op. `dateFrom`/`dateTo` are checkout-exclusive nights for
+  `HOTEL_ROOM`/`PROPERTY_UNIT` units and inclusive-both-ends for every
+  other type (`accommodationDateSemantics.js`, applied per-unit inside
+  the same query, not a second definition). `guests` is checked against
+  a unit's real `max_guests` occupancy, never against room inventory
+  quantity.
+- **Rating / amenities / price tier / bedrooms / star rating / etc.** —
+  real, catalog-driven dynamic filters (`DynamicFilterPanel`,
+  `GET /search/filters`), not hardcoded. `rating_average`/`review_count`
+  are real DTO fields, aggregated from approved reviews.
+- **Price** — `toSearchResultResponse`'s `price_amount`/
+  `price_currency_code` is a per-listing "from" price: the cheapest real
+  `bookable_units.base_price_amount` among a listing's units when they
+  all share one currency, falling back to the legacy per-listing
+  `listing_pricing` row, and `null` (never a fabricated/mismatched
+  number) when a listing's units are priced in more than one currency.
+  The full current DTO field list is
   `id, partner_id, listing_type, slug, status, title, summary, city_id,
-city_name, country_id, cover_image_url, created_at` — nothing else).
-  `SearchResultCard` renders exactly those fields and nothing invented on
-  top of them.
-- **Dates / guests** — the Homepage's `SearchWidget` already sends
-  `checkIn`/`checkOut`/`guests` as URL params, but no availability/
-  capacity filter exists on this endpoint. This page reads the URL
-  through its own schema, which only recognizes `destination`/
-  `categoryId`/`sort` — the other three params pass through inertly on
-  first load and are dropped the next time this page's own filters
-  change (`schemas/searchParams.js`'s `buildSearchParams` only ever
-  writes its own three keys).
+city_name, country_id, cover_image_url, price_amount,
+price_currency_code, media_count, rating_average, review_count,
+created_at`.
 
 **Future AI Search preparation:** `SearchResults` takes a plain
 `results` array plus loading/error/pagination props — it has no

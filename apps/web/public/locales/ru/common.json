@@ -474,6 +474,7 @@
     },
     "results": {
       "loadMore": "Показать ещё",
+      "count": "{{count}} результатов",
       "empty": {
         "title": "Ничего не найдено",
         "description": "Попробуйте изменить поиск или фильтры."
@@ -485,7 +486,8 @@
       }
     },
     "card": {
-      "viewDetails": "Смотреть {{title}}"
+      "viewDetails": "Смотреть {{title}}",
+      "fromPrice": "От"
     }
   },
   "errors": {

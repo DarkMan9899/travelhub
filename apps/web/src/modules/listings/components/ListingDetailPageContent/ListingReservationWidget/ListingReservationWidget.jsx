@@ -23,10 +23,10 @@
  * duplicate price display.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { PriceTag } from '@desavii/ui/components/data-display';
 import { Button } from '@desavii/ui/components/primitives';
 import {
@@ -52,6 +52,7 @@ import {
   resolvePricingModelLabel,
 } from '../../../utils/reservationLabels.js';
 import { formatBedConfiguration } from '../../../utils/bedConfigurationDisplay.js';
+import { resolveInitialReservationState } from '../../../utils/reservationSearchContext.js';
 import styles from './ListingReservationWidget.module.scss';
 
 const CALENDAR_WINDOW_DAYS = 180;
@@ -66,11 +67,25 @@ export default function ListingReservationWidget({
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
 
+  const today = toISODate(new Date());
+
+  // P2.2D: a customer arriving here from the search page (which carries
+  // dateFrom/dateTo/guests forward as query params) starts with THOSE
+  // selections already filled in, instead of a blank calendar and
+  // guests=1 they'd have to re-enter. A bare/direct listing URL with no
+  // (or malformed) params resolves to the exact same blank/1 defaults as
+  // before — see `resolveInitialReservationState`'s own safety rules.
+  const [initialReservationState] = useState(() =>
+    resolveInitialReservationState(searchParams, today),
+  );
   const [selectedUnitId, setSelectedUnitId] = useState(null);
-  const [dateRange, setDateRange] = useState({ start: null, end: null });
+  const [dateRange, setDateRange] = useState(initialReservationState.dateRange);
   const [quantity, setQuantity] = useState(1);
-  const [guestCount, setGuestCount] = useState(1);
+  const [guestCount, setGuestCount] = useState(
+    initialReservationState.guestCount,
+  );
 
   const {
     data: units,
@@ -97,7 +112,6 @@ export default function ListingReservationWidget({
     );
   }
 
-  const today = toISODate(new Date());
   const windowEnd = addDays(today, CALENDAR_WINDOW_DAYS);
 
   const { data: calendarDays, refetch: refetchCalendar } =
@@ -169,6 +183,19 @@ export default function ListingReservationWidget({
     selectedUnit?.max_guests !== undefined && selectedUnit?.max_guests !== null
       ? selectedUnit.max_guests * quantity
       : null;
+
+  // P2.2D: a `guestCount` seeded from the search page's own `guests`
+  // param (see `initialReservationState` above) is only bounds-checked
+  // generically (1..50) at that point — the unit-specific cap isn't
+  // knowable until `units` finishes loading. Re-clamps once it does,
+  // same rule `handleChangeQuantity` already applies on every later
+  // quantity change, so the field is never left silently over its real
+  // allowance just because the URL supplied a value larger than this
+  // particular unit permits.
+  useEffect(() => {
+    if (allowedGuests === null) return;
+    setGuestCount((current) => Math.min(current, allowedGuests));
+  }, [allowedGuests]);
 
   const bedConfigurationSummary = selectedUnit
     ? formatBedConfiguration(t, selectedUnit.bed_configuration)

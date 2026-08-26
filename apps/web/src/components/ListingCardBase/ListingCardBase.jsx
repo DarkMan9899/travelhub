@@ -54,6 +54,7 @@ export default function ListingCardBase({
   reviewCount = 0,
   priceAmount = undefined,
   priceCurrencyCode = undefined,
+  pricePrefix = null,
   locale = undefined,
 }) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -104,12 +105,17 @@ export default function ListingCardBase({
         {location}
         {summary && <p className={styles.summary}>{summary}</p>}
         {priceAmount && (
-          <PriceTag
-            amount={priceAmount}
-            currencyCode={priceCurrencyCode}
-            locale={locale}
-            size="sm"
-          />
+          <span className={styles.priceRow}>
+            {pricePrefix && (
+              <span className={styles.pricePrefix}>{pricePrefix}</span>
+            )}
+            <PriceTag
+              amount={priceAmount}
+              currencyCode={priceCurrencyCode}
+              locale={locale}
+              size="sm"
+            />
+          </span>
         )}
       </div>
     </Card>
@@ -131,5 +137,6 @@ ListingCardBase.propTypes = {
   reviewCount: PropTypes.number,
   priceAmount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   priceCurrencyCode: PropTypes.string,
+  pricePrefix: PropTypes.node,
   locale: PropTypes.string,
 };

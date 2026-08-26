@@ -26,9 +26,9 @@ const RESULT = {
   price_currency_code: null,
 };
 
-function renderCard(result = RESULT) {
+function renderCard(result = RESULT, initialEntry = '/en') {
   return render(
-    <MemoryRouter initialEntries={['/en']}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/:locale" element={<SearchResultCard result={result} />} />
       </Routes>
@@ -85,5 +85,32 @@ describe('SearchResultCard (apps/web/src/modules/search)', () => {
   test('renders no price when price_amount is null (never fabricated)', () => {
     renderCard(RESULT);
     expect(screen.queryByText(/^[\d$֏₽]/)).not.toBeInTheDocument();
+  });
+
+  test('a real price is labeled "From" (P2.2D: search price is a per-listing minimum, never an exact promise)', () => {
+    renderCard({
+      ...RESULT,
+      price_amount: '99.00',
+      price_currency_code: 'USD',
+    });
+    expect(screen.getByText('Սկսած')).toBeInTheDocument();
+  });
+
+  // P2.2D: search -> listing detail context handoff — the reservation
+  // widget reads these exact same query keys to prefill its own state.
+  test('carries dateFrom/dateTo/guests from the current search URL into the listing detail link', () => {
+    renderCard(
+      RESULT,
+      '/en?dateFrom=2026-09-10&dateTo=2026-09-12&guests=3&sort=newest',
+    );
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/en/listings/7?dateFrom=2026-09-10&dateTo=2026-09-12&guests=3',
+    );
+  });
+
+  test('omits the query string entirely when the current search has no dates/guests', () => {
+    renderCard(RESULT, '/en?sort=newest');
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/en/listings/7');
   });
 });

@@ -126,9 +126,9 @@ const DAY_STATUSES = [
   },
 ];
 
-function renderWidget(props = {}) {
+function renderWidget(props = {}, initialEntry = '/en/listings/10') {
   return render(
-    <MemoryRouter initialEntries={['/en/listings/10']}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <ToastProvider>
         <Routes>
           <Route
@@ -648,5 +648,108 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
     expect(
       screen.queryByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
     ).not.toBeInTheDocument();
+  });
+
+  describe("P2.2D: initializes from the search page's own URL context", () => {
+    test('a valid dateFrom/dateTo/guests carried from search prefills the widget immediately', () => {
+      useListingBookableUnitsQuery.mockReturnValue({
+        data: SINGLE_UNIT,
+        isPending: false,
+        isError: false,
+      });
+      renderWidget(
+        {},
+        '/en/listings/10?dateFrom=2026-09-10&dateTo=2026-09-12&guests=2',
+      );
+
+      // dateRange is already valid without ever clicking the (mocked)
+      // date picker — proven by the submit button being enabled from the
+      // very first render, since `canSubmit` requires a real start/end.
+      expect(
+        screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+      ).toBeEnabled();
+      expect(screen.getByLabelText('Հյուրեր')).toHaveValue(2);
+    });
+
+    test('a bare listing URL with no query params keeps the original blank/1 defaults', () => {
+      useListingBookableUnitsQuery.mockReturnValue({
+        data: SINGLE_UNIT,
+        isPending: false,
+        isError: false,
+      });
+      renderWidget({}, '/en/listings/10');
+
+      expect(
+        screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+      ).toBeDisabled();
+      expect(screen.getByLabelText('Հյուրեր')).toHaveValue(1);
+    });
+
+    test.each([
+      [
+        'a past dateFrom',
+        '/en/listings/10?dateFrom=2020-01-01&dateTo=2020-01-03&guests=2',
+      ],
+      [
+        'dateTo before dateFrom',
+        '/en/listings/10?dateFrom=2026-09-12&dateTo=2026-09-10&guests=2',
+      ],
+      [
+        'a malformed date',
+        '/en/listings/10?dateFrom=not-a-date&dateTo=2026-09-12&guests=2',
+      ],
+      [
+        'only dateFrom, no dateTo',
+        '/en/listings/10?dateFrom=2026-09-10&guests=2',
+      ],
+    ])('falls back to blank dates rather than trusting %s', (_label, entry) => {
+      useListingBookableUnitsQuery.mockReturnValue({
+        data: SINGLE_UNIT,
+        isPending: false,
+        isError: false,
+      });
+      renderWidget({}, entry);
+      expect(
+        screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+      ).toBeDisabled();
+    });
+
+    test.each([
+      ['zero', '/en/listings/10?guests=0'],
+      ['negative', '/en/listings/10?guests=-3'],
+      ['non-numeric', '/en/listings/10?guests=abc'],
+      ['above the sane bound', '/en/listings/10?guests=999'],
+    ])(
+      'falls back to guests=1 rather than trusting a %s value',
+      (_label, entry) => {
+        useListingBookableUnitsQuery.mockReturnValue({
+          data: SINGLE_UNIT,
+          isPending: false,
+          isError: false,
+        });
+        renderWidget({}, entry);
+        expect(screen.getByLabelText('Հյուրեր')).toHaveValue(1);
+      },
+    );
+
+    test("an initial guest count exceeding the selected unit's real max_guests is re-clamped once units load", () => {
+      useListingBookableUnitsQuery.mockReturnValue({
+        data: [
+          {
+            id: 1,
+            bookable_unit_type: 'HOTEL_ROOM',
+            capacity: 3,
+            max_guests: 2,
+          },
+        ],
+        isPending: false,
+        isError: false,
+      });
+      renderWidget({}, '/en/listings/10?guests=5');
+      // 5 was validly parsed from the URL (1..50), but this specific
+      // unit's own max_guests × quantity(1) is 2 — the same re-clamp
+      // `handleChangeQuantity` already applies on every later change.
+      expect(screen.getByLabelText('Հյուրեր')).toHaveValue(2);
+    });
   });
 });

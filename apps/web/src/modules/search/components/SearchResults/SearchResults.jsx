@@ -67,6 +67,16 @@ export default function SearchResults({
 
   return (
     <div>
+      {/* P2.2D: truthful, screen-reader-announced result count — labeled
+          as the number currently loaded (grows as "Load more" fetches
+          further cursor pages), never a fabricated total the cursor-
+          paginated API doesn't expose. `aria-live="polite"` means both a
+          filter change and a "Load more" click are announced, closing
+          the audited gap where a result-set update was silent to
+          screen-reader users. */}
+      <p className={styles.resultCount} aria-live="polite">
+        {t('search.results.count', { count: results.length })}
+      </p>
       <div className={styles.grid}>
         {results.map((result) => (
           <SearchResultCard key={result.id} result={result} />

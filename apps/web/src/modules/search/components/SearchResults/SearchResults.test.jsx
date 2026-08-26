@@ -73,6 +73,16 @@ describe('SearchResults (apps/web/src/modules/search)', () => {
     expect(links[0]).toHaveAttribute('href', '/en/listings/1');
   });
 
+  // P2.2D: a truthful, screen-reader-announced count of what's currently
+  // loaded — never a fabricated total the cursor-paginated API can't
+  // provide.
+  test('renders an aria-live result count matching the loaded results, not a fabricated total', () => {
+    renderResults({ results: RESULTS });
+    const count = screen.getByText('2 արդյունք');
+    expect(count).toBeInTheDocument();
+    expect(count).toHaveAttribute('aria-live', 'polite');
+  });
+
   test('renders a "load more" control only when hasNextPage is true', () => {
     const { rerender } = render(
       <MemoryRouter initialEntries={['/en']}>

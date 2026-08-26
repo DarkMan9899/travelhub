@@ -474,6 +474,7 @@
     },
     "results": {
       "loadMore": "Բեռնել ավելին",
+      "count": "{{count}} արդյունք",
       "empty": {
         "title": "Արդյունքներ չեն գտնվել",
         "description": "Փորձեք փոփոխել որոնումը կամ զտիչները։"
@@ -485,7 +486,8 @@
       }
     },
     "card": {
-      "viewDetails": "Դիտել {{title}}"
+      "viewDetails": "Դիտել {{title}}",
+      "fromPrice": "Սկսած"
     }
   },
   "errors": {

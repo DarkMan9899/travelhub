@@ -107,3 +107,14 @@
   color: tokens.$color-gray-600;
   @include truncate.truncate-lines(2);
 }
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: tokens.$space-1;
+}
+
+.pricePrefix {
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+}

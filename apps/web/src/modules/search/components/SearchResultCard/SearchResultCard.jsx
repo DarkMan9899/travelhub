@@ -21,22 +21,44 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import ListingCardBase from '../../../../components/ListingCardBase/ListingCardBase.jsx';
 import { FavoriteButton } from '../../../favorites/index.js';
 import styles from './SearchResultCard.module.scss';
 
+/**
+ * P2.2D: carries the customer's own search selections forward into the
+ * listing detail URL — `ListingReservationWidget` reads these same three
+ * keys to prefill its date range/guest count (see
+ * `reservationSearchContext.js`). Reads straight from this page's own
+ * URL rather than threading new props through `SearchResults`/
+ * `SearchPageContent`, since the search filters already ARE this page's
+ * query params. Omits a key entirely when absent (a plain
+ * `/listings/:id` visit, or a keyword-only search with no dates, stays a
+ * bare URL — never a "?dateFrom=null"-style artifact).
+ */
+function buildSearchContextQuery(searchParams) {
+  const query = new URLSearchParams();
+  ['dateFrom', 'dateTo', 'guests'].forEach((key) => {
+    const value = searchParams.get(key);
+    if (value) query.set(key, value);
+  });
+  const serialized = query.toString();
+  return serialized ? `?${serialized}` : '';
+}
+
 export default function SearchResultCard({ result }) {
   const { t } = useTranslation();
   const { locale } = useParams();
+  const [searchParams] = useSearchParams();
   const typeLabel = t(`listings.type.${result.listing_type}`, {
     defaultValue: result.listing_type,
   });
 
   return (
     <ListingCardBase
-      href={`/${locale}/listings/${result.slug ?? result.id}`}
+      href={`/${locale}/listings/${result.slug ?? result.id}${buildSearchContextQuery(searchParams)}`}
       ariaLabel={t('search.card.viewDetails', { title: result.title })}
       imageUrl={result.cover_image_url}
       typeLabel={typeLabel}
@@ -56,6 +78,13 @@ export default function SearchResultCard({ result }) {
       reviewCount={result.review_count}
       priceAmount={result.price_amount}
       priceCurrencyCode={result.price_currency_code}
+      // P2.2D: search's own price is always the cheapest currently known
+      // rate (a per-listing MIN across real bookable-unit prices, or the
+      // legacy listing-level fallback) — never a promise that every unit
+      // costs exactly this, so every search-card price is labeled "from",
+      // matching how it's actually computed rather than implying an
+      // exact, guaranteed rate.
+      pricePrefix={t('search.card.fromPrice')}
       locale={locale}
     />
   );
