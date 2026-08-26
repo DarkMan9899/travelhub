@@ -455,6 +455,50 @@ describe('GET /search/listings — P2.2D unit-level "from" price', () => {
     expect(row.price_amount).toBeNull();
     expect(row.price_currency_code).toBeNull();
   });
+
+  // Final-review fix: per accommodationPriceResolution.js, a unit's own
+  // base price always outranks listing_pricing for THAT unit at
+  // booking time — so once a listing's units already carry base prices
+  // (here, priced but currency-ambiguous), listing_pricing would never
+  // actually be charged for booking any of them, regardless of whether
+  // a listing_pricing row happens to exist. Showing it anyway would be a
+  // price checkout can never produce for this listing's real units, not
+  // merely an imprecise one — the fallback must stay null, not silently
+  // become "safe" again just because a listing_pricing row is present.
+  test('a listing_pricing row never rescues a mixed-currency unit-priced listing', async () => {
+    const listingId = await createListing({
+      title: `Mixed Currency With Listing Pricing Fixture ${Date.now()}`,
+      listingType: 'HOTEL',
+      categoryId: hotelsCategoryId,
+      cityId: yerevanCityId,
+      description: 'A P2.2D pricing fixture.',
+    });
+    await publishListing(listingId);
+    await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        pricing: { modelCode: 'PER_NIGHT', amount: 50000, currencyCode: 'AMD' },
+      });
+    await registerUnit(listingId, {
+      unitLabel: 'AMD Room',
+      basePriceAmount: 30000,
+      basePriceCurrency: 'AMD',
+    });
+    await registerUnit(listingId, {
+      unitLabel: 'USD Room',
+      basePriceAmount: 80,
+      basePriceCurrency: 'USD',
+    });
+
+    const res = await request(app).get(
+      `/api/v1/search/listings?keyword=Mixed+Currency+With+Listing+Pricing`,
+    );
+    expect(res.status).toBe(200);
+    const row = res.body.data.find((r) => r.id === listingId);
+    expect(row.price_amount).toBeNull();
+    expect(row.price_currency_code).toBeNull();
+  });
 });
 
 describe('GET /search/listings — visibility', () => {

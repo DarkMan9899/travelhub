@@ -456,15 +456,24 @@ export function buildSearchListingsQuery(
       loc.city_id, c.name AS city_name, r.country_id,
       m.url AS cover_image_url,
       -- P2.2D: a "from" price -- the cheapest real per-unit base price
-      -- (P2.2A) when the listing's priced units all share one currency,
-      -- falling back to the legacy listing-level listing_pricing row
-      -- when no unit pricing exists. Deliberately does NOT fall back to
-      -- a cross-currency numeric MIN when a listing's units are priced
-      -- in more than one currency (never comparable as raw numbers) --
-      -- the HAVING guard makes both subqueries return NULL together in
-      -- that case, falling through to listing_pricing untouched. Both
-      -- subqueries share the identical WHERE/HAVING scope, so amount and
-      -- currency always come from the same set of rows, never mixed.
+      -- (P2.2A) when the listing's priced units all share one currency.
+      --
+      -- The listing-level listing_pricing fallback is deliberately
+      -- gated by a "does this listing have ANY priced unit at all" EXISTS
+      -- check, not merely COALESCE'd in whenever the MIN subquery is
+      -- NULL. Per accommodationPriceResolution.js#resolvePriceForDate
+      -- (the same precedence booking-time actually charges), a unit's
+      -- own base price always outranks the listing fallback for THAT
+      -- unit -- so if a listing's units already carry base prices, just
+      -- priced in more than one currency, listing_pricing would never
+      -- actually be charged for booking any of them. Showing it anyway
+      -- would display a price checkout cannot produce for this listing's
+      -- real units -- correctness bug, not a display nuance. The
+      -- fallback is only valid when NO unit has a base price at all
+      -- (rung 2 genuinely absent for every unit, so rung 3 is what
+      -- booking-time would actually resolve to). Both subqueries share
+      -- the identical WHERE/HAVING/EXISTS scope, so amount and currency
+      -- always come from the same set of rows, never mixed.
       COALESCE(
         (SELECT MIN(bu_price.base_price_amount)
            FROM bookable_units bu_price
@@ -472,7 +481,13 @@ export function buildSearchListingsQuery(
              AND bu_price.base_price_amount IS NOT NULL
            HAVING COUNT(DISTINCT bu_price.base_price_currency_id) = 1
         ),
-        lp.amount
+        CASE
+          WHEN NOT EXISTS (
+            SELECT 1 FROM bookable_units bu_any_price
+            WHERE bu_any_price.listing_id = l.id AND bu_any_price.deleted_at IS NULL
+              AND bu_any_price.base_price_amount IS NOT NULL
+          ) THEN lp.amount
+        END
       ) AS price_amount,
       COALESCE(
         -- MAX(), not GROUP BY: a GROUP BY on code would let the HAVING
@@ -489,7 +504,13 @@ export function buildSearchListingsQuery(
              AND bu_price.base_price_amount IS NOT NULL
            HAVING COUNT(DISTINCT bu_price.base_price_currency_id) = 1
         ),
-        cur.code
+        CASE
+          WHEN NOT EXISTS (
+            SELECT 1 FROM bookable_units bu_any_price2
+            WHERE bu_any_price2.listing_id = l.id AND bu_any_price2.deleted_at IS NULL
+              AND bu_any_price2.base_price_amount IS NOT NULL
+          ) THEN cur.code
+        END
       ) AS price_currency_code,
       (SELECT COUNT(*) FROM media gm
          WHERE gm.mediable_type = 'listing' AND gm.mediable_id = l.id AND gm.deleted_at IS NULL
