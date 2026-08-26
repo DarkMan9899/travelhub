@@ -751,5 +751,50 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
       // `handleChangeQuantity` already applies on every later change.
       expect(screen.getByLabelText('Հյուրեր')).toHaveValue(2);
     });
+
+    // Final-review fix: a multi-unit listing never auto-selects (see
+    // `effectiveUnitId`), so picking a room is mandatory — proven live
+    // in the browser that the pre-existing `handleSelectUnit` reset
+    // silently discarded the URL-seeded dateRange/guestCount the
+    // instant a customer picked their FIRST room, making the whole
+    // handoff a no-op for exactly the multi-room listings P2.2A exists
+    // for. Genuinely switching to a DIFFERENT unit afterward must still
+    // reset both fields (a previously valid range/count isn't
+    // necessarily valid for a different unit) — both behaviors are
+    // asserted together so a regression in either direction is caught.
+    test('the first room pick preserves URL-seeded dates/guests; switching to a different room still resets them', async () => {
+      useListingBookableUnitsQuery.mockReturnValue({
+        data: MULTI_UNIT_LABELED,
+        isPending: false,
+        isError: false,
+      });
+      const user = userEvent.setup();
+      renderWidget(
+        {},
+        '/en/listings/10?dateFrom=2026-09-10&dateTo=2026-09-12&guests=2',
+      );
+
+      await user.click(screen.getByTestId('select-trigger'));
+      await user.click(
+        screen.getByRole('option', {
+          name: 'Standard Room — Ընդունում է 2 հյուր',
+        }),
+      );
+      expect(
+        screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+      ).toBeEnabled();
+      expect(screen.getByLabelText('Հյուրեր')).toHaveValue(2);
+
+      await user.click(screen.getByTestId('select-trigger'));
+      await user.click(
+        screen.getByRole('option', {
+          name: 'Deluxe Suite — Ընդունում է 4 հյուր',
+        }),
+      );
+      expect(
+        screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+      ).toBeDisabled();
+      expect(screen.getByLabelText('Հյուրեր')).toHaveValue(1);
+    });
   });
 });

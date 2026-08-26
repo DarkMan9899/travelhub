@@ -208,10 +208,24 @@ export default function ListingReservationWidget({
     Boolean(dateRange.end);
 
   function handleSelectUnit(value) {
+    // P2.2D: a multi-unit listing never auto-selects (see
+    // `effectiveUnitId` above), so this is the ONLY path that applies a
+    // URL-seeded `initialReservationState` for such a listing — clearing
+    // dateRange/guestCount unconditionally here, as this function
+    // previously did, silently discarded a customer's own search
+    // selections the instant they picked their first room. Genuinely
+    // SWITCHING between units (selectedUnitId was already set) still
+    // clears them, since a previously valid date range/guest count isn't
+    // necessarily valid for a different unit's own availability/
+    // max_guests — only the first pick preserves whatever was already
+    // there.
+    const isFirstSelection = selectedUnitId === null;
     setSelectedUnitId(Number(value));
-    setDateRange({ start: null, end: null });
-    setQuantity(1);
-    setGuestCount(1);
+    if (!isFirstSelection) {
+      setDateRange({ start: null, end: null });
+      setQuantity(1);
+      setGuestCount(1);
+    }
   }
 
   function handleChangeQuantity(nextQuantity) {
