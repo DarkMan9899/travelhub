@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-# TravelHub Engineering Rules
+# Desavii Engineering Rules
 
 ## Mission
 

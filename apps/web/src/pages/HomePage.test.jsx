@@ -58,7 +58,7 @@ describe('HomePage (apps/web/src/pages)', () => {
     // Hero
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
     // One labeled section per homepage section (destinations, featured
-    // listings, experiences, categories, why-travelhub, partner CTA,
+    // listings, experiences, categories, why-desavii, partner CTA,
     // testimonials).
     expect(
       screen.getAllByRole('heading', { level: 2 }).length,

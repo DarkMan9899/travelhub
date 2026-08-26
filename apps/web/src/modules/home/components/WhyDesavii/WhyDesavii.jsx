@@ -1,20 +1,20 @@
 /**
- * WhyTravelHub — trust / value-proposition section. Static site content,
+ * WhyDesavii — trust / value-proposition section. Static site content,
  * not placeholder data; only text is translated, structure is real.
  */
 
 import { useTranslation } from 'react-i18next';
 import { Section } from '@travelhub/ui/components/layout';
 import { ShieldCheck, Lock, Compass, Languages } from 'lucide-react';
-import WHY_TRAVEL_HUB_ITEMS from '../../constants/whyTravelHub.js';
+import WHY_DESAVII_ITEMS from '../../constants/whyDesavii.js';
 import SectionHeader from '../SectionHeader/SectionHeader.jsx';
 import ScrollReveal from '../ScrollReveal/ScrollReveal.jsx';
-import styles from './WhyTravelHub.module.scss';
+import styles from './WhyDesavii.module.scss';
 
 const ICONS = { ShieldCheck, Lock, Compass, Languages };
-const HEADING_ID = 'why-travelhub-heading';
+const HEADING_ID = 'why-desavii-heading';
 
-export default function WhyTravelHub() {
+export default function WhyDesavii() {
   const { t } = useTranslation();
 
   return (
@@ -22,12 +22,12 @@ export default function WhyTravelHub() {
       <div className={styles.panel}>
         <SectionHeader
           id={HEADING_ID}
-          eyebrow={t('home.whyTravelHub.eyebrow')}
-          title={t('home.whyTravelHub.title')}
-          subtitle={t('home.whyTravelHub.subtitle')}
+          eyebrow={t('home.whyDesavii.eyebrow')}
+          title={t('home.whyDesavii.title')}
+          subtitle={t('home.whyDesavii.subtitle')}
         />
         <ScrollReveal stagger className={styles.grid}>
-          {WHY_TRAVEL_HUB_ITEMS.map((item) => {
+          {WHY_DESAVII_ITEMS.map((item) => {
             const Icon = ICONS[item.icon];
             return (
               <div key={item.id} className={styles.item}>
@@ -35,10 +35,10 @@ export default function WhyTravelHub() {
                   <Icon size={28} />
                 </span>
                 <h3 className={styles.itemTitle}>
-                  {t(`home.whyTravelHub.items.${item.id}.title`)}
+                  {t(`home.whyDesavii.items.${item.id}.title`)}
                 </h3>
                 <p className={styles.itemDescription}>
-                  {t(`home.whyTravelHub.items.${item.id}.description`)}
+                  {t(`home.whyDesavii.items.${item.id}.description`)}
                 </p>
               </div>
             );

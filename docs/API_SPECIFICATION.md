@@ -1,6 +1,6 @@
 # API SPECIFICATION
 
-**Travel Hub Armenia — Backend ⇄ Frontend Contract**
+**Desavii Armenia — Backend ⇄ Frontend Contract**
 **Status:** Final · **Version:** 1.0 · **Classification:** Confidential
 **Owner:** Chief API Architect
 **Depends on (must never be contradicted):** `PROJECT_BIBLE.md` · `UI_UX_GUIDELINES.md` · `DATABASE_ARCHITECTURE.md` · `BOOKING_ENGINE_ARCHITECTURE.md`
@@ -13,7 +13,7 @@
 > versioned, exhaustively documented) and Airbnb's breadth (one contract,
 > dozens of very different resource types) at once."
 
-This document is the single source of truth for the Travel Hub Armenia REST
+This document is the single source of truth for the Desavii Armenia REST
 API. It is binding on both Backend and Frontend teams: no endpoint may ship
 that is not described here, and no client may assume behavior not described
 here. Every resource and business rule in this document maps directly onto

@@ -1,6 +1,6 @@
 # BACKEND ARCHITECTURE
 
-**Travel Hub Armenia — Backend Engineering Contract**
+**Desavii Armenia — Backend Engineering Contract**
 **Status:** Final · **Version:** 1.0 · **Classification:** Confidential
 **Owner:** Chief Backend Architect
 **Depends on (must never be contradicted):** `PROJECT_BIBLE.md` · `UI_UX_GUIDELINES.md` · `DATABASE_ARCHITECTURE.md` · `BOOKING_ENGINE_ARCHITECTURE.md` · `API_SPECIFICATION.md` · `FRONTEND_ARCHITECTURE.md`

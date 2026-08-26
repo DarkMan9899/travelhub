@@ -1,6 +1,6 @@
 # FRONTEND ARCHITECTURE
 
-**Travel Hub Armenia — React Frontend Engineering Contract**
+**Desavii Armenia — React Frontend Engineering Contract**
 **Status:** Final · **Version:** 1.0 · **Classification:** Confidential
 **Owner:** Lead Frontend Architect
 **Depends on (must never be contradicted):** `PROJECT_BIBLE.md` · `UI_UX_GUIDELINES.md` · `DATABASE_ARCHITECTURE.md` · `BOOKING_ENGINE_ARCHITECTURE.md` · `API_SPECIFICATION.md`
@@ -455,7 +455,7 @@ locales, actively working against indexing all three languages. It also
 means the *default* locale's canonical URL is ambiguous (is `/hotels/123`
 Armenian, or does it depend on a cookie no crawler carries?).
 
-**Why not subdomains (`hy.travelhubarmenia.am`)?** Subdomains fragment
+**Why not subdomains (`hy.desavii.com`)?** Subdomains fragment
 domain authority and analytics, and are unnecessary operational overhead
 (three separate TLS/CDN configurations conceptually) for what is
 fundamentally the same site in three languages, not three distinct
@@ -470,7 +470,7 @@ specific-language URL.
 internationalization pattern, keeps one domain's authority intact, makes
 every localized page independently crawlable, linkable, and bookmarkable,
 and maps directly onto `hreflang` alternate-link tags (Chapter 33) —
-`https://travelhubarmenia.am/en/hotels/yerevan-grand` and
+`https://desavii.com/en/hotels/yerevan-grand` and
 `.../hy/hotels/yerevan-grand` are two distinct, indexable URLs the site
 explicitly declares as language alternates of one another.
 

@@ -1,4 +1,4 @@
-# Travel Hub Armenia — local development infrastructure.
+# Desavii Armenia — local development infrastructure.
 # Per SPRINT_0_IMPLEMENTATION_PLAN.md, Chapter 7.
 # The application services (apps/api, apps/web) run OUTSIDE Docker during
 # local development (fast hot-reload via nodemon/Vite) and connect to these

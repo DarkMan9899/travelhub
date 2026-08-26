@@ -95,7 +95,7 @@ function buildSvg({ label, index, icon, gradientFrom, gradientTo, iconFill }) {
     ${icon}
   </g>
   <text x="400" y="470" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="${PALETTE.white}" opacity="0.95">${label}</text>
-  <text x="400" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" letter-spacing="2" fill="${PALETTE.gold}">TRAVELHUB DEMO PLACEHOLDER</text>
+  <text x="400" y="510" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" letter-spacing="2" fill="${PALETTE.gold}">DESAVII DEMO PLACEHOLDER</text>
 </svg>
 `;
 }

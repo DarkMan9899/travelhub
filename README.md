@@ -1,4 +1,4 @@
-# Travel Hub Armenia — Monorepo
+# Desavii Armenia — Monorepo
 
 A production-ready travel marketplace platform. This repository contains
 the customer website, customer account area, partner dashboard, and admin
@@ -25,7 +25,7 @@ contradict, the documents in `docs/`:
 ## Repository structure
 
 ```
-travelhub/
+desavii/
   apps/
     web/            React/Vite frontend — FRONTEND_ARCHITECTURE.md
     api/             Node/Express backend — BACKEND_ARCHITECTURE.md
@@ -115,13 +115,13 @@ same commands CI runs.
 
 ## Scripts (root)
 
-| Script | Purpose |
-|---|---|
-| `npm run lint` / `lint:fix` | Lint every workspace |
-| `npm run build` | Build every workspace with a build step |
-| `npm test` | Test every workspace |
-| `npm run dev:api` / `dev:web` | Run one app in dev mode |
-| `npm run docker:up` / `docker:down` | Start/stop local infrastructure |
+| Script                              | Purpose                                 |
+| ----------------------------------- | --------------------------------------- |
+| `npm run lint` / `lint:fix`         | Lint every workspace                    |
+| `npm run build`                     | Build every workspace with a build step |
+| `npm test`                          | Test every workspace                    |
+| `npm run dev:api` / `dev:web`       | Run one app in dev mode                 |
+| `npm run docker:up` / `docker:down` | Start/stop local infrastructure         |
 
 ## Git & Commit Convention
 

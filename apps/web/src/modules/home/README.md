@@ -8,7 +8,7 @@ consumes.
 **Phase 3 status (Premium Homepage):** implemented. The Homepage is now
 the full marketplace landing page — Hero (with the search widget),
 Featured Destinations, Featured Listings, Popular Experiences,
-Categories, Why TravelHub, Become a Partner CTA, and Testimonials —
+Categories, Why Desavii, Become a Partner CTA, and Testimonials —
 composed in `pages/HomePage.jsx` from this module's public export
 surface (`index.js`). Phase 1's `FeaturedListings` is unchanged in
 behavior, just re-styled to match the rest of the page (shared
@@ -47,7 +47,7 @@ swapping in real production photography later touches that folder only.
 - `components/` — module-owned UI, composing `@travelhub/ui` primitives.
   Only the sections `pages/HomePage.jsx` composes directly
   (Hero/FeaturedDestinations/FeaturedListings/PopularExperiences/
-  Categories/WhyTravelHub/PartnerCta/Testimonials) are exported from
+  Categories/WhyDesavii/PartnerCta/Testimonials) are exported from
   `index.js`; every card component and the shared
   `SectionHeader`/`ScrollReveal`/`SearchWidget` building blocks stay
   module-private per §6.3's cross-module rule, promoted to `components/`

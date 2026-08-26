@@ -1,6 +1,6 @@
 # SPRINT 0 IMPLEMENTATION PLAN
 
-**Travel Hub Armenia — Engineering Kickoff**
+**Desavii Armenia — Engineering Kickoff**
 **Status:** Final · **Version:** 1.0 · **Classification:** Confidential
 **Owner:** Chief Backend Architect / Chief Frontend Architect (joint)
 **Depends on (must never be contradicted):** `PROJECT_BIBLE.md` · `UI_UX_GUIDELINES.md` · `DATABASE_ARCHITECTURE.md` · `BOOKING_ENGINE_ARCHITECTURE.md` · `API_SPECIFICATION.md` · `FRONTEND_ARCHITECTURE.md` · `BACKEND_ARCHITECTURE.md`

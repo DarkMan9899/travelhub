@@ -1,4 +1,4 @@
-# Travel Hub Armenia — apps/api production image.
+# Desavii Armenia — apps/api production image.
 # Per BACKEND_ARCHITECTURE.md §7/§58: the application runs OUTSIDE Docker
 # during local development (nodemon, fast hot-reload against the Docker
 # Compose backing services); this Dockerfile is validated in CI

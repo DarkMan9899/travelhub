@@ -2,7 +2,7 @@
   "name": "travelhub",
   "private": true,
   "version": "0.0.0",
-  "description": "Travel Hub Armenia — monorepo root (apps/web, apps/api, packages/*)",
+  "description": "Desavii Armenia — monorepo root (apps/web, apps/api, packages/*)",
   "workspaces": [
     "apps/*",
     "packages/*"

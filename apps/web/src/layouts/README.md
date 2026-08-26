@@ -30,10 +30,7 @@ import Footer from '../components/Footer/Footer.jsx';
 
 export default function PublicLayout() {
   return (
-    <AppLayout
-      header={<Header logo="Travel Hub Armenia" />}
-      footer={<Footer />}
-    >
+    <AppLayout header={<Header logo="Desavii Armenia" />} footer={<Footer />}>
       <Outlet />
     </AppLayout>
   );

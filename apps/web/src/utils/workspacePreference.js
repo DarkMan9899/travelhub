@@ -6,14 +6,22 @@
  * login requirement. Plain `localStorage`, not a context — read only at
  * the two moments that matter (post-login redirect, workspace switch),
  * never subscribed to for live updates.
+ *
+ * Desavii brand rename: the storage key moved from `travelhub:` to
+ * `desavii:`. `getLastWorkspace` falls back to the old key when the new
+ * one is unset so an existing user's saved preference isn't silently
+ * lost by the rename — every write always uses the new key only.
  */
 
-const STORAGE_KEY = 'travelhub:lastWorkspace';
+const STORAGE_KEY = 'desavii:lastWorkspace';
+const LEGACY_STORAGE_KEY = 'travelhub:lastWorkspace';
 const WORKSPACES = ['customer', 'partner'];
 
 export function getLastWorkspace() {
   try {
-    const value = window.localStorage.getItem(STORAGE_KEY);
+    const value =
+      window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_STORAGE_KEY);
     return WORKSPACES.includes(value) ? value : null;
   } catch {
     // Storage unavailable (private browsing, disabled cookies) — treat as

@@ -27,7 +27,7 @@ them.
 import Header from '../components/Header/Header.jsx';
 
 <Header
-  logo="Travel Hub Armenia"
+  logo="Desavii Armenia"
   homeHref="/hy"
   navItems={[
     { label: 'Home', to: '/hy' },
@@ -54,7 +54,7 @@ import Footer from '../components/Footer/Footer.jsx';
 
 <Footer
   columns={[{ title: 'Company', links: [{ label: 'About', to: '/about' }] }]}
-  bottomText="© 2026 Travel Hub Armenia"
+  bottomText="© 2026 Desavii Armenia"
 />;
 ```
 

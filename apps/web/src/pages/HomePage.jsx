@@ -16,7 +16,7 @@ import {
   FeaturedListings,
   PopularExperiences,
   Categories,
-  WhyTravelHub,
+  WhyDesavii,
   PartnerCta,
   Testimonials,
 } from '../modules/home/index.js';
@@ -40,7 +40,7 @@ export default function HomePage() {
       <FeaturedListings />
       <PopularExperiences />
       <Categories />
-      <WhyTravelHub />
+      <WhyDesavii />
       <PartnerCta />
       <Testimonials />
     </Container>

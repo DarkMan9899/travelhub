@@ -78,7 +78,7 @@ describe('UserMenu (apps/web/src/components)', () => {
     expect(partnerItem).toBeInTheDocument();
 
     await user.click(partnerItem);
-    expect(window.localStorage.getItem('travelhub:lastWorkspace')).toBe(
+    expect(window.localStorage.getItem('desavii:lastWorkspace')).toBe(
       'partner',
     );
   });

@@ -1,6 +1,6 @@
 # BOOKING ENGINE ARCHITECTURE
 
-**Travel Hub Armenia — Core Platform Document**
+**Desavii Armenia — Core Platform Document**
 **Status:** Final · **Version:** 1.0 · **Classification:** Confidential
 **Owner:** Chief Software Architect
 **Depends on (must never be contradicted):** `PROJECT_BIBLE.md` · `UI_UX_GUIDELINES.md` · `DATABASE_ARCHITECTURE.md`
@@ -12,7 +12,7 @@
 > not eight different problems. They are one problem — *reserve a finite, time-bound
 > resource, exactly once, under contention* — wearing eight different costumes."
 
-This document is the authoritative architecture for the Travel Hub Armenia Booking
+This document is the authoritative architecture for the Desavii Armenia Booking
 Engine: the subsystem responsible for search-to-availability, holds, payment,
 confirmation, check-in/out, cancellation, refunds, and the calendar, pricing, and
 notification logic that surround them. It builds directly on the schema defined in

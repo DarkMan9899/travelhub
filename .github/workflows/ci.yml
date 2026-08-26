@@ -1,4 +1,4 @@
-# Travel Hub Armenia — CI pipeline.
+# Desavii Armenia — CI pipeline.
 #
 # `test` runs each workspace's own unit suite only (fast, no real
 # services). `integration` (P0.10, Master Roadmap) is what actually

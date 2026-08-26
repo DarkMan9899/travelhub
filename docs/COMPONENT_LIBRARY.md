@@ -1,6 +1,6 @@
 # COMPONENT LIBRARY
 
-**Travel Hub Armenia — Reusable UI Component Reference**
+**Desavii Armenia — Reusable UI Component Reference**
 **Status:** Final · **Version:** 1.0 · **Classification:** Confidential
 **Owner:** Chief UI Engineer
 **Depends on (must never be contradicted):** `PROJECT_BIBLE.md` · `UI_UX_GUIDELINES.md` · `DATABASE_ARCHITECTURE.md` · `BOOKING_ENGINE_ARCHITECTURE.md` · `API_SPECIFICATION.md` · `FRONTEND_ARCHITECTURE.md` · `BACKEND_ARCHITECTURE.md`

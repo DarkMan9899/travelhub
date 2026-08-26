@@ -1,6 +1,6 @@
 # @travelhub/api
 
-Travel Hub Armenia backend — Node.js/Express, implementing
+Desavii Armenia backend — Node.js/Express, implementing
 `BACKEND_ARCHITECTURE.md` exactly.
 
 ## Sprint 1 status
@@ -40,10 +40,10 @@ npm run dev
 
 ## Scripts
 
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Start with nodemon (hot reload) |
-| `npm run lint` / `lint:fix` | ESLint (Clean Architecture boundary rules included) |
-| `npm test` | Unit tests only (fast, no infrastructure required) |
-| `npm run test:integration` | Integration tests (requires Docker services running) |
-| `npm run test:all` | Every test project |
+| Script                      | Purpose                                              |
+| --------------------------- | ---------------------------------------------------- |
+| `npm run dev`               | Start with nodemon (hot reload)                      |
+| `npm run lint` / `lint:fix` | ESLint (Clean Architecture boundary rules included)  |
+| `npm test`                  | Unit tests only (fast, no infrastructure required)   |
+| `npm run test:integration`  | Integration tests (requires Docker services running) |
+| `npm run test:all`          | Every test project                                   |

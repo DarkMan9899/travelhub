@@ -1,6 +1,6 @@
 # @travelhub/web
 
-Travel Hub Armenia frontend — React/Vite, implementing
+Desavii Armenia frontend — React/Vite, implementing
 `FRONTEND_ARCHITECTURE.md` exactly.
 
 ## Sprint 1 status
@@ -34,10 +34,10 @@ see `vite.config.js`).
 
 ## Scripts
 
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Vite dev server |
-| `npm run build` | Production build |
+| Script                      | Purpose                                        |
+| --------------------------- | ---------------------------------------------- |
+| `npm run dev`               | Vite dev server                                |
+| `npm run build`             | Production build                               |
 | `npm run lint` / `lint:fix` | ESLint (module-boundary + a11y rules included) |
-| `npm test` | Vitest (unit/component) |
-| `npm run test:e2e` | Playwright |
+| `npm test`                  | Vitest (unit/component)                        |
+| `npm run test:e2e`          | Playwright                                     |

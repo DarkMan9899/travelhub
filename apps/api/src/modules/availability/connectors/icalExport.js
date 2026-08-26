@@ -1,5 +1,5 @@
 /**
- * Builds a minimal, valid iCalendar feed from TravelHub's own occupied
+ * Builds a minimal, valid iCalendar feed from Desavii's own occupied
  * ranges (Phase 17 §20 — export). Deliberately exposes nothing
  * customer-identifying: `SUMMARY` is a generic "Reserved" label, never a
  * guest name/email/phone, even though `external_reservations`/`bookings`
@@ -44,7 +44,7 @@ export function buildIcsExport({ calendarName, occupiedRanges }) {
     const dtEnd = addDaysIso(range.dateTo, 1);
     lines.push(
       'BEGIN:VEVENT',
-      `UID:travelhub-${range.reference}-${index}@travelhub.local`,
+      `UID:desavii-${range.reference}-${index}@desavii.local`,
       `DTSTART;VALUE=DATE:${toIcsDate(range.dateFrom)}`,
       `DTEND;VALUE=DATE:${toIcsDate(dtEnd)}`,
       'SUMMARY:Reserved',

@@ -21,7 +21,7 @@ import { registerNotificationDeliveryWorker } from './modules/notifications/jobs
 import { registerLocalProviderSettlementWorker } from './modules/payments/jobs/localProviderSettlementQueue.js';
 
 const server = app.listen(config.port, () => {
-  logger.info({ port: config.port, env: config.env }, 'travelhub-api started');
+  logger.info({ port: config.port, env: config.env }, 'desavii-api started');
 });
 
 // P0.8 (Master Roadmap): previously no process-level handler existed at
