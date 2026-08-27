@@ -287,6 +287,11 @@ export class BookingService {
 
     return {
       bookableUnitId: firstHold.bookableUnitId,
+      // P2.2E: snapshotted onto `booking_items.unit_label_snapshot` at
+      // creation time (see `createBooking` below) so a later rename of
+      // this unit can never retroactively change what this booking
+      // displays.
+      unitLabel: unit.unitLabel,
       dateFrom: firstHold.dateFrom,
       dateTo: firstHold.dateTo,
       quantity,
@@ -411,6 +416,7 @@ export class BookingService {
           {
             bookingId: createdBooking.id,
             bookableUnitId: resolved.bookableUnitId,
+            unitLabelSnapshot: resolved.unitLabel,
             dateFrom: resolved.dateFrom,
             dateTo: resolved.dateTo,
             quantity: resolved.quantity,

@@ -21,9 +21,11 @@ import { DEV_CREDENTIALS } from '../../../src/infrastructure/database/seeds/005_
 
 let vendor;
 let customer;
+let admin;
 let partnerId;
 let languageId;
 let hotelCategoryId;
+let pool;
 
 async function login(email, password) {
   const res = await request(app)
@@ -137,8 +139,12 @@ beforeAll(async () => {
     DEV_CREDENTIALS.customer.email,
     DEV_CREDENTIALS.customer.password,
   );
+  admin = await login(
+    DEV_CREDENTIALS.admin.email,
+    DEV_CREDENTIALS.admin.password,
+  );
 
-  const pool = getMysqlPool();
+  pool = getMysqlPool();
   const [[partnerRow]] = await pool.query(
     "SELECT id FROM partners WHERE slug = 'yerevan-boutique-hospitality'",
   );
@@ -838,6 +844,114 @@ describe('P2.2B final review — booking identity after unit retirement', () => 
       .set('Authorization', `Bearer ${vendor.accessToken}`);
     expect(partnerRes.status).toBe(200);
     expect(partnerRes.body.data.items[0].unit_label).toBe('Soon Retired Room');
+  });
+});
+
+describe('P2.2E — historical booking integrity: unit-label snapshot survives a later rename', () => {
+  test('renaming a unit after booking does not change the label an existing booking displays', async () => {
+    const listingId = await createListing(
+      `P2.2E Rename Identity ${Date.now()}`,
+    );
+    const unitRes = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: 'Standard Room',
+        basePriceAmount: 30,
+        basePriceCurrency: 'AMD',
+      });
+    const unitId = unitRes.body.data.id;
+    const dateFrom = '2027-07-10';
+    const dateTo = '2027-07-11';
+    const holdIds = await createHold(customer, unitId, dateFrom, dateTo, 1);
+    const bookingRes = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+    expect(bookingRes.status).toBe(201);
+    const bookingId = bookingRes.body.data.id;
+    expect(bookingRes.body.data.items[0].unit_label).toBe('Standard Room');
+
+    const renameRes = await request(app)
+      .patch(`/api/v1/availability/units/${unitId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ unitLabel: 'Deluxe King' });
+    expect(renameRes.status).toBe(200);
+    expect(renameRes.body.data.unit_label).toBe('Deluxe King');
+
+    // The unit's own record now genuinely says "Deluxe King" — but the
+    // existing booking, read by customer, partner, and admin
+    // alike, must still show what the guest actually booked.
+    const customerDetailRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(customerDetailRes.status).toBe(200);
+    expect(customerDetailRes.body.data.items[0].unit_label).toBe(
+      'Standard Room',
+    );
+
+    const partnerDetailRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(partnerDetailRes.status).toBe(200);
+    expect(partnerDetailRes.body.data.items[0].unit_label).toBe(
+      'Standard Room',
+    );
+
+    const adminDetailRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(adminDetailRes.status).toBe(200);
+    expect(adminDetailRes.body.data.items[0].unit_label).toBe('Standard Room');
+  });
+
+  test('a legacy booking_item row with no snapshot (unit_label_snapshot IS NULL) still resolves its label via the live join', async () => {
+    const listingId = await createListing(
+      `P2.2E Legacy Snapshot Fallback ${Date.now()}`,
+    );
+    const unitRes = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'HOTEL_ROOM',
+        unitLabel: 'Legacy Room',
+        basePriceAmount: 30,
+        basePriceCurrency: 'AMD',
+      });
+    const unitId = unitRes.body.data.id;
+    const dateFrom = '2027-08-01';
+    const dateTo = '2027-08-02';
+    const holdIds = await createHold(customer, unitId, dateFrom, dateTo, 1);
+    const bookingRes = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+    expect(bookingRes.status).toBe(201);
+    const bookingId = bookingRes.body.data.id;
+    const bookingItemId = bookingRes.body.data.items[0].id;
+
+    // Simulate a pre-P2.2E row: clear the snapshot this booking just wrote,
+    // exactly the state every `booking_items` row created before migration
+    // 0035 is in permanently.
+    await pool.query(
+      'UPDATE booking_items SET unit_label_snapshot = NULL WHERE id = ?',
+      [bookingItemId],
+    );
+
+    const detailRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(detailRes.status).toBe(200);
+    expect(detailRes.body.data.items[0].unit_label).toBe('Legacy Room');
   });
 });
 

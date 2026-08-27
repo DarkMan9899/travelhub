@@ -69,12 +69,16 @@ function toItemDomain(row) {
     id: row.id,
     bookingId: row.booking_id,
     bookableUnitId: row.bookable_unit_id,
-    // P2.2B: joined in from `bookable_units`/`bookable_unit_types` by
-    // `findItemsForBooking` below — `null` for a unit that no longer
-    // exists (the LEFT JOIN makes that possible in principle even though
-    // no code path in this repository hard-deletes a `bookable_units` row
-    // today; see that method's own comment).
-    unitLabel: row.unit_label ?? null,
+    // P2.2E: `unit_label_snapshot` (taken at booking-creation time) wins
+    // whenever present — a row created before this snapshot column
+    // existed has `NULL` here and falls back to the live
+    // `bookable_units`/`bookable_unit_types` LEFT JOIN from
+    // `findItemsForBooking` below, exactly as every row did before this
+    // change. `null` for a unit that no longer exists AND has no snapshot
+    // (the LEFT JOIN makes that possible in principle even though no code
+    // path in this repository hard-deletes a `bookable_units` row today;
+    // see that method's own comment).
+    unitLabel: row.unit_label_snapshot ?? row.unit_label ?? null,
     bookableUnitTypeCode: row.bookable_unit_type_code ?? null,
     dateFrom: toDateString(row.date_from),
     dateTo: toDateString(row.date_to),
@@ -322,14 +326,30 @@ export class MySqlBookingRepository {
   // --- booking_items ---
 
   async createBookingItem(
-    { bookingId, bookableUnitId, dateFrom, dateTo, quantity, unitPriceAmount },
+    {
+      bookingId,
+      bookableUnitId,
+      unitLabelSnapshot,
+      dateFrom,
+      dateTo,
+      quantity,
+      unitPriceAmount,
+    },
     connection = this.#pool,
   ) {
     const [result] = await connection.query(
       `INSERT INTO booking_items
-        (booking_id, bookable_unit_id, date_from, date_to, quantity, unit_price_amount)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [bookingId, bookableUnitId, dateFrom, dateTo, quantity, unitPriceAmount],
+        (booking_id, bookable_unit_id, unit_label_snapshot, date_from, date_to, quantity, unit_price_amount)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        bookingId,
+        bookableUnitId,
+        unitLabelSnapshot ?? null,
+        dateFrom,
+        dateTo,
+        quantity,
+        unitPriceAmount,
+      ],
     );
     return result.insertId;
   }
@@ -341,6 +361,13 @@ export class MySqlBookingRepository {
    * repository already follows elsewhere) — read-only, no new capability,
    * no migration; `booking_items.bookable_unit_id` already carries the
    * live FK this joins through.
+   *
+   * P2.2E: the live-joined `bu.unit_label` is now only a FALLBACK for rows
+   * created before `unit_label_snapshot` existed — `toItemDomain` prefers
+   * the snapshot whenever it's non-null. The JOIN itself stays exactly as
+   * it was (still needed for `bookable_unit_type_code` on every row, and
+   * as the legacy-row fallback), it just no longer solely determines the
+   * displayed label for a post-migration booking.
    */
   async findItemsForBooking(bookingId, connection = this.#pool) {
     const [rows] = await connection.query(
