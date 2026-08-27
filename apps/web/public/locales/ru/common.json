@@ -46,7 +46,10 @@
   "common": {
     "cancel": "Отмена",
     "confirm": "Подтвердить",
-    "save": "Сохранить"
+    "save": "Сохранить",
+    "close": "Закрыть",
+    "dismiss": "Закрыть",
+    "dialog": "Диалог"
   },
   "nav": {
     "home": "Главная",
@@ -265,7 +268,10 @@
       "status": "Статус",
       "roomType": "Тип номера/единицы",
       "dates": "Даты",
+      "nights": "Ночи",
       "quantity": "Количество",
+      "guests": "Гости",
+      "cancellationReason": "Причина отмены",
       "notes": "Комментарий хозяину",
       "contactName": "Контактное имя",
       "contactEmail": "Эл. почта",
@@ -293,7 +299,8 @@
       "noActiveHold": {
         "title": "Нет активного бронирования",
         "description": "Начните с выбора дат на странице объявления.",
-        "action": "Смотреть объявления"
+        "action": "Смотреть объявления",
+        "viewBookingsAction": "Мои бронирования"
       },
       "guestContact": {
         "heading": "Контактные данные",
@@ -1818,6 +1825,12 @@
       "partner": "Партнёр",
       "listing": "Объявление",
       "listingId": "Объявление №{{id}}",
+      "refundStatus": "Статус возврата",
+      "refundStatusValue": {
+        "REQUIRES_MANUAL_REVIEW": "Ожидает ручной проверки",
+        "REFUNDED_ONLINE": "Возвращено",
+        "PARTIALLY_REFUNDED_ONLINE": "Частично возвращено"
+      },
       "notes": "Примечания клиента",
       "error": {
         "title": "Не удалось загрузить это бронирование.",

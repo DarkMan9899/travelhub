@@ -30,7 +30,10 @@
   "common": {
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "save": "Save"
+    "save": "Save",
+    "close": "Close",
+    "dismiss": "Dismiss",
+    "dialog": "Dialog"
   },
   "discovery": {
     "category": {
@@ -265,7 +268,10 @@
       "status": "Status",
       "roomType": "Room / unit type",
       "dates": "Dates",
+      "nights": "Nights",
       "quantity": "Quantity",
+      "guests": "Guests",
+      "cancellationReason": "Cancellation reason",
       "notes": "Notes to the host",
       "contactName": "Contact name",
       "contactEmail": "Email",
@@ -293,7 +299,8 @@
       "noActiveHold": {
         "title": "No active reservation",
         "description": "Start by selecting dates on a listing page.",
-        "action": "Browse listings"
+        "action": "Browse listings",
+        "viewBookingsAction": "View my bookings"
       },
       "guestContact": {
         "heading": "Contact details",
@@ -1806,6 +1813,12 @@
       "partner": "Partner",
       "listing": "Listing",
       "listingId": "Listing #{{id}}",
+      "refundStatus": "Refund status",
+      "refundStatusValue": {
+        "REQUIRES_MANUAL_REVIEW": "Awaiting manual review",
+        "REFUNDED_ONLINE": "Refunded",
+        "PARTIALLY_REFUNDED_ONLINE": "Partially refunded"
+      },
       "notes": "Customer notes",
       "error": {
         "title": "We couldn't load this booking.",
