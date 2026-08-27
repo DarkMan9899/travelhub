@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import {
   Skeleton,
@@ -51,7 +52,7 @@ function NotificationsSkeletonList() {
   );
 }
 
-export default function NotificationsPageContent() {
+export default function NotificationsPageContent({ audience = 'customer' }) {
   const { t } = useTranslation();
   const [status, setStatus] = useState('all');
   const [category, setCategory] = useState(undefined);
@@ -177,6 +178,7 @@ export default function NotificationsPageContent() {
               <NotificationRow
                 key={notification.id}
                 notification={notification}
+                audience={audience}
                 onMarkRead={(id) => markReadMutation.mutate(id)}
                 onArchive={(id) => archiveMutation.mutate(id)}
                 onDelete={(id) => deleteMutation.mutate(id)}
@@ -197,3 +199,7 @@ export default function NotificationsPageContent() {
     </Section>
   );
 }
+
+NotificationsPageContent.propTypes = {
+  audience: PropTypes.oneOf(['customer', 'partner', 'admin']),
+};

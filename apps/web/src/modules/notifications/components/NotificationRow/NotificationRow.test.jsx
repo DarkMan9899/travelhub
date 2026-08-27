@@ -13,6 +13,7 @@ function renderRow(notification, overrides = {}) {
             <ul>
               <NotificationRow
                 notification={notification}
+                audience={overrides.audience}
                 onMarkRead={overrides.onMarkRead ?? vi.fn()}
                 onArchive={overrides.onArchive ?? vi.fn()}
                 onDelete={overrides.onDelete ?? vi.fn()}
@@ -95,5 +96,53 @@ describe('NotificationRow (apps/web/src/modules/notifications)', () => {
   test('does not show an archive action for an already-archived notification', () => {
     renderRow({ ...BASE_NOTIFICATION, is_archived: true });
     expect(screen.queryByText('Արխիվացնել')).not.toBeInTheDocument();
+  });
+
+  test('P2.2E: a BOOKING_* notification (resource_type/resource_id) links to the audience-correct booking detail page', () => {
+    renderRow(
+      {
+        ...BASE_NOTIFICATION,
+        resource_type: 'booking',
+        resource_id: 42,
+      },
+      { audience: 'partner' },
+    );
+    const link = screen.getByRole('link', { name: /BK-42/ });
+    expect(link).toHaveAttribute('href', '/hy/partner/bookings/42');
+  });
+
+  test('P2.2E: a PAYMENT_* notification (payload.bookingId, resource_type "payment") links to the correct booking, not the payment', () => {
+    renderRow({
+      ...BASE_NOTIFICATION,
+      event_type: 'payment.succeeded',
+      category: 'PAYMENT',
+      resource_type: 'payment',
+      resource_id: 999,
+      payload: { paymentReference: 'PAY-1', bookingId: 42, totalAmount: '1' },
+    });
+    const link = screen.getByRole('link');
+    expect(link).toHaveAttribute('href', '/hy/account/bookings/42');
+  });
+
+  test('P2.2E: a non-booking notification (no resource_type/bookingId) stays a plain, non-navigable row', () => {
+    renderRow({
+      ...BASE_NOTIFICATION,
+      event_type: 'review.submitted',
+      category: 'REVIEW',
+      resource_type: 'review',
+      resource_id: 7,
+      payload: { listingId: 3, rating: 5 },
+    });
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  test('P2.2E: defaults to the customer booking route when no audience prop is given', () => {
+    renderRow({
+      ...BASE_NOTIFICATION,
+      resource_type: 'booking',
+      resource_id: 42,
+    });
+    const link = screen.getByRole('link', { name: /BK-42/ });
+    expect(link).toHaveAttribute('href', '/hy/account/bookings/42');
   });
 });

@@ -23,7 +23,19 @@ import styles from './NotificationDropdown.module.scss';
 
 const DROPDOWN_LIMIT = 6;
 
-export default function NotificationDropdown({ onNavigate = undefined }) {
+// P2.2E: mirrors `NotificationRow.jsx`'s own `BOOKING_HREF_BASE` — the
+// "View all" link previously always pointed at the customer notifications
+// page regardless of which layout mounted this dropdown.
+const NOTIFICATIONS_HREF_BASE = {
+  customer: 'account/notifications',
+  partner: 'partner/notifications',
+  admin: 'admin/notifications',
+};
+
+export default function NotificationDropdown({
+  audience = 'customer',
+  onNavigate = undefined,
+}) {
   const { t } = useTranslation();
   const { locale } = useParams();
   const { data, isPending, isError, refetch } = useNotificationsQuery({
@@ -78,6 +90,7 @@ export default function NotificationDropdown({ onNavigate = undefined }) {
             <NotificationRow
               key={notification.id}
               notification={notification}
+              audience={audience}
               onMarkRead={(id) => markReadMutation.mutate(id)}
               onArchive={(id) => archiveMutation.mutate(id)}
               onDelete={(id) => deleteMutation.mutate(id)}
@@ -87,7 +100,7 @@ export default function NotificationDropdown({ onNavigate = undefined }) {
       )}
 
       <Link
-        to={`/${locale}/account/notifications`}
+        to={`/${locale}/${NOTIFICATIONS_HREF_BASE[audience]}`}
         className={styles.viewAll}
         onClick={onNavigate}
       >
@@ -98,5 +111,6 @@ export default function NotificationDropdown({ onNavigate = undefined }) {
 }
 
 NotificationDropdown.propTypes = {
+  audience: PropTypes.oneOf(['customer', 'partner', 'admin']),
   onNavigate: PropTypes.func,
 };

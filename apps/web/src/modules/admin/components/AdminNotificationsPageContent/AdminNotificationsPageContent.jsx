@@ -15,7 +15,7 @@ export default function AdminNotificationsPageContent() {
   return (
     <Stack gap="4">
       <AdminAnnouncementComposer />
-      <NotificationsPageContent />
+      <NotificationsPageContent audience="admin" />
     </Stack>
   );
 }

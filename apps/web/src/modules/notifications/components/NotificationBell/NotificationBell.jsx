@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Bell } from 'lucide-react';
 import { Popover } from '@desavii/ui/components/navigation';
@@ -17,7 +18,7 @@ import { useUnreadCountQuery } from '../../queries/useUnreadCountQuery.js';
 import NotificationDropdown from '../NotificationDropdown/NotificationDropdown.jsx';
 import styles from './NotificationBell.module.scss';
 
-export default function NotificationBell() {
+export default function NotificationBell({ audience = 'customer' }) {
   const { t } = useTranslation();
   const { isAuthenticated, isBootstrapping } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -59,7 +60,14 @@ export default function NotificationBell() {
         </button>
       }
     >
-      <NotificationDropdown onNavigate={() => setIsOpen(false)} />
+      <NotificationDropdown
+        audience={audience}
+        onNavigate={() => setIsOpen(false)}
+      />
     </Popover>
   );
 }
+
+NotificationBell.propTypes = {
+  audience: PropTypes.oneOf(['customer', 'partner', 'admin']),
+};

@@ -178,7 +178,7 @@ export default function AdminLayout() {
             <>
               <LanguageSwitcher />
               <MessagingBell />
-              <NotificationBell />
+              <NotificationBell audience="admin" />
               <AiAssistantTrigger />
               <UserMenu />
             </>

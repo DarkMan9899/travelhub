@@ -113,7 +113,7 @@ export default function PartnerLayout() {
             <>
               <LanguageSwitcher />
               <MessagingBell />
-              <NotificationBell />
+              <NotificationBell audience="partner" />
               <AiAssistantTrigger />
               <UserMenu />
             </>

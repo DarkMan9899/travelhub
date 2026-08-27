@@ -1,5 +1,5 @@
 import { NotificationsPageContent } from '../../modules/notifications/index.js';
 
 export default function PartnerNotificationsPage() {
-  return <NotificationsPageContent />;
+  return <NotificationsPageContent audience="partner" />;
 }

@@ -4,6 +4,26 @@
  * message via `notificationCopy.js` — the backend stores only
  * `event_type` + `payload`, never rendered text (Phase 4.2's "i18n owns
  * all labels" rule).
+ *
+ * P2.2E: a booking-lifecycle notification now links to the booking it's
+ * about. `resolveBookingId` reads whichever field actually carries it —
+ * `notificationListener.js` puts the booking's own id on
+ * `resource_type`/`resource_id` for BOOKING_* events (the row's own
+ * `resourceType: 'booking', resourceId: booking.id`), but on
+ * `payload.bookingId` for PAYMENT_ and REFUND_ events (those set
+ * `resourceType: 'payment'`/`'refund'` instead, pointing at a DIFFERENT
+ * record) — never both, so checking `resource_type` first and falling
+ * back to the payload is exhaustive, not a guess. Every other category
+ * (REVIEW/FAVORITE/PARTNER/LISTING/ADMIN) has neither field set and stays
+ * a plain, non-navigable row exactly as before.
+ *
+ * `audience` picks which of the three booking-detail pages this
+ * recipient should land on — mirrors `BookingCard.jsx`'s own
+ * `hrefBase`/`audience` prop convention exactly, threaded down from
+ * whichever layout mounted `NotificationBell`/`NotificationsPageContent`
+ * (a customer's own notification always resolves to *their* booking
+ * view; the same booking id would 404/403 under the wrong audience's
+ * route for anyone who isn't also that booking's partner/admin).
  */
 
 import PropTypes from 'prop-types';
@@ -19,6 +39,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { Icon, Button } from '@desavii/ui/components/primitives';
+import RouterLink from '../../../../components/RouterLink.jsx';
 import { getNotificationCopy } from '../../constants/notificationCopy.js';
 import { formatRelativeTime } from '../../utils/formatRelativeTime.js';
 import styles from './NotificationRow.module.scss';
@@ -32,8 +53,22 @@ const CATEGORY_ICONS = {
   ADMIN: Megaphone,
 };
 
+const BOOKING_HREF_BASE = {
+  customer: 'account/bookings',
+  partner: 'partner/bookings',
+  admin: 'admin/bookings',
+};
+
+function resolveBookingId(notification) {
+  if (notification.resource_type === 'booking') {
+    return notification.resource_id ?? null;
+  }
+  return notification.payload?.bookingId ?? null;
+}
+
 export default function NotificationRow({
   notification,
+  audience = 'customer',
   onMarkRead,
   onArchive,
   onDelete,
@@ -45,6 +80,18 @@ export default function NotificationRow({
     notification.payload,
   );
   const IconComponent = CATEGORY_ICONS[notification.category] ?? Bell;
+  const bookingId = resolveBookingId(notification);
+  const bookingHref = bookingId
+    ? `/${locale}/${BOOKING_HREF_BASE[audience]}/${bookingId}`
+    : null;
+  const message = copy.isAnnouncement ? (
+    <>
+      <strong>{copy.title}</strong>
+      {copy.body && <span> — {copy.body}</span>}
+    </>
+  ) : (
+    t(copy.key, copy.params)
+  );
 
   return (
     <li
@@ -57,13 +104,10 @@ export default function NotificationRow({
       </span>
       <div className={styles.body}>
         <p className={styles.message}>
-          {copy.isAnnouncement ? (
-            <>
-              <strong>{copy.title}</strong>
-              {copy.body && <span> — {copy.body}</span>}
-            </>
+          {bookingHref ? (
+            <RouterLink href={bookingHref}>{message}</RouterLink>
           ) : (
-            t(copy.key, copy.params)
+            message
           )}
         </p>
         <span className={styles.timestamp}>
@@ -113,6 +157,7 @@ NotificationRow.propTypes = {
   // normalized-but-untyped response), not a hand-authored prop contract.
   // eslint-disable-next-line react/forbid-prop-types
   notification: PropTypes.object.isRequired,
+  audience: PropTypes.oneOf(['customer', 'partner', 'admin']),
   onMarkRead: PropTypes.func.isRequired,
   onArchive: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
