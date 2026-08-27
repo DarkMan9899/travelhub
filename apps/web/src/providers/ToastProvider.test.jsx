@@ -32,7 +32,18 @@ describe('ToastProvider (apps/web/src/providers)', () => {
     await user.click(screen.getByRole('button', { name: 'Notify' }));
     expect(screen.getByText('Booking request sent')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Dismiss' }));
+    await user.click(screen.getByRole('button', { name: 'Փակել' }));
     expect(screen.queryByText('Booking request sent')).not.toBeInTheDocument();
+  });
+
+  test('P2.2E: the dismiss button uses a real, localized label, not the shared Toast default', async () => {
+    const user = userEvent.setup();
+    render(
+      <ToastProvider>
+        <Trigger />
+      </ToastProvider>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Notify' }));
+    expect(screen.getByRole('button', { name: 'Փակել' })).toBeInTheDocument();
   });
 });

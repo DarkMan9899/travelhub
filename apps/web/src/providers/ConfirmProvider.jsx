@@ -45,6 +45,8 @@ export default function ConfirmProvider({ children }) {
           isOpen
           onClose={() => settle(false)}
           title={request.title}
+          ariaLabel={t('common.dialog')}
+          closeLabel={t('common.close')}
           size="sm"
           footer={
             <Inline gap="3" justify="flex-end">

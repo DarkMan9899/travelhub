@@ -61,4 +61,16 @@ describe('ConfirmProvider (apps/web/src/providers)', () => {
 
     expect(await screen.findByText('Result: false')).toBeInTheDocument();
   });
+
+  test('P2.2E: the dialog close (X) button uses a real, localized label, not the shared Modal default', async () => {
+    const user = userEvent.setup();
+    render(
+      <ConfirmProvider>
+        <Trigger />
+      </ConfirmProvider>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Ask' }));
+    expect(screen.getByRole('button', { name: 'Փակել' })).toBeInTheDocument();
+  });
 });

@@ -62,6 +62,7 @@ export default function ToastProvider({ children }) {
               key={toast.id}
               variant={toast.variant}
               message={toast.message}
+              dismissLabel={t('common.dismiss')}
               onDismiss={() => dismissToast(toast.id)}
             />
           ))}
