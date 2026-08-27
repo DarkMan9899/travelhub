@@ -45,6 +45,7 @@ import {
 } from '../../../bookings/index.js';
 import { useCreateConversationMutation } from '../../../messaging/index.js';
 import { BookingPaymentSection } from '../../../payments/index.js';
+import { computeNights } from '../../../bookings/utils/computeNights.js';
 
 const CANCELLABLE_STATUSES = ['CONFIRMED'];
 const TIMELINE_FIELDS = [
@@ -269,23 +270,36 @@ export default function PartnerBookingDetailContent() {
             </Inline>
 
             <Stack gap="3">
-              {booking.items.map((item) => (
-                <div key={item.id}>
-                  {item.unit_label && (
+              {booking.items.map((item) => {
+                const nights = computeNights(item);
+                return (
+                  <div key={item.id}>
+                    {item.unit_label && (
+                      <p>
+                        {t('bookings.detail.roomType')}: {item.unit_label}
+                      </p>
+                    )}
                     <p>
-                      {t('bookings.detail.roomType')}: {item.unit_label}
+                      {t('bookings.detail.dates')}:{' '}
+                      {dateFormatter.format(new Date(item.date_from))} –{' '}
+                      {dateFormatter.format(new Date(item.date_to))}
                     </p>
-                  )}
-                  <p>
-                    {t('bookings.detail.dates')}:{' '}
-                    {dateFormatter.format(new Date(item.date_from))} –{' '}
-                    {dateFormatter.format(new Date(item.date_to))}
-                  </p>
-                  <p>
-                    {t('bookings.detail.quantity')}: {item.quantity}
-                  </p>
-                </div>
-              ))}
+                    {nights !== null && (
+                      <p>
+                        {t('bookings.detail.nights')}: {nights}
+                      </p>
+                    )}
+                    <p>
+                      {t('bookings.detail.quantity')}: {item.quantity}
+                    </p>
+                    {item.guests.length > 0 && (
+                      <p>
+                        {t('bookings.detail.guests')}: {item.guests.length}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </Stack>
 
             <Stack gap="1">
@@ -304,6 +318,13 @@ export default function PartnerBookingDetailContent() {
                 </p>
               )}
             </Stack>
+
+            {booking.cancellation_reason && (
+              <p>
+                {t('bookings.detail.cancellationReason')}:{' '}
+                {booking.cancellation_reason}
+              </p>
+            )}
           </Stack>
         </Card>
 

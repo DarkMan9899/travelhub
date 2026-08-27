@@ -27,6 +27,7 @@ import {
 import { Button, Card } from '@desavii/ui/components/primitives';
 import { PriceTag } from '@desavii/ui/components/data-display';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import RouterLink from '../../../../components/RouterLink.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useBookingQuery } from '../../queries/useBookingQuery.js';
@@ -39,6 +40,9 @@ import {
 import { useCreateConversationMutation } from '../../../messaging/index.js';
 import { AskAiButton } from '../../../ai/index.js';
 import { BookingPaymentSection } from '../../../payments/index.js';
+import { useListingQuery } from '../../../listings/queries/useListingQuery.js';
+import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';
+import { computeNights } from '../../utils/computeNights.js';
 
 // Mirrors `bookingStatusTransitions.js`'s domain rule exactly:
 // `PENDING_VENDOR` may only become CONFIRMED/REJECTED/EXPIRED — never a
@@ -70,6 +74,10 @@ export default function BookingDetailPageContent() {
   // to be COMPLETED, below.
   const reviewQuery = useReviewForBookingQuery(bookingId);
   const createConversationMutation = useCreateConversationMutation();
+  // P2.2E: same "follow up with the listing module's own query" tradeoff
+  // `BookingCard.jsx` already documents — `enabled: Boolean(id)` makes
+  // this a no-op until `booking` itself has loaded.
+  const { data: listing } = useListingQuery(booking?.listing_id);
 
   if (isPending) {
     return (
@@ -124,6 +132,10 @@ export default function BookingDetailPageContent() {
     dateStyle: 'medium',
   });
   const canCancel = CANCELLABLE_STATUSES.includes(booking.status);
+  const listingTitle = listing
+    ? (getLocalizedTranslation(listing.translations, locale)?.title ??
+      listing.slug)
+    : null;
 
   async function handleCancel() {
     const confirmed = await confirm({
@@ -190,24 +202,45 @@ export default function BookingDetailPageContent() {
               />
             </Inline>
 
+            {listingTitle && (
+              <p>
+                <RouterLink href={`/${locale}/listings/${listing.slug}`}>
+                  {listingTitle}
+                </RouterLink>
+              </p>
+            )}
+
             <Stack gap="3">
-              {booking.items.map((item) => (
-                <div key={item.id}>
-                  {item.unit_label && (
+              {booking.items.map((item) => {
+                const nights = computeNights(item);
+                return (
+                  <div key={item.id}>
+                    {item.unit_label && (
+                      <p>
+                        {t('bookings.detail.roomType')}: {item.unit_label}
+                      </p>
+                    )}
                     <p>
-                      {t('bookings.detail.roomType')}: {item.unit_label}
+                      {t('bookings.detail.dates')}:{' '}
+                      {dateFormatter.format(new Date(item.date_from))} –{' '}
+                      {dateFormatter.format(new Date(item.date_to))}
                     </p>
-                  )}
-                  <p>
-                    {t('bookings.detail.dates')}:{' '}
-                    {dateFormatter.format(new Date(item.date_from))} –{' '}
-                    {dateFormatter.format(new Date(item.date_to))}
-                  </p>
-                  <p>
-                    {t('bookings.detail.quantity')}: {item.quantity}
-                  </p>
-                </div>
-              ))}
+                    {nights !== null && (
+                      <p>
+                        {t('bookings.detail.nights')}: {nights}
+                      </p>
+                    )}
+                    <p>
+                      {t('bookings.detail.quantity')}: {item.quantity}
+                    </p>
+                    {item.guests.length > 0 && (
+                      <p>
+                        {t('bookings.detail.guests')}: {item.guests.length}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </Stack>
 
             <Stack gap="1">
@@ -226,6 +259,13 @@ export default function BookingDetailPageContent() {
                 </p>
               )}
             </Stack>
+
+            {booking.cancellation_reason && (
+              <p>
+                {t('bookings.detail.cancellationReason')}:{' '}
+                {booking.cancellation_reason}
+              </p>
+            )}
           </Stack>
         </Card>
 

@@ -56,6 +56,8 @@ const BASE_BOOKING = {
   currency: 'AMD',
   total_amount: '85000.00',
   customer_notes: null,
+  cancellation_reason: null,
+  refund_status: null,
   guest_contact_snapshot: {
     fullName: 'Ana Smith',
     email: 'ana@example.com',
@@ -68,6 +70,7 @@ const BASE_BOOKING = {
       date_to: '2026-08-03',
       quantity: 1,
       unit_price_amount: '85000.00',
+      guests: [],
     },
   ],
 };
@@ -342,5 +345,49 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
     });
     renderPage();
     expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  test('P2.2E: shows guests, nights, cancellation reason, and refund status when present', () => {
+    useAdminBookingDetailQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        status: 'CANCELLED_BY_CUSTOMER',
+        cancellation_reason: 'Customer changed plans',
+        refund_status: 'REQUIRES_MANUAL_REVIEW',
+        items: [
+          {
+            ...BASE_BOOKING.items[0],
+            bookable_unit_type: 'HOTEL_ROOM',
+            date_from: '2026-08-01',
+            date_to: '2026-08-04',
+            guests: [{ id: 1, full_name: 'Ana Smith', document_number: null }],
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(screen.getByText(/Գիշերներ: 3/)).toBeInTheDocument();
+    expect(screen.getByText(/Հյուրեր: 1/)).toBeInTheDocument();
+    expect(screen.getByText(/Customer changed plans/)).toBeInTheDocument();
+    expect(screen.getByText(/Սպասում է ձեռքով վերանայման/)).toBeInTheDocument();
+  });
+
+  test('P2.2E: omits refund status when the booking has none', () => {
+    useAdminBookingDetailQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.queryByText('Փոխհատուցման կարգավիճակ'),
+    ).not.toBeInTheDocument();
   });
 });

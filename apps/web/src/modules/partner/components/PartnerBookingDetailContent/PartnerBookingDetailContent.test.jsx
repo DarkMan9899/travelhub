@@ -41,6 +41,7 @@ const BASE_BOOKING = {
   currency: 'AMD',
   total_amount: '85000.00',
   customer_notes: null,
+  cancellation_reason: null,
   customer_user_id: 55,
   requested_at: '2026-07-01T10:00:00.000Z',
   confirmed_at: null,
@@ -59,6 +60,7 @@ const BASE_BOOKING = {
       date_to: '2026-08-03',
       quantity: 1,
       unit_price_amount: '85000.00',
+      guests: [],
     },
   ],
 };
@@ -483,5 +485,33 @@ describe('PartnerBookingDetailContent (apps/web/src/modules/partner)', () => {
         'Չհաջողվեց սկսել զրույց հաճախորդի հետ։ Խնդրում ենք կրկին փորձել։',
       ),
     ).toBeInTheDocument();
+  });
+
+  test('P2.2E: shows the guest count and nights, and the cancellation reason when present', () => {
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        status: 'CANCELLED_BY_VENDOR',
+        cancellation_reason: 'Unit under maintenance',
+        items: [
+          {
+            ...BASE_BOOKING.items[0],
+            bookable_unit_type: 'HOTEL_ROOM',
+            date_from: '2026-08-01',
+            date_to: '2026-08-04',
+            guests: [{ id: 1, full_name: 'Ana Smith', document_number: null }],
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(screen.getByText(/Գիշերներ: 3/)).toBeInTheDocument();
+    expect(screen.getByText(/Հյուրեր: 1/)).toBeInTheDocument();
+    expect(screen.getByText(/Unit under maintenance/)).toBeInTheDocument();
   });
 });

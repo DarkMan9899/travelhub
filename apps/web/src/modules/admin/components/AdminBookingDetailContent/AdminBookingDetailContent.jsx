@@ -45,6 +45,7 @@ import { useAdminCompleteBookingMutation } from '../../mutations/useAdminComplet
 import { useAdminMarkNoShowMutation } from '../../mutations/useAdminMarkNoShowMutation.js';
 import { BookingStatusBadge } from '../../../bookings/index.js';
 import { BookingPaymentSection } from '../../../payments/index.js';
+import { computeNights } from '../../../bookings/utils/computeNights.js';
 
 export default function AdminBookingDetailContent() {
   const { t, i18n } = useTranslation();
@@ -265,26 +266,50 @@ export default function AdminBookingDetailContent() {
                   id: booking.listing_id,
                 })}
               </p>
+              {booking.refund_status && (
+                <p>
+                  {t('admin.bookingDetail.refundStatus')}:{' '}
+                  {t(
+                    `admin.bookingDetail.refundStatusValue.${booking.refund_status}`,
+                    {
+                      defaultValue: booking.refund_status,
+                    },
+                  )}
+                </p>
+              )}
             </Stack>
 
             <Stack gap="3">
-              {booking.items.map((item) => (
-                <div key={item.id}>
-                  {item.unit_label && (
+              {booking.items.map((item) => {
+                const nights = computeNights(item);
+                return (
+                  <div key={item.id}>
+                    {item.unit_label && (
+                      <p>
+                        {t('bookings.detail.roomType')}: {item.unit_label}
+                      </p>
+                    )}
                     <p>
-                      {t('bookings.detail.roomType')}: {item.unit_label}
+                      {t('bookings.detail.dates')}:{' '}
+                      {dateFormatter.format(new Date(item.date_from))} –{' '}
+                      {dateFormatter.format(new Date(item.date_to))}
                     </p>
-                  )}
-                  <p>
-                    {t('bookings.detail.dates')}:{' '}
-                    {dateFormatter.format(new Date(item.date_from))} –{' '}
-                    {dateFormatter.format(new Date(item.date_to))}
-                  </p>
-                  <p>
-                    {t('bookings.detail.quantity')}: {item.quantity}
-                  </p>
-                </div>
-              ))}
+                    {nights !== null && (
+                      <p>
+                        {t('bookings.detail.nights')}: {nights}
+                      </p>
+                    )}
+                    <p>
+                      {t('bookings.detail.quantity')}: {item.quantity}
+                    </p>
+                    {item.guests.length > 0 && (
+                      <p>
+                        {t('bookings.detail.guests')}: {item.guests.length}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </Stack>
 
             <Stack gap="1">
@@ -303,6 +328,13 @@ export default function AdminBookingDetailContent() {
                 </p>
               )}
             </Stack>
+
+            {booking.cancellation_reason && (
+              <p>
+                {t('bookings.detail.cancellationReason')}:{' '}
+                {booking.cancellation_reason}
+              </p>
+            )}
           </Stack>
         </Card>
 

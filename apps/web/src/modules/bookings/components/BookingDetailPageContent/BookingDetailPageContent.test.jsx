@@ -2,16 +2,21 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ToastProvider from '../../../../providers/ToastProvider.jsx';
 import ConfirmProvider from '../../../../providers/ConfirmProvider.jsx';
 import BookingDetailPageContent from './BookingDetailPageContent.jsx';
 import { useBookingQuery } from '../../queries/useBookingQuery.js';
 import { useCancelBookingMutation } from '../../mutations/useCancelBookingMutation.js';
 import { useCreateConversationMutation } from '../../../messaging/index.js';
+import { getListing } from '../../../../api/listings.js';
 
 vi.mock('../../queries/useBookingQuery.js', () => ({
   useBookingQuery: vi.fn(),
   default: vi.fn(),
+}));
+vi.mock('../../../../api/listings.js', () => ({
+  getListing: vi.fn(),
 }));
 vi.mock('../../mutations/useCancelBookingMutation.js', () => ({
   useCancelBookingMutation: vi.fn(),
@@ -39,7 +44,9 @@ const BASE_BOOKING = {
   currency: 'AMD',
   total_amount: '85000.00',
   customer_notes: null,
+  cancellation_reason: null,
   partner_owner_user_id: 42,
+  listing_id: 1,
   guest_contact_snapshot: {
     fullName: 'Ana Smith',
     email: 'ana@example.com',
@@ -52,28 +59,41 @@ const BASE_BOOKING = {
       date_to: '2026-08-03',
       quantity: 1,
       unit_price_amount: '85000.00',
+      guests: [],
     },
   ],
 };
 
+const BASE_LISTING = {
+  id: 1,
+  slug: 'sunset-ridge-villa',
+  translations: [{ language_id: 1, title: 'Sunset Ridge Villa' }],
+  media: [],
+};
+
 function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <MemoryRouter initialEntries={['/en/account/bookings/7']}>
-      <ToastProvider>
-        <ConfirmProvider>
-          <Routes>
-            <Route
-              path="/:locale/account/bookings/:id"
-              element={<BookingDetailPageContent />}
-            />
-            <Route
-              path="/:locale/account/messages/:conversationId"
-              element={<div>Conversation thread page</div>}
-            />
-          </Routes>
-        </ConfirmProvider>
-      </ToastProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/en/account/bookings/7']}>
+        <ToastProvider>
+          <ConfirmProvider>
+            <Routes>
+              <Route
+                path="/:locale/account/bookings/:id"
+                element={<BookingDetailPageContent />}
+              />
+              <Route
+                path="/:locale/account/messages/:conversationId"
+                element={<div>Conversation thread page</div>}
+              />
+            </Routes>
+          </ConfirmProvider>
+        </ToastProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
@@ -90,6 +110,8 @@ describe('BookingDetailPageContent (apps/web/src/modules/bookings)', () => {
       mutateAsync: vi.fn().mockResolvedValue({ data: { id: 99 } }),
       isPending: false,
     });
+    getListing.mockReset();
+    getListing.mockResolvedValue({ data: BASE_LISTING });
   });
 
   test('renders booking reference, status, total, items, and contact snapshot', () => {
@@ -158,19 +180,24 @@ describe('BookingDetailPageContent (apps/web/src/modules/bookings)', () => {
       error: null,
       refetch: vi.fn(),
     });
+    const rerenderQueryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     rerender(
-      <MemoryRouter initialEntries={['/en/account/bookings/7']}>
-        <ToastProvider>
-          <ConfirmProvider>
-            <Routes>
-              <Route
-                path="/:locale/account/bookings/:id"
-                element={<BookingDetailPageContent />}
-              />
-            </Routes>
-          </ConfirmProvider>
-        </ToastProvider>
-      </MemoryRouter>,
+      <QueryClientProvider client={rerenderQueryClient}>
+        <MemoryRouter initialEntries={['/en/account/bookings/7']}>
+          <ToastProvider>
+            <ConfirmProvider>
+              <Routes>
+                <Route
+                  path="/:locale/account/bookings/:id"
+                  element={<BookingDetailPageContent />}
+                />
+              </Routes>
+            </ConfirmProvider>
+          </ToastProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
     expect(
       screen.queryByRole('button', { name: 'Չեղարկել ամրագրումը' }),
@@ -324,5 +351,120 @@ describe('BookingDetailPageContent (apps/web/src/modules/bookings)', () => {
         'Չհաջողվեց սկսել զրույց հյուրընկալողի հետ։ Խնդրում ենք կրկին փորձել։',
       ),
     ).toBeInTheDocument();
+  });
+
+  test('P2.2E: shows the listing name as a link to the listing, once resolved', async () => {
+    useBookingQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    const link = await screen.findByRole('link', {
+      name: 'Sunset Ridge Villa',
+    });
+    expect(link).toHaveAttribute('href', '/en/listings/sunset-ridge-villa');
+  });
+
+  test('P2.2E: shows computed nights for a HOTEL_ROOM item (checkout-exclusive), not for a non-accommodation item', () => {
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        items: [
+          {
+            ...BASE_BOOKING.items[0],
+            bookable_unit_type: 'HOTEL_ROOM',
+            date_from: '2026-08-01',
+            date_to: '2026-08-04',
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    const { rerender } = renderPage();
+    expect(screen.getByText(/Գիշերներ: 3/)).toBeInTheDocument();
+
+    const tourQueryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        items: [
+          {
+            ...BASE_BOOKING.items[0],
+            bookable_unit_type: 'TOUR_DEPARTURE',
+            date_from: '2026-08-01',
+            date_to: '2026-08-04',
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    rerender(
+      <QueryClientProvider client={tourQueryClient}>
+        <MemoryRouter initialEntries={['/en/account/bookings/7']}>
+          <ToastProvider>
+            <ConfirmProvider>
+              <Routes>
+                <Route
+                  path="/:locale/account/bookings/:id"
+                  element={<BookingDetailPageContent />}
+                />
+              </Routes>
+            </ConfirmProvider>
+          </ToastProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.queryByText(/Գիշերներ:/)).not.toBeInTheDocument();
+  });
+
+  test('P2.2E: shows the guest count when named guests were recorded, omits it otherwise', () => {
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        items: [
+          {
+            ...BASE_BOOKING.items[0],
+            guests: [
+              { id: 1, full_name: 'Ana Smith', document_number: null },
+              { id: 2, full_name: 'Leo Smith', document_number: null },
+            ],
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByText(/Հյուրեր: 2/)).toBeInTheDocument();
+  });
+
+  test('P2.2E: shows the cancellation reason when present, omits it otherwise', () => {
+    useBookingQuery.mockReturnValue({
+      data: {
+        ...BASE_BOOKING,
+        status: 'CANCELLED_BY_CUSTOMER',
+        cancellation_reason: 'Change of plans',
+      },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByText(/Change of plans/)).toBeInTheDocument();
   });
 });
