@@ -282,7 +282,7 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
     expect(screen.getByText(/220/)).toBeInTheDocument();
   });
 
-  test('the unit selector shows each real unit_label with its known max guests, not a generic "Type #N" ordinal', async () => {
+  test('P2.2E: the unit selector shows each real unit_label with its known max guests, price, and available quantity, not a generic "Type #N" ordinal', async () => {
     useListingBookableUnitsQuery.mockReturnValue({
       data: MULTI_UNIT_LABELED,
       isPending: false,
@@ -295,15 +295,44 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
 
     expect(
       screen.getByRole('option', {
-        name: 'Standard Room — Ընդունում է 2 հյուր',
+        name: 'Standard Room — Ընդունում է 2 հյուր — 50000.00 AMD / գիշեր — 2 հասանելի',
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('option', {
-        name: 'Deluxe Suite — Ընդունում է 4 հյուր',
+        name: 'Deluxe Suite — Ընդունում է 4 հյուր — 90000.00 AMD / գիշեր — 1 հասանելի',
       }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Type #1/)).not.toBeInTheDocument();
+  });
+
+  test("P2.2E: a unit with no base price of its own shows no price suffix in the selector (never the listing fallback mislabeled as this unit's price)", async () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: [
+        {
+          id: 1,
+          bookable_unit_type: 'HOTEL_ROOM',
+          capacity: 2,
+          unit_label: 'Legacy Room',
+          max_guests: 2,
+          base_price_amount: null,
+          base_price_currency: null,
+        },
+        MULTI_UNIT_LABELED[1],
+      ],
+      isPending: false,
+      isError: false,
+    });
+    const user = userEvent.setup();
+    renderWidget();
+
+    await user.click(screen.getByTestId('select-trigger'));
+
+    expect(
+      screen.getByRole('option', {
+        name: 'Legacy Room — Ընդունում է 2 հյուր — 2 հասանելի',
+      }),
+    ).toBeInTheDocument();
   });
 
   test("selecting a different room type switches the headline price to that unit's own resolved price and shows its bed configuration", async () => {
@@ -323,13 +352,16 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
     await user.click(screen.getByTestId('select-trigger'));
     await user.click(
       screen.getByRole('option', {
-        name: 'Deluxe Suite — Ընդունում է 4 հյուր',
+        name: 'Deluxe Suite — Ընդունում է 4 հյուր — 90000.00 AMD / գիշեր — 1 հասանելի',
       }),
     );
 
     // The headline now reflects the SELECTED unit's own base price, not
-    // the static listing price.
-    expect(screen.getByText(/90[.,]?000/)).toBeInTheDocument();
+    // the static listing price. Two matches are expected here (up from
+    // one, pre-P2.2E): the headline `PriceTag` AND the select's own
+    // displayed current-option text, which since P2.2E also states this
+    // unit's price — both agree with each other, never diverge.
+    expect(screen.getAllByText(/90[.,]?000/)).toHaveLength(2);
     expect(screen.queryByText(/85[.,]?000/)).not.toBeInTheDocument();
     expect(screen.getByText('1 × Քինգ')).toBeInTheDocument();
   });
@@ -777,7 +809,7 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
       await user.click(screen.getByTestId('select-trigger'));
       await user.click(
         screen.getByRole('option', {
-          name: 'Standard Room — Ընդունում է 2 հյուր',
+          name: 'Standard Room — Ընդունում է 2 հյուր — 50000.00 AMD / գիշեր — 2 հասանելի',
         }),
       );
       expect(
@@ -788,7 +820,7 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
       await user.click(screen.getByTestId('select-trigger'));
       await user.click(
         screen.getByRole('option', {
-          name: 'Deluxe Suite — Ընդունում է 4 հյուր',
+          name: 'Deluxe Suite — Ընդունում է 4 հյուր — 90000.00 AMD / գիշեր — 1 հասանելի',
         }),
       );
       expect(

@@ -363,15 +363,32 @@ export default function ListingReservationWidget({
   // `max_guests` appended — reuses the same `maxGuestsSummary` string the
   // partner-side BookableUnitsManager already shows for the identical
   // data, rather than inventing new copy for it.
+  //
+  // P2.2E: price and available quantity per option, so a customer can
+  // compare units before picking one rather than only after. Both reuse
+  // `BookableUnitsManager.jsx`'s own `basePriceSummary`/`capacitySummary`
+  // keys verbatim (same field, same audience-neutral wording already
+  // shown to partners) — never fabricated: price is shown only when this
+  // SPECIFIC unit has its own `base_price_amount` (never the listing-
+  // level fallback price mislabeled as this unit's own), matching this
+  // widget's own `headlinePricing` precedence comment above.
   const unitOptions = units.map((unit) => {
     const baseLabel = resolveUnitDisplayLabel(unit);
     const guestsSuffix =
       unit.max_guests !== undefined && unit.max_guests !== null
         ? ` — ${t('partner.listingWizard.availability.maxGuestsSummary', { count: unit.max_guests })}`
         : '';
+    const priceSuffix =
+      unit.base_price_amount !== undefined && unit.base_price_amount !== null
+        ? ` — ${t('partner.listingWizard.availability.basePriceSummary', { amount: unit.base_price_amount, currency: unit.base_price_currency })}`
+        : '';
+    const quantitySuffix =
+      unit.capacity !== undefined && unit.capacity !== null
+        ? ` — ${t('partner.listingWizard.availability.capacitySummary', { count: unit.capacity })}`
+        : '';
     return {
       value: unit.id,
-      label: `${baseLabel}${guestsSuffix}`,
+      label: `${baseLabel}${guestsSuffix}${priceSuffix}${quantitySuffix}`,
     };
   });
 
