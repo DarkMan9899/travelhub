@@ -104,7 +104,17 @@ function buildOffers(listing) {
     '@type': 'Offer',
     price: amount,
     priceCurrency: currency,
-    availability: 'https://schema.org/InStock',
+    // P2.2E: this previously hardcoded `https://schema.org/InStock`
+    // unconditionally whenever a price existed — a sold-out listing's
+    // structured data still told search engines it was in stock. The
+    // real per-day/per-unit availability status
+    // (`useListingAvailabilitySummaryQuery`'s `AVAILABLE`/`LOW`/
+    // `SOLD_OUT`) isn't fetched anywhere in this schema-building path,
+    // and fetching it here just for this claim would be a new query
+    // dependency, not the smallest fix. `Offer.availability` is optional
+    // in schema.org — omitting an unverifiable claim here is strictly
+    // more correct than asserting one, per this task's own "prefer
+    // omission over a false claim" guidance.
     url: buildLocaleUrl('hy', `listings/${listing.slug ?? listing.id}`),
   };
 }

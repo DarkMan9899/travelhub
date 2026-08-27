@@ -176,9 +176,22 @@ describe('buildListingSchema', () => {
       '@type': 'Offer',
       price: 80,
       priceCurrency: 'USD',
-      availability: 'https://schema.org/InStock',
       url: buildLocaleUrl('hy', 'listings/boutique-yerevan-hotel'),
     });
+  });
+
+  test('P2.2E: never claims availability (InStock or otherwise) — the real per-unit/per-date status is not fetched in this schema-building path, and omission is preferred over an unverifiable claim', () => {
+    const listing = {
+      ...baseListing,
+      pricing: { amount: 80, currency_code: 'USD' },
+    };
+    const schema = buildListingSchema({
+      listing,
+      categoryCode: 'hotels',
+      locale: 'en',
+      path: 'en/listings/boutique-yerevan-hotel',
+    });
+    expect(schema.offers).not.toHaveProperty('availability');
   });
 
   test('never includes offers for TouristAttraction, even with real pricing data', () => {
