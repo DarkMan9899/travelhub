@@ -113,13 +113,29 @@ export default function BookingCheckoutPageContent() {
   });
 
   if (!holdState || !holdItem) {
+    // P2.2E: this honest "no active hold" state (see this file's own
+    // header comment) previously only offered "Browse listings" — no
+    // path back to a booking that may have just succeeded (e.g. the
+    // customer refreshed right after submitting). `EmptyState` only
+    // supports one action, so a second, smaller action is composed
+    // alongside it rather than changing that shared primitive.
     return (
-      <EmptyState
-        title={t('bookings.checkout.noActiveHold.title')}
-        description={t('bookings.checkout.noActiveHold.description')}
-        actionLabel={t('bookings.checkout.noActiveHold.action')}
-        onAction={() => navigate(`/${locale}`)}
-      />
+      <Stack gap="3" align="center">
+        <EmptyState
+          title={t('bookings.checkout.noActiveHold.title')}
+          description={t('bookings.checkout.noActiveHold.description')}
+          actionLabel={t('bookings.checkout.noActiveHold.action')}
+          onAction={() => navigate(`/${locale}`)}
+        />
+        {user && (
+          <Button
+            variant="ghost"
+            onClick={() => navigate(`/${locale}/account/bookings`)}
+          >
+            {t('bookings.checkout.noActiveHold.viewBookingsAction')}
+          </Button>
+        )}
+      </Stack>
     );
   }
 

@@ -99,6 +99,23 @@ describe('BookingCheckoutPageContent (apps/web/src/modules/bookings)', () => {
     ).toBeInTheDocument();
   });
 
+  test('P2.2E: the no-active-hold state offers a way back to My bookings, not just home', async () => {
+    renderPage(null);
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole('button', { name: 'Դիտել իմ ամրագրումները' }),
+    );
+    expect(mockNavigate).toHaveBeenCalledWith('/en/account/bookings');
+  });
+
+  test('P2.2E: omits the "View my bookings" action when there is no authenticated user', () => {
+    useAuth.mockReturnValue({ user: null });
+    renderPage(null);
+    expect(
+      screen.queryByRole('button', { name: 'Դիտել իմ ամրագրումները' }),
+    ).not.toBeInTheDocument();
+  });
+
   test('renders the listing title and prefills the contact form from the authenticated user', () => {
     renderPage();
     expect(screen.getByText('Sunset Ridge Villa')).toBeInTheDocument();
