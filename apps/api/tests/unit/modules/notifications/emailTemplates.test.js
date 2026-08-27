@@ -53,4 +53,83 @@ describe('renderEmail', () => {
     );
     expect(subject).toBe('Booking confirmed');
   });
+
+  describe('P2.2E — payment/refund lifecycle emails no longer fall through to the generic JSON dump', () => {
+    const PAYLOAD = {
+      succeeded: {
+        paymentReference: 'PAY-1',
+        bookingId: 42,
+        totalAmount: '150.00',
+        currency: 'AMD',
+      },
+      failed: {
+        paymentReference: 'PAY-2',
+        bookingId: 42,
+        failureCode: 'CARD_DECLINED',
+      },
+      refunded: {
+        refundReference: 'REF-1',
+        bookingId: 42,
+        amount: '75.00',
+        currency: 'AMD',
+      },
+    };
+
+    test.each(['en', 'hy', 'ru'])(
+      'payment.succeeded renders a real, localized subject/body with amount, currency, and a booking link (%s)',
+      (locale) => {
+        const { subject, body } = renderEmail(
+          'payment.succeeded',
+          PAYLOAD.succeeded,
+          locale,
+        );
+        expect(subject).not.toBe('Notification');
+        expect(body).not.toContain('{"');
+        expect(body).toContain('150.00');
+        expect(body).toContain('AMD');
+        expect(body).toContain('/account/bookings/42');
+      },
+    );
+
+    test.each(['en', 'hy', 'ru'])(
+      'payment.failed renders a real, localized subject/body identifying the booking (%s)',
+      (locale) => {
+        const { subject, body } = renderEmail(
+          'payment.failed',
+          PAYLOAD.failed,
+          locale,
+        );
+        expect(subject).not.toBe('Notification');
+        expect(body).not.toContain('{"');
+        expect(body).toContain('42');
+        expect(body).toContain('/account/bookings/42');
+      },
+    );
+
+    test.each(['en', 'hy', 'ru'])(
+      'refund.succeeded renders a real, localized subject/body with amount, currency, and a booking link (%s)',
+      (locale) => {
+        const { subject, body } = renderEmail(
+          'refund.succeeded',
+          PAYLOAD.refunded,
+          locale,
+        );
+        expect(subject).not.toBe('Notification');
+        expect(body).not.toContain('{"');
+        expect(body).toContain('75.00');
+        expect(body).toContain('AMD');
+        expect(body).toContain('/account/bookings/42');
+      },
+    );
+
+    test('omits the booking link, without throwing, when bookingId is missing', () => {
+      const { subject, body } = renderEmail('payment.succeeded', {
+        paymentReference: 'PAY-3',
+        totalAmount: '10.00',
+        currency: 'AMD',
+      });
+      expect(subject).toBe('Payment received');
+      expect(body).not.toContain('/account/bookings/');
+    });
+  });
 });

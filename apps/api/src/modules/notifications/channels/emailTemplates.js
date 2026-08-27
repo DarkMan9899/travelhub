@@ -15,9 +15,37 @@
  * `admin.announcement` is intentionally NOT per-locale — its
  * title/body come directly from whatever an admin actually typed, in
  * whatever language they chose; there's nothing here to translate.
+ *
+ * P2.2E: `payment.succeeded`/`payment.failed`/`refund.succeeded` had no
+ * entries here at all — every real send for these three events fell
+ * through to `renderEmail`'s own generic fallback below and put a raw,
+ * un-localized `JSON.stringify` of the event payload straight into a
+ * real customer's inbox. `bookingUrl` reuses `config.webAppUrl` exactly
+ * the way `partnerStaffService.js`'s `inviteUrl` already does — the one
+ * existing "safe canonical application URL" pattern in this codebase,
+ * not a newly invented one. It always points at the CUSTOMER booking
+ * route: `payment.failed`/`refund.succeeded` are only ever sent to the
+ * customer (`notificationListener.js`), and `payment.succeeded` also
+ * reaches the partner owner — for them this is a real, working link
+ * (the same `booking.view_all`-style ownership check `GET /bookings/:id`
+ * already grants a partner owner passes regardless of which route
+ * fetched it), just without their partner-only action buttons, not a
+ * broken/wrong-audience link. These templates only have `bookingId`
+ * (a raw FK) on the payload, never `bookingReference` — payment/refund
+ * domain events never carry it (see `paymentService.js`'s own event
+ * payload) — so the link IS the human-readable identifier here, exactly
+ * matching this task's own "prefer a booking link" guidance rather than
+ * inventing a fetch this module doesn't otherwise need.
  */
 
+import config from '../../../config/index.js';
+
 const DEFAULT_LOCALE = 'en';
+
+function bookingUrl(locale, bookingId) {
+  if (!bookingId) return null;
+  return `${config.webAppUrl}/${locale}/account/bookings/${bookingId}`;
+}
 
 const TEMPLATES = {
   'booking.created': {
@@ -88,6 +116,48 @@ const TEMPLATES = {
     ru: ({ bookingReference }) => ({
       subject: 'Поездка завершена',
       body: `Ваше бронирование ${bookingReference ?? ''} завершено. Будем рады узнать ваше мнение о поездке.`,
+    }),
+  },
+  'payment.succeeded': {
+    en: ({ bookingId, totalAmount, currency }) => ({
+      subject: 'Payment received',
+      body: `We received a payment of ${totalAmount ?? ''} ${currency ?? ''} for booking #${bookingId ?? ''}.${bookingUrl('en', bookingId) ? ` View the booking: ${bookingUrl('en', bookingId)}` : ''}`,
+    }),
+    hy: ({ bookingId, totalAmount, currency }) => ({
+      subject: 'Վճարումն ստացվել է',
+      body: `Մենք ստացել ենք ${totalAmount ?? ''} ${currency ?? ''} վճարում #${bookingId ?? ''} ամրագրման համար:${bookingUrl('hy', bookingId) ? ` Դիտեք ամրագրումը՝ ${bookingUrl('hy', bookingId)}` : ''}`,
+    }),
+    ru: ({ bookingId, totalAmount, currency }) => ({
+      subject: 'Платёж получен',
+      body: `Мы получили платёж на сумму ${totalAmount ?? ''} ${currency ?? ''} за бронирование №${bookingId ?? ''}.${bookingUrl('ru', bookingId) ? ` Посмотреть бронирование: ${bookingUrl('ru', bookingId)}` : ''}`,
+    }),
+  },
+  'payment.failed': {
+    en: ({ bookingId }) => ({
+      subject: 'Payment failed',
+      body: `Your payment for booking #${bookingId ?? ''} could not be completed. Please try again.${bookingUrl('en', bookingId) ? ` View the booking: ${bookingUrl('en', bookingId)}` : ''}`,
+    }),
+    hy: ({ bookingId }) => ({
+      subject: 'Վճարումը ձախողվեց',
+      body: `Ձեր վճարումը #${bookingId ?? ''} ամրագրման համար չհաջողվեց ավարտել: Խնդրում ենք կրկին փորձել:${bookingUrl('hy', bookingId) ? ` Դիտեք ամրագրումը՝ ${bookingUrl('hy', bookingId)}` : ''}`,
+    }),
+    ru: ({ bookingId }) => ({
+      subject: 'Платёж не прошёл',
+      body: `Не удалось выполнить платёж за бронирование №${bookingId ?? ''}. Пожалуйста, попробуйте снова.${bookingUrl('ru', bookingId) ? ` Посмотреть бронирование: ${bookingUrl('ru', bookingId)}` : ''}`,
+    }),
+  },
+  'refund.succeeded': {
+    en: ({ bookingId, amount, currency }) => ({
+      subject: 'Refund issued',
+      body: `A refund of ${amount ?? ''} ${currency ?? ''} has been issued for booking #${bookingId ?? ''}.${bookingUrl('en', bookingId) ? ` View the booking: ${bookingUrl('en', bookingId)}` : ''}`,
+    }),
+    hy: ({ bookingId, amount, currency }) => ({
+      subject: 'Փոխհատուցումն իրականացվել է',
+      body: `${amount ?? ''} ${currency ?? ''} փոխհատուցում է իրականացվել #${bookingId ?? ''} ամրագրման համար:${bookingUrl('hy', bookingId) ? ` Դիտեք ամրագրումը՝ ${bookingUrl('hy', bookingId)}` : ''}`,
+    }),
+    ru: ({ bookingId, amount, currency }) => ({
+      subject: 'Возврат средств выполнен',
+      body: `Выполнен возврат ${amount ?? ''} ${currency ?? ''} за бронирование №${bookingId ?? ''}.${bookingUrl('ru', bookingId) ? ` Посмотреть бронирование: ${bookingUrl('ru', bookingId)}` : ''}`,
     }),
   },
   'review.submitted': {
