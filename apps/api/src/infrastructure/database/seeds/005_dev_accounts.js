@@ -3,16 +3,22 @@
  * (Sprint 5 §15). Credentials are printed to the log at seed time and
  * documented in docs/SPRINT_5_DATABASE_FOUNDATION.md — every password
  * below is intentionally simple, publicly documented, and MUST NOT be
- * reused anywhere outside a local/sandbox environment. `db:seed` never
- * runs in production (see reset.js's NODE_ENV guard for the equivalent
- * check on the destructive `db:reset` path); this file does not itself
- * re-check NODE_ENV since seeding non-destructively re-creating fixed
- * dev accounts is safe to leave callable, but the credentials being
- * public means this data must never exist outside dev/staging.
+ * reused anywhere outside a local/sandbox environment.
+ *
+ * Launch-blocker remediation (P0-A): this module refuses to run when
+ * `config.isProduction` is true, regardless of caller. It is the sole
+ * write path for these fixed, publicly-documented credentials, so the
+ * guard lives here rather than in any individual caller (`seedAll()`,
+ * `db:reset:dev`, or a direct invocation) — protecting all of them at
+ * once. The failure is loud (throws) rather than a silent skip, since a
+ * `db:seed`/`db:reset` invocation that unexpectedly runs against a
+ * production database is a misconfiguration serious enough to deserve
+ * a hard stop, not a partially-successful seed run.
  */
 
 import argon2 from 'argon2';
 import { getIdByCode } from './helpers.js';
+import config from '../../../config/index.js';
 
 export const DEV_CREDENTIALS = Object.freeze({
   admin: { email: 'admin@travelhub.dev', password: 'DevAdmin!2024' },
@@ -82,6 +88,14 @@ async function upsertPartner(
 }
 
 export default async function seedDevAccounts(connection) {
+  if (config.isProduction) {
+    throw new Error(
+      'seedDevAccounts refused: NODE_ENV=production. Fixed, publicly-' +
+        'documented development credentials must never be created in a ' +
+        'production environment.',
+    );
+  }
+
   const [
     activeStatusId,
     approvedStatusId,
