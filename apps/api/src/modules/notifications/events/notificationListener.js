@@ -361,6 +361,36 @@ export function registerNotificationListeners({
       ),
     );
   });
+
+  // Launch-blocker remediation (P0-B): a customer's cancellation left a
+  // paid booking's `refund_status = REQUIRES_MANUAL_REVIEW` with nobody
+  // ever alerted — same MODERATOR/ADMIN/SUPER_ADMIN fan-out as
+  // REVIEW_REPORTED above, HIGH priority since this concerns money.
+  // `resourceType: 'booking'`/`resourceId` on the event (see
+  // `bookingService.js#resolveRefundForCancelledBooking`) already routes
+  // through the existing booking-detail notification deep link with no
+  // further wiring needed.
+  eventBus.subscribe(EVENT_TYPES.REFUND_REVIEW_REQUIRED, async (event) => {
+    const recipientUserIds = await userService.listUserIdsByRole([
+      'MODERATOR',
+      'ADMIN',
+      'SUPER_ADMIN',
+    ]);
+    await Promise.all(
+      recipientUserIds.map((recipientUserId) =>
+        notify(event, {
+          recipientUserId,
+          categoryCode: 'ADMIN',
+          priorityCode: PRIORITY.HIGH,
+          payload: {
+            bookingReference: event.payload.bookingReference,
+            partnerId: event.payload.partnerId,
+            paymentId: event.payload.paymentId,
+          },
+        }),
+      ),
+    );
+  });
 }
 
 export default registerNotificationListeners;

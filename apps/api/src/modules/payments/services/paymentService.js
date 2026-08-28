@@ -798,6 +798,17 @@ export class PaymentService {
           isFullyRefunded ? 'REFUNDED_ONLINE' : 'PARTIALLY_REFUNDED_ONLINE',
           { connection },
         );
+        // Launch-blocker remediation (P0-B): only reached once the
+        // refund has genuinely succeeded with the provider (inside this
+        // `isSucceeded` branch) — never on a failed/declined refund,
+        // which leaves REQUIRES_MANUAL_REVIEW untouched. Conditional by
+        // construction: a booking that was never REQUIRES_MANUAL_REVIEW
+        // (an unrelated refund) is left untouched, and a duplicate call
+        // safely no-ops — see `transitionRefundStatus`'s WHERE clause.
+        await this.#bookingService.resolveManualReviewRefundSystemInternal(
+          payment.bookingId,
+          { connection },
+        );
         await this.#ledgerRepository.create(
           {
             entryType: 'REFUND_ISSUED',

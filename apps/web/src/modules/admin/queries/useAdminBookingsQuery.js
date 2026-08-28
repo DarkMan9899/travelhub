@@ -13,13 +13,17 @@ import { listMyBookings } from '../../../api/bookings.js';
 
 export const ADMIN_BOOKINGS_LIMIT = 20;
 
-export function useAdminBookingsQuery({ status } = {}) {
+export function useAdminBookingsQuery({ status, refundStatus } = {}) {
   return useInfiniteQuery({
-    queryKey: ['admin', 'bookings', { status }],
+    queryKey: ['admin', 'bookings', { status, refundStatus }],
     queryFn: async ({ pageParam }) => {
       const { data, meta } = await listMyBookings({
         viewAll: true,
         status: status || undefined,
+        // Launch-blocker remediation (P0-B/4D): real backend filtering
+        // (mysqlBookingRepository.js#list), not a client-side narrowing
+        // of one already-paginated page.
+        refundStatus: refundStatus || undefined,
         limit: ADMIN_BOOKINGS_LIMIT,
         cursor: pageParam ?? undefined,
       });

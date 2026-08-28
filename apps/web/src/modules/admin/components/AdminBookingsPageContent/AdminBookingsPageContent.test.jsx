@@ -29,9 +29,9 @@ function bookingFixture(overrides) {
   };
 }
 
-function renderPage() {
+function renderPage({ initialEntries = ['/hy/admin/bookings'] } = {}) {
   return render(
-    <MemoryRouter initialEntries={['/hy/admin/bookings']}>
+    <MemoryRouter initialEntries={initialEntries}>
       <ToastProvider>
         <ConfirmProvider>
           <Routes>
@@ -108,5 +108,28 @@ describe('AdminBookingsPageContent (apps/web/src/modules/admin)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Բեռնել ավելին' }));
     expect(fetchNextPage).toHaveBeenCalledTimes(1);
+  });
+
+  // Launch-blocker remediation (P0-B/4D): the admin bookings screen had
+  // no way at all to find REQUIRES_MANUAL_REVIEW bookings — this proves
+  // the new filter's value is read from the URL and threaded through to
+  // the real backend query, not just rendered decoratively.
+  test('reads refundStatus from the URL and passes it to useAdminBookingsQuery', () => {
+    useAdminBookingsQuery.mockReturnValue({
+      data: { pages: [{ results: [] }] },
+      isPending: false,
+      isError: false,
+      ...noopQueryExtras,
+    });
+    renderPage({
+      initialEntries: [
+        '/hy/admin/bookings?refundStatus=REQUIRES_MANUAL_REVIEW',
+      ],
+    });
+
+    expect(useAdminBookingsQuery).toHaveBeenCalledWith({
+      status: '',
+      refundStatus: 'REQUIRES_MANUAL_REVIEW',
+    });
   });
 });

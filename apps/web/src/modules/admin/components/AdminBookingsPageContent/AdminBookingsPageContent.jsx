@@ -25,7 +25,7 @@ import { useAdminListFilters } from '../../hooks/useAdminListFilters.js';
 import { useAdminBookingsQuery } from '../../queries/useAdminBookingsQuery.js';
 import { BookingStatusBadge } from '../../../bookings/index.js';
 
-const DEFAULT_FILTERS = { status: '' };
+const DEFAULT_FILTERS = { status: '', refundStatus: '' };
 
 const STATUS_CODES = [
   'DRAFT',
@@ -37,6 +37,20 @@ const STATUS_CODES = [
   'COMPLETED',
   'NO_SHOW',
   'EXPIRED',
+];
+
+// Launch-blocker remediation (P0-B/4D): the Master Audit found this
+// screen had no way to find REQUIRES_MANUAL_REVIEW bookings at all — the
+// smallest useful fix, a second filter reusing this page's existing
+// filtering architecture. Only the values an admin can actually act on
+// or needs to distinguish are listed; NOT_APPLICABLE (the overwhelming
+// majority of bookings) is covered by leaving the filter unset.
+const REFUND_STATUS_CODES = [
+  'REQUIRES_MANUAL_REVIEW',
+  'AUTO_REFUNDED',
+  'MANUALLY_REFUNDED',
+  'RESOLVED_NO_REFUND',
+  'REFUND_FAILED',
 ];
 
 export default function AdminBookingsPageContent() {
@@ -53,7 +67,10 @@ export default function AdminBookingsPageContent() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useAdminBookingsQuery({ status: filters.status });
+  } = useAdminBookingsQuery({
+    status: filters.status,
+    refundStatus: filters.refundStatus,
+  });
 
   const bookings = useMemo(
     () => data?.pages.flatMap((page) => page.results) ?? [],
@@ -65,6 +82,16 @@ export default function AdminBookingsPageContent() {
     ...STATUS_CODES.map((code) => ({
       value: code,
       label: t(`bookings.status.${code}`, { defaultValue: code }),
+    })),
+  ];
+
+  const refundStatusOptions = [
+    { value: '', label: t('admin.bookings.filters.refundStatusAll') },
+    ...REFUND_STATUS_CODES.map((code) => ({
+      value: code,
+      label: t(`admin.bookings.filters.refundStatusValue.${code}`, {
+        defaultValue: code,
+      }),
     })),
   ];
 
@@ -146,6 +173,12 @@ export default function AdminBookingsPageContent() {
               options={statusOptions}
               value={filters.status}
               onChange={(value) => updateFilters({ status: value })}
+            />
+            <Select
+              ariaLabel={t('admin.bookings.filters.refundStatusLabel')}
+              options={refundStatusOptions}
+              value={filters.refundStatus}
+              onChange={(value) => updateFilters({ refundStatus: value })}
             />
           </Inline>
 

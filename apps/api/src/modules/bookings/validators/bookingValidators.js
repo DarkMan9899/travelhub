@@ -8,6 +8,7 @@
 
 import { z } from 'zod';
 import { BOOKING_STATUSES } from '../../../core/domain/bookingStatusTransitions.js';
+import { BOOKING_REFUND_STATUSES } from '../../../core/domain/bookingRefundStatuses.js';
 
 const passthroughQuery = z.object({}).passthrough();
 const passthroughParams = z.object({}).passthrough();
@@ -96,8 +97,21 @@ export const listBookingsQuerySchema = z.object({
     // workspace narrow server-side (e.g. PENDING_VENDOR to find bookings
     // needing action) — mirrors `GET /listings`'s existing `status` param.
     status: z.enum(BOOKING_STATUSES).optional(),
+    // Launch-blocker remediation (P0-B/4D): lets the admin bookings
+    // screen filter for REQUIRES_MANUAL_REVIEW — real backend filtering
+    // (see mysqlBookingRepository.js#list), not a client-side narrowing
+    // of one already-paginated page.
+    refundStatus: z.enum(BOOKING_REFUND_STATUSES).optional(),
     cursor: z.string().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
   }),
   body: z.any(),
+});
+
+export const resolveRefundReviewSchema = z.object({
+  params: idParams,
+  query: passthroughQuery,
+  body: z.object({
+    reason: z.string().trim().min(1).max(1000),
+  }),
 });

@@ -1786,7 +1786,16 @@
       "loadMore": "Բեռնել ավելին",
       "filters": {
         "statusLabel": "Կարգավիճակ",
-        "statusAll": "Բոլոր կարգավիճակները"
+        "statusAll": "Բոլոր կարգավիճակները",
+        "refundStatusLabel": "Փոխհատուցման վերանայում",
+        "refundStatusAll": "Փոխհատուցման բոլոր կարգավիճակները",
+        "refundStatusValue": {
+          "REQUIRES_MANUAL_REVIEW": "Սպասում է վերանայման",
+          "AUTO_REFUNDED": "Ավտոմատ փոխհատուցված",
+          "MANUALLY_REFUNDED": "Ձեռքով փոխհատուցված",
+          "RESOLVED_NO_REFUND": "Լուծված՝ առանց փոխհատուցման",
+          "REFUND_FAILED": "Փոխհատուցումը ձախողվեց"
+        }
       },
       "table": {
         "reference": "Հղում",

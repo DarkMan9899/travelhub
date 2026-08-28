@@ -65,11 +65,24 @@ export function createBookingController(bookingService) {
 
     async list(req, res, next) {
       try {
-        const { partnerId, viewAll, status, customerId, cursor, limit } =
-          req.validated.query;
+        const {
+          partnerId,
+          viewAll,
+          status,
+          customerId,
+          refundStatus,
+          cursor,
+          limit,
+        } = req.validated.query;
         const { rows, meta } = await bookingService.listBookings(
           req.principal,
-          { partnerId, viewAll, status, customerUserId: customerId },
+          {
+            partnerId,
+            viewAll,
+            status,
+            customerUserId: customerId,
+            refundStatus,
+          },
           { cursor, limit },
         );
         res.status(200).json({
@@ -155,6 +168,26 @@ export function createBookingController(bookingService) {
       try {
         const { id } = req.validated.params;
         const booking = await bookingService.markNoShow(req.principal, id);
+        res.status(200).json({
+          success: true,
+          data: toBookingResponse(booking),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async resolveRefundReview(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const { reason } = req.validated.body;
+        const booking = await bookingService.resolveRefundReviewWithoutRefund(
+          req.principal,
+          id,
+          { reason },
+        );
         res.status(200).json({
           success: true,
           data: toBookingResponse(booking),

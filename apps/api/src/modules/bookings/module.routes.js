@@ -13,6 +13,7 @@ import {
   rejectBookingSchema,
   cancelBookingSchema,
   listBookingsQuerySchema,
+  resolveRefundReviewSchema,
 } from './validators/bookingValidators.js';
 
 export default function createBookingRoutes({ bookingController, guards }) {
@@ -84,6 +85,18 @@ export default function createBookingRoutes({ bookingController, guards }) {
     requireAuth,
     validate(bookingIdParamsSchema),
     bookingController.noShow,
+  );
+
+  // Launch-blocker remediation (P0-B/4B): admin-only resolution of a
+  // REQUIRES_MANUAL_REVIEW booking without issuing a refund. Permission
+  // (payment.refund, no owner-fallback) is enforced inside
+  // BookingService#resolveRefundReviewWithoutRefund, same split every
+  // other route in this file already follows.
+  router.post(
+    '/:id/resolve-refund-review',
+    requireAuth,
+    validate(resolveRefundReviewSchema),
+    bookingController.resolveRefundReview,
   );
 
   return router;

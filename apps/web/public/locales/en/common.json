@@ -1786,7 +1786,16 @@
       "loadMore": "Load more",
       "filters": {
         "statusLabel": "Status",
-        "statusAll": "All statuses"
+        "statusAll": "All statuses",
+        "refundStatusLabel": "Refund review",
+        "refundStatusAll": "All refund statuses",
+        "refundStatusValue": {
+          "REQUIRES_MANUAL_REVIEW": "Awaiting manual review",
+          "AUTO_REFUNDED": "Auto-refunded",
+          "MANUALLY_REFUNDED": "Manually refunded",
+          "RESOLVED_NO_REFUND": "Resolved — no refund",
+          "REFUND_FAILED": "Refund failed"
+        }
       },
       "table": {
         "reference": "Reference",

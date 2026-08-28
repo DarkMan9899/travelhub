@@ -232,7 +232,7 @@ describe('Booking cancellation <-> refund lifecycle (P0.2)', () => {
     expect(bookingAfter.refund_status).toBe('AUTO_REFUNDED');
   });
 
-  test('a customer cancelling their own paid, CONFIRMED booking does NOT auto-refund — it is flagged for manual review, and the existing admin refund flow can still resolve it', async () => {
+  test('a customer cancelling their own paid, CONFIRMED booking does NOT auto-refund — it is flagged for manual review, admin/moderator are notified, and the existing admin refund flow now also resolves refund_status to MANUALLY_REFUNDED', async () => {
     const booking = await createConfirmedBooking(customer, 8_000);
     const payment = await paySuccessfully(customer, booking.id);
 
@@ -251,6 +251,19 @@ describe('Booking cancellation <-> refund lifecycle (P0.2)', () => {
     expect(paymentRes.body.data.status).toBe('SUCCEEDED');
     expect(paymentRes.body.data.refunds).toHaveLength(0);
 
+    // Launch-blocker remediation (P0-B/4C): REFUND_REVIEW_REQUIRED now has
+    // a real subscriber — the admin dev account must have been notified.
+    const adminNotifications = await request(app)
+      .get('/api/v1/notifications?category=ADMIN&limit=100')
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    const reviewNotification = adminNotifications.body.data.find(
+      (n) =>
+        n.event_type === 'refund.review_required' &&
+        n.resource_type === 'booking' &&
+        n.resource_id === booking.id,
+    );
+    expect(reviewNotification).toBeDefined();
+
     // The pre-existing admin refund endpoint fully resolves it — the
     // policy hands off to a human, it doesn't strand the money.
     const refundRes = await request(app)
@@ -259,6 +272,12 @@ describe('Booking cancellation <-> refund lifecycle (P0.2)', () => {
       .send({ amount: '8000.00', reason: 'Approved after review' });
     expect(refundRes.status).toBe(201);
     expect(refundRes.body.data.status).toBe('SUCCEEDED');
+
+    // Launch-blocker remediation (P0-B/4A): before this fix, refund_status
+    // stayed at REQUIRES_MANUAL_REVIEW forever even after a successful
+    // admin refund. It must now resolve to MANUALLY_REFUNDED.
+    const bookingAfterRefund = await getBooking(customer, booking.id);
+    expect(bookingAfterRefund.refund_status).toBe('MANUALLY_REFUNDED');
   });
 
   test('cancelling a CONFIRMED booking with no successful payment leaves refund_status at NOT_APPLICABLE', async () => {
@@ -270,5 +289,152 @@ describe('Booking cancellation <-> refund lifecycle (P0.2)', () => {
       .send({ reason: 'Never paid' });
     expect(cancelRes.status).toBe(200);
     expect(cancelRes.body.data.refund_status).toBe('NOT_APPLICABLE');
+  });
+
+  test('a refund against a booking that was never REQUIRES_MANUAL_REVIEW does not corrupt its refund_status (unrelated refund)', async () => {
+    // Never cancelled — still CONFIRMED, refund_status defaults to
+    // NOT_APPLICABLE. An admin can still refund a successfully-paid
+    // booking directly (no cancellation prerequisite in this codebase),
+    // and that must not fabricate a REQUIRES_MANUAL_REVIEW->MANUALLY_REFUNDED
+    // transition it never actually went through.
+    const booking = await createConfirmedBooking(customer, 6_000);
+    const payment = await paySuccessfully(customer, booking.id);
+
+    const beforeRefund = await getBooking(customer, booking.id);
+    expect(beforeRefund.refund_status).toBe('NOT_APPLICABLE');
+
+    const refundRes = await request(app)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ amount: '6000.00', reason: 'Customer-service goodwill refund' });
+    expect(refundRes.status).toBe(201);
+    expect(refundRes.body.data.status).toBe('SUCCEEDED');
+
+    const afterRefund = await getBooking(customer, booking.id);
+    expect(afterRefund.refund_status).toBe('NOT_APPLICABLE');
+  });
+
+  describe('resolve-refund-review (P0-B/4B: resolve without issuing a refund)', () => {
+    test('an admin can resolve REQUIRES_MANUAL_REVIEW to RESOLVED_NO_REFUND with a reason, and it creates an audit record', async () => {
+      const booking = await createConfirmedBooking(customer, 4_000);
+      const payment = await paySuccessfully(customer, booking.id);
+      await request(app)
+        .post(`/api/v1/bookings/${booking.id}/cancel`)
+        .set('Authorization', `Bearer ${customer.accessToken}`)
+        .send({ reason: 'Change of plans' });
+
+      const resolveRes = await request(app)
+        .post(`/api/v1/bookings/${booking.id}/resolve-refund-review`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ reason: 'Non-refundable per policy, confirmed with customer' });
+      expect(resolveRes.status).toBe(200);
+      expect(resolveRes.body.data.refund_status).toBe('RESOLVED_NO_REFUND');
+
+      const pool = getMysqlPool();
+      const [auditRows] = await pool.query(
+        `SELECT action, before_snapshot, after_snapshot FROM audit_logs
+         WHERE target_type = 'booking' AND target_id = ? AND action = 'booking.refund_review_resolved'`,
+        [booking.id],
+      );
+      expect(auditRows).toHaveLength(1);
+      const afterSnapshot = JSON.parse(auditRows[0].after_snapshot);
+      expect(afterSnapshot.outcome).toBe('RESOLVED_NO_REFUND');
+      expect(afterSnapshot.reason).toBe(
+        'Non-refundable per policy, confirmed with customer',
+      );
+
+      // Must not move money or create a refund record.
+      const paymentRes = await request(app)
+        .get(`/api/v1/payments/${payment.id}`)
+        .set('Authorization', `Bearer ${admin.accessToken}`);
+      expect(paymentRes.body.data.status).toBe('SUCCEEDED');
+      expect(paymentRes.body.data.refunds).toHaveLength(0);
+    });
+
+    test('duplicate resolution is a safe no-op, not an error', async () => {
+      const booking = await createConfirmedBooking(customer, 3_000);
+      await paySuccessfully(customer, booking.id);
+      await request(app)
+        .post(`/api/v1/bookings/${booking.id}/cancel`)
+        .set('Authorization', `Bearer ${customer.accessToken}`)
+        .send({ reason: 'Change of plans' });
+
+      const first = await request(app)
+        .post(`/api/v1/bookings/${booking.id}/resolve-refund-review`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ reason: 'Non-refundable per policy' });
+      expect(first.status).toBe(200);
+
+      const second = await request(app)
+        .post(`/api/v1/bookings/${booking.id}/resolve-refund-review`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ reason: 'Retried request' });
+      expect(second.status).toBe(200);
+      expect(second.body.data.refund_status).toBe('RESOLVED_NO_REFUND');
+
+      const pool = getMysqlPool();
+      const [auditRows] = await pool.query(
+        `SELECT id FROM audit_logs
+         WHERE target_type = 'booking' AND target_id = ? AND action = 'booking.refund_review_resolved'`,
+        [booking.id],
+      );
+      // Exactly one audit entry — the duplicate call never re-wrote it.
+      expect(auditRows).toHaveLength(1);
+    });
+
+    test('requires a non-empty reason', async () => {
+      const booking = await createConfirmedBooking(customer, 3_000);
+      await paySuccessfully(customer, booking.id);
+      await request(app)
+        .post(`/api/v1/bookings/${booking.id}/cancel`)
+        .set('Authorization', `Bearer ${customer.accessToken}`)
+        .send({ reason: 'Change of plans' });
+
+      const missingReason = await request(app)
+        .post(`/api/v1/bookings/${booking.id}/resolve-refund-review`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({});
+      expect(missingReason.status).toBe(422);
+
+      const blankReason = await request(app)
+        .post(`/api/v1/bookings/${booking.id}/resolve-refund-review`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ reason: '   ' });
+      expect(blankReason.status).toBe(422);
+    });
+
+    test('is admin-only — a non-admin caller is rejected, and the booking is untouched', async () => {
+      const booking = await createConfirmedBooking(customer, 3_000);
+      await paySuccessfully(customer, booking.id);
+      await request(app)
+        .post(`/api/v1/bookings/${booking.id}/cancel`)
+        .set('Authorization', `Bearer ${customer.accessToken}`)
+        .send({ reason: 'Change of plans' });
+
+      const asVendor = await request(app)
+        .post(`/api/v1/bookings/${booking.id}/resolve-refund-review`)
+        .set('Authorization', `Bearer ${vendor.accessToken}`)
+        .send({ reason: 'Trying to self-resolve' });
+      expect(asVendor.status).toBe(403);
+
+      const asCustomer = await request(app)
+        .post(`/api/v1/bookings/${booking.id}/resolve-refund-review`)
+        .set('Authorization', `Bearer ${customer.accessToken}`)
+        .send({ reason: 'Trying to self-resolve' });
+      expect(asCustomer.status).toBe(403);
+
+      const bookingAfter = await getBooking(customer, booking.id);
+      expect(bookingAfter.refund_status).toBe('REQUIRES_MANUAL_REVIEW');
+    });
+
+    test('is only valid from REQUIRES_MANUAL_REVIEW — rejects a booking that was never flagged for review', async () => {
+      const booking = await createConfirmedBooking(customer, 3_000);
+      // Never paid/cancelled — refund_status is NOT_APPLICABLE.
+      const resolveRes = await request(app)
+        .post(`/api/v1/bookings/${booking.id}/resolve-refund-review`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ reason: 'Should not be valid here' });
+      expect(resolveRes.status).toBe(409);
+    });
   });
 });

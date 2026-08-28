@@ -267,12 +267,34 @@ export class MySqlBookingRepository {
     );
   }
 
-  /** P0.2 — the sole write path for `refund_status`, called only from `BookingService#cancelBooking` after resolving `cancellationRefundPolicy.js`'s outcome. */
+  /** P0.2 — the sole write path for the initial `refund_status` transition out of `NOT_APPLICABLE`, called only from `BookingService#cancelBooking` after resolving `cancellationRefundPolicy.js`'s outcome. Every later transition (a resolved manual review) goes through `transitionRefundStatus` below instead. */
   async updateRefundStatus(id, refundStatus, connection = this.#pool) {
     await connection.query(
       'UPDATE bookings SET refund_status = ? WHERE id = ?',
       [refundStatus, id],
     );
+  }
+
+  /**
+   * Launch-blocker remediation (P0-B) — conditional transition: only
+   * writes when the booking's *current* `refund_status` still matches
+   * `fromStatus`, and reports whether it did via `affectedRows`. This is
+   * the write path for resolving a `REQUIRES_MANUAL_REVIEW` booking (to
+   * either `MANUALLY_REFUNDED` or `RESOLVED_NO_REFUND`) — the WHERE
+   * clause is what makes a duplicate/concurrent resolution attempt, or a
+   * refund against a booking that was never in manual review, a safe
+   * no-op rather than a data-corrupting overwrite.
+   */
+  async transitionRefundStatus(
+    id,
+    { fromStatus, toStatus },
+    connection = this.#pool,
+  ) {
+    const [result] = await connection.query(
+      'UPDATE bookings SET refund_status = ? WHERE id = ? AND refund_status = ?',
+      [toStatus, id, fromStatus],
+    );
+    return result.affectedRows > 0;
   }
 
   /** Owner/admin/customer visibility is the Service's job — this is a plain filtered list. */
@@ -295,6 +317,14 @@ export class MySqlBookingRepository {
     if (filters.statusCode !== undefined) {
       conditions.push('bs.code = ?');
       params.push(filters.statusCode);
+    }
+    // Launch-blocker remediation (P0-B/4D) — admin discoverability for
+    // REQUIRES_MANUAL_REVIEW bookings (previously findable nowhere).
+    // `b.refund_status` is a plain, unconstrained column (migration
+    // 0028), filtered the same direct-equality way as `bs.code` above.
+    if (filters.refundStatus !== undefined) {
+      conditions.push('b.refund_status = ?');
+      params.push(filters.refundStatus);
     }
 
     const decoded = decodeCursor(cursor);

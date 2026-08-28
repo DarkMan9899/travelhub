@@ -1798,7 +1798,16 @@
       "loadMore": "Загрузить ещё",
       "filters": {
         "statusLabel": "Статус",
-        "statusAll": "Все статусы"
+        "statusAll": "Все статусы",
+        "refundStatusLabel": "Проверка возврата",
+        "refundStatusAll": "Все статусы возврата",
+        "refundStatusValue": {
+          "REQUIRES_MANUAL_REVIEW": "Ожидает проверки",
+          "AUTO_REFUNDED": "Возвращено автоматически",
+          "MANUALLY_REFUNDED": "Возвращено вручную",
+          "RESOLVED_NO_REFUND": "Решено — без возврата",
+          "REFUND_FAILED": "Возврат не удался"
+        }
       },
       "table": {
         "reference": "Номер",

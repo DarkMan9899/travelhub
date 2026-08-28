@@ -58,6 +58,13 @@ const VIEW_ALL_PERMISSION = 'booking.view_all';
 const CONFIRM_PERMISSION = 'booking.confirm';
 const REJECT_PERMISSION = 'booking.reject';
 const CANCEL_ANY_PERMISSION = 'booking.cancel_any';
+// Launch-blocker remediation (P0-B): deliberately reuses PaymentService's
+// own `payment.refund` permission rather than minting a new one — a
+// partner deciding "no refund is owed" is an equally sensitive,
+// money-adjacent judgment call as a partner issuing one, and admin-only/
+// no-owner-fallback for the same reason (see paymentService.js's
+// REFUND_PERMISSION comment).
+const REFUND_REVIEW_PERMISSION = 'payment.refund';
 const MAX_REFERENCE_ATTEMPTS = 5;
 
 function todayDateString() {
@@ -565,7 +572,8 @@ export class BookingService {
    */
   async listBookings(principal, filters = {}, paginationOpts = {}) {
     if (!principal) throw new AuthenticationError();
-    const { partnerId, viewAll, status, customerUserId } = filters;
+    const { partnerId, viewAll, status, customerUserId, refundStatus } =
+      filters;
 
     if (partnerId !== undefined) {
       await this.#assertOwnerOrPermission(
@@ -574,7 +582,7 @@ export class BookingService {
         VIEW_ALL_PERMISSION,
       );
       return this.#bookingRepository.list(
-        { partnerId, statusCode: status },
+        { partnerId, statusCode: status, refundStatus },
         paginationOpts,
       );
     }
@@ -589,7 +597,7 @@ export class BookingService {
       );
       if (!isAdmin) throw new AuthorizationError();
       return this.#bookingRepository.list(
-        { customerUserId, statusCode: status },
+        { customerUserId, statusCode: status, refundStatus },
         paginationOpts,
       );
     }
@@ -600,12 +608,12 @@ export class BookingService {
       );
       if (!isAdmin) throw new AuthorizationError();
       return this.#bookingRepository.list(
-        { statusCode: status },
+        { statusCode: status, refundStatus },
         paginationOpts,
       );
     }
     return this.#bookingRepository.list(
-      { customerUserId: principal.userId, statusCode: status },
+      { customerUserId: principal.userId, statusCode: status, refundStatus },
       paginationOpts,
     );
   }
@@ -965,6 +973,98 @@ export class BookingService {
       paymentStatusId,
       connection,
     );
+  }
+
+  /**
+   * Launch-blocker remediation (P0-B) — the manual-refund-review
+   * counterpart to `recordPaymentOutcome` immediately above: same
+   * system-callable, no-principal, connection-accepting shape, called
+   * only from `PaymentService#executeRefund`'s success branch, after a
+   * refund has genuinely succeeded with the provider. Conditional by
+   * construction (`transitionRefundStatus`'s WHERE clause) — a booking
+   * that was never `REQUIRES_MANUAL_REVIEW` (an unrelated refund) is left
+   * untouched, and a second, duplicate call safely no-ops.
+   */
+  async resolveManualReviewRefundSystemInternal(
+    bookingId,
+    { connection } = {},
+  ) {
+    return this.#bookingRepository.transitionRefundStatus(
+      bookingId,
+      { fromStatus: 'REQUIRES_MANUAL_REVIEW', toStatus: 'MANUALLY_REFUNDED' },
+      connection,
+    );
+  }
+
+  /**
+   * Launch-blocker remediation (P0-B) — the admin action for closing a
+   * `REQUIRES_MANUAL_REVIEW` booking without issuing a refund (the policy
+   * says non-refundable, or the matter was resolved out-of-band). Moves
+   * no money and creates no refund/payment record — it only writes
+   * `bookings.refund_status` plus an audit trail. Only valid coming from
+   * `REQUIRES_MANUAL_REVIEW`; already being at `RESOLVED_NO_REFUND` is
+   * treated as a safe, idempotent no-op (no duplicate audit entry) so a
+   * retried/double-clicked request can never error or double-write. Any
+   * other current state is a genuine conflict (e.g. it was already
+   * refunded, or was never awaiting review) and is rejected loudly rather
+   * than silently reinterpreted.
+   */
+  async resolveRefundReviewWithoutRefund(principal, id, { reason } = {}) {
+    if (!principal) throw new AuthenticationError();
+    const canResolve = await this.#permissionResolver.hasPermission(
+      principal.roles,
+      REFUND_REVIEW_PERMISSION,
+    );
+    if (!canResolve) throw new AuthorizationError();
+
+    const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+    if (!trimmedReason) {
+      throw new ValidationError(
+        'A reason is required to resolve a refund review without a refund.',
+        [{ field: 'reason', issue: 'REQUIRED' }],
+      );
+    }
+
+    return withTransaction(async (connection) => {
+      const locked = await this.#bookingRepository.lockById(id, connection);
+      if (!locked) throw new NotFoundError('Booking not found.');
+
+      if (locked.refundStatus === 'RESOLVED_NO_REFUND') {
+        return locked;
+      }
+      if (locked.refundStatus !== 'REQUIRES_MANUAL_REVIEW') {
+        throw new ConflictError(
+          `Cannot resolve refund review for a booking whose refund_status is ${locked.refundStatus}.`,
+          'REFUND_REVIEW_NOT_PENDING',
+        );
+      }
+
+      await this.#bookingRepository.transitionRefundStatus(
+        id,
+        {
+          fromStatus: 'REQUIRES_MANUAL_REVIEW',
+          toStatus: 'RESOLVED_NO_REFUND',
+        },
+        connection,
+      );
+      await this.#auditLogger.record(
+        {
+          actorId: principal.userId,
+          action: 'booking.refund_review_resolved',
+          targetType: 'booking',
+          targetId: id,
+          beforeSnapshot: { refundStatus: 'REQUIRES_MANUAL_REVIEW' },
+          afterSnapshot: {
+            refundStatus: 'RESOLVED_NO_REFUND',
+            outcome: 'RESOLVED_NO_REFUND',
+            reason: trimmedReason,
+          },
+        },
+        connection,
+      );
+
+      return this.#bookingRepository.findById(id, connection);
+    });
   }
 
   async markNoShow(principal, id) {
