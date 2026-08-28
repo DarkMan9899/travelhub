@@ -11,6 +11,7 @@ import { describe, test, expect } from '@jest/globals';
 import { buildSearchListingsQuery } from '../../../../src/modules/search/repositories/mysqlSearchRepository.js';
 import { resolveSortOption } from '../../../../src/core/domain/sortOptions.js';
 import { ACCOMMODATION_BOOKABLE_UNIT_TYPES } from '../../../../src/core/domain/accommodationDateSemantics.js';
+import { INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES } from '../../../../src/core/domain/inventoryQuantityUnitTypes.js';
 
 function countPlaceholders(sql) {
   return (sql.match(/\?/g) ?? []).length;
@@ -20,6 +21,8 @@ const baseFilters = { localeId: 1, defaultLocaleId: 1 };
 
 /** `ACCOMMODATION_BOOKABLE_UNIT_TYPES` bound once per `IN (...)` occurrence in the availability EXISTS block — see `mysqlSearchRepository.js`'s own comment on why this repeats rather than being reused. */
 const TYPES = ACCOMMODATION_BOOKABLE_UNIT_TYPES;
+/** Launch-blocker remediation (P0-C): the quantity IF's own IN(...) is gated by this separate, VEHICLE-inclusive list instead of `TYPES` above. */
+const INVENTORY_TYPES = INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES;
 
 describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
   test('no filters, no keyword: placeholder count matches params length', () => {
@@ -194,7 +197,7 @@ describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
       ...TYPES,
       '2026-09-10',
       '2026-09-10',
-      ...TYPES,
+      ...INVENTORY_TYPES,
       1,
       2,
       ...TYPES,
@@ -205,7 +208,7 @@ describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
     ]);
   });
 
-  test('availability filter joins bookable_unit_types and gates both the date and quantity bounds by accommodation type (P2.2D)', () => {
+  test('availability filter joins bookable_unit_types, gates the date bound by accommodation type, and gates the quantity bound by the separate (accommodation + VEHICLE) inventory-quantity type list (P2.2D / P0-C launch-blocker remediation)', () => {
     const { sql } = buildSearchListingsQuery(
       {
         ...baseFilters,
@@ -217,6 +220,7 @@ describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
       resolveSortOption('newest'),
     );
     const typePlaceholders = TYPES.map(() => '?').join(', ');
+    const inventoryTypePlaceholders = INVENTORY_TYPES.map(() => '?').join(', ');
     expect(sql).toContain(
       'JOIN bookable_unit_types but ON but.id = bu.bookable_unit_type_id',
     );
@@ -224,7 +228,13 @@ describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
     expect(sql).toContain(
       `sd.d <= IF(but.code IN (${typePlaceholders}), ?, ?)`,
     );
-    expect(sql).toContain(`< IF(but.code IN (${typePlaceholders}), ?, ?)`);
+    // The quantity bound uses a DIFFERENT, VEHICLE-inclusive type list —
+    // deliberately not the same `typePlaceholders` as the date bound
+    // above (VEHICLE's date semantics stay unchanged).
+    expect(sql).toContain(
+      `< IF(but.code IN (${inventoryTypePlaceholders}), ?, ?)`,
+    );
+    expect(sql).not.toContain(`< IF(but.code IN (${typePlaceholders}), ?, ?)`);
   });
 
   test('availability filter (multi-night stay request) uses distinct dateFrom/lastNight for the checkout-exclusive branch', () => {
@@ -249,7 +259,7 @@ describe('buildSearchListingsQuery — placeholder/parameter alignment', () => {
       ...TYPES,
       '2026-09-11',
       '2026-09-12',
-      ...TYPES,
+      ...INVENTORY_TYPES,
       1,
       1,
       ...TYPES,

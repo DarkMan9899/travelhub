@@ -1,0 +1,32 @@
+/**
+ * Launch-blocker remediation (P0-C) — bookable unit types whose
+ * `capacity`/`availability_calendar.quantity_available` means "how many
+ * interchangeable units of inventory exist" (compared against a fixed
+ * `SEARCH_REQUESTED_QUANTITY`, never against the requested guest count),
+ * as opposed to a per-unit occupancy ceiling (compared directly against
+ * guests — see `mysqlSearchRepository.js`'s availability EXISTS block).
+ *
+ * HOTEL_ROOM/PROPERTY_UNIT: room-type inventory count.
+ * VEHICLE: fleet inventory — under the current data model, one row per
+ *   VIN — never a passenger-seat count (no such field exists; inventing
+ *   one is out of scope here). Comparing it against `guests` was the
+ *   P0-C bug: a single available vehicle was wrongly excluded from any
+ *   `guests >= 2` search.
+ * TOUR_DEPARTURE (and RESTAURANT_TABLE, unchanged/undetermined pending
+ *   its own vertical) are deliberately NOT here — their `capacity` is a
+ *   genuine seat/occupancy ceiling, compared directly against guests.
+ *
+ * Deliberately a separate list from `accommodationDateSemantics.js`'s
+ * `ACCOMMODATION_BOOKABLE_UNIT_TYPES` — that one governs checkout-
+ * exclusive vs. inclusive DATE semantics, which stay unchanged for
+ * VEHICLE (inclusive-both-ends), so VEHICLE must never be added there.
+ */
+
+import { ACCOMMODATION_BOOKABLE_UNIT_TYPES } from './accommodationDateSemantics.js';
+
+export const INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES = Object.freeze([
+  ...ACCOMMODATION_BOOKABLE_UNIT_TYPES,
+  'VEHICLE',
+]);
+
+export default { INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES };

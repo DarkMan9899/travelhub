@@ -32,11 +32,16 @@ import {
   buildPageMeta,
 } from '../../../infrastructure/database/pagination.js';
 import { ACCOMMODATION_BOOKABLE_UNIT_TYPES } from '../../../core/domain/accommodationDateSemantics.js';
+import { INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES } from '../../../core/domain/inventoryQuantityUnitTypes.js';
 
-/** `IN (?, ?)`-shaped placeholder list matching `ACCOMMODATION_BOOKABLE_UNIT_TYPES`'s length — reused everywhere the query needs to branch by accommodation-vs-not without a second, independent type list. */
+/** `IN (?, ?)`-shaped placeholder list matching `ACCOMMODATION_BOOKABLE_UNIT_TYPES`'s length — reused everywhere the query needs to branch by accommodation-vs-not without a second, independent type list (DATE semantics only — see `INVENTORY_QUANTITY_TYPE_PLACEHOLDERS` below for the separate capacity-semantics branch). */
 const ACCOMMODATION_TYPE_PLACEHOLDERS = ACCOMMODATION_BOOKABLE_UNIT_TYPES.map(
   () => '?',
 ).join(', ');
+
+/** Launch-blocker remediation (P0-C): same `IN (?, ?, ?)` shape, but for `INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES` — deliberately a different list/placeholder pair from the one above, since VEHICLE belongs in the capacity-semantics branch but must stay OUT of the date-semantics one. */
+const INVENTORY_QUANTITY_TYPE_PLACEHOLDERS =
+  INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES.map(() => '?').join(', ');
 
 /**
  * P2.2D: search has no "how many rooms" input yet (unlike booking-time,
@@ -333,20 +338,29 @@ export function buildSearchListingsQuery(
   //
   // 2. Occupancy vs. inventory quantity, never conflated. `bu.capacity`/
   //    `ac.quantity_available` answer "is at least one unit of this type
-  //    free" — for accommodation types that's compared against a fixed
-  //    `SEARCH_REQUESTED_QUANTITY` (1; search has no "how many rooms"
-  //    input yet, unlike booking-time's real held-room count), never
-  //    against the guest count. `bu.max_guests` separately answers "can
-  //    ONE such unit hold this party" — mirrors `bookingService.js
-  //    #resolveItem`'s proven `guestCount > maxGuests * quantity` check
-  //    exactly (quantity=1 here), including its NULL-safety (a unit with
-  //    no `max_guests` set is never vetoed on occupancy, same as
-  //    booking-time). For non-accommodation types, `capacity` keeps its
+  //    free" — for INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES (accommodation
+  //    types, and — launch-blocker remediation P0-C — VEHICLE, whose
+  //    `capacity` is fleet inventory under the current one-row-per-VIN
+  //    data model, never a passenger-seat count) that's compared against
+  //    a fixed `SEARCH_REQUESTED_QUANTITY` (1; search has no "how many
+  //    rooms/vehicles" input yet, unlike booking-time's real held-unit
+  //    count), never against the guest count. `bu.max_guests` separately
+  //    answers "can ONE such unit hold this party" — mirrors
+  //    `bookingService.js#resolveItem`'s proven `guestCount > maxGuests *
+  //    quantity` check exactly (quantity=1 here), including its
+  //    NULL-safety (a unit with no `max_guests` set is never vetoed on
+  //    occupancy, same as booking-time) — VEHICLE has no `max_guests`
+  //    set, so this branch was already a no-op for it before P0-C.
+  //    For every OTHER non-accommodation type (TOUR_DEPARTURE, and
+  //    RESTAURANT_TABLE pending its own vertical), `capacity` keeps its
   //    pre-existing meaning of a direct occupancy ceiling (e.g. a Tour
   //    departure's total seats) compared straight against the requested
   //    party size — proven by `searchAvailability.test.js`'s existing
   //    TOUR_DEPARTURE case — so the quantity/guest bound is itself
-  //    type-gated the same way.
+  //    type-gated, by a DIFFERENT type list than #1's date-semantics
+  //    gate (`INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES`, not
+  //    `ACCOMMODATION_BOOKABLE_UNIT_TYPES` — VEHICLE's DATE semantics
+  //    stay inclusive-both-ends, unchanged).
   const hasAvailabilityFilter = Boolean(
     availabilityDateFrom && availabilityDateTo,
   );
@@ -374,7 +388,7 @@ export function buildSearchListingsQuery(
             AND (
               COALESCE(ast.code, 'AVAILABLE') = 'BLOCKED'
               OR COALESCE(ac.quantity_available, bu.capacity)
-                 < IF(but.code IN (${ACCOMMODATION_TYPE_PLACEHOLDERS}), ?, ?)
+                 < IF(but.code IN (${INVENTORY_QUANTITY_TYPE_PLACEHOLDERS}), ?, ?)
             )
         )
         -- Mirrors MySqlBlackoutRepository's established
@@ -396,7 +410,7 @@ export function buildSearchListingsQuery(
       ...ACCOMMODATION_BOOKABLE_UNIT_TYPES,
       availabilityLastNight,
       availabilityDateTo,
-      ...ACCOMMODATION_BOOKABLE_UNIT_TYPES,
+      ...INVENTORY_QUANTITY_BOOKABLE_UNIT_TYPES,
       SEARCH_REQUESTED_QUANTITY,
       availabilityGuests,
       ...ACCOMMODATION_BOOKABLE_UNIT_TYPES,

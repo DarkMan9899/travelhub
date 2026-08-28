@@ -376,6 +376,40 @@ describe('GET /search — availability filtering (Inventory Engine)', () => {
     // exclusivity for accommodation is unchanged by this fix.
   });
 
+  // Launch-blocker remediation (P0-C): before this fix, `listingCar`
+  // (VEHICLE, capacity=1 — one row per VIN under this app's fleet-
+  // inventory data model) was wrongly compared against the requested
+  // party size, the same as a TOUR_DEPARTURE's seat count. A single
+  // available vehicle was excluded from any `guests >= 2` search even
+  // though it had nothing to do with how many people it could seat.
+  // `CAR_FROM`..`2026-09-21` is the same "clear range" (no blocks) the
+  // existing inclusive-final-day test above already establishes.
+  test('a single available VEHICLE remains discoverable for guests=2 and guests=3 (P0-C)', async () => {
+    const guests2 = await request(app).get(
+      `/api/v1/search?keyword=Availability&dateFrom=${CAR_FROM}&dateTo=2026-09-21&guests=2`,
+    );
+    expect(guests2.status).toBe(200);
+    expect(guests2.body.data.map((r) => r.id)).toContain(listingCar);
+
+    const guests3 = await request(app).get(
+      `/api/v1/search?keyword=Availability&dateFrom=${CAR_FROM}&dateTo=2026-09-21&guests=3`,
+    );
+    expect(guests3.status).toBe(200);
+    expect(guests3.body.data.map((r) => r.id)).toContain(listingCar);
+  });
+
+  // The genuine-unavailability case (its one VIN blocked on CAR_TO) must
+  // still exclude the listing regardless of guest count — proving the
+  // P0-C fix changed WHAT capacity is compared against, not whether a
+  // truly unavailable vehicle can still be found.
+  test('a genuinely unavailable VEHICLE (blocked inventory) stays excluded even at guests=2 (P0-C)', async () => {
+    const res = await request(app).get(
+      `/api/v1/search?keyword=Availability&dateFrom=${CAR_FROM}&dateTo=${CAR_TO}&guests=2`,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((r) => r.id)).not.toContain(listingCar);
+  });
+
   test('without dateFrom/dateTo, availability is not filtered at all (every fixture listing appears)', async () => {
     const res = await request(app).get('/api/v1/search?keyword=Availability');
     expect(res.status).toBe(200);
