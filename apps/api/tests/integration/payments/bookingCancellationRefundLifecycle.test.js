@@ -337,7 +337,9 @@ describe('Booking cancellation <-> refund lifecycle (P0.2)', () => {
         [booking.id],
       );
       expect(auditRows).toHaveLength(1);
-      const afterSnapshot = JSON.parse(auditRows[0].after_snapshot);
+      // mysql2 deserializes a JSON-typed column automatically — already
+      // a plain object here, not a string to re-parse.
+      const afterSnapshot = auditRows[0].after_snapshot;
       expect(afterSnapshot.outcome).toBe('RESOLVED_NO_REFUND');
       expect(afterSnapshot.reason).toBe(
         'Non-refundable per policy, confirmed with customer',
