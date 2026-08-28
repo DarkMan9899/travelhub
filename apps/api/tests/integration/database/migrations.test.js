@@ -182,4 +182,50 @@ describe('Fresh migration from an empty database (Sprint 5 Quality Gate #4)', ()
     }
     await up(undefined, { databaseName: MIGRATION_CHECK_DATABASE });
   });
+
+  // P2.2E final acceptance: same pattern as the 0034 proof above, now for
+  // the current most-recent migration — proves 0035's down.sql is valid,
+  // reversible SQL and that reversing it leaves every other column
+  // (including 0034's own additions) untouched.
+  test('migration 0035 down.sql cleanly reverses the booking_items unit-label snapshot column', async () => {
+    const connection = await mysql.createConnection({
+      host: config.database.host,
+      port: config.database.port,
+      database: MIGRATION_CHECK_DATABASE,
+      user: config.database.user,
+      password: config.database.password,
+      multipleStatements: true,
+    });
+    try {
+      const downSql = readFileSync(
+        path.join(
+          MIGRATIONS_DIR,
+          '0035_booking_item_unit_label_snapshot.down.sql',
+        ),
+        'utf8',
+      );
+      await expect(connection.query(downSql)).resolves.not.toThrow();
+
+      const [columns] = await connection.query(
+        `SELECT column_name FROM information_schema.columns
+         WHERE table_schema = ? AND table_name = 'booking_items'`,
+        [MIGRATION_CHECK_DATABASE],
+      );
+      const columnNames = new Set(
+        columns.map((row) => row.column_name ?? row.COLUMN_NAME),
+      );
+      expect(columnNames.has('unit_label_snapshot')).toBe(false);
+      // Pre-existing columns this migration never touched are untouched.
+      expect(columnNames.has('bookable_unit_id')).toBe(true);
+      expect(columnNames.has('unit_price_amount')).toBe(true);
+      expect(columnNames.has('quantity')).toBe(true);
+
+      await connection.query(
+        `DELETE FROM schema_migrations WHERE version = '0035'`,
+      );
+    } finally {
+      await connection.end();
+    }
+    await up(undefined, { databaseName: MIGRATION_CHECK_DATABASE });
+  });
 });
