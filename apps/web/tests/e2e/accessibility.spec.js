@@ -135,6 +135,70 @@ test('Admin dashboard has no serious/critical accessibility violations', async (
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 });
 
+// Admin Sprint 2 (Users + Partners + Partner Applications) — same
+// concurrent-login race this file's own "Customer account pages" block
+// documents (several admin logins racing on the same account's refresh-
+// token rotation), so this stays `.serial` for the identical reason.
+test.describe.serial('Admin Sprint 2 pages', () => {
+  async function loginAsAdmin(page) {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('admin@travelhub.dev');
+    await page.getByLabel('Password').fill('DevAdmin!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/admin$/);
+  }
+
+  test('Admin Users list has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/users');
+    await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin User Detail has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    // Keyword-filtered, not relying on list order — real E2E-fixture
+    // rows from other spec files can otherwise bury this seeded dev
+    // account off the first page.
+    await page.goto('/en/admin/users?keyword=vendor%40travelhub.dev');
+    await page.getByRole('link', { name: 'Dev Vendor' }).click();
+    await expect(page).toHaveURL(/\/en\/admin\/users\/\d+$/);
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Partners list has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/partners');
+    await expect(page.getByRole('heading', { name: 'Partners' })).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Partner Application detail has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    // Keyword-filtered, not relying on list order — real E2E-fixture
+    // partners from other spec files (sorted newest-first) otherwise
+    // bury the flagship demo partner off the first page entirely.
+    await page.goto('/en/admin/partners?keyword=Yerevan+Boutique');
+    await page
+      .getByRole('link', { name: 'Yerevan Boutique Hospitality' })
+      .click();
+    await expect(page).toHaveURL(/\/en\/admin\/partners\/\d+$/);
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+});
+
 // 2026 SEO/performance audit: these six all need the same signed-in
 // customer, and each performed its own fresh UI login — safe in
 // isolation, but Playwright's default `fullyParallel` config runs them

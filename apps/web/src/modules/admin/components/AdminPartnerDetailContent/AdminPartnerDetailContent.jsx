@@ -98,6 +98,14 @@ export default function AdminPartnerDetailContent() {
 
   const [isRequestChangesOpen, setIsRequestChangesOpen] = useState(false);
   const [reviewNoteValue, setReviewNoteValue] = useState('');
+  // Reject's `reviewNote` is optional on the real backend contract
+  // (`updateVerificationStatusSchema`) but was never wired up on this
+  // page — it silently rejected with no reason recorded. Same local-
+  // `Modal`-not-`useConfirm()` reasoning as Request Changes above (a
+  // real Textarea needs real re-rendering state), just with an optional
+  // field and no client-side non-empty guard.
+  const [isRejectOpen, setIsRejectOpen] = useState(false);
+  const [rejectNoteValue, setRejectNoteValue] = useState('');
 
   // Stable across renders on purpose: `Modal`'s focus trap
   // (`useFocusTrap.js`) re-runs its effect whenever `onClose`'s identity
@@ -107,6 +115,10 @@ export default function AdminPartnerDetailContent() {
   // character silently went nowhere).
   const handleCloseRequestChanges = useCallback(() => {
     setIsRequestChangesOpen(false);
+  }, []);
+
+  const handleCloseReject = useCallback(() => {
+    setIsRejectOpen(false);
   }, []);
 
   if (partnerQuery.isError) {
@@ -123,42 +135,56 @@ export default function AdminPartnerDetailContent() {
 
   const partner = partnerQuery.data;
 
-  async function handleVerificationDecision(nextStatus) {
+  // Approve stays on the simple `useConfirm()` flow — the backend clears
+  // `reviewNote` to null on APPROVED regardless ("nothing left to fix",
+  // `partnerService.js`), so a text field here would collect input the
+  // server discards.
+  async function handleApprove() {
     const confirmed = await confirm({
-      title: t(
-        nextStatus === 'APPROVED'
-          ? 'admin.partnerDetail.verification.approveConfirmTitle'
-          : 'admin.partnerDetail.verification.rejectConfirmTitle',
-        { name: partner.display_name },
-      ),
+      title: t('admin.partnerDetail.verification.approveConfirmTitle', {
+        name: partner.display_name,
+      }),
       description: t(
-        nextStatus === 'APPROVED'
-          ? 'admin.partnerDetail.verification.approveConfirmDescription'
-          : 'admin.partnerDetail.verification.rejectConfirmDescription',
+        'admin.partnerDetail.verification.approveConfirmDescription',
       ),
-      confirmLabel: t(
-        nextStatus === 'APPROVED'
-          ? 'admin.partnerDetail.verification.approveAction'
-          : 'admin.partnerDetail.verification.rejectAction',
-      ),
+      confirmLabel: t('admin.partnerDetail.verification.approveAction'),
       cancelLabel: t('common.cancel'),
-      variant: nextStatus === 'APPROVED' ? 'primary' : 'danger',
+      variant: 'primary',
     });
     if (!confirmed) return;
 
     try {
       await verificationMutation.mutateAsync({
         id: partner.id,
-        status: nextStatus,
+        status: 'APPROVED',
       });
-      showToast(
-        t(
-          nextStatus === 'APPROVED'
-            ? 'admin.partnerDetail.verification.approveSuccess'
-            : 'admin.partnerDetail.verification.rejectSuccess',
-        ),
-        { variant: 'success' },
-      );
+      showToast(t('admin.partnerDetail.verification.approveSuccess'), {
+        variant: 'success',
+      });
+    } catch {
+      showToast(t('admin.partners.statusError'), { variant: 'danger' });
+    }
+  }
+
+  function handleOpenReject() {
+    setRejectNoteValue('');
+    setIsRejectOpen(true);
+  }
+
+  async function handleConfirmReject() {
+    const reviewNote = rejectNoteValue.trim();
+    try {
+      await verificationMutation.mutateAsync({
+        id: partner.id,
+        status: 'REJECTED',
+        // Optional on the real backend contract — send it only when the
+        // admin actually wrote one, never an empty string.
+        ...(reviewNote ? { reviewNote } : {}),
+      });
+      setIsRejectOpen(false);
+      showToast(t('admin.partnerDetail.verification.rejectSuccess'), {
+        variant: 'success',
+      });
     } catch {
       showToast(t('admin.partners.statusError'), { variant: 'danger' });
     }
@@ -300,6 +326,52 @@ export default function AdminPartnerDetailContent() {
                 </Inline>
               </Inline>
 
+              {(partner.legal_name ||
+                partner.phone ||
+                partner.website ||
+                partner.translations?.length > 0) && (
+                <Card padding="md">
+                  <Stack gap="1">
+                    <strong>
+                      {t('admin.partnerDetail.companyDetails.heading')}
+                    </strong>
+                    {partner.legal_name &&
+                      partner.legal_name !== partner.display_name && (
+                        <span>
+                          {t('admin.partnerDetail.companyDetails.legalName')}:{' '}
+                          {partner.legal_name}
+                        </span>
+                      )}
+                    {partner.phone && (
+                      <span>
+                        {t('admin.partnerDetail.companyDetails.phone')}:{' '}
+                        {partner.phone}
+                      </span>
+                    )}
+                    {partner.website && (
+                      <span>
+                        {t('admin.partnerDetail.companyDetails.website')}:{' '}
+                        <a
+                          href={partner.website}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {partner.website}
+                        </a>
+                      </span>
+                    )}
+                    {(() => {
+                      const description =
+                        partner.translations?.find(
+                          (row) => row.language_code === i18n.language,
+                        )?.description ??
+                        partner.translations?.[0]?.description;
+                      return description ? <p>{description}</p> : null;
+                    })()}
+                  </Stack>
+                </Card>
+              )}
+
               {partner.review_note && (
                 <Card padding="md">
                   <Stack gap="1">
@@ -322,7 +394,7 @@ export default function AdminPartnerDetailContent() {
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={() => handleVerificationDecision('APPROVED')}
+                          onClick={() => handleApprove()}
                           loading={verificationMutation.isPending}
                         >
                           {t('admin.partnerDetail.verification.approveAction')}
@@ -330,8 +402,7 @@ export default function AdminPartnerDetailContent() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleVerificationDecision('REJECTED')}
-                          loading={verificationMutation.isPending}
+                          onClick={() => handleOpenReject()}
                         >
                           {t('admin.partnerDetail.verification.rejectAction')}
                         </Button>
@@ -471,6 +542,49 @@ export default function AdminPartnerDetailContent() {
               )}
               rows={4}
               required
+            />
+          </Stack>
+        </Modal>
+      )}
+
+      {isRejectOpen && (
+        <Modal
+          isOpen
+          onClose={handleCloseReject}
+          title={t('admin.partnerDetail.verification.rejectConfirmTitle', {
+            name: partner.display_name,
+          })}
+          size="sm"
+          footer={
+            <Inline gap="3" justify="flex-end">
+              <Button variant="ghost" onClick={handleCloseReject}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleConfirmReject()}
+                loading={verificationMutation.isPending}
+              >
+                {t('admin.partnerDetail.verification.rejectAction')}
+              </Button>
+            </Inline>
+          }
+        >
+          <Stack gap="3">
+            <p>
+              {t('admin.partnerDetail.verification.rejectConfirmDescription')}
+            </p>
+            <Textarea
+              label={t('admin.partnerDetail.verification.reviewNoteLabel')}
+              value={rejectNoteValue}
+              onChange={(event) => setRejectNoteValue(event.target.value)}
+              placeholder={t(
+                'admin.partnerDetail.verification.rejectNotePlaceholder',
+              )}
+              helperText={t(
+                'admin.partnerDetail.verification.reviewNoteOptionalHint',
+              )}
+              rows={4}
             />
           </Stack>
         </Modal>

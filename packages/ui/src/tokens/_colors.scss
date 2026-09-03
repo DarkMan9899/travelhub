@@ -28,7 +28,17 @@ $color-danger: #c13a3a;
 // $color-warning is 3.45:1, white-on-$color-gold is 2.40:1,
 // $color-danger-on-its-own-tint is 4.47:1) — these do, in both roles at
 // once, so one token serves both call sites per color.
-$color-success-strong: #1a7a4d;
+// Darkened from #1a7a4d (2026 Admin Workspace redesign, first real axe
+// scan of an unfilled small `success` Badge over a genuinely non-white
+// ancestor background — a `DataTable` row's own `:hover` tint,
+// `$color-gray-100`): the original tone cleared 4.5:1 only against a
+// flat-white composite (4.53:1) and dropped to a real, reproducible
+// 4.16:1 the moment a user hovers the row — not a test-timing false
+// positive like the animation cases this file documents elsewhere, a
+// real UX regression on hover. #166a43 clears 4.5:1 with real margin in
+// both the plain and hovered composite (5.07:1 measured), same
+// remediation shape as $color-danger-strong below.
+$color-success-strong: #166a43;
 $color-warning-strong: #9b5b18;
 // Darkened from #bf3939 (Phase 17 accessibility audit): a real axe scan
 // of an unfilled danger Badge in context measured only 4.17:1, below the

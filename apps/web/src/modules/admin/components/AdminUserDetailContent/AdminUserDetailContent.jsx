@@ -141,6 +141,20 @@ export default function AdminUserDetailContent() {
                       )
                       .join(', ') || '—'}
                   </span>
+                  <span>
+                    {t('admin.userDetail.joined', {
+                      date: new Intl.DateTimeFormat(i18n.language, {
+                        dateStyle: 'medium',
+                      }).format(new Date(user.created_at)),
+                    })}
+                    {user.last_login_at &&
+                      ` · ${t('admin.userDetail.lastLogin', {
+                        date: new Intl.DateTimeFormat(i18n.language, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }).format(new Date(user.last_login_at)),
+                      })}`}
+                  </span>
                 </Stack>
                 <Inline gap="3" align="center">
                   <Badge
@@ -244,7 +258,13 @@ export default function AdminUserDetailContent() {
                       align="center"
                     >
                       <span>{membership.display_name}</span>
-                      <Badge variant="info" size="sm" label={membership.role} />
+                      <Badge
+                        variant="info"
+                        size="sm"
+                        label={t(`partner.staff.roles.${membership.role}`, {
+                          defaultValue: membership.role,
+                        })}
+                      />
                     </Inline>
                   ))}
                 </Stack>

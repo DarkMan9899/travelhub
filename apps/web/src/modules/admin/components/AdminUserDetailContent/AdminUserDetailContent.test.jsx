@@ -82,6 +82,8 @@ describe('AdminUserDetailContent (apps/web/src/modules/admin)', () => {
         last_name: 'Vendor',
         status_code: 'ACTIVE',
         role_codes: ['CUSTOMER'],
+        created_at: '2026-01-15T10:00:00.000Z',
+        last_login_at: '2026-09-03T09:30:00.000Z',
       },
       isPending: false,
       isError: false,
@@ -119,7 +121,13 @@ describe('AdminUserDetailContent (apps/web/src/modules/admin)', () => {
     expect(
       screen.getByText('Yerevan Boutique Hospitality'),
     ).toBeInTheDocument();
-    expect(screen.getByText('OWNER')).toBeInTheDocument();
+    // Localized role label, not the raw `partner_employee_roles.code` —
+    // a real gap the 2026 Admin redesign fixed (was asserting the raw
+    // 'OWNER' string here before).
+    expect(screen.getByText('Սեփականատեր')).toBeInTheDocument();
+    // Real "joined/last login" context (2026 redesign) — was never
+    // rendered at all before, despite both being real API fields.
+    expect(screen.getByText(/2026 թ./)).toBeInTheDocument();
   });
 
   test('shows empty states when there is no booking history or partnerships', () => {
@@ -131,6 +139,8 @@ describe('AdminUserDetailContent (apps/web/src/modules/admin)', () => {
         last_name: 'Customer',
         status_code: 'ACTIVE',
         role_codes: ['CUSTOMER'],
+        created_at: '2026-02-20T14:00:00.000Z',
+        last_login_at: null,
       },
       isPending: false,
       isError: false,

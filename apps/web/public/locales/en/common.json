@@ -1762,6 +1762,8 @@
     "userDetail": {
       "loading": "Loading…",
       "roles": "Roles",
+      "joined": "Joined {{date}}",
+      "lastLogin": "Last login {{date}}",
       "error": {
         "title": "We couldn't load this user.",
         "retry": "Try again"
@@ -1836,6 +1838,12 @@
         "totalListings": "Total listings",
         "publishedListings": "Published listings"
       },
+      "companyDetails": {
+        "heading": "Company details",
+        "legalName": "Legal name",
+        "phone": "Phone",
+        "website": "Website"
+      },
       "verification": {
         "heading": "Verification",
         "approveAction": "Approve",
@@ -1844,7 +1852,7 @@
         "approveConfirmTitle": "Approve {{name}}?",
         "approveConfirmDescription": "This partner will be marked verified and shown a \"Verified\" badge publicly.",
         "rejectConfirmTitle": "Reject {{name}}?",
-        "rejectConfirmDescription": "This partner's verification request will be marked rejected.",
+        "rejectConfirmDescription": "This partner's verification request will be marked rejected. You can optionally add a note explaining why.",
         "needsChangesConfirmTitle": "Request changes from {{name}}?",
         "needsChangesConfirmDescription": "The applicant will be asked to update their application and resubmit it for review. Explain what needs to change.",
         "approveSuccess": "Partner verification approved.",
@@ -1852,7 +1860,9 @@
         "needsChangesSuccess": "Changes requested. The applicant has been notified.",
         "reviewNoteLabel": "Note to applicant",
         "reviewNotePlaceholder": "e.g. Please provide a valid business phone number.",
-        "reviewNoteRequired": "A note is required so the applicant knows what to change."
+        "reviewNoteRequired": "A note is required so the applicant knows what to change.",
+        "rejectNotePlaceholder": "e.g. This business doesn't meet our marketplace requirements.",
+        "reviewNoteOptionalHint": "Optional — left blank, no reason is recorded."
       },
       "moderation": {
         "heading": "Visibility",
