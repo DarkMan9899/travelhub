@@ -279,14 +279,18 @@ export function registerNotificationListeners({
     }),
   );
 
-  // Phase 17 (Inventory & Connectivity): only the two events a partner
-  // genuinely needs to act on are subscribed here — a failed sync or a
-  // detected conflict. `INVENTORY_SYNC_COMPLETED` (routine success) and
-  // the per-hold/per-block events are deliberately NOT subscribed, per
-  // the explicit "no spam on routine success" requirement — a partner
-  // who just clicked "Block" or "Sync now" already knows the outcome
-  // from the UI's own response, and a 30-second hold expiry is far too
-  // high-frequency to notify on individually.
+  // Phase 17 (Inventory & Connectivity): only the events a partner
+  // genuinely needs to act on are subscribed here — a failed sync, a
+  // detected conflict, or a sync recovering from a prior failure.
+  // `INVENTORY_SYNC_COMPLETED` (routine success) and the per-hold/
+  // per-block events are deliberately NOT subscribed, per the explicit
+  // "no spam on routine success" requirement — a partner who just
+  // clicked "Block" or "Sync now" already knows the outcome from the
+  // UI's own response, and a 30-second hold expiry is far too
+  // high-frequency to notify on individually. `#executeSync` itself
+  // (inventoryConnectionService.js) already de-duplicates repeat
+  // failures of an already-broken connection before ever publishing
+  // `INVENTORY_SYNC_FAILED`, so no additional filtering belongs here.
   eventBus.subscribe(EVENT_TYPES.INVENTORY_SYNC_FAILED, (event) =>
     notifyPartnerOwner(event, {
       categoryCode: 'PARTNER',
@@ -305,6 +309,20 @@ export function registerNotificationListeners({
       payload: {
         connectionName: event.payload.connectionName,
         conflictsCount: event.payload.conflicts?.length ?? 0,
+      },
+    }),
+  );
+
+  // Published only on the actual ERROR -> working transition
+  // (inventoryConnectionService.js's `#executeSync`) — never on a
+  // routine success, so this stays a genuinely new, actionable signal
+  // rather than more noise on top of the failure notification above.
+  eventBus.subscribe(EVENT_TYPES.INVENTORY_SYNC_RECOVERED, (event) =>
+    notifyPartnerOwner(event, {
+      categoryCode: 'PARTNER',
+      priorityCode: PRIORITY.NORMAL,
+      payload: {
+        connectionName: event.payload.connectionName,
       },
     }),
   );

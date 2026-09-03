@@ -3120,6 +3120,7 @@
       "refundSucceeded": "Refund {{reference}} completed",
       "inventorySyncFailed": "Sync failed for {{connectionName}}",
       "inventorySyncConflict": "{{count}} sync conflicts found for {{connectionName}}",
+      "inventorySyncRecovered": "Sync recovered for {{connectionName}}",
       "partnerStaffAdded": "You joined {{partnerName}}",
       "reviewReported": "A review was reported for moderation",
       "refundReviewRequired": "Refund for booking {{reference}} needs review",

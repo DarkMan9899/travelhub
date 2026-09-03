@@ -28,6 +28,7 @@ const KNOWN_EVENT_TYPES = [
   'refund.succeeded',
   'inventory.sync_failed',
   'inventory.sync_conflict',
+  'inventory.sync_recovered',
   'partner.staff_added',
   'review.reported',
   'refund.review_required',

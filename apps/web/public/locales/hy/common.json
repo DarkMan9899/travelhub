@@ -3120,6 +3120,7 @@
       "refundSucceeded": "{{reference}} վերադարձը կատարվել է",
       "inventorySyncFailed": "{{connectionName}}-ի համաժամացումը ձախողվել է",
       "inventorySyncConflict": "{{connectionName}}-ում հայտնաբերվել է {{count}} հակասություն",
+      "inventorySyncRecovered": "{{connectionName}}-ի համաժամացումը վերականգնվել է",
       "partnerStaffAdded": "Դուք միացել եք {{partnerName}}-ին",
       "reviewReported": "Կարծիք է հայտնվել մոդերացիայի համար",
       "refundReviewRequired": "{{reference}} ամրագրման վերադարձը վերանայում է պահանջում",

@@ -104,6 +104,12 @@ const REGISTRY = {
       count: payload.conflictsCount,
     },
   }),
+  // Only published on the actual ERROR -> working transition (never on
+  // routine back-to-back successes) — see inventoryConnectionService.js.
+  'inventory.sync_recovered': (payload) => ({
+    key: 'notifications.copy.inventorySyncRecovered',
+    params: { connectionName: payload.connectionName },
+  }),
   'partner.staff_added': (payload) => ({
     key: 'notifications.copy.partnerStaffAdded',
     params: { partnerName: payload.partnerName },

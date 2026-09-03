@@ -64,6 +64,12 @@ export const EVENT_TYPES = Object.freeze({
   INVENTORY_SYNC_COMPLETED: 'inventory.sync_completed',
   INVENTORY_SYNC_FAILED: 'inventory.sync_failed',
   INVENTORY_SYNC_CONFLICT: 'inventory.sync_conflict',
+  // Published only when a sync succeeds immediately after the connection
+  // was in ERROR — never on routine back-to-back successes — so a
+  // partner learns their broken sync started working again without
+  // being spammed on every scheduled run (see notificationListener.js's
+  // "no spam on routine success" comment for INVENTORY_SYNC_COMPLETED).
+  INVENTORY_SYNC_RECOVERED: 'inventory.sync_recovered',
   // P1.4 (Master Roadmap) — published once an invited user accepts and
   // becomes a real `partner_employees` row (never at invite-send time,
   // when there may not even be a `users` row yet to notify in-app).

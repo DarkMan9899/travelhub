@@ -94,7 +94,11 @@ test.describe('Partner staff invite/accept — happy path', () => {
 
     await login(page, ownerEmail, 'StrongPass!2024');
     await expect(page).toHaveURL(/\/en\/partner$/);
-    await page.getByRole('link', { name: 'Staff' }).click();
+    // `exact: true` — without it this also substring-matches any partner
+    // org card whose name happens to contain "Staff" (e.g. a leftover
+    // "E2E Staff Co ..." fixture from another test's own org name),
+    // which is a real, reproducible strict-mode violation otherwise.
+    await page.getByRole('link', { name: 'Staff', exact: true }).click();
     await expect(page).toHaveURL(/\/en\/partner\/staff$/);
 
     await page.getByRole('button', { name: 'Invite staff member' }).click();
@@ -112,8 +116,12 @@ test.describe('Partner staff invite/accept — happy path', () => {
     const { invite_url: inviteUrl } = (await inviteResponse.json()).data;
     expect(inviteUrl).toContain('/partner/invitations/');
 
-    // The invitee is now visible as a pending invitation.
-    await expect(page.getByText(inviteeEmail)).toBeVisible();
+    // The invitee is now visible as a pending invitation. Real dual
+    // rendering by design (PartnerStaffPageContent.jsx's `.desktopOnly`
+    // table + `.mobileOnly` StaffInvitationCard list both stay in the
+    // DOM, CSS-hidden per breakpoint) — `.first()` just picks either,
+    // the test only cares that the invitee genuinely appears.
+    await expect(page.getByText(inviteeEmail).first()).toBeVisible();
 
     await logout(page);
     await resetRateLimits();
@@ -145,6 +153,9 @@ test.describe('Partner staff invite/accept — happy path', () => {
     // on a fresh, unauthenticated /auth/login.
     await expect(page).toHaveURL(/\/en\/partner$/);
     await page.goto('/en/partner/staff');
-    await expect(page.getByText(inviteeEmail)).toBeVisible();
+    // Same real desktopOnly/mobileOnly dual rendering as above — the
+    // now-accepted member shows in the "Team members" table and card
+    // list simultaneously.
+    await expect(page.getByText(inviteeEmail).first()).toBeVisible();
   });
 });

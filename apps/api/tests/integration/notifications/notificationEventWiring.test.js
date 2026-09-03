@@ -377,4 +377,83 @@ describe('Domain event -> notification wiring', () => {
     const vendorTypes = await latestNotificationTypes(vendor.accessToken);
     expect(vendorTypes).toContain('inventory.sync_conflict');
   });
+
+  // Partner Workspace Final Closeout: a scheduled sweep retries a broken
+  // connection every few minutes — before this fix, every single retry
+  // created its own `inventory.sync_failed` row even when nothing about
+  // the failure had changed. Real ICAL connector, real deterministic
+  // failure (no feedUrl/fixtureIcs — see `icalConnector.js`'s own
+  // `#readIcsText`), no mocks.
+  test('a persistent identical sync failure does not create a new notification on every retry, and recovery/re-failure each notify exactly once', async () => {
+    const { listingId, unitId } = await publishListing(
+      'Ical Dedup Sync Listing',
+    );
+    const connectionName = `Dedup iCal feed ${Date.now()}`;
+
+    const connectionRes = await request(app)
+      .post('/api/v1/inventory-connections')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        partnerId,
+        listingId,
+        connectorType: 'ICAL',
+        direction: 'IMPORT',
+        name: connectionName,
+        config: {},
+      });
+    const connectionId = connectionRes.body.data.id;
+    await request(app)
+      .post(`/api/v1/inventory-connections/${connectionId}/mapping`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ bookableUnitId: unitId });
+
+    async function countNotificationsOfType(eventType) {
+      const rows = await latestNotifications(vendor.accessToken);
+      return rows.filter(
+        (row) =>
+          row.event_type === eventType &&
+          row.payload?.connectionName === connectionName,
+      ).length;
+    }
+
+    // Two consecutive failures with the identical "no feedUrl configured"
+    // message must produce exactly one notification, not two.
+    await request(app)
+      .post(`/api/v1/inventory-connections/${connectionId}/sync`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    await request(app)
+      .post(`/api/v1/inventory-connections/${connectionId}/sync`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(await countNotificationsOfType('inventory.sync_failed')).toBe(1);
+    expect(await countNotificationsOfType('inventory.sync_recovered')).toBe(0);
+
+    // Fixing the feed and syncing must notify recovery exactly once —
+    // and a second, routine successful sync must not add another.
+    const validIcs =
+      'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:dedup-1@test.com\nDTSTART;VALUE=DATE:20270701\nDTEND;VALUE=DATE:20270702\nSUMMARY:Reserved\nSTATUS:CONFIRMED\nEND:VEVENT\nEND:VCALENDAR';
+    await request(app)
+      .patch(`/api/v1/inventory-connections/${connectionId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ config: { fixtureIcs: validIcs } });
+    await request(app)
+      .post(`/api/v1/inventory-connections/${connectionId}/sync`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(await countNotificationsOfType('inventory.sync_recovered')).toBe(1);
+
+    await request(app)
+      .post(`/api/v1/inventory-connections/${connectionId}/sync`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(await countNotificationsOfType('inventory.sync_recovered')).toBe(1);
+
+    // Breaking it again after a recovery is genuinely new information —
+    // a second, distinct `inventory.sync_failed` row must appear.
+    await request(app)
+      .patch(`/api/v1/inventory-connections/${connectionId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ config: {} });
+    await request(app)
+      .post(`/api/v1/inventory-connections/${connectionId}/sync`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(await countNotificationsOfType('inventory.sync_failed')).toBe(2);
+  });
 });

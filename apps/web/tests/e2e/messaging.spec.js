@@ -77,6 +77,19 @@ function conversationListItems(page) {
   return page.getByRole('listitem').filter({ has: page.locator('button') });
 }
 
+// The customer Account Overview page also shows a "Messages" quick-link
+// card alongside the persistent sidebar nav's own "Messages" item, so an
+// unscoped `getByRole('link', { name: 'Messages' })` is genuinely
+// ambiguous there (strict-mode violation). Scoping to the nav landmark
+// (`CustomerAccountLayout.jsx`'s `Sidebar` — `ariaLabel={t('nav.account')}`,
+// "My Account") resolves to the one real navigation link, regardless of
+// whether a quick-link card is also present on the current page.
+function customerMessagesNavLink(page) {
+  return page
+    .getByRole('navigation', { name: 'My Account' })
+    .getByRole('link', { name: 'Messages' });
+}
+
 // Phase 14.9: "message the host about this booking" — the real entry
 // point for `useCreateConversationMutation` (previously wired but never
 // reachable from any UI). Reuses the customer's real demo booking
@@ -139,7 +152,7 @@ test.describe.serial('Messaging page (customer)', () => {
     page,
   }) => {
     await loginAsDemoCustomer(page);
-    await page.getByRole('link', { name: 'Messages' }).click();
+    await customerMessagesNavLink(page).click();
     await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
 
     await expect(conversationListItems(page).first()).toBeVisible({
@@ -155,7 +168,7 @@ test.describe.serial('Messaging page (customer)', () => {
 
   test('sending a message shows it in the thread', async ({ page }) => {
     await loginAsDemoCustomer(page);
-    await page.getByRole('link', { name: 'Messages' }).click();
+    await customerMessagesNavLink(page).click();
     await conversationListItems(page).first().click();
     await expect(page).toHaveURL(/\/en\/account\/messages\/\d+$/);
 
@@ -170,7 +183,7 @@ test.describe.serial('Messaging page (customer)', () => {
     page,
   }) => {
     await loginAsDemoCustomer(page);
-    await page.getByRole('link', { name: 'Messages' }).click();
+    await customerMessagesNavLink(page).click();
     await conversationListItems(page).first().click();
     await expect(page).toHaveURL(/\/en\/account\/messages\/(\d+)$/);
     const conversationId = page.url().match(/messages\/(\d+)$/)[1];
@@ -192,7 +205,7 @@ test.describe.serial('Messaging page (customer)', () => {
 
   test('reacting to a message shows a reaction chip', async ({ page }) => {
     await loginAsDemoCustomer(page);
-    await page.getByRole('link', { name: 'Messages' }).click();
+    await customerMessagesNavLink(page).click();
     await conversationListItems(page).first().click();
     await expect(page).toHaveURL(/\/en\/account\/messages\/\d+$/);
     await expect(page.getByPlaceholder('Write a message…')).toBeVisible({
@@ -209,7 +222,7 @@ test.describe.serial('Messaging page (customer)', () => {
     page,
   }) => {
     await loginAsDemoCustomer(page);
-    await page.getByRole('link', { name: 'Messages' }).click();
+    await customerMessagesNavLink(page).click();
     await conversationListItems(page).first().click();
     await expect(page).toHaveURL(/\/en\/account\/messages\/\d+$/);
 
@@ -236,7 +249,7 @@ test.describe.serial('Messaging page (customer)', () => {
     page,
   }) => {
     await loginAsDemoCustomer(page);
-    await page.getByRole('link', { name: 'Messages' }).click();
+    await customerMessagesNavLink(page).click();
     await page.getByRole('tab', { name: 'All' }).click();
     await conversationListItems(page).first().click();
     await expect(page).toHaveURL(/\/en\/account\/messages\/\d+$/);
@@ -279,7 +292,7 @@ test.describe('Cross-persona delivery', () => {
 
     try {
       await loginAsDemoCustomer(customerPage, 'davit.sargsyan@example.com');
-      await customerPage.getByRole('link', { name: 'Messages' }).click();
+      await customerMessagesNavLink(customerPage).click();
       await conversationListItems(customerPage).first().click();
       await expect(customerPage).toHaveURL(/\/en\/account\/messages\/\d+$/);
 
@@ -321,7 +334,7 @@ test.describe('Admin moderation & view_all visibility', () => {
 
     try {
       await loginAsDemoCustomer(customerPage);
-      await customerPage.getByRole('link', { name: 'Messages' }).click();
+      await customerMessagesNavLink(customerPage).click();
       await conversationListItems(customerPage).first().click();
       await expect(customerPage).toHaveURL(/\/en\/account\/messages\/(\d+)$/);
       const conversationUrl = customerPage.url();

@@ -3150,6 +3150,7 @@
       "refundSucceeded": "Возврат {{reference}} выполнен",
       "inventorySyncFailed": "Синхронизация {{connectionName}} не удалась",
       "inventorySyncConflict": "Обнаружено {{count}} конфликтов синхронизации для {{connectionName}}",
+      "inventorySyncRecovered": "Синхронизация {{connectionName}} восстановлена",
       "partnerStaffAdded": "Вы присоединились к {{partnerName}}",
       "reviewReported": "Отзыв отправлен на модерацию",
       "refundReviewRequired": "Возврат по бронированию {{reference}} требует проверки",

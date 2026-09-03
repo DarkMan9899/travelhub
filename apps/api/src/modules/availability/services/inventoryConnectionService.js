@@ -467,6 +467,25 @@ export class InventoryConnectionService {
           },
         }),
       );
+      // `connection` is the state loaded BEFORE this attempt — only
+      // publish the recovery signal on the actual ERROR -> working
+      // transition, never on a routine successful run following another
+      // routine successful run.
+      if (connection.status === 'ERROR') {
+        await this.#eventBus.publish(
+          createDomainEvent({
+            eventType: EVENT_TYPES.INVENTORY_SYNC_RECOVERED,
+            actorId,
+            resourceType: 'inventory_connection',
+            resourceId: connection.id,
+            payload: {
+              partnerId: connection.partnerId,
+              connectionName: connection.name,
+              syncRunId: syncRun.id,
+            },
+          }),
+        );
+      }
       return finishedRun;
     } catch (err) {
       const message = err.message ?? 'Sync failed.';
@@ -481,19 +500,29 @@ export class InventoryConnectionService {
         status: 'ERROR',
         lastError: message,
       });
-      await this.#eventBus.publish(
-        createDomainEvent({
-          eventType: EVENT_TYPES.INVENTORY_SYNC_FAILED,
-          actorId,
-          resourceType: 'inventory_connection',
-          resourceId: connection.id,
-          payload: {
-            partnerId: connection.partnerId,
-            connectionName: connection.name,
-            error: message,
-          },
-        }),
-      );
+      // `connection` is the state loaded BEFORE this attempt — a
+      // scheduled sweep retries every few minutes, so an already-ERROR
+      // connection failing again with the SAME message is not new
+      // information and must not create another notification row.
+      // Genuinely new information (failure begins, or the error message
+      // itself changes while still failing) still notifies.
+      const isNewFailure =
+        connection.status !== 'ERROR' || connection.lastError !== message;
+      if (isNewFailure) {
+        await this.#eventBus.publish(
+          createDomainEvent({
+            eventType: EVENT_TYPES.INVENTORY_SYNC_FAILED,
+            actorId,
+            resourceType: 'inventory_connection',
+            resourceId: connection.id,
+            payload: {
+              partnerId: connection.partnerId,
+              connectionName: connection.name,
+              error: message,
+            },
+          }),
+        );
+      }
       return failedRun;
     }
   }
