@@ -14,6 +14,13 @@
  * scope needs a simulated refund failure — Admin-initiated refunds are
  * already gated by RBAC and amount validation before this is ever called).
  *
+ * Manual-capture booking payment flow: `SUCCESS` resolves to `AUTHORIZED`,
+ * never straight to `SUCCEEDED` — mirrors real Stripe `capture_method:
+ * 'manual'` behavior (`StripePaymentProvider`'s own `createPaymentIntent`).
+ * The customer's funds are held, not captured, until the vendor accepts
+ * the booking; `capturePayment`/`cancelPayment` below are what actually
+ * move an AUTHORIZED payment to `SUCCEEDED`/`CANCELLED`.
+ *
  * `isConfigured` is always `true` — no external credentials are ever
  * needed to run this provider, which is exactly why it is the safe
  * default for development/demo/CI.
@@ -70,7 +77,7 @@ export class LocalPaymentProvider extends PaymentProvider {
     if (scenario === 'REQUIRES_ACTION') {
       return { providerPaymentId, status: 'REQUIRES_ACTION', raw };
     }
-    return { providerPaymentId, status: 'SUCCEEDED', raw };
+    return { providerPaymentId, status: 'AUTHORIZED', raw };
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -122,9 +129,15 @@ export class LocalPaymentProvider extends PaymentProvider {
     return true;
   }
 
+  // Only ever called by `jobs/localProviderSettlementQueue.js`'s own
+  // synthetic payment-settlement event — `kind: 'payment'` matches
+  // `StripePaymentProvider`'s discriminated shape so
+  // `PaymentService#handleProviderWebhook` routes both providers through
+  // the same dispatch.
   // eslint-disable-next-line class-methods-use-this
   normalizeWebhookEvent(rawEvent) {
     return {
+      kind: 'payment',
       providerEventId: rawEvent.id,
       eventType: rawEvent.type,
       normalizedEventType: rawEvent.type,

@@ -114,6 +114,15 @@ export default function AdminBookingDetailContent() {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+  // The `bookings.status.partner.*` override exists because the default
+  // copy is written from the customer's point of view ("Cancelled by
+  // you") — just as wrong for an admin looking at someone else's booking
+  // history (see BookingStatusBadge.jsx).
+  function statusLabel(status) {
+    return status === 'CANCELLED_BY_CUSTOMER'
+      ? t('bookings.status.partner.CANCELLED_BY_CUSTOMER')
+      : t(`bookings.status.${status}`, { defaultValue: status });
+  }
   const canConfirmOrReject = booking.status === 'PENDING_VENDOR';
   const canActOnConfirmed = booking.status === 'CONFIRMED';
   const showConfirm = canConfirmOrReject && canConfirm;
@@ -231,7 +240,11 @@ export default function AdminBookingDetailContent() {
         <Card as="div" padding="lg">
           <Stack gap="4">
             <Inline gap="3" align="center">
-              <BookingStatusBadge status={booking.status} />
+              {/* audience="partner": reuses the third-person "cancelled by
+                  the customer" override — see AdminBookingsPageContent's
+                  identical comment on why the customer-audience default
+                  ("Cancelled by you") is wrong here too. */}
+              <BookingStatusBadge status={booking.status} audience="partner" />
               <PriceTag
                 amount={booking.total_amount}
                 currencyCode={booking.currency}
@@ -363,15 +376,10 @@ export default function AdminBookingDetailContent() {
                 {history.map((entry) => (
                   <p key={entry.id}>
                     {entry.from_status
-                      ? t(`bookings.status.${entry.from_status}`, {
-                          defaultValue: entry.from_status,
-                        })
+                      ? statusLabel(entry.from_status)
                       : t('admin.bookingDetail.history.created')}{' '}
-                    →{' '}
-                    {t(`bookings.status.${entry.to_status}`, {
-                      defaultValue: entry.to_status,
-                    })}{' '}
-                    — {dateTimeFormatter.format(new Date(entry.changed_at))}
+                    → {statusLabel(entry.to_status)} —{' '}
+                    {dateTimeFormatter.format(new Date(entry.changed_at))}
                   </p>
                 ))}
               </Stack>

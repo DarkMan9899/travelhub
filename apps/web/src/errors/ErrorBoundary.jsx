@@ -9,6 +9,11 @@
 
 import { Component } from 'react';
 import PropTypes from 'prop-types';
+// The i18next singleton, not the `useTranslation` hook — a class
+// component (this one, since React error boundaries can only be classes)
+// can't call hooks. `i18n.t()` still reads the live, currently-active
+// language at call time, the same as the hook would.
+import i18n from '../translations/i18n.js';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -38,8 +43,8 @@ export default class ErrorBoundary extends Component {
     if (hasError) {
       return (
         <div role="alert" style={{ padding: '2rem', textAlign: 'center' }}>
-          <h1>Something went wrong.</h1>
-          <p>Please reload the page.</p>
+          <h1>{i18n.t('errors.boundary.title')}</h1>
+          <p>{i18n.t('errors.boundary.description')}</p>
         </div>
       );
     }

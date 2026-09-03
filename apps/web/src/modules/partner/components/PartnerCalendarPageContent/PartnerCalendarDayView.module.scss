@@ -1,0 +1,104 @@
+// PartnerCalendarDayView — Partner Workspace Sprint 5. Tokens only.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+.dayView {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+}
+
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-sm;
+  background-color: tokens.$color-white;
+  color: tokens.$color-gray-900;
+  cursor: pointer;
+  @include focus.focus-ring;
+
+  &:hover {
+    border-color: tokens.$color-royal-blue;
+  }
+}
+
+.dateLabel {
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+  flex: 1;
+}
+
+.timeline {
+  display: flex;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  overflow: hidden;
+}
+
+.hourLabels {
+  flex-shrink: 0;
+  width: 56px;
+  border-right: 1px solid tokens.$color-gray-200;
+  background-color: tokens.$color-gray-100;
+}
+
+.hourLabel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: tokens.$space-1;
+  font-size: tokens.$font-size-micro;
+  color: tokens.$color-gray-600;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid tokens.$color-gray-200;
+  box-sizing: border-box;
+}
+
+.slotsLayer {
+  position: relative;
+  flex: 1;
+}
+
+.hourGridline {
+  border-bottom: 1px solid tokens.$color-gray-200;
+  box-sizing: border-box;
+}
+
+.summaryCard {
+  width: 100%;
+  padding: tokens.$space-4;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  background-color: tokens.$color-white;
+  text-align: left;
+  cursor: pointer;
+  @include focus.focus-ring;
+
+  &:hover {
+    border-color: tokens.$color-royal-blue;
+  }
+
+  &--selected {
+    outline: 2px solid tokens.$color-royal-blue;
+    outline-offset: 1px;
+  }
+}
+
+.summaryStats {
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-900;
+  font-variant-numeric: tabular-nums;
+}

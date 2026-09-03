@@ -1,10 +1,12 @@
 /**
  * Payments module route wiring (BACKEND_ARCHITECTURE.md §2: route wiring
- * only, no logic). Every route except the provider webhook requires
- * authentication — a real payment provider cannot authenticate as an app
- * user, so its webhook is necessarily public, protected instead by
- * `PaymentProvider#verifyWebhook`'s signature check inside the Service
- * (never trusted on the strength of "it hit this URL" alone).
+ * only, no logic). Every route except `/config` and the provider webhook
+ * requires authentication — a real payment provider cannot authenticate
+ * as an app user, so its webhook is necessarily public, protected instead
+ * by `PaymentProvider#verifyWebhook`'s signature check inside the Service
+ * (never trusted on the strength of "it hit this URL" alone); `/config`
+ * is public because the checkout page needs to know whether payments are
+ * enabled before a customer has necessarily logged in.
  *
  * No explicit per-route rate limiter here — `app.js`'s global baseline
  * middleware already applies `authenticatedRateLimiter`/`publicRateLimiter`
@@ -38,6 +40,11 @@ export default function createPaymentRoutes({
 }) {
   const router = Router();
   const { requireAuth } = guards;
+
+  // Public, unauthenticated — see `paymentController.getConfig`'s own
+  // comment. Must be reachable before login (the checkout page needs it
+  // to decide whether to render at all).
+  router.get('/config', paymentController.getConfig);
 
   router.post(
     '/',

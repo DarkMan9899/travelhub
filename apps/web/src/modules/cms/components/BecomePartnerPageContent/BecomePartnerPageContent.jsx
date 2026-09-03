@@ -1,6 +1,14 @@
 /**
  * BecomePartnerPageContent — `/:locale/become-a-partner` (Phase 10
- * redesign). Marketing content with a single CTA.
+ * redesign; editorial conversion-page redesign in the 2026
+ * public-frontend audit's static-page pass — see `EditorialPageHero`'s
+ * own file header for the shared hero shell this now uses). Marketing
+ * content with a single CTA — the most consequential of the six static
+ * pages, so it gets the strongest visual treatment of the family: the
+ * shared hero, a benefits grid, then a dedicated dark CTA band (the same
+ * `$gradient-navy-royal` treatment `DashboardOverviewContent`'s
+ * trip-planner CTA already uses) instead of a bare button sitting under
+ * a paragraph.
  *
  * P1.2 (Master Roadmap) added the real self-service application flow at
  * `/partner/apply`, wrapped in `RequireAuth` (not `RequirePartner` — an
@@ -11,15 +19,15 @@
  *
  * P1.6 (Master Roadmap): title/lead now come from the real CMS backend
  * (see `AboutPageContent.jsx`'s identical comment for the fallback
- * reasoning). The benefits grid and CTA stay static/functional as-is.
+ * reasoning). The benefits grid and CTA stay static/functional as-is —
+ * no revenue claims, partner counts, or testimonials invented.
  */
 
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { TrendingUp, Users, ShieldCheck } from 'lucide-react';
-import { Section, Stack } from '@desavii/ui/components/layout';
-import { Button, Icon } from '@desavii/ui/components/primitives';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import { Handshake, TrendingUp, Users, ShieldCheck } from 'lucide-react';
+import { Button } from '@desavii/ui/components/primitives';
+import EditorialPageHero from '../../../../components/EditorialPageHero/EditorialPageHero.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
 import { useCmsPageQuery } from '../../queries/useCmsPageQuery.js';
@@ -56,33 +64,38 @@ export default function BecomePartnerPageContent() {
   });
 
   return (
-    <Section spacing="default">
-      <PageHeader title={title} breadcrumbs={breadcrumbItems} />
-      <Stack gap="8">
-        <p className={styles.lead}>{lead}</p>
-        <div className={styles.benefitsGrid}>
-          {BENEFIT_KEYS.map(({ key, icon }) => (
-            <Stack key={key} gap="2" as="article" align="flex-start">
-              <Icon icon={icon} />
-              <h2 className={styles.benefitTitle}>
-                {t(`cms.becomePartner.benefits.${key}.title`)}
-              </h2>
-              <p className={styles.benefitDescription}>
-                {t(`cms.becomePartner.benefits.${key}.description`)}
-              </p>
-            </Stack>
-          ))}
-        </div>
-        <div className={styles.ctaRow}>
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => navigate(`/${locale}/partner/apply`)}
-          >
-            {t('cms.becomePartner.cta')}
-          </Button>
-        </div>
-      </Stack>
-    </Section>
+    <div className={styles.page}>
+      <EditorialPageHero
+        breadcrumbItems={breadcrumbItems}
+        heroSeed="become-a-partner"
+        icon={Handshake}
+        title={title}
+        lead={lead}
+      />
+      <div className={styles.benefitsGrid}>
+        {BENEFIT_KEYS.map(({ key, icon: BenefitIcon }) => (
+          <article key={key} className={styles.benefitCard}>
+            <span className={styles.benefitIcon} aria-hidden="true">
+              <BenefitIcon size={24} />
+            </span>
+            <h2 className={styles.benefitTitle}>
+              {t(`cms.becomePartner.benefits.${key}.title`)}
+            </h2>
+            <p className={styles.benefitDescription}>
+              {t(`cms.becomePartner.benefits.${key}.description`)}
+            </p>
+          </article>
+        ))}
+      </div>
+      <div className={styles.ctaBand}>
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={() => navigate(`/${locale}/partner/apply`)}
+        >
+          {t('cms.becomePartner.cta')}
+        </Button>
+      </div>
+    </div>
   );
 }

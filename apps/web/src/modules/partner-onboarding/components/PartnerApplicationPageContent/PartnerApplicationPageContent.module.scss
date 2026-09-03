@@ -1,0 +1,46 @@
+// PartnerApplicationPageContent — tokens only, consumed from @desavii/ui.
+
+@use 'tokens' as tokens;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-6;
+  padding-block: tokens.$space-6;
+}
+
+// The hero spans the full (wide) container, matching Become a Partner's
+// own hero width — but a single-column form reads better narrower, so
+// the form card itself is capped and left-aligned rather than stretching
+// edge to edge.
+.formCard {
+  max-width: 720px;
+  border-radius: tokens.$radius-xl;
+}
+
+.applicationName {
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  color: tokens.$color-gray-900;
+}
+
+// Visual grouping between "business identity" / "contact" / "about"
+// field clusters — spacing only, no new section headings invented.
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+  padding-block-end: tokens.$space-4;
+  border-bottom: 1px solid tokens.$color-gray-200;
+
+  &:last-of-type {
+    padding-block-end: 0;
+    border-bottom: none;
+  }
+}
+
+.hint {
+  margin: 0;
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+}

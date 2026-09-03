@@ -48,7 +48,11 @@ function buildSearchContextQuery(searchParams) {
   return serialized ? `?${serialized}` : '';
 }
 
-export default function SearchResultCard({ result }) {
+export default function SearchResultCard({
+  result,
+  hideTypeBadge = false,
+  priorityImage = false,
+}) {
   const { t } = useTranslation();
   const { locale } = useParams();
   const [searchParams] = useSearchParams();
@@ -62,6 +66,7 @@ export default function SearchResultCard({ result }) {
       ariaLabel={t('search.card.viewDetails', { title: result.title })}
       imageUrl={result.cover_image_url}
       typeLabel={typeLabel}
+      hideTypeBadge={hideTypeBadge}
       favoriteButton={<FavoriteButton listingId={result.id} />}
       galleryCount={result.media_count}
       title={result.title}
@@ -86,6 +91,7 @@ export default function SearchResultCard({ result }) {
       // exact, guaranteed rate.
       pricePrefix={t('search.card.fromPrice')}
       locale={locale}
+      priorityImage={priorityImage}
     />
   );
 }
@@ -95,4 +101,6 @@ SearchResultCard.propTypes = {
   // normalized-but-untyped response), not a hand-authored prop contract.
   // eslint-disable-next-line react/forbid-prop-types
   result: PropTypes.object.isRequired,
+  hideTypeBadge: PropTypes.bool,
+  priorityImage: PropTypes.bool,
 };

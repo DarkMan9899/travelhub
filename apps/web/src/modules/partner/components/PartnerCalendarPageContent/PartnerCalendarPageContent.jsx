@@ -40,6 +40,9 @@ import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';
 import CsvImportWizard from './CsvImportWizard/CsvImportWizard.jsx';
+import PartnerCalendarWeekView from './PartnerCalendarWeekView.jsx';
+import PartnerCalendarDayView from './PartnerCalendarDayView.jsx';
+import { addDays, startOfWeek, todayIso } from './calendarDateGrid.js';
 import {
   useMyListingsQuery,
   useListingCalendarQuery,
@@ -61,6 +64,8 @@ import {
   EXTERNAL_RESERVATION_SOURCE_CODES,
 } from '../../../availability/index.js';
 
+const VIEW_MODES = ['month', 'week', 'day'];
+
 const STATUS_VARIANT_BY_CODE = { AVAILABLE: 'available', BLOCKED: 'blocked' };
 const WRITABLE_STATUSES = ['AVAILABLE', 'BLOCKED'];
 
@@ -78,6 +83,16 @@ function monthRange({ year, month }) {
 function todayViewMonth() {
   const now = new Date();
   return { year: now.getFullYear(), month: now.getMonth() };
+}
+
+function calendarFetchRange({ viewMode, weekStart, viewDate, viewMonth }) {
+  if (viewMode === 'week') {
+    return { from: weekStart, to: addDays(weekStart, 6) };
+  }
+  if (viewMode === 'day') {
+    return { from: viewDate, to: viewDate };
+  }
+  return monthRange(viewMonth);
 }
 
 function unitLabel(unit, t) {
@@ -106,7 +121,9 @@ export default function PartnerCalendarPageContent() {
 
   const [listingId, setListingId] = useState(null);
   const [unitId, setUnitId] = useState(null);
+  const [viewMode, setViewMode] = useState('month');
   const [viewMonth, setViewMonth] = useState(todayViewMonth);
+  const [viewDate, setViewDate] = useState(todayIso);
   const [selection, setSelection] = useState(null);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [actionTab, setActionTab] = useState('availability');
@@ -134,8 +151,24 @@ export default function PartnerCalendarPageContent() {
   const units = unitsQuery.data ?? [];
   const effectiveUnitId = unitId ?? units[0]?.id ?? null;
   const selectedUnit = units.find((u) => u.id === effectiveUnitId);
+  // A unit is time-sliced (a tour/activity departure) if and only if its
+  // OWN `time_slot_start` is populated — never inferred from
+  // `listing_type`/`bookable_unit_type`, which are identical for a
+  // time-sliced Activity and a date-only Guide (see the Sprint 5 backend
+  // audit: both are ATTRACTION/TOUR_DEPARTURE rows).
+  const isTimeSliced = Boolean(selectedUnit?.time_slot_start);
 
-  const { from, to } = monthRange(viewMonth);
+  const weekStart = startOfWeek(viewDate);
+  // The Month grid keeps its own `monthRange` (unchanged); Week/Day widen
+  // or narrow the SAME `useListingCalendarQuery` range so the date-only
+  // Week strip and the Month grid always read from one fetch, never a
+  // second query for the same status data.
+  const { from, to } = calendarFetchRange({
+    viewMode,
+    weekStart,
+    viewDate,
+    viewMonth,
+  });
   const calendarQuery = useListingCalendarQuery(
     effectiveListingId,
     effectiveUnitId,
@@ -198,6 +231,24 @@ export default function PartnerCalendarPageContent() {
       externalReference: '',
       notes: '',
     });
+  }
+
+  function handleSelectSlot(slotUnitId, date) {
+    setUnitId(slotUnitId);
+    setSelection({ start: date, end: date });
+    setBlockForm({ quantity: '1', reasonCode: 'MAINTENANCE', notes: '' });
+    setExternalForm({
+      quantity: '1',
+      sourceCode: 'PHONE',
+      guestName: '',
+      guestPhone: '',
+      externalReference: '',
+      notes: '',
+    });
+  }
+
+  function handleSelectDate(date) {
+    handleSelectSlot(effectiveUnitId, date);
   }
 
   async function handleApplyAvailability() {
@@ -501,6 +552,85 @@ export default function PartnerCalendarPageContent() {
     (r) => r.bookable_unit_id === effectiveUnitId && !r.cancelled_at,
   );
 
+  function renderCalendarView() {
+    if (calendarQuery.isError) {
+      return (
+        <ErrorState
+          title={t('partner.bookings.error.title')}
+          retryLabel={t('partner.bookings.error.retry')}
+          onRetry={calendarQuery.refetch}
+        />
+      );
+    }
+
+    if (viewMode === 'month') {
+      return (
+        <PartnerCalendarEditor
+          viewMonth={viewMonth}
+          onViewMonthChange={setViewMonth}
+          statusByDate={statusByDate}
+          statusLabels={{
+            available: t('partner.calendar.legend.available'),
+            blocked: t('partner.calendar.legend.blocked'),
+          }}
+          selection={selection}
+          onSelectionChange={setSelection}
+          locale={i18n.language}
+          previousMonthLabel={t(
+            'partner.listingWizard.datePicker.previousMonth',
+          )}
+          nextMonthLabel={t('partner.listingWizard.datePicker.nextMonth')}
+          disabled={
+            calendarQuery.isPending || setAvailabilityMutation.isPending
+          }
+          isLoading={calendarQuery.isPending}
+        />
+      );
+    }
+
+    if (viewMode === 'week') {
+      return (
+        <PartnerCalendarWeekView
+          weekStart={weekStart}
+          onWeekStartChange={(iso) => {
+            setViewDate(iso);
+            setSelection(null);
+          }}
+          units={units}
+          effectiveUnit={selectedUnit}
+          isTimeSliced={isTimeSliced}
+          statusByDate={statusByDate}
+          statusLabels={{
+            available: t('partner.calendar.legend.available'),
+            blocked: t('partner.calendar.legend.blocked'),
+          }}
+          selection={selection}
+          onSelectSlot={(slotUnitId, date) =>
+            handleSelectSlot(slotUnitId, date)
+          }
+          onSelectDate={(date) => handleSelectDate(date)}
+          locale={i18n.language}
+        />
+      );
+    }
+
+    return (
+      <PartnerCalendarDayView
+        date={viewDate}
+        onDateChange={(iso) => {
+          setViewDate(iso);
+          setSelection(null);
+        }}
+        units={units}
+        effectiveUnit={selectedUnit}
+        isTimeSliced={isTimeSliced}
+        selection={selection}
+        onSelectSlot={(slotUnitId, date) => handleSelectSlot(slotUnitId, date)}
+        locale={i18n.language}
+      />
+    );
+  }
+
   if (listingsQuery.isPending) {
     return (
       <Section aria-label={t('partner.calendar.heading')}>
@@ -596,36 +726,19 @@ export default function PartnerCalendarPageContent() {
 
           {units.length > 0 && (
             <>
-              {calendarQuery.isError ? (
-                <ErrorState
-                  title={t('partner.bookings.error.title')}
-                  retryLabel={t('partner.bookings.error.retry')}
-                  onRetry={calendarQuery.refetch}
-                />
-              ) : (
-                <PartnerCalendarEditor
-                  viewMonth={viewMonth}
-                  onViewMonthChange={setViewMonth}
-                  statusByDate={statusByDate}
-                  statusLabels={{
-                    available: t('partner.calendar.legend.available'),
-                    blocked: t('partner.calendar.legend.blocked'),
-                  }}
-                  selection={selection}
-                  onSelectionChange={setSelection}
-                  locale={i18n.language}
-                  previousMonthLabel={t(
-                    'partner.listingWizard.datePicker.previousMonth',
-                  )}
-                  nextMonthLabel={t(
-                    'partner.listingWizard.datePicker.nextMonth',
-                  )}
-                  disabled={
-                    calendarQuery.isPending || setAvailabilityMutation.isPending
-                  }
-                  isLoading={calendarQuery.isPending}
-                />
-              )}
+              <Tabs
+                ariaLabel={t('partner.calendar.views.ariaLabel')}
+                activeTabId={viewMode}
+                onChange={(mode) => {
+                  setViewMode(mode);
+                  setSelection(null);
+                }}
+                tabs={VIEW_MODES.map((mode) => ({
+                  id: mode,
+                  label: t(`partner.calendar.views.${mode}`),
+                  panel: renderCalendarView(),
+                }))}
+              />
 
               {selection?.start && (
                 <Card as="div" padding="lg">

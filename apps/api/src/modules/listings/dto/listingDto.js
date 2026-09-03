@@ -81,6 +81,7 @@ function toBookingRulesResponse(bookingRules) {
 export function toHighlightResponse(highlight) {
   return {
     id: highlight.id,
+    language_code: highlight.languageCode,
     icon_code: highlight.iconCode,
     text: highlight.text,
   };
@@ -89,6 +90,7 @@ export function toHighlightResponse(highlight) {
 export function toItineraryStepResponse(step) {
   return {
     id: step.id,
+    language_code: step.languageCode,
     title: step.title,
     description: step.description,
     duration_minutes: step.durationMinutes,
@@ -98,6 +100,7 @@ export function toItineraryStepResponse(step) {
 export function toIncludedItemResponse(item) {
   return {
     id: item.id,
+    language_code: item.languageCode,
     item_text: item.itemText,
     is_included: item.isIncluded,
   };
@@ -106,6 +109,7 @@ export function toIncludedItemResponse(item) {
 export function toFaqResponse(faq) {
   return {
     id: faq.id,
+    language_code: faq.languageCode,
     question: faq.question,
     answer: faq.answer,
   };

@@ -37,6 +37,7 @@ import { Images } from 'lucide-react';
 import { Card, Badge, Icon } from '@desavii/ui/components/primitives';
 import { PriceTag, RatingStars } from '@desavii/ui/components/data-display';
 import RouterLink from '../RouterLink.jsx';
+import DestinationArt from '../DestinationArt/DestinationArt.jsx';
 import styles from './ListingCardBase.module.scss';
 
 export default function ListingCardBase({
@@ -45,6 +46,7 @@ export default function ListingCardBase({
   imageUrl = undefined,
   imageAlt = '',
   typeLabel,
+  hideTypeBadge = false,
   favoriteButton = null,
   galleryCount = 0,
   title,
@@ -56,6 +58,8 @@ export default function ListingCardBase({
   priceCurrencyCode = undefined,
   pricePrefix = null,
   locale = undefined,
+  artSeed = undefined,
+  priorityImage = false,
 }) {
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -65,6 +69,7 @@ export default function ListingCardBase({
       href={href}
       padding="none"
       interactive
+      elevated
       className={styles.card}
       aria-label={ariaLabel}
     >
@@ -74,15 +79,30 @@ export default function ListingCardBase({
             src={imageUrl}
             alt={imageAlt}
             className={styles.image}
-            loading="lazy"
+            // 2026 SEO/performance audit: real Lighthouse trace evidence
+            // (largest-contentful-paint-element + lcp-lazy-loaded audits)
+            // identified the FIRST card's image as the actual LCP element
+            // on Category pages, unconditionally lazy-loaded — Load Delay
+            // alone was 70% of a 4.7s LCP. `priorityImage` lets the one
+            // caller who knows it's rendering the first/likely-LCP card
+            // (a grid's own index === 0) opt out of the default lazy
+            // behavior; every other card is unaffected.
+            loading={priorityImage ? 'eager' : 'lazy'}
+            // eslint-disable-next-line react/no-unknown-property -- this React version's JSX runtime doesn't yet know the camelCase `fetchPriority` DOM-property mapping; the lowercase spelling passes straight through as the real HTML attribute browsers read.
+            fetchpriority={priorityImage ? 'high' : undefined}
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <div className={styles.imagePlaceholder} aria-hidden="true" />
+          <DestinationArt
+            seed={artSeed ?? title}
+            className={styles.imagePlaceholder}
+          />
         )}
-        <span className={styles.typeBadge}>
-          <Badge variant="info" label={typeLabel} size="sm" />
-        </span>
+        {!hideTypeBadge && (
+          <span className={styles.typeBadge}>
+            <Badge variant="info" label={typeLabel} size="sm" />
+          </span>
+        )}
         {favoriteButton && (
           <span className={styles.favoriteButton}>{favoriteButton}</span>
         )}
@@ -128,6 +148,7 @@ ListingCardBase.propTypes = {
   imageUrl: PropTypes.string,
   imageAlt: PropTypes.string,
   typeLabel: PropTypes.string.isRequired,
+  hideTypeBadge: PropTypes.bool,
   favoriteButton: PropTypes.node,
   galleryCount: PropTypes.number,
   title: PropTypes.node.isRequired,
@@ -139,4 +160,6 @@ ListingCardBase.propTypes = {
   priceCurrencyCode: PropTypes.string,
   pricePrefix: PropTypes.node,
   locale: PropTypes.string,
+  artSeed: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  priorityImage: PropTypes.bool,
 };

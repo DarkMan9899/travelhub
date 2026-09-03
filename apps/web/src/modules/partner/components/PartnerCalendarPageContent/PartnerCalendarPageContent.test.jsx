@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ToastProvider from '../../../../providers/ToastProvider.jsx';
@@ -247,5 +247,168 @@ describe('PartnerCalendarPageContent (apps/web/src/modules/partner)', () => {
         expect.objectContaining({ quantity: 3, notes: 'Roof repair' }),
       ),
     );
+  });
+
+  describe('Week/Day views (Sprint 5 P0 — real intraday scheduling)', () => {
+    test('a date-only unit (no time_slot_start) shows a date-only Week strip — never a fake hour grid', async () => {
+      useMyListingsQuery.mockReturnValue({
+        data: {
+          pages: [
+            {
+              results: [
+                { id: 1, title: 'Boutique Hotel', status: 'PUBLISHED' },
+              ],
+            },
+          ],
+        },
+        isPending: false,
+      });
+      useBookableUnitsQuery.mockReturnValue({
+        data: [
+          {
+            id: 5,
+            bookable_unit_type: 'HOTEL_ROOM',
+            unit_label: 'Standard Room',
+            time_slot_start: null,
+            time_slot_end: null,
+          },
+        ],
+        isPending: false,
+      });
+      useListingCalendarQuery.mockReturnValue({
+        data: [],
+        isPending: false,
+        isError: false,
+      });
+      const user = userEvent.setup();
+      renderPage();
+
+      await user.click(screen.getByRole('tab', { name: 'Շաբաթ' }));
+
+      expect(screen.queryByText('06:00')).not.toBeInTheDocument();
+      // prev/next week nav (2) + 7 plain date-cell buttons, never an
+      // hour-axis timeline, for a unit whose own `time_slot_start` is null.
+      const weekTabpanel = screen.getByRole('tabpanel', { name: 'Շաբաթ' });
+      const buttons = within(weekTabpanel).getAllByRole('button');
+      expect(buttons).toHaveLength(9);
+    });
+
+    test('a time-sliced unit (time_slot_start set) shows a real hour-axis Week grid with a block per sibling departure', async () => {
+      useMyListingsQuery.mockReturnValue({
+        data: {
+          pages: [
+            {
+              results: [
+                { id: 1, title: 'Dilijan Trail Tour', status: 'PUBLISHED' },
+              ],
+            },
+          ],
+        },
+        isPending: false,
+      });
+      useBookableUnitsQuery.mockReturnValue({
+        data: [
+          {
+            id: 10,
+            bookable_unit_type: 'TOUR_DEPARTURE',
+            unit_label: 'Morning Departure',
+            time_slot_start: '09:00:00',
+            time_slot_end: '13:00:00',
+          },
+          {
+            id: 11,
+            bookable_unit_type: 'TOUR_DEPARTURE',
+            unit_label: 'Afternoon Departure',
+            time_slot_start: '14:00:00',
+            time_slot_end: '18:00:00',
+          },
+        ],
+        isPending: false,
+      });
+      useListingCalendarQuery.mockReturnValue({
+        data: [],
+        isPending: false,
+        isError: false,
+      });
+      useUnitBreakdownQuery.mockReturnValue({
+        data: [
+          {
+            date: '2026-09-03',
+            total: 12,
+            available: 12,
+            confirmed: 0,
+            held: 0,
+            external: 0,
+            manual: 0,
+          },
+        ],
+        isPending: false,
+        isError: false,
+      });
+      const user = userEvent.setup();
+      renderPage();
+
+      await user.click(screen.getByRole('tab', { name: 'Շաբաթ' }));
+
+      expect(screen.getByText('06:00')).toBeInTheDocument();
+      expect(screen.getByText('23:00')).toBeInTheDocument();
+      // One resource-picker pill + one TimeSlotBlock per day of the week (7).
+      expect(screen.getAllByText('Morning Departure')).toHaveLength(8);
+      expect(screen.getAllByText('Afternoon Departure')).toHaveLength(8);
+    });
+
+    test('a date-only unit Day view shows a plain single-day summary, not an hour timeline', async () => {
+      useMyListingsQuery.mockReturnValue({
+        data: {
+          pages: [
+            {
+              results: [
+                { id: 1, title: 'Ararat Valley Fleet', status: 'PUBLISHED' },
+              ],
+            },
+          ],
+        },
+        isPending: false,
+      });
+      useBookableUnitsQuery.mockReturnValue({
+        data: [
+          {
+            id: 20,
+            bookable_unit_type: 'VEHICLE',
+            unit_label: 'Toyota RAV4',
+            time_slot_start: null,
+            time_slot_end: null,
+          },
+        ],
+        isPending: false,
+      });
+      useListingCalendarQuery.mockReturnValue({
+        data: [],
+        isPending: false,
+        isError: false,
+      });
+      useUnitBreakdownQuery.mockReturnValue({
+        data: [
+          {
+            date: '2026-09-03',
+            total: 1,
+            available: 1,
+            confirmed: 0,
+            held: 0,
+            external: 0,
+            manual: 0,
+          },
+        ],
+        isPending: false,
+        isError: false,
+      });
+      const user = userEvent.setup();
+      renderPage();
+
+      await user.click(screen.getByRole('tab', { name: 'Օր' }));
+
+      expect(screen.queryByText('06:00')).not.toBeInTheDocument();
+      expect(screen.getByText(/1 ընդամենը/)).toBeInTheDocument();
+    });
   });
 });

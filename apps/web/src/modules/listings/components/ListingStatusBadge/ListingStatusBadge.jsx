@@ -13,6 +13,7 @@ import { Badge } from '@desavii/ui/components/primitives';
 
 const STATUS_VARIANTS = Object.freeze({
   DRAFT: 'neutral',
+  PENDING_REVIEW: 'warning',
   PUBLISHED: 'success',
   UNPUBLISHED: 'warning',
   ARCHIVED: 'neutral',

@@ -13,10 +13,11 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Section } from '@desavii/ui/components/layout';
+import { Container, Section } from '@desavii/ui/components/layout';
 import TESTIMONIALS from '../../constants/testimonials.js';
 import SectionHeader from '../SectionHeader/SectionHeader.jsx';
 import Showcase from '../Showcase/Showcase.jsx';
+import ScrollReveal from '../ScrollReveal/ScrollReveal.jsx';
 import TestimonialCard from '../TestimonialCard/TestimonialCard.jsx';
 import styles from './Testimonials.module.scss';
 
@@ -27,20 +28,26 @@ export default function Testimonials() {
 
   return (
     <Section aria-labelledby={HEADING_ID}>
-      <SectionHeader
-        id={HEADING_ID}
-        eyebrow={t('home.testimonials.eyebrow')}
-        title={t('home.testimonials.title')}
-        subtitle={t('home.testimonials.disclosure')}
-      />
-      <Showcase
-        ariaLabel={t('home.testimonials.title')}
-        slideClassName={styles.slide}
-      >
-        {TESTIMONIALS.map((testimonial) => (
-          <TestimonialCard key={testimonial.id} testimonial={testimonial} />
-        ))}
-      </Showcase>
+      <Container size="wide">
+        <ScrollReveal variant="depth">
+          <SectionHeader
+            id={HEADING_ID}
+            eyebrow={t('home.testimonials.eyebrow')}
+            title={t('home.testimonials.title')}
+            subtitle={t('home.testimonials.disclosure')}
+          />
+        </ScrollReveal>
+      </Container>
+      <ScrollReveal delay={0.1} variant="depth" className={styles.bleedRow}>
+        <Showcase
+          ariaLabel={t('home.testimonials.title')}
+          slideClassName={styles.slide}
+        >
+          {TESTIMONIALS.map((testimonial) => (
+            <TestimonialCard key={testimonial.id} testimonial={testimonial} />
+          ))}
+        </Showcase>
+      </ScrollReveal>
     </Section>
   );
 }

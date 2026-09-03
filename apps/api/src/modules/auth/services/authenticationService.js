@@ -11,7 +11,7 @@
  * shared `AuditLogger`/`PermissionResolver`.
  */
 
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import {
   signAccessToken,
   signRefreshToken,
@@ -25,11 +25,22 @@ import {
 import {
   AuthenticationError,
   AuthorizationError,
+  ConflictError,
+  NotFoundError,
   LockedError,
 } from '../../../errors/AppError.js';
+import { renderEmail } from '../../notifications/channels/emailTemplates.js';
+import config from '../../../config/index.js';
 
 const BLOCKING_STATUS_CODES = new Set(['SUSPENDED', 'BANNED']);
 const DEFAULT_ROLE_CODE = 'CUSTOMER';
+// Deliberately much shorter than the staff-invitation token's 7 days
+// (`partnerStaffService.js`'s `INVITATION_EXPIRY_DAYS`) — a password
+// reset is a higher-stakes credential-recovery action, so a narrower
+// window that limits how long a leaked/forwarded email link stays
+// dangerous is the right tradeoff here, unlike an invitation link, which
+// is a lower-stakes convenience with no live-secret window to shrink.
+const PASSWORD_RESET_EXPIRY_MINUTES = 60;
 
 function hashToken(token) {
   return createHash('sha256').update(token).digest('hex');
@@ -48,6 +59,10 @@ export class AuthenticationService {
 
   #auditLogger;
 
+  #passwordResetTokenRepository;
+
+  #emailAdapter;
+
   constructor({
     userService,
     refreshTokenRepository,
@@ -55,6 +70,8 @@ export class AuthenticationService {
     loginAttemptTracker,
     permissionResolver,
     auditLogger,
+    passwordResetTokenRepository,
+    emailAdapter,
   }) {
     this.#userService = userService;
     this.#refreshTokenRepository = refreshTokenRepository;
@@ -62,6 +79,8 @@ export class AuthenticationService {
     this.#loginAttemptTracker = loginAttemptTracker;
     this.#permissionResolver = permissionResolver;
     this.#auditLogger = auditLogger;
+    this.#passwordResetTokenRepository = passwordResetTokenRepository;
+    this.#emailAdapter = emailAdapter;
   }
 
   async #issueTokenPair(user, familyId, deviceLabel) {
@@ -311,6 +330,135 @@ export class AuthenticationService {
       requestId: context.requestId,
     });
     return { revokedCount };
+  }
+
+  /**
+   * Always resolves the same way regardless of whether `email` matches a
+   * real account — the controller returns one identical response either
+   * way (API_SPECIFICATION-style account-enumeration avoidance: a caller
+   * must not be able to tell "no such account" apart from "email sent"
+   * by the response shape, status, or observable timing of THIS method
+   * — real timing variance between the found/not-found branches below is
+   * accepted as a known, low-value side channel here, the same tradeoff
+   * every mainstream reset-flow implementation makes rather than adding
+   * artificial delay). No email is sent, and nothing is written, for an
+   * email that doesn't match an account — there is nothing to reset and
+   * no recipient to notify.
+   */
+  async requestPasswordReset({ email, locale }, context = {}) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.#userService.findByNormalizedEmail(normalizedEmail);
+
+    if (!user || BLOCKING_STATUS_CODES.has(user.statusCode)) {
+      return { requested: true };
+    }
+
+    const rawToken = randomBytes(32).toString('hex');
+    const expiresAt = new Date(
+      Date.now() + PASSWORD_RESET_EXPIRY_MINUTES * 60 * 1000,
+    );
+
+    // A fresh request supersedes any earlier, still-unused link for this
+    // account — same "resend simply supersedes the previous link" choice
+    // `partnerStaffService.js#inviteStaff` already makes, for the same
+    // reason: an abandoned older link should stop working once a newer
+    // one exists, rather than leaving two simultaneously valid.
+    await this.#passwordResetTokenRepository.invalidateAllForUser(user.id);
+    await this.#passwordResetTokenRepository.create({
+      userId: user.id,
+      tokenHash: hashToken(rawToken),
+      expiresAt,
+    });
+
+    const resetUrl = `${config.webAppUrl}/${locale}/auth/reset-password/${rawToken}`;
+    const { subject, body } = renderEmail(
+      'auth.password_reset_requested',
+      { resetUrl },
+      locale,
+    );
+    // Never logged, never returned to the caller — the raw token/URL's
+    // only path out of this process is this one `send()` call, unlike
+    // `partnerStaffService.js#inviteStaff`'s deliberate "also return it
+    // in the response" fallback, which is safe there only because that
+    // endpoint is authenticated and permissioned; this one is public.
+    await this.#emailAdapter.send({ subject, body }, user.email);
+
+    await this.#auditLogger.record({
+      actorId: user.id,
+      action: 'auth.password_reset_requested',
+      targetType: 'user',
+      targetId: user.id,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      requestId: context.requestId,
+    });
+
+    return { requested: true };
+  }
+
+  /**
+   * Consumes a single-use reset token and sets a new password. Unlike
+   * `requestPasswordReset` above, this step is safe to be specific about
+   * *why* it failed (expired vs. invalid/already-used) — possession of
+   * the token already proves the caller received the email, so there is
+   * no account-existence signal left to protect at this step.
+   */
+  async resetPassword({ token, newPassword }, context = {}) {
+    const record = await this.#passwordResetTokenRepository.findByTokenHash(
+      hashToken(token),
+    );
+    if (!record || record.usedAt) {
+      throw new NotFoundError(
+        'This password reset link is invalid or has already been used.',
+        'RESET_TOKEN_INVALID',
+      );
+    }
+    if (record.expiresAt.getTime() < Date.now()) {
+      throw new ConflictError(
+        'This password reset link has expired. Request a new one.',
+        'RESET_TOKEN_EXPIRED',
+      );
+    }
+
+    const user = await this.#userService.findById(record.userId);
+    if (!user || BLOCKING_STATUS_CODES.has(user.statusCode)) {
+      throw new NotFoundError(
+        'This password reset link is invalid or has already been used.',
+        'RESET_TOKEN_INVALID',
+      );
+    }
+
+    const newPasswordHash = await hashPassword(newPassword);
+    await this.#userService.setPasswordHashSystemInternal(
+      user.id,
+      newPasswordHash,
+    );
+    await this.#passwordResetTokenRepository.markUsed(record.id);
+    // Defense in depth beyond the single token just consumed — an older,
+    // still-unexpired reset link for the same account (e.g. one from a
+    // prior request that the fresh-request supersession in
+    // `requestPasswordReset` didn't reach, or a narrow race with a
+    // second concurrent request) must not remain usable once the
+    // password it would reset has already changed.
+    await this.#passwordResetTokenRepository.invalidateAllForUser(user.id);
+    // A password reset is exactly the "credential may have been
+    // compromised" scenario `logoutAll` exists for — every existing
+    // session is force-logged-out, same mechanism `POST /auth/logout-all`
+    // already exposes to a signed-in user, applied here on the user's
+    // behalf since they are, by definition, signed out during a reset.
+    await this.#refreshTokenRepository.revokeAllForUser(user.id);
+
+    await this.#auditLogger.record({
+      actorId: user.id,
+      action: 'auth.password_reset_completed',
+      targetType: 'user',
+      targetId: user.id,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      requestId: context.requestId,
+    });
+
+    return { reset: true };
   }
 
   /** GET /auth/me — the canonical "hydrate session state" endpoint. */

@@ -216,10 +216,16 @@ export const updateListingMediaSchema = z.object({
 // included-items / FAQs — each a full-replace PATCH, matching the
 // repository's own full-replace semantics (see mysqlListingRepository.js).
 
+// 2026 Partner Workspace redesign (Sprint 3): `languageCode` is optional
+// on all four — an omitted value falls back to the platform default
+// locale server-side (`resolveLocaleIds`), matching every caller that
+// existed before this field was added.
+
 export const replaceHighlightsSchema = z.object({
   params: idParams,
   query: passthroughQuery,
   body: z.object({
+    languageCode: z.enum(['en', 'hy', 'ru']).optional(),
     highlights: z
       .array(
         z.object({
@@ -235,6 +241,7 @@ export const replaceItineraryStepsSchema = z.object({
   params: idParams,
   query: passthroughQuery,
   body: z.object({
+    languageCode: z.enum(['en', 'hy', 'ru']).optional(),
     steps: z
       .array(
         z.object({
@@ -251,6 +258,7 @@ export const replaceIncludedItemsSchema = z.object({
   params: idParams,
   query: passthroughQuery,
   body: z.object({
+    languageCode: z.enum(['en', 'hy', 'ru']).optional(),
     items: z
       .array(
         z.object({
@@ -266,6 +274,7 @@ export const replaceFaqsSchema = z.object({
   params: idParams,
   query: passthroughQuery,
   body: z.object({
+    languageCode: z.enum(['en', 'hy', 'ru']).optional(),
     faqs: z
       .array(
         z.object({

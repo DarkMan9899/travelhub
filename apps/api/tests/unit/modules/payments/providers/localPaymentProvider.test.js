@@ -8,15 +8,23 @@ describe('LocalPaymentProvider', () => {
     expect(provider.isConfigured).toBe(true);
   });
 
-  test('createPaymentIntent defaults to the SUCCESS scenario when none is specified', async () => {
+  test('createPaymentIntent defaults to the SUCCESS scenario when none is specified, resolving to AUTHORIZED (manual capture)', async () => {
     const provider = new LocalPaymentProvider();
     const result = await provider.createPaymentIntent({
       amount: '100.00',
       currencyCode: 'AMD',
     });
-    expect(result.status).toBe('SUCCEEDED');
+    expect(result.status).toBe('AUTHORIZED');
     expect(result.providerPaymentId).toMatch(/^local_pi_/);
     expect(result.raw.simulated).toBe(true);
+  });
+
+  test('capturePayment resolves an AUTHORIZED payment to SUCCEEDED', async () => {
+    const provider = new LocalPaymentProvider();
+    const result = await provider.capturePayment('local_pi_x', {
+      amount: '100.00',
+    });
+    expect(result.status).toBe('SUCCEEDED');
   });
 
   test('createPaymentIntent honors an explicit DECLINE scenario', async () => {
@@ -58,7 +66,7 @@ describe('LocalPaymentProvider', () => {
       currencyCode: 'AMD',
       metadata: { simulateScenario: 'NOT_A_REAL_SCENARIO' },
     });
-    expect(result.status).toBe('SUCCEEDED');
+    expect(result.status).toBe('AUTHORIZED');
   });
 
   test('cancelPayment resolves to CANCELLED', async () => {
@@ -95,6 +103,7 @@ describe('LocalPaymentProvider', () => {
       status: 'SUCCEEDED',
     });
     expect(normalized).toEqual({
+      kind: 'payment',
       providerEventId: 'local_evt_1',
       eventType: 'local.payment.succeeded',
       normalizedEventType: 'local.payment.succeeded',

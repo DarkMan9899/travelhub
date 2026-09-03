@@ -212,27 +212,40 @@ async function main() {
   log(`Serving dist/ at ${baseUrl}`);
 
   const browser = await chromium.launch();
-  const page = await browser.newPage();
-  if (INTERNAL_BUILD_TOKEN) {
-    // Applies to every request the page issues, including the app's own
-    // cross-origin fetches to API_BASE_URL — same rate-limit-tier
-    // reasoning as the manifest fetch above, just for the requests React
-    // itself makes while rendering each crawled route.
-    await page.setExtraHTTPHeaders({
-      'X-Internal-Build-Token': INTERNAL_BUILD_TOKEN,
-    });
-  }
 
   let succeeded = 0;
   const failures = [];
-  // eslint-disable-next-line no-restricted-syntax -- routes must be visited sequentially: one Playwright page, one navigation at a time
+  // eslint-disable-next-line no-restricted-syntax -- routes must be visited sequentially, one page at a time
   for (const entry of manifest) {
+    // 2026 SEO audit: a fresh page (not one shared across all 228 routes)
+    // per crawl — a page that ever runs client code with a real side
+    // effect (e.g. a component that injects its own `<script>` tag into
+    // `document.head`, as `getStripe()` legitimately does once a real
+    // payment flow renders) must never let that leak into an unrelated
+    // later route's own snapshot. `page.goto()` reloads the document, but
+    // only a fresh page/context guarantees no residual head/DOM state
+    // survives across crawls.
+    // eslint-disable-next-line no-await-in-loop -- sequential by design, see above
+    const page = await browser.newPage();
+    if (INTERNAL_BUILD_TOKEN) {
+      // Applies to every request the page issues, including the app's own
+      // cross-origin fetches to API_BASE_URL — same rate-limit-tier
+      // reasoning as the manifest fetch above, just for the requests React
+      // itself makes while rendering each crawled route.
+      // eslint-disable-next-line no-await-in-loop -- sequential by design, see above
+      await page.setExtraHTTPHeaders({
+        'X-Internal-Build-Token': INTERNAL_BUILD_TOKEN,
+      });
+    }
     try {
       // eslint-disable-next-line no-await-in-loop -- sequential by design, see above
       await prerenderRoute(page, baseUrl, entry);
       succeeded += 1;
     } catch (err) {
       failures.push({ path: entry.path, message: err.message });
+    } finally {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design, see above
+      await page.close();
     }
   }
 

@@ -1,0 +1,42 @@
+// CompanyAvatar — tokens only, consumed from @desavii/ui.
+
+@use 'tokens' as tokens;
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: tokens.$radius-full;
+  border: 3px solid tokens.$color-white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  object-fit: cover;
+  background-color: tokens.$color-white;
+}
+
+.avatar--mesh-1 {
+  background: tokens.$gradient-mesh-1;
+}
+
+.avatar--mesh-2 {
+  background: tokens.$gradient-mesh-2;
+}
+
+.avatar--mesh-3 {
+  background: tokens.$gradient-mesh-3;
+}
+
+.avatar--mesh-4 {
+  background: tokens.$gradient-mesh-4;
+}
+
+.avatar--mesh-5 {
+  background: tokens.$gradient-mesh-5;
+}
+
+.initials {
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  color: tokens.$color-white;
+  letter-spacing: 0.02em;
+}

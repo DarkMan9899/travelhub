@@ -15,13 +15,12 @@
  * `audience` forwards to `BookingStatusBadge` for the same reason — see
  * that component's own header for which status label actually differs.
  *
- * Built on the shared `Card` primitive (Phase 10 redesign) — this row
- * hand-rolled its own hover-lift/elevation/border treatment before Card
- * existed, restating exactly the duplication Card's own header calls
- * out. Now the third real consumer of `Card`'s `interactive` variant
- * (after `ListingCard`/`SearchResultCard`), matching their -4px lift /
- * 1px border hover language for platform-wide consistency instead of
- * this row's slightly different -2px/2px values.
+ * `variant="premium"` (2026 Customer Account redesign): an additive,
+ * opt-in visual upgrade — larger media, a `DestinationArt` fallback
+ * instead of a flat gray box, and the shared `Card`'s `elevated` surface.
+ * Defaults to `"default"`, so both existing Partner call sites
+ * (`PartnerBookingsList`, `PartnerDashboardOverviewContent`), which don't
+ * pass `variant`, render byte-for-byte as before.
  */
 
 import PropTypes from 'prop-types';
@@ -31,12 +30,19 @@ import { Card } from '@desavii/ui/components/primitives';
 import { PriceTag } from '@desavii/ui/components/data-display';
 import { Spinner } from '@desavii/ui/components/feedback-overlays';
 import RouterLink from '../../../../components/RouterLink.jsx';
+import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
 import { useListingQuery } from '../../../listings/queries/useListingQuery.js';
 import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';
 import BookingStatusBadge from '../BookingStatusBadge/BookingStatusBadge.jsx';
 import styles from './BookingCard.module.scss';
 
-function renderMedia({ isPending, coverMedia, styles: classNames }) {
+function renderMedia({
+  isPending,
+  coverMedia,
+  listingId,
+  isPremium,
+  styles: classNames,
+}) {
   if (isPending) return <Spinner size="sm" decorative />;
   if (coverMedia) {
     return (
@@ -48,6 +54,14 @@ function renderMedia({ isPending, coverMedia, styles: classNames }) {
       />
     );
   }
+  if (isPremium) {
+    return (
+      <DestinationArt
+        seed={listingId}
+        className={classNames.imagePlaceholder}
+      />
+    );
+  }
   return <div className={classNames.imagePlaceholder} aria-hidden="true" />;
 }
 
@@ -55,6 +69,7 @@ export default function BookingCard({
   booking,
   hrefBase = 'account/bookings',
   audience = 'customer',
+  variant = 'default',
 }) {
   const { t, i18n } = useTranslation();
   const { locale } = useParams();
@@ -68,20 +83,30 @@ export default function BookingCard({
   const requestedDate = new Intl.DateTimeFormat(i18n.language, {
     dateStyle: 'medium',
   }).format(new Date(booking.requested_at));
+  const isPremium = variant === 'premium';
 
   return (
     <Card
       as={RouterLink}
       href={`/${locale}/${hrefBase}/${booking.id}`}
       interactive
+      elevated={isPremium}
       padding="none"
-      className={styles.card}
+      className={[styles.card, isPremium && styles['card--premium']]
+        .filter(Boolean)
+        .join(' ')}
       aria-label={t('bookings.list.viewDetails', {
         reference: booking.booking_reference,
       })}
     >
       <div className={styles.media}>
-        {renderMedia({ isPending, coverMedia, styles })}
+        {renderMedia({
+          isPending,
+          coverMedia,
+          listingId: booking.listing_id,
+          isPremium,
+          styles,
+        })}
       </div>
       <div className={styles.body}>
         <div className={styles.header}>
@@ -95,6 +120,7 @@ export default function BookingCard({
         <PriceTag
           amount={booking.total_amount}
           currencyCode={booking.currency}
+          locale={i18n.language}
           suffix={t('bookings.list.total')}
           size="sm"
         />
@@ -116,4 +142,5 @@ BookingCard.propTypes = {
   }).isRequired,
   hrefBase: PropTypes.string,
   audience: PropTypes.oneOf(['customer', 'partner']),
+  variant: PropTypes.oneOf(['default', 'premium']),
 };

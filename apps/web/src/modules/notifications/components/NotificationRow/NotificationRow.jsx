@@ -37,6 +37,11 @@ import {
   Home,
   Megaphone,
   Bell,
+  MessageSquare,
+  CreditCard,
+  Check,
+  Archive,
+  Trash2,
 } from 'lucide-react';
 import { Icon, Button } from '@desavii/ui/components/primitives';
 import RouterLink from '../../../../components/RouterLink.jsx';
@@ -50,6 +55,8 @@ const CATEGORY_ICONS = {
   FAVORITE: Heart,
   PARTNER: Building2,
   LISTING: Home,
+  MESSAGE: MessageSquare,
+  PAYMENT: CreditCard,
   ADMIN: Megaphone,
 };
 
@@ -101,6 +108,13 @@ export default function NotificationRow({
     >
       <span className={styles.iconWrap}>
         <Icon icon={IconComponent} size="md" />
+        {!notification.is_read && (
+          <span
+            className={styles.unreadDot}
+            role="img"
+            aria-label={t('notifications.a11y.unread')}
+          />
+        )}
       </span>
       <div className={styles.body}>
         <p className={styles.message}>
@@ -114,39 +128,32 @@ export default function NotificationRow({
           {formatRelativeTime(notification.created_at, locale)}
         </span>
       </div>
-      {!notification.is_read && (
-        <span
-          className={styles.unreadDot}
-          role="img"
-          aria-label={t('notifications.a11y.unread')}
-        />
-      )}
       <div className={styles.actions}>
         {!notification.is_read && (
           <Button
             variant="ghost"
             size="sm"
+            ariaLabel={t('notifications.actions.markAsRead')}
+            iconLeft={<Check size={16} aria-hidden="true" />}
             onClick={() => onMarkRead(notification.id)}
-          >
-            {t('notifications.actions.markAsRead')}
-          </Button>
+          />
         )}
         {!notification.is_archived && (
           <Button
             variant="ghost"
             size="sm"
+            ariaLabel={t('notifications.actions.archive')}
+            iconLeft={<Archive size={16} aria-hidden="true" />}
             onClick={() => onArchive(notification.id)}
-          >
-            {t('notifications.actions.archive')}
-          </Button>
+          />
         )}
         <Button
           variant="ghost"
           size="sm"
+          ariaLabel={t('notifications.actions.delete')}
+          iconLeft={<Trash2 size={16} aria-hidden="true" />}
           onClick={() => onDelete(notification.id)}
-        >
-          {t('notifications.actions.delete')}
-        </Button>
+        />
       </div>
     </li>
   );

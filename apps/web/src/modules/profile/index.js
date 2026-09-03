@@ -7,3 +7,4 @@
 export { default as ProfilePageContent } from './components/ProfilePageContent/ProfilePageContent.jsx';
 export { default as SettingsPageContent } from './components/SettingsPageContent/SettingsPageContent.jsx';
 export { default as DashboardOverviewContent } from './components/DashboardOverviewContent/DashboardOverviewContent.jsx';
+export { default as AccountIdentityCard } from './components/AccountIdentityCard/AccountIdentityCard.jsx';

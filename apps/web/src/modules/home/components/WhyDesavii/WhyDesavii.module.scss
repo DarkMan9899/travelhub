@@ -3,20 +3,61 @@
 @use 'tokens' as tokens;
 @use 'mixins/respond' as respond;
 
-// A tinted panel — alternates with the plain-background sections around
-// it (FeaturedListings/Categories/Testimonials) for page-level rhythm
-// instead of one flat, undifferentiated scroll.
+// A much lighter touch than the previous solid gray-100 box — "fewer
+// obvious boxes": still a faint wash for page-level rhythm against the
+// plain-background sections around it, but no longer read as its own
+// bounded card.
 .panel {
   padding: tokens.$space-8 tokens.$space-6;
   border-radius: tokens.$radius-xl;
-  background-color: tokens.$color-gray-100;
+  background-color: rgba(tokens.$color-gray-100, 0.5);
 
   @include respond.respond(laptop) {
     padding: tokens.$space-12 tokens.$space-8;
   }
 }
 
+.gridWrapper {
+  position: relative;
+}
+
+// The connecting route line — only meaningful once the grid is a single
+// row (laptop+); hidden below that, where items wrap and a horizontal
+// line spanning 0-25%-50%-75% would cross through item text instead of
+// visually linking icon-to-icon.
+.connector {
+  display: none;
+
+  @include respond.respond(laptop) {
+    display: block;
+    position: absolute;
+    top: 30px;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+.connectorPath {
+  stroke: rgba(201, 162, 75, 0.45);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 5 10;
+  animation: why-connector-flow 9s linear infinite;
+  @include tokens.reduced-motion-safe;
+}
+
+@keyframes why-connector-flow {
+  to {
+    stroke-dashoffset: -90;
+  }
+}
+
 .grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1fr;
   gap: tokens.$space-8;
@@ -45,13 +86,17 @@
   width: tokens.$space-16;
   height: tokens.$space-16;
   border-radius: tokens.$radius-full;
-  background-color: rgba(tokens.$color-gold, 0.12);
+  background-color: tokens.$color-white;
   color: tokens.$color-gold;
+  @include tokens.elevation-2;
 }
 
 .itemTitle {
   margin: 0;
-  font-family: tokens.$font-heading;
+  // The editorial display face, matching every other major Home
+  // heading in this pass — "larger editorial copy," not a functional
+  // UI label pretending to be a heading.
+  font-family: tokens.$font-display;
   font-size: tokens.$font-size-h4;
   line-height: tokens.$line-height-h4;
   color: tokens.$color-gray-900;

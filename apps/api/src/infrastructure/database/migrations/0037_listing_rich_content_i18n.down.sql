@@ -1,0 +1,27 @@
+ALTER TABLE listing_highlights DROP FOREIGN KEY fk_listing_highlights_language_id;
+ALTER TABLE listing_highlights DROP INDEX idx_listing_highlights_language_id;
+ALTER TABLE listing_highlights ADD KEY idx_listing_highlights_listing_id_old (listing_id, sort_order);
+ALTER TABLE listing_highlights DROP INDEX idx_listing_highlights_listing_id;
+ALTER TABLE listing_highlights RENAME INDEX idx_listing_highlights_listing_id_old TO idx_listing_highlights_listing_id;
+ALTER TABLE listing_highlights DROP COLUMN language_id;
+
+ALTER TABLE listing_itinerary_steps DROP FOREIGN KEY fk_listing_itinerary_steps_language_id;
+ALTER TABLE listing_itinerary_steps DROP INDEX idx_listing_itinerary_steps_language_id;
+ALTER TABLE listing_itinerary_steps ADD KEY idx_listing_itinerary_steps_listing_id_old (listing_id, sort_order);
+ALTER TABLE listing_itinerary_steps DROP INDEX idx_listing_itinerary_steps_listing_id;
+ALTER TABLE listing_itinerary_steps RENAME INDEX idx_listing_itinerary_steps_listing_id_old TO idx_listing_itinerary_steps_listing_id;
+ALTER TABLE listing_itinerary_steps DROP COLUMN language_id;
+
+ALTER TABLE listing_included_items DROP FOREIGN KEY fk_listing_included_items_language_id;
+ALTER TABLE listing_included_items DROP INDEX idx_listing_included_items_language_id;
+ALTER TABLE listing_included_items ADD KEY idx_listing_included_items_listing_id_old (listing_id, is_included, sort_order);
+ALTER TABLE listing_included_items DROP INDEX idx_listing_included_items_listing_id;
+ALTER TABLE listing_included_items RENAME INDEX idx_listing_included_items_listing_id_old TO idx_listing_included_items_listing_id;
+ALTER TABLE listing_included_items DROP COLUMN language_id;
+
+ALTER TABLE listing_faqs DROP FOREIGN KEY fk_listing_faqs_language_id;
+ALTER TABLE listing_faqs DROP INDEX idx_listing_faqs_language_id;
+ALTER TABLE listing_faqs ADD KEY idx_listing_faqs_listing_id_old (listing_id, sort_order);
+ALTER TABLE listing_faqs DROP INDEX idx_listing_faqs_listing_id;
+ALTER TABLE listing_faqs RENAME INDEX idx_listing_faqs_listing_id_old TO idx_listing_faqs_listing_id;
+ALTER TABLE listing_faqs DROP COLUMN language_id;

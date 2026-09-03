@@ -43,7 +43,7 @@ describe('LocationStep (PartnerListingWizard)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Շարունակել' }));
 
-    const errors = await screen.findAllByText('Այս դաշտը պարտադիր է:');
+    const errors = await screen.findAllByText('Այս դաշտը պարտադիր է։');
     expect(errors.length).toBeGreaterThan(0);
     expect(mutateAsync).not.toHaveBeenCalled();
   });
@@ -57,7 +57,7 @@ describe('LocationStep (PartnerListingWizard)', () => {
     await user.click(screen.getByRole('button', { name: 'Շարունակել' }));
 
     expect(
-      await screen.findByText('Լայնությունը պետք է լինի -90-ից 90-ի միջև:'),
+      await screen.findByText('Լայնությունը պետք է լինի -90-ից 90-ի միջև։'),
     ).toBeInTheDocument();
     expect(mutateAsync).not.toHaveBeenCalled();
   });

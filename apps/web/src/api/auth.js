@@ -24,6 +24,19 @@ export function refresh() {
   return apiClient.post('/auth/refresh', {}).then((response) => response.data);
 }
 
+/** Always resolves the same way whether or not the email matched an account — see the API's own doc comment. */
+export function requestPasswordReset({ email, locale }) {
+  return apiClient
+    .post('/auth/password-reset/request', { email, locale })
+    .then((response) => response.data);
+}
+
+export function resetPassword({ token, newPassword }) {
+  return apiClient
+    .post('/auth/password-reset/confirm', { token, newPassword })
+    .then((response) => response.data);
+}
+
 export function logout() {
   return apiClient.post('/auth/logout').then((response) => response.data);
 }

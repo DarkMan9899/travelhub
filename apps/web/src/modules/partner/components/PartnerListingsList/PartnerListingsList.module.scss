@@ -2,12 +2,6 @@
 
 @use 'tokens' as tokens;
 
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: tokens.$space-2;
-}
-
 .loadMore {
   display: flex;
   justify-content: center;

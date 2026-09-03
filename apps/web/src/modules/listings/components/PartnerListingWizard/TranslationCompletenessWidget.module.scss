@@ -1,0 +1,72 @@
+// TranslationCompletenessWidget — tokens only. Same panel recipe as
+// ListingCompletenessWidget's own module, deliberately visually distinct
+// enough (row list, not a progress bar) that the two are never confused
+// for one score.
+
+@use 'tokens' as tokens;
+
+.widget {
+  padding: tokens.$space-4;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  background-color: tokens.$color-white;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+}
+
+.hint {
+  margin: tokens.$space-1 0 tokens.$space-3;
+  font-size: 0.8125rem;
+  color: tokens.$color-gray-600;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  font-size: 0.875rem;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.row--complete {
+  color: tokens.$color-success-strong;
+}
+
+.row--partial {
+  color: tokens.$color-warning-strong;
+}
+
+.row--missing {
+  color: tokens.$color-gray-400;
+}
+
+.localeName {
+  min-width: 80px;
+  font-weight: 600;
+  color: tokens.$color-gray-900;
+}
+
+.status {
+  flex: 1;
+}
+
+.fraction {
+  color: tokens.$color-gray-600;
+  font-variant-numeric: tabular-nums;
+}

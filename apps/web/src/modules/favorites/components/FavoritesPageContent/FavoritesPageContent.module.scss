@@ -1,0 +1,11 @@
+// FavoritesPageContent — tokens only.
+
+@use 'tokens' as tokens;
+
+.groupHeading {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h3;
+  line-height: tokens.$line-height-h3;
+  color: tokens.$color-gray-900;
+}

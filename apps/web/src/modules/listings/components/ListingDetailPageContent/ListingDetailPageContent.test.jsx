@@ -297,6 +297,34 @@ describe('ListingDetailPageContent (Listing Details, Phase 18)', () => {
     ).toBeInTheDocument();
   });
 
+  test("2026 SEO audit: sets a real og:image/twitter:image from the listing's own lowest-position photo", () => {
+    useListingQuery.mockReturnValue({
+      data: VILLA_LISTING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useListingMetadataQuery.mockReturnValue({
+      data: VILLA_METADATA,
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage(3);
+
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    const twitterImage = document.querySelector('meta[name="twitter:image"]');
+    const twitterCard = document.querySelector('meta[name="twitter:card"]');
+    expect(ogImage?.getAttribute('content')).toBe(
+      'https://example.test/villa.jpg',
+    );
+    expect(twitterImage?.getAttribute('content')).toBe(
+      'https://example.test/villa.jpg',
+    );
+    expect(twitterCard?.getAttribute('content')).toBe('summary_large_image');
+  });
+
   test('renders a differently-shaped Tour listing with zero hardcoded category logic', () => {
     useListingQuery.mockReturnValue({
       data: TOUR_LISTING,

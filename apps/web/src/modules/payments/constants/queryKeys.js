@@ -7,6 +7,7 @@
 
 const paymentKeys = {
   all: ['payments'],
+  config: () => [...paymentKeys.all, 'config'],
   lists: () => [...paymentKeys.all, 'list'],
   list: (filters) => [...paymentKeys.lists(), { filters }],
   details: () => [...paymentKeys.all, 'detail'],

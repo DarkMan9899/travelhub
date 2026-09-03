@@ -5,6 +5,13 @@
  * its own). Phase 3 extends Phase 1's Hero + FeaturedListings with the
  * rest of the marketplace homepage — every section below is real `home`
  * module content, composed here in display order.
+ *
+ * Redesign phase (2026) — no single page-wide `Container` any more: a
+ * cinematic hero and the carousel sections need to bleed to the viewport
+ * edge (see each carousel section's own `bleed-start` treatment), which a
+ * single wrapping `Container` around the whole page would make
+ * impossible. Sections that stay conventional width (Categories/
+ * WhyDesavii/PartnerCta) each get their own `Container` here instead.
  */
 
 import { useTranslation } from 'react-i18next';
@@ -34,15 +41,23 @@ export default function HomePage() {
   });
 
   return (
-    <Container size="wide">
+    <>
       <Hero />
       <FeaturedDestinations />
       <FeaturedListings />
-      <PopularExperiences />
-      <Categories />
-      <WhyDesavii />
-      <PartnerCta />
+      <Container size="wide">
+        <PopularExperiences />
+      </Container>
+      <Container size="wide">
+        <Categories />
+      </Container>
+      <Container size="wide">
+        <WhyDesavii />
+      </Container>
+      <Container size="wide">
+        <PartnerCta />
+      </Container>
       <Testimonials />
-    </Container>
+    </>
   );
 }

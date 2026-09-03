@@ -1,10 +1,23 @@
 @use 'tokens' as tokens;
 @use 'mixins/focus-ring' as focus;
 
+// Redesign phase (2026) — the same elevated-panel language `SearchFilters`
+// now uses, so this reads as a continuation of one "premium instrument
+// panel" filter experience rather than a second, differently-styled
+// block directly beneath it.
 .panel {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-3;
+  padding: tokens.$space-4;
+  border-radius: tokens.$radius-xl;
+  background-color: tokens.$color-white;
+  margin-block-end: tokens.$space-8;
+  @include tokens.elevation-2;
+
+  &:empty {
+    display: none;
+  }
 }
 
 .triggerRow {

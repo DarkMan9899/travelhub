@@ -14,20 +14,32 @@
  * `sensitiveRateLimiter` (10/min on `register`/`login`). A fresh
  * *booking* is created per test case (via `createBookingFixture`), which
  * is what actually needs per-test isolation for this file's assertions.
+ *
+ * Explicitly opts into `PAYMENTS_ENABLED=true` (test-readiness remediation,
+ * 2026) rather than assuming it — the marketplace's real launch default is
+ * `PAYMENTS_ENABLED=false` (see docs/PAYMENTS_PAUSED.md), which a local
+ * `.env` may now set explicitly and which overrides envalid's
+ * `devDefault: true` for this env var. This file's whole subject is the
+ * payment subsystem itself, so it forces the flag it needs rather than
+ * requiring the ambient environment to happen to have it on — same
+ * "force the env var this file's own module registry needs before any
+ * static import evaluates config" pattern `paymentsDisabledGate.test.js`
+ * already established (there, forcing it off; here, on), so every other
+ * test file in the same `--runInBand` worker keeps seeing the real
+ * launch default.
  */
 
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
-import { up } from '../../../src/infrastructure/database/migrate.js';
-import { seedAll } from '../../../src/infrastructure/database/seeds/index.js';
-import app from '../../../src/app.js';
-import {
-  getMysqlPool,
-  closeMysqlPool,
-} from '../../../src/infrastructure/database/mysqlPool.js';
-import { closeRedisConnection } from '../../../src/infrastructure/cache/redisClient.js';
-import { resetRateLimits } from '../helpers/resetRateLimits.js';
-import { DEV_CREDENTIALS } from '../../../src/infrastructure/database/seeds/005_dev_accounts.js';
+
+let up;
+let seedAll;
+let app;
+let getMysqlPool;
+let closeMysqlPool;
+let closeRedisConnection;
+let resetRateLimits;
+let DEV_CREDENTIALS;
 
 let vendor;
 let admin;
@@ -166,7 +178,53 @@ async function createBookingFixture(customerAuth, desiredTotal = 10_000) {
   return res.body.data;
 }
 
+async function confirmBooking(bookingId) {
+  return request(app)
+    .post(`/api/v1/bookings/${bookingId}/confirm`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`);
+}
+
+/**
+ * Manual-capture booking payment flow: `simulateScenario: 'SUCCESS'`
+ * resolves to `AUTHORIZED`, not `SUCCEEDED` — money is only actually
+ * captured once the vendor confirms the booking. Most of this file's
+ * tests care about a genuinely captured/refundable payment, so this
+ * helper drives both steps and returns the resulting payment.
+ */
+async function createAndCapturePayment(customerAuth, desiredTotal = 10_000) {
+  const booking = await createBookingFixture(customerAuth, desiredTotal);
+  const created = await request(app)
+    .post('/api/v1/payments')
+    .set('Authorization', `Bearer ${customerAuth.accessToken}`)
+    .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+  expect(created.status).toBe(201);
+  expect(created.body.data.status).toBe('AUTHORIZED');
+
+  const confirmed = await confirmBooking(booking.id);
+  expect(confirmed.status).toBe(200);
+
+  const paymentRes = await request(app)
+    .get(`/api/v1/payments/${created.body.data.id}`)
+    .set('Authorization', `Bearer ${customerAuth.accessToken}`);
+  expect(paymentRes.body.data.status).toBe('SUCCEEDED');
+  return { booking, payment: paymentRes.body.data };
+}
+
 beforeAll(async () => {
+  process.env.PAYMENTS_ENABLED = 'true';
+
+  ({ up } = await import('../../../src/infrastructure/database/migrate.js'));
+  ({ seedAll } =
+    await import('../../../src/infrastructure/database/seeds/index.js'));
+  ({ default: app } = await import('../../../src/app.js'));
+  ({ getMysqlPool, closeMysqlPool } =
+    await import('../../../src/infrastructure/database/mysqlPool.js'));
+  ({ closeRedisConnection } =
+    await import('../../../src/infrastructure/cache/redisClient.js'));
+  ({ resetRateLimits } = await import('../helpers/resetRateLimits.js'));
+  ({ DEV_CREDENTIALS } =
+    await import('../../../src/infrastructure/database/seeds/005_dev_accounts.js'));
+
   await up();
   await seedAll();
   await resetRateLimits();
@@ -194,6 +252,7 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
+  delete process.env.PAYMENTS_ENABLED;
   await closeMysqlPool();
   await closeRedisConnection();
 });
@@ -206,7 +265,7 @@ describe('POST /payments — creates a Payment for a booking', () => {
     expect(res.status).toBe(401);
   });
 
-  test('SUCCESS scenario: resolves synchronously to SUCCEEDED, updates the booking payment status, is clearly labeled simulated', async () => {
+  test('SUCCESS scenario: resolves synchronously to AUTHORIZED (manual capture — funds are held, not yet charged), is clearly labeled simulated', async () => {
     const booking = await createBookingFixture(customer, 12_000);
 
     const res = await request(app)
@@ -215,24 +274,66 @@ describe('POST /payments — creates a Payment for a booking', () => {
       .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
 
     expect(res.status).toBe(201);
-    expect(res.body.data.status).toBe('SUCCEEDED');
+    expect(res.body.data.status).toBe('AUTHORIZED');
     expect(res.body.data.total_amount).toBe('12000.00');
-    expect(res.body.data.captured_amount).toBe('12000.00');
-    expect(res.body.data.refundable_amount).toBe('12000.00');
+    expect(res.body.data.captured_amount).toBe('0.00');
     expect(res.body.data.is_simulated).toBe(true);
     expect(res.body.data.provider).toBe('local');
     expect(res.body.data.payment_reference).toMatch(/^PAY-\d{8}-[A-Z2-9]{8}$/);
     expect(
       res.body.data.transactions.some((t) => t.type === 'PAYMENT_CREATED'),
     ).toBe(true);
+
+    const bookingRes = await request(app)
+      .get(`/api/v1/bookings/${booking.id}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(bookingRes.body.data.payment_status).toBe(
+      'AUTHORIZED_AWAITING_CAPTURE',
+    );
+  });
+
+  test('manual capture: confirming the booking captures the AUTHORIZED payment to SUCCEEDED and updates the booking payment status', async () => {
+    const { booking, payment } = await createAndCapturePayment(
+      customer,
+      12_000,
+    );
+    expect(payment.total_amount).toBe('12000.00');
+    expect(payment.captured_amount).toBe('12000.00');
+    expect(payment.refundable_amount).toBe('12000.00');
     expect(
-      res.body.data.transactions.some((t) => t.type === 'PAYMENT_CAPTURED'),
+      payment.transactions.some((t) => t.type === 'PAYMENT_CAPTURED'),
     ).toBe(true);
 
     const bookingRes = await request(app)
       .get(`/api/v1/bookings/${booking.id}`)
       .set('Authorization', `Bearer ${customer.accessToken}`);
     expect(bookingRes.body.data.payment_status).toBe('PAID_ONLINE');
+  });
+
+  test('manual capture: rejecting the booking voids the AUTHORIZED payment to CANCELLED, never charging the customer', async () => {
+    const booking = await createBookingFixture(customer, 9_000);
+    const created = await request(app)
+      .post('/api/v1/payments')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+    expect(created.body.data.status).toBe('AUTHORIZED');
+
+    const rejected = await request(app)
+      .post(`/api/v1/bookings/${booking.id}/reject`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ reason: 'Fully booked elsewhere' });
+    expect(rejected.status).toBe(200);
+
+    const paymentRes = await request(app)
+      .get(`/api/v1/payments/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(paymentRes.body.data.status).toBe('CANCELLED');
+    expect(paymentRes.body.data.captured_amount).toBe('0.00');
+
+    const bookingRes = await request(app)
+      .get(`/api/v1/bookings/${booking.id}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(bookingRes.body.data.payment_status).toBe('PAYMENT_VOIDED');
   });
 
   test('DECLINE scenario: resolves to FAILED, booking payment status becomes PAYMENT_FAILED, booking status_id is untouched', async () => {
@@ -370,6 +471,37 @@ describe('Payment webhook settlement (PROCESSING -> SUCCEEDED)', () => {
       ).length,
     ).toBe(1);
   });
+
+  test('Stripe go-live preflight: a webhook event with an unrecognized/missing status is acked (200) and leaves the payment untouched, instead of crashing', async () => {
+    // Regression: an unmapped status previously reached
+    // `isValidPaymentStatusTransition` with `toStatus === undefined`,
+    // which throws a bare (uncaught) TypeError, surfacing as a 500 and
+    // leaving the provider's event stuck retrying forever.
+    const booking = await createBookingFixture(customer, 5_000);
+    const created = await request(app)
+      .post('/api/v1/payments')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({ bookingId: booking.id, simulateScenario: 'PROCESSING' });
+    const providerPaymentId = created.body.data.provider_payment_id;
+
+    const webhookPayload = {
+      id: `evt_test_unmapped_${Date.now()}`,
+      type: 'local.payment.unknown_status',
+      providerPaymentId,
+      // No `status` field — `LocalPaymentProvider#normalizeWebhookEvent`
+      // resolves this to `null`, the exact unmapped case being guarded.
+    };
+
+    const delivery = await request(app)
+      .post('/api/v1/payments/webhooks/local')
+      .send(webhookPayload);
+    expect(delivery.status).toBe(200);
+
+    const afterDelivery = await request(app)
+      .get(`/api/v1/payments/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(afterDelivery.body.data.status).toBe('PROCESSING');
+  });
 });
 
 describe('Payment visibility scoping', () => {
@@ -453,14 +585,13 @@ describe('Refunds', () => {
   });
 
   test('a full refund transitions the payment to REFUNDED and the booking to REFUNDED_ONLINE', async () => {
-    const booking = await createBookingFixture(customer, 15_000);
-    const payment = await request(app)
-      .post('/api/v1/payments')
-      .set('Authorization', `Bearer ${customer.accessToken}`)
-      .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+    const { booking, payment } = await createAndCapturePayment(
+      customer,
+      15_000,
+    );
 
     const refundRes = await request(app)
-      .post(`/api/v1/payments/${payment.body.data.id}/refunds`)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
       .set('Authorization', `Bearer ${admin.accessToken}`)
       .send({ amount: '15000.00', reason: 'customer requested cancellation' });
     expect(refundRes.status).toBe(201);
@@ -470,7 +601,7 @@ describe('Refunds', () => {
     );
 
     const paymentRes = await request(app)
-      .get(`/api/v1/payments/${payment.body.data.id}`)
+      .get(`/api/v1/payments/${payment.id}`)
       .set('Authorization', `Bearer ${customer.accessToken}`);
     expect(paymentRes.body.data.status).toBe('REFUNDED');
     expect(paymentRes.body.data.refunded_amount).toBe('15000.00');
@@ -483,20 +614,19 @@ describe('Refunds', () => {
   });
 
   test('a partial refund transitions the payment to PARTIALLY_REFUNDED and the booking to PARTIALLY_REFUNDED_ONLINE, and stacks to a full refund', async () => {
-    const booking = await createBookingFixture(customer, 20_000);
-    const payment = await request(app)
-      .post('/api/v1/payments')
-      .set('Authorization', `Bearer ${customer.accessToken}`)
-      .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+    const { booking, payment } = await createAndCapturePayment(
+      customer,
+      20_000,
+    );
 
     const refundRes = await request(app)
-      .post(`/api/v1/payments/${payment.body.data.id}/refunds`)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
       .set('Authorization', `Bearer ${admin.accessToken}`)
       .send({ amount: '5000.00' });
     expect(refundRes.status).toBe(201);
 
     const paymentRes = await request(app)
-      .get(`/api/v1/payments/${payment.body.data.id}`)
+      .get(`/api/v1/payments/${payment.id}`)
       .set('Authorization', `Bearer ${customer.accessToken}`);
     expect(paymentRes.body.data.status).toBe('PARTIALLY_REFUNDED');
     expect(paymentRes.body.data.refunded_amount).toBe('5000.00');
@@ -512,27 +642,23 @@ describe('Refunds', () => {
     // A second partial refund for exactly the remaining balance closes it
     // out to fully REFUNDED.
     const secondRefundRes = await request(app)
-      .post(`/api/v1/payments/${payment.body.data.id}/refunds`)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
       .set('Authorization', `Bearer ${admin.accessToken}`)
       .send({ amount: '15000.00' });
     expect(secondRefundRes.status).toBe(201);
 
     const finalPaymentRes = await request(app)
-      .get(`/api/v1/payments/${payment.body.data.id}`)
+      .get(`/api/v1/payments/${payment.id}`)
       .set('Authorization', `Bearer ${customer.accessToken}`);
     expect(finalPaymentRes.body.data.status).toBe('REFUNDED');
     expect(finalPaymentRes.body.data.refundable_amount).toBe('0.00');
   });
 
   test('a refund exceeding the refundable balance is rejected with 422 REFUND_EXCEEDS_REFUNDABLE, no partial state change', async () => {
-    const booking = await createBookingFixture(customer, 10_000);
-    const payment = await request(app)
-      .post('/api/v1/payments')
-      .set('Authorization', `Bearer ${customer.accessToken}`)
-      .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+    const { payment } = await createAndCapturePayment(customer, 10_000);
 
     const res = await request(app)
-      .post(`/api/v1/payments/${payment.body.data.id}/refunds`)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
       .set('Authorization', `Bearer ${admin.accessToken}`)
       .send({ amount: '10000.01' });
     expect(res.status).toBe(422);
@@ -543,7 +669,7 @@ describe('Refunds', () => {
     ).toBe(true);
 
     const paymentRes = await request(app)
-      .get(`/api/v1/payments/${payment.body.data.id}`)
+      .get(`/api/v1/payments/${payment.id}`)
       .set('Authorization', `Bearer ${customer.accessToken}`);
     expect(paymentRes.body.data.status).toBe('SUCCEEDED');
     expect(paymentRes.body.data.refunded_amount).toBe('0.00');
@@ -563,15 +689,98 @@ describe('Refunds', () => {
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('PAYMENT_NOT_REFUNDABLE');
   });
-});
 
-describe('Ledger + partner balance', () => {
-  test('a successful payment accrues a partner-payable ledger entry visible via the partner balance endpoint', async () => {
-    const booking = await createBookingFixture(customer, 7_500);
-    await request(app)
+  test('an AUTHORIZED (not yet captured) payment cannot be refunded either (409 PAYMENT_NOT_REFUNDABLE)', async () => {
+    // Manual-capture booking payment flow: refunding only ever makes sense
+    // for money that was actually captured — an authorization is voided
+    // via booking rejection/cancellation, never "refunded".
+    const booking = await createBookingFixture(customer);
+    const payment = await request(app)
       .post('/api/v1/payments')
       .set('Authorization', `Bearer ${customer.accessToken}`)
       .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+    expect(payment.body.data.status).toBe('AUTHORIZED');
+
+    const res = await request(app)
+      .post(`/api/v1/payments/${payment.body.data.id}/refunds`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ amount: '1.00' });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('PAYMENT_NOT_REFUNDABLE');
+  });
+
+  test('Stripe go-live preflight: a repeated admin refund request with no idempotencyKey and the same amount/reason dedupes to the original refund, but a different amount creates a new one', async () => {
+    const { payment } = await createAndCapturePayment(customer, 12_000);
+
+    const first = await request(app)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ amount: '3000.00', reason: 'duplicate click' });
+    expect(first.status).toBe(201);
+
+    // No idempotencyKey supplied either time — the server-synthesized key
+    // (derived from amount+reason) must still dedupe an exact retry.
+    const retry = await request(app)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ amount: '3000.00', reason: 'duplicate click' });
+    expect(retry.status).toBe(201);
+    expect(retry.body.data.id).toBe(first.body.data.id);
+
+    const paymentAfterRetry = await request(app)
+      .get(`/api/v1/payments/${payment.id}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(paymentAfterRetry.body.data.refunded_amount).toBe('3000.00');
+
+    // A genuinely different amount must NOT be swallowed by the same
+    // dedupe path.
+    const different = await request(app)
+      .post(`/api/v1/payments/${payment.id}/refunds`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ amount: '4000.00', reason: 'duplicate click' });
+    expect(different.status).toBe(201);
+    expect(different.body.data.id).not.toBe(first.body.data.id);
+
+    const paymentAfterDifferent = await request(app)
+      .get(`/api/v1/payments/${payment.id}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(paymentAfterDifferent.body.data.refunded_amount).toBe('7000.00');
+  });
+
+  test('Stripe go-live preflight: two concurrent refund requests for more than the refundable balance combined — exactly one succeeds, the other is rejected, never both', async () => {
+    // Exercises `reserveRefundAmount`'s atomic UPDATE as the concurrency
+    // guard replacing "hold the row lock across the provider network
+    // call" — the anti-pattern the transaction-boundary split removed.
+    const { payment } = await createAndCapturePayment(customer, 10_000);
+
+    const [resA, resB] = await Promise.all([
+      request(app)
+        .post(`/api/v1/payments/${payment.id}/refunds`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ amount: '7000.00', reason: 'race-a' }),
+      request(app)
+        .post(`/api/v1/payments/${payment.id}/refunds`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ amount: '7000.00', reason: 'race-b' }),
+    ]);
+
+    const statuses = [resA.status, resB.status].sort();
+    expect(statuses).toEqual([201, 422]);
+
+    const paymentRes = await request(app)
+      .get(`/api/v1/payments/${payment.id}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(paymentRes.body.data.refunded_amount).toBe('7000.00');
+    expect(paymentRes.body.data.refundable_amount).toBe('3000.00');
+  });
+});
+
+describe('Ledger + partner balance', () => {
+  test('a successful (captured) payment accrues a partner-payable ledger entry visible via the partner balance endpoint', async () => {
+    // Manual-capture booking payment flow: the ledger only accrues once a
+    // payment is actually SUCCEEDED (captured), never merely AUTHORIZED —
+    // `#applyProviderResult`'s ledger writes are gated on `isSucceeded`.
+    await createAndCapturePayment(customer, 7_500);
 
     const balanceRes = await request(app)
       .get(`/api/v1/payments/partners/${partnerId}/balance`)

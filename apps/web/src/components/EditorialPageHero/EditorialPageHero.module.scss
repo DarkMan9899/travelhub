@@ -1,0 +1,81 @@
+// EditorialPageHero — tokens only, consumed from @desavii/ui. Matches
+// CategoryPageContent/DestinationPageContent/CompaniesDirectoryPageContent's
+// hero treatment exactly (the pattern this component now centralizes).
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.breadcrumbs {
+  font-size: tokens.$font-size-small;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: tokens.$radius-xl;
+  min-height: 220px;
+  margin-block-start: tokens.$space-6;
+  @include tokens.elevation-2;
+
+  @include respond.respond(tablet) {
+    min-height: 280px;
+  }
+}
+
+.heroArt {
+  position: absolute;
+  inset: 0;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  @include tokens.scrim-navy-glow;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-2;
+  padding: tokens.$space-6;
+  color: tokens.$color-white;
+
+  @include respond.respond(tablet) {
+    padding: tokens.$space-8;
+  }
+}
+
+.heroIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: tokens.$radius-full;
+  background-color: rgba(tokens.$color-white, 0.14);
+  margin-block-end: tokens.$space-1;
+}
+
+.title {
+  margin: 0;
+  font-family: tokens.$font-display;
+  font-size: tokens.$font-size-h2;
+  line-height: tokens.$line-height-h2;
+
+  @include respond.respond(tablet) {
+    font-size: tokens.$font-size-display;
+    line-height: tokens.$line-height-display;
+  }
+}
+
+.lead {
+  margin: 0;
+  max-width: 58ch;
+  font-size: tokens.$font-size-body-large;
+  color: rgba(tokens.$color-white, 0.86);
+}

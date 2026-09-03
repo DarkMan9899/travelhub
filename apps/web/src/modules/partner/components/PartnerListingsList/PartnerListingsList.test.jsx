@@ -17,6 +17,11 @@ import {
 // logic (no hooks, no side effects) reused as-is here — mirrors the real
 // `categoryPresentation.js` mapping exactly (P2.2A: this is the
 // "accommodation-only Manage Rooms" gate's actual condition under test).
+// Shared by both `PartnerListingsList.jsx` and (2026 Partner Workspace
+// redesign) the extracted `PartnerListingRowActions.jsx`, which imports
+// the same `../../../listings/index.js` module path — one mock covers
+// both, since vi.mock keys off the resolved module, not the literal
+// specifier string.
 vi.mock('../../../listings/index.js', () => {
   function MockListingStatusBadge({ status }) {
     return <span>{status}</span>;
@@ -46,6 +51,19 @@ vi.mock('../../../listings/index.js', () => {
       GROUP_BY_LISTING_TYPE[code] ?? PRESENTATION_GROUPS.GENERIC,
   };
 });
+
+const MORE_ACTIONS_LABEL = 'Լրացուցիչ գործողություններ';
+
+// 2026 Partner Workspace redesign: Publish/Unpublish/Archive/Delete/
+// Manage rooms now live behind a "More actions" overflow menu
+// (`PartnerListingRowActions`) instead of being directly visible
+// buttons — opens the given row's menu (0-indexed among however many
+// "More actions" triggers are currently rendered) before a test can see
+// its `role="menuitem"` entries.
+async function openMoreMenu(user, index = 0) {
+  const triggers = screen.getAllByRole('button', { name: MORE_ACTIONS_LABEL });
+  await user.click(triggers[index]);
+}
 
 function listingFixture(overrides) {
   return {
@@ -170,7 +188,24 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
     ).toBeInTheDocument();
   });
 
-  test('shows Publish for a DRAFT listing and not Unpublish', () => {
+  test('shows View and Edit as always-visible buttons, not behind the overflow menu', () => {
+    renderList({
+      listings: [listingFixture()],
+      isPending: false,
+      isError: false,
+      onRetry: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      onLoadMore: vi.fn(),
+    });
+    expect(screen.getByRole('button', { name: 'Դիտել' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Խմբագրել' }),
+    ).toBeInTheDocument();
+  });
+
+  test('the overflow menu shows Publish for a DRAFT listing and not Unpublish', async () => {
+    const user = userEvent.setup();
     renderList({
       listings: [listingFixture({ status: 'DRAFT' })],
       isPending: false,
@@ -180,15 +215,17 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
       isFetchingNextPage: false,
       onLoadMore: vi.fn(),
     });
+    await openMoreMenu(user);
     expect(
-      screen.getByRole('button', { name: 'Հրապարակել' }),
+      screen.getByRole('menuitem', { name: 'Հրապարակել' }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Հանել հրապարակումից' }),
+      screen.queryByRole('menuitem', { name: 'Հանել հրապարակումից' }),
     ).not.toBeInTheDocument();
   });
 
-  test('shows Unpublish and Archive for a PUBLISHED listing and not Publish', () => {
+  test('the overflow menu shows Unpublish and Archive for a PUBLISHED listing and not Publish', async () => {
+    const user = userEvent.setup();
     renderList({
       listings: [listingFixture({ status: 'PUBLISHED' })],
       isPending: false,
@@ -198,18 +235,20 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
       isFetchingNextPage: false,
       onLoadMore: vi.fn(),
     });
+    await openMoreMenu(user);
     expect(
-      screen.getByRole('button', { name: 'Հանել հրապարակումից' }),
+      screen.getByRole('menuitem', { name: 'Հանել հրապարակումից' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Արխիվացնել' }),
+      screen.getByRole('menuitem', { name: 'Արխիվացնել' }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Հրապարակել' }),
+      screen.queryByRole('menuitem', { name: 'Հրապարակել' }),
     ).not.toBeInTheDocument();
   });
 
-  test('shows neither Publish/Unpublish/Archive for an ARCHIVED listing', () => {
+  test('the overflow menu shows neither Publish/Unpublish/Archive for an ARCHIVED listing, only Delete', async () => {
+    const user = userEvent.setup();
     renderList({
       listings: [listingFixture({ status: 'ARCHIVED' })],
       isPending: false,
@@ -219,19 +258,20 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
       isFetchingNextPage: false,
       onLoadMore: vi.fn(),
     });
+    await openMoreMenu(user);
     expect(
-      screen.queryByRole('button', { name: 'Հրապարակել' }),
+      screen.queryByRole('menuitem', { name: 'Հրապարակել' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Հանել հրապարակումից' }),
+      screen.queryByRole('menuitem', { name: 'Հանել հրապարակումից' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Արխիվացնել' }),
+      screen.queryByRole('menuitem', { name: 'Արխիվացնել' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ջնջել' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Ջնջել' })).toBeInTheDocument();
   });
 
-  test('publishing calls the mutation and shows a success toast', async () => {
+  test('publishing (from the overflow menu) calls the mutation and shows a success toast', async () => {
     const user = userEvent.setup();
     renderList({
       listings: [listingFixture({ id: 5, status: 'DRAFT' })],
@@ -242,7 +282,8 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
       isFetchingNextPage: false,
       onLoadMore: vi.fn(),
     });
-    await user.click(screen.getByRole('button', { name: 'Հրապարակել' }));
+    await openMoreMenu(user);
+    await user.click(screen.getByRole('menuitem', { name: 'Հրապարակել' }));
     await waitFor(() => expect(publishMutateAsync).toHaveBeenCalledWith(5));
     expect(
       await screen.findByText('Ձեր հայտարարությունը հրապարակվել է։'),
@@ -263,13 +304,14 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
       isFetchingNextPage: false,
       onLoadMore: vi.fn(),
     });
-    await user.click(screen.getByRole('button', { name: 'Հրապարակել' }));
+    await openMoreMenu(user);
+    await user.click(screen.getByRole('menuitem', { name: 'Հրապարակել' }));
     expect(
       await screen.findByText('Add at least one photo before publishing.'),
     ).toBeInTheDocument();
   });
 
-  test('archiving requires confirmation, then calls the mutation and shows a success toast', async () => {
+  test('archiving (from the overflow menu) requires confirmation, then calls the mutation and shows a success toast', async () => {
     const user = userEvent.setup();
     renderList({
       listings: [listingFixture({ id: 9, status: 'PUBLISHED' })],
@@ -280,7 +322,8 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
       isFetchingNextPage: false,
       onLoadMore: vi.fn(),
     });
-    await user.click(screen.getByRole('button', { name: 'Արխիվացնել' }));
+    await openMoreMenu(user);
+    await user.click(screen.getByRole('menuitem', { name: 'Արխիվացնել' }));
     expect(archiveMutateAsync).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Այո, արխիվացնել' }));
@@ -290,7 +333,7 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
     ).toBeInTheDocument();
   });
 
-  test('deleting requires confirmation, then calls the mutation and shows a success toast', async () => {
+  test('deleting (from the overflow menu) requires confirmation, then calls the mutation and shows a success toast', async () => {
     const user = userEvent.setup();
     renderList({
       listings: [listingFixture({ id: 3, status: 'PUBLISHED' })],
@@ -301,7 +344,8 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
       isFetchingNextPage: false,
       onLoadMore: vi.fn(),
     });
-    await user.click(screen.getByRole('button', { name: 'Ջնջել' }));
+    await openMoreMenu(user);
+    await user.click(screen.getByRole('menuitem', { name: 'Ջնջել' }));
     expect(deleteMutateAsync).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Այո, ջնջել' }));
@@ -313,9 +357,15 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
 
   // P2.2A: "Manage rooms" reuses bookable_units, a generic mechanism
   // every listing_type technically has — but the label/action only
-  // makes sense for accommodation. Confirms the fix without redesigning
-  // the row itself.
-  test('shows Manage rooms for HOTEL and PROPERTY, not for TOUR/CAR_RENTAL/ATTRACTION', () => {
+  // makes sense for accommodation. Confirms the fix survives the 2026
+  // redesign's move into each row's own overflow menu. Each row owns
+  // independent open state, but Popover's own click-outside handling
+  // closes a row's menu the moment another row's trigger is clicked
+  // (a real, correct dropdown behaviour, not a test artifact) — so this
+  // checks one row's menu at a time rather than opening all five at
+  // once.
+  test('the overflow menu offers Manage rooms for HOTEL and PROPERTY, not for TOUR/CAR_RENTAL/ATTRACTION', async () => {
+    const user = userEvent.setup();
     renderList({
       listings: [
         listingFixture({ id: 1, listing_type: 'HOTEL' }),
@@ -331,9 +381,20 @@ describe('PartnerListingsList (apps/web/src/modules/partner)', () => {
       isFetchingNextPage: false,
       onLoadMore: vi.fn(),
     });
-    expect(
-      screen.getAllByRole('button', { name: 'Կառավարել սենյակները' }),
-    ).toHaveLength(2);
+    const expectedByIndex = [true, true, false, false, false];
+    for (let index = 0; index < expectedByIndex.length; index += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await openMoreMenu(user, index);
+      if (expectedByIndex[index]) {
+        expect(
+          screen.getByRole('menuitem', { name: 'Կառավարել սենյակները' }),
+        ).toBeInTheDocument();
+      } else {
+        expect(
+          screen.queryByRole('menuitem', { name: 'Կառավարել սենյակները' }),
+        ).not.toBeInTheDocument();
+      }
+    }
   });
 
   test('renders a Load More button when hasNextPage is true', () => {

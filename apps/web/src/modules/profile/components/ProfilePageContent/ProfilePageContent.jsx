@@ -7,15 +7,18 @@
  * its own "current user" copy — it always re-renders from the freshly
  * synced `useAuth().user`.
  *
- * Each section sits in its own shared `Card` panel (Phase 10 redesign),
- * matching the panel treatment `DashboardOverviewContent`/
- * `SettingsPageContent` already use.
+ * 2026 Customer Account redesign: each section keeps the shared `Card`
+ * panel treatment (Phase 10 redesign) but adds a small icon + one-line
+ * description above its form (brief: "strong section hierarchy... clean
+ * field grouping") — no change to `AvatarUploader`/`ProfileForm`
+ * themselves or what they submit.
  */
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack } from '@desavii/ui/components/layout';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import { Card } from '@desavii/ui/components/primitives';
+import { ImageIcon, UserRound } from 'lucide-react';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
@@ -23,6 +26,7 @@ import { useUpdateProfileMutation } from '../../mutations/useUpdateProfileMutati
 import { useUploadAvatarMutation } from '../../mutations/useUploadAvatarMutation.js';
 import AvatarUploader from '../AvatarUploader/AvatarUploader.jsx';
 import ProfileForm from '../ProfileForm/ProfileForm.jsx';
+import styles from './ProfilePageContent.module.scss';
 
 export default function ProfilePageContent() {
   const { t } = useTranslation();
@@ -66,8 +70,15 @@ export default function ProfilePageContent() {
       />
       <Stack gap="6">
         <Card as="div" padding="lg">
-          <Stack gap="3">
-            <h2>{t('profile.sections.photo')}</h2>
+          <Stack gap="4">
+            <Inline gap="3" align="center">
+              <span className={styles.sectionIcon} aria-hidden="true">
+                <ImageIcon size={18} />
+              </span>
+              <h2 className={styles.sectionHeading}>
+                {t('profile.sections.photo')}
+              </h2>
+            </Inline>
             <AvatarUploader
               name={fullName}
               userId={String(user.id)}
@@ -81,8 +92,15 @@ export default function ProfilePageContent() {
           </Stack>
         </Card>
         <Card as="div" padding="lg">
-          <Stack gap="3">
-            <h2>{t('profile.sections.personalInfo')}</h2>
+          <Stack gap="4">
+            <Inline gap="3" align="center">
+              <span className={styles.sectionIcon} aria-hidden="true">
+                <UserRound size={18} />
+              </span>
+              <h2 className={styles.sectionHeading}>
+                {t('profile.sections.personalInfo')}
+              </h2>
+            </Inline>
             <ProfileForm
               user={user}
               onSave={(fields) => handleSaveProfile(fields)}

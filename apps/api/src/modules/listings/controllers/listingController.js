@@ -323,6 +323,7 @@ export function createListingController(
           req.principal,
           id,
           req.validated.body.highlights,
+          req.validated.body.languageCode,
         );
         res.status(200).json({
           success: true,
@@ -342,6 +343,7 @@ export function createListingController(
           req.principal,
           id,
           req.validated.body.steps,
+          req.validated.body.languageCode,
         );
         res.status(200).json({
           success: true,
@@ -361,6 +363,7 @@ export function createListingController(
           req.principal,
           id,
           req.validated.body.items,
+          req.validated.body.languageCode,
         );
         res.status(200).json({
           success: true,
@@ -380,6 +383,7 @@ export function createListingController(
           req.principal,
           id,
           req.validated.body.faqs,
+          req.validated.body.languageCode,
         );
         res.status(200).json({
           success: true,

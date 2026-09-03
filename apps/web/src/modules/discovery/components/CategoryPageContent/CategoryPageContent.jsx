@@ -12,6 +12,19 @@
  * + `SearchResultCard` (the same listing-grid `RelatedListings`/
  * `CompanyProfilePageContent` already reuse) — no new listing-fetch path,
  * no fabricated content.
+ *
+ * Public-frontend audit (2026): previously a bare breadcrumb/title/
+ * description/grid stack, and the grid used the generic `Grid`
+ * primitive's `columns="auto"` mode — a raw 4/8/12-column layout grid,
+ * not a card grid, which put 8+ narrow `SearchResultCard`s in one row on
+ * desktop with heavily truncated titles. Now: a compact breadcrumb, a
+ * restrained editorial hero (`DestinationArt` + the category's own icon,
+ * matching `CategoryCard`'s identity so Home -> category feels
+ * continuous), then `ListingGrid` (the same 1/2/3/4 card grid `Search`
+ * already uses). The per-card category badge is hidden here — every card
+ * on this page already IS that category, so repeating the label 8+ times
+ * only added visual noise (and, in a cramped grid, read as if the page
+ * title itself were duplicating).
  */
 
 import { useTranslation } from 'react-i18next';
@@ -21,8 +34,11 @@ import {
   ErrorState,
   EmptyState,
 } from '@desavii/ui/components/feedback-overlays';
-import { Stack, Grid } from '@desavii/ui/components/layout';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import { Breadcrumbs } from '@desavii/ui/components/navigation';
+import RouterLink from '../../../../components/RouterLink.jsx';
+import ListingGrid from '../../../../components/ListingGrid/ListingGrid.jsx';
+import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
+import { getCategoryIcon } from '../../../../utils/categoryIcons.js';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
 import {
@@ -30,6 +46,7 @@ import {
   useSearchListingsQuery,
   SearchResultCard,
 } from '../../../search/index.js';
+import styles from './CategoryPageContent.module.scss';
 
 export default function CategoryPageContent() {
   const { t } = useTranslation();
@@ -48,8 +65,20 @@ export default function CategoryPageContent() {
     (candidate) => candidate.slug === categorySlug,
   );
 
+  // 2026 SEO/performance audit: real, confirmed waste, caught via a live
+  // network capture — without `enabled`, this fired once with
+  // `categoryId: undefined` (an unfiltered "all listings" fetch, whose
+  // result is never rendered — the component is still showing the
+  // categories-pending skeleton at that point) and again, correctly
+  // filtered, the instant `category.id` resolved. `!category` already
+  // early-returns above before any JSX reads `isListingsPending`, so
+  // gating on `Boolean(category?.id)` never leaves the page stuck
+  // showing a listings skeleton.
   const { data: listingsData, isPending: isListingsPending } =
-    useSearchListingsQuery({ categoryId: category?.id }, { locale });
+    useSearchListingsQuery(
+      { categoryId: category?.id },
+      { locale, enabled: Boolean(category?.id) },
+    );
   const listings = listingsData?.pages[0]?.results ?? [];
 
   const canonicalPath = `categories/${categorySlug}`;
@@ -76,19 +105,20 @@ export default function CategoryPageContent() {
 
   if (isPending) {
     return (
-      <Stack
-        gap="6"
+      <div
         aria-busy="true"
         aria-label={t('discovery.category.loading')}
+        className={styles.page}
       >
-        <Skeleton variant="text" width="40%" height={32} />
-        <Grid columns="auto" gap="4">
-          {Array.from({ length: 6 }, (_, index) => (
+        <Skeleton variant="text" width="30%" height={20} />
+        <Skeleton variant="rect" height={220} className={styles.heroSkeleton} />
+        <ListingGrid>
+          {Array.from({ length: 8 }, (_, index) => (
             // eslint-disable-next-line react/no-array-index-key -- fixed-count skeleton placeholders, no stable identity to key by
             <Skeleton key={index} variant="rect" height={280} />
           ))}
-        </Grid>
-      </Stack>
+        </ListingGrid>
+      </div>
     );
   }
 
@@ -113,19 +143,44 @@ export default function CategoryPageContent() {
     );
   }
 
-  return (
-    <Stack gap="6">
-      <PageHeader title={category.name} breadcrumbs={breadcrumbItems} />
+  const Icon = getCategoryIcon(category.slug);
 
-      <p>{t('seo.category.description', { category: category.name })}</p>
+  return (
+    <div className={styles.page}>
+      <Breadcrumbs
+        items={breadcrumbItems}
+        linkComponent={RouterLink}
+        className={styles.breadcrumbs}
+      />
+
+      <section className={styles.hero}>
+        <DestinationArt seed={category.id} className={styles.heroArt} />
+        <div className={styles.heroContent}>
+          <span className={styles.eyebrow}>{t('nav.explore')}</span>
+          <span className={styles.heroIcon} aria-hidden="true">
+            <Icon size={28} />
+          </span>
+          <h1 className={styles.title}>{category.name}</h1>
+          <p className={styles.description}>
+            {t('seo.category.description', { category: category.name })}
+          </p>
+          {category.listing_count > 0 && (
+            <span className={styles.count}>
+              {t('home.categories.listingCount', {
+                count: category.listing_count,
+              })}
+            </span>
+          )}
+        </div>
+      </section>
 
       {isListingsPending && (
-        <Grid columns="auto" gap="4">
-          {Array.from({ length: 6 }, (_, index) => (
+        <ListingGrid>
+          {Array.from({ length: 8 }, (_, index) => (
             // eslint-disable-next-line react/no-array-index-key -- fixed-count skeleton placeholders, no stable identity to key by
             <Skeleton key={index} variant="rect" height={280} />
           ))}
-        </Grid>
+        </ListingGrid>
       )}
 
       {!isListingsPending && listings.length === 0 && (
@@ -136,12 +191,22 @@ export default function CategoryPageContent() {
       )}
 
       {!isListingsPending && listings.length > 0 && (
-        <Grid columns="auto" gap="4">
-          {listings.map((listing) => (
-            <SearchResultCard key={listing.id} result={listing} />
+        <ListingGrid>
+          {listings.map((listing, index) => (
+            <SearchResultCard
+              key={listing.id}
+              result={listing}
+              hideTypeBadge
+              // 2026 SEO/performance audit: real Lighthouse trace evidence
+              // identified this grid's first card image as the page's
+              // actual LCP element, unconditionally lazy-loaded (Load
+              // Delay alone was 70% of a 4.7s LCP) — only the first card
+              // opts out of the default lazy behavior.
+              priorityImage={index === 0}
+            />
           ))}
-        </Grid>
+        </ListingGrid>
       )}
-    </Stack>
+    </div>
   );
 }

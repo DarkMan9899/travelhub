@@ -33,15 +33,11 @@ import {
   useUnpublishListingMutation,
   useArchiveListingMutation,
   useDeleteListingMutation,
-  PRESENTATION_GROUPS,
-  resolvePresentationGroup,
 } from '../../../listings/index.js';
+import PartnerListingRowActions from '../PartnerListingRowActions/PartnerListingRowActions.jsx';
 import styles from './PartnerListingsList.module.scss';
 
 const SKELETON_COUNT = 4;
-const PUBLISHABLE_STATUSES = ['DRAFT', 'UNPUBLISHED'];
-const UNPUBLISHABLE_STATUSES = ['PUBLISHED'];
-const ARCHIVABLE_STATUSES = ['PUBLISHED', 'UNPUBLISHED'];
 
 export default function PartnerListingsList({
   listings,
@@ -182,98 +178,41 @@ export default function PartnerListingsList({
               dateStyle: 'medium',
             }).format(new Date(listing.created_at))}
             actions={
-              <div className={styles.actions}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    navigate(
-                      `/${locale}/listings/${listing.slug ?? listing.id}`,
-                    )
-                  }
-                >
-                  {t('partner.listings.actions.view')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    navigate(
-                      `/${locale}/partner/listings/new?listingId=${listing.id}`,
-                    )
-                  }
-                >
-                  {t('partner.listings.actions.edit')}
-                </Button>
-                {resolvePresentationGroup(listing.listing_type) ===
-                  PRESENTATION_GROUPS.ACCOMMODATION && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      navigate(
-                        `/${locale}/partner/listings/${listing.id}/rooms`,
-                      )
-                    }
-                  >
-                    {t('partner.listings.actions.manageRooms')}
-                  </Button>
-                )}
-                {PUBLISHABLE_STATUSES.includes(listing.status) && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={
-                      publishMutation.isPending &&
-                      publishMutation.variables === listing.id
-                    }
-                    disabled={isMutating}
-                    onClick={() => handlePublish(listing)}
-                  >
-                    {t('partner.listings.actions.publish')}
-                  </Button>
-                )}
-                {UNPUBLISHABLE_STATUSES.includes(listing.status) && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={
-                      unpublishMutation.isPending &&
-                      unpublishMutation.variables === listing.id
-                    }
-                    disabled={isMutating}
-                    onClick={() => handleUnpublish(listing)}
-                  >
-                    {t('partner.listings.actions.unpublish')}
-                  </Button>
-                )}
-                {ARCHIVABLE_STATUSES.includes(listing.status) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    loading={
-                      archiveMutation.isPending &&
-                      archiveMutation.variables === listing.id
-                    }
-                    disabled={isMutating}
-                    onClick={() => handleArchive(listing)}
-                  >
-                    {t('partner.listings.actions.archive')}
-                  </Button>
-                )}
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  loading={
-                    deleteMutation.isPending &&
-                    deleteMutation.variables === listing.id
-                  }
-                  disabled={isMutating}
-                  onClick={() => handleDelete(listing)}
-                >
-                  {t('partner.listings.actions.delete')}
-                </Button>
-              </div>
+              <PartnerListingRowActions
+                listing={listing}
+                isMutating={isMutating}
+                isPublishing={
+                  publishMutation.isPending &&
+                  publishMutation.variables === listing.id
+                }
+                isUnpublishing={
+                  unpublishMutation.isPending &&
+                  unpublishMutation.variables === listing.id
+                }
+                isArchiving={
+                  archiveMutation.isPending &&
+                  archiveMutation.variables === listing.id
+                }
+                isDeleting={
+                  deleteMutation.isPending &&
+                  deleteMutation.variables === listing.id
+                }
+                onView={() =>
+                  navigate(`/${locale}/listings/${listing.slug ?? listing.id}`)
+                }
+                onEdit={() =>
+                  navigate(
+                    `/${locale}/partner/listings/new?listingId=${listing.id}`,
+                  )
+                }
+                onManageRooms={() =>
+                  navigate(`/${locale}/partner/listings/${listing.id}/rooms`)
+                }
+                onPublish={(row) => handlePublish(row)}
+                onUnpublish={(row) => handleUnpublish(row)}
+                onArchive={(row) => handleArchive(row)}
+                onDelete={(row) => handleDelete(row)}
+              />
             }
           />
         );

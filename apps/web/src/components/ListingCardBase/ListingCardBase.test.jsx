@@ -81,4 +81,14 @@ describe('ListingCardBase (apps/web/src/components)', () => {
     renderCard({ location: <p>Yerevan</p> });
     expect(screen.getByText('Yerevan')).toBeInTheDocument();
   });
+
+  test('renders the type badge by default', () => {
+    renderCard();
+    expect(screen.getByText('Hotel')).toBeInTheDocument();
+  });
+
+  test('hides the type badge when hideTypeBadge is set (e.g. a category page where it is redundant)', () => {
+    renderCard({ hideTypeBadge: true });
+    expect(screen.queryByText('Hotel')).not.toBeInTheDocument();
+  });
 });

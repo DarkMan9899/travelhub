@@ -1,7 +1,11 @@
 /**
- * HelpCenterPageContent — `/:locale/help` (Phase 10 redesign). A hub of
- * links into the other real support surfaces (FAQ, Contact) — not a
- * ticketing/search system, since no backend exists for one.
+ * HelpCenterPageContent — `/:locale/help` (Phase 10 redesign; editorial
+ * redesign in the 2026 public-frontend audit's static-page pass — see
+ * `EditorialPageHero`'s own file header for the shared shell this now
+ * uses). A hub of links into the other real support surfaces (FAQ,
+ * Contact) — not a ticketing/search system, since no backend exists for
+ * one. Exactly two real support paths, so this gives each one strong,
+ * deliberate hierarchy rather than padding out a list.
  *
  * P1.6 (Master Roadmap): title/lead now come from the real CMS backend
  * (see `AboutPageContent.jsx`'s identical comment for the fallback
@@ -10,11 +14,9 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { HelpCircle, Mail } from 'lucide-react';
-import { Section, Stack } from '@desavii/ui/components/layout';
-import { Card, Icon } from '@desavii/ui/components/primitives';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import { ArrowRight, HelpCircle, LifeBuoy, Mail } from 'lucide-react';
 import RouterLink from '../../../../components/RouterLink.jsx';
+import EditorialPageHero from '../../../../components/EditorialPageHero/EditorialPageHero.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
 import { useCmsPageQuery } from '../../queries/useCmsPageQuery.js';
@@ -54,31 +56,34 @@ export default function HelpCenterPageContent() {
   });
 
   return (
-    <Section spacing="default">
-      <PageHeader title={title} breadcrumbs={breadcrumbItems} />
-      <Stack gap="6">
-        <p className={styles.lead}>{lead}</p>
-        <div className={styles.linksGrid}>
-          {links.map(({ key, href, icon }) => (
-            <Card
-              key={key}
-              as={RouterLink}
-              href={href}
-              interactive
-              padding="lg"
-              className={styles.linkCard}
-            >
-              <Icon icon={icon} />
-              <span className={styles.linkTitle}>
-                {t(`cms.help.links.${key}.title`)}
-              </span>
-              <span className={styles.linkDescription}>
-                {t(`cms.help.links.${key}.description`)}
-              </span>
-            </Card>
-          ))}
-        </div>
-      </Stack>
-    </Section>
+    <div className={styles.page}>
+      <EditorialPageHero
+        breadcrumbItems={breadcrumbItems}
+        heroSeed="help"
+        icon={LifeBuoy}
+        title={title}
+        lead={lead}
+      />
+      <div className={styles.linksGrid}>
+        {links.map(({ key, href, icon: LinkIcon }) => (
+          <RouterLink key={key} href={href} className={styles.linkCard}>
+            <span className={styles.linkIcon} aria-hidden="true">
+              <LinkIcon size={26} />
+            </span>
+            <ArrowRight
+              size={18}
+              aria-hidden="true"
+              className={styles.linkArrow}
+            />
+            <span className={styles.linkTitle}>
+              {t(`cms.help.links.${key}.title`)}
+            </span>
+            <span className={styles.linkDescription}>
+              {t(`cms.help.links.${key}.description`)}
+            </span>
+          </RouterLink>
+        ))}
+      </div>
+    </div>
   );
 }

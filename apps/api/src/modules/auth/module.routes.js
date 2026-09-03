@@ -1,10 +1,10 @@
 /**
  * Auth module route wiring (BACKEND_ARCHITECTURE.md §2: route wiring
- * only, no logic). `register`/`login`/`refresh` are public and
- * rate-limited under `sensitiveRateLimiter` (Sprint 5's tier reserved
- * for exactly this: "Login, password reset, coupon-redemption-class
- * sensitive endpoints"). `logout`/`logout-all`/`me` require
- * authentication.
+ * only, no logic). `register`/`login`/`refresh`/`password-reset/request`/
+ * `password-reset/confirm` are public and rate-limited under
+ * `sensitiveRateLimiter` (Sprint 5's tier reserved for exactly this:
+ * "Login, password reset, coupon-redemption-class sensitive endpoints").
+ * `logout`/`logout-all`/`me` require authentication.
  */
 
 import { Router } from 'express';
@@ -14,6 +14,8 @@ import {
   registerSchema,
   loginSchema,
   refreshSchema,
+  requestPasswordResetSchema,
+  resetPasswordSchema,
 } from './validators/authValidators.js';
 
 export default function createAuthRoutes({ authController, guards }) {
@@ -37,6 +39,20 @@ export default function createAuthRoutes({ authController, guards }) {
     sensitiveRateLimiter,
     validate(refreshSchema),
     authController.refresh,
+  );
+  // Public, unauthenticated — same `sensitiveRateLimiter` tier this
+  // file's own header comment already names "password reset" under.
+  router.post(
+    '/password-reset/request',
+    sensitiveRateLimiter,
+    validate(requestPasswordResetSchema),
+    authController.requestPasswordReset,
+  );
+  router.post(
+    '/password-reset/confirm',
+    sensitiveRateLimiter,
+    validate(resetPasswordSchema),
+    authController.resetPassword,
   );
   router.post('/logout', requireAuth, authController.logout);
   router.post('/logout-all', requireAuth, authController.logoutAll);

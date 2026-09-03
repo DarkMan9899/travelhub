@@ -1,5 +1,8 @@
 /**
- * AboutPageContent — `/:locale/about` (Phase 10 redesign).
+ * AboutPageContent — `/:locale/about` (Phase 10 redesign; editorial
+ * redesign in the 2026 public-frontend audit's static-page pass — see
+ * `EditorialPageHero`'s own file header for why the previous bare
+ * `PageHeader` + plain content is now this shared hero shell instead).
  *
  * P1.6 (Master Roadmap): title/lead now come from the real CMS backend
  * (`GET /cms/pages/about`, seeded and admin-editable since Stage 11.6,
@@ -14,9 +17,7 @@
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { ShieldCheck, Compass, Headset } from 'lucide-react';
-import { Section, Stack } from '@desavii/ui/components/layout';
-import { Icon } from '@desavii/ui/components/primitives';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import EditorialPageHero from '../../../../components/EditorialPageHero/EditorialPageHero.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
 import { useCmsPageQuery } from '../../queries/useCmsPageQuery.js';
@@ -53,24 +54,29 @@ export default function AboutPageContent() {
   });
 
   return (
-    <Section spacing="default">
-      <PageHeader title={title} breadcrumbs={breadcrumbItems} />
-      <Stack gap="8">
-        <p className={styles.lead}>{lead}</p>
-        <div className={styles.valuesGrid}>
-          {VALUE_KEYS.map(({ key, icon }) => (
-            <Stack key={key} gap="2" as="article" align="flex-start">
-              <Icon icon={icon} />
-              <h2 className={styles.valueTitle}>
-                {t(`cms.about.values.${key}.title`)}
-              </h2>
-              <p className={styles.valueDescription}>
-                {t(`cms.about.values.${key}.description`)}
-              </p>
-            </Stack>
-          ))}
-        </div>
-      </Stack>
-    </Section>
+    <div className={styles.page}>
+      <EditorialPageHero
+        breadcrumbItems={breadcrumbItems}
+        heroSeed="about"
+        icon={Compass}
+        title={title}
+        lead={lead}
+      />
+      <div className={styles.valuesGrid}>
+        {VALUE_KEYS.map(({ key, icon: ValueIcon }) => (
+          <article key={key} className={styles.valueCard}>
+            <span className={styles.valueIcon} aria-hidden="true">
+              <ValueIcon size={24} />
+            </span>
+            <h2 className={styles.valueTitle}>
+              {t(`cms.about.values.${key}.title`)}
+            </h2>
+            <p className={styles.valueDescription}>
+              {t(`cms.about.values.${key}.description`)}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
   );
 }

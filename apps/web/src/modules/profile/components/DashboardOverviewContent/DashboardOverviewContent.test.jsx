@@ -27,6 +27,27 @@ vi.mock('../../../bookings/index.js', () => {
   };
 });
 
+// `NextTripPanel` renders identically to the mocked `BookingCard` above —
+// both just the reference — so every existing "which booking landed in
+// which section" assertion below still holds: the redesign only changes
+// WHICH component the soonest upcoming booking renders through, not how
+// many times its reference text appears.
+vi.mock('../NextTripPanel/NextTripPanel.jsx', () => ({
+  default: function MockNextTripPanel({ booking }) {
+    return <p>{booking.booking_reference}</p>;
+  },
+}));
+
+vi.mock('../../../favorites/index.js', () => ({
+  useFavoritesQuery: vi.fn(() => ({ data: { pages: [{ results: [] }] } })),
+}));
+vi.mock('../../../notifications/index.js', () => ({
+  useUnreadCountQuery: vi.fn(() => ({ data: 0 })),
+}));
+vi.mock('../../../messaging/index.js', () => ({
+  useUnreadConversationCountQuery: vi.fn(() => ({ data: 0 })),
+}));
+
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');

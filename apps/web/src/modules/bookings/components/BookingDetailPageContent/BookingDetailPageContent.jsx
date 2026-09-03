@@ -11,13 +11,16 @@
  * approach, mirror `ListingDetailPageContent.jsx`'s own established
  * pattern from Phase 6.
  *
- * Booking summary/items/contact and the notes section each sit in their
- * own shared `Card` panel (Phase 10 redesign) — this page previously
- * rendered them as bare, unstyled `Stack`s.
+ * 2026 Customer Account redesign: a `DestinationArt`/photo band + a
+ * status stepper (`StatusStepper`, below — built from `booking.status`
+ * only, no new data) replace the previous bare-`Card` header. Every
+ * mutation, query, and conditional below is unchanged from before the
+ * redesign — this file only changes what wraps them.
  */
 
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Calendar, Moon, Hash, Users2 } from 'lucide-react';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import {
   Skeleton,
@@ -28,6 +31,7 @@ import { Button, Card } from '@desavii/ui/components/primitives';
 import { PriceTag } from '@desavii/ui/components/data-display';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import RouterLink from '../../../../components/RouterLink.jsx';
+import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useBookingQuery } from '../../queries/useBookingQuery.js';
@@ -43,6 +47,8 @@ import { BookingPaymentSection } from '../../../payments/index.js';
 import { useListingQuery } from '../../../listings/queries/useListingQuery.js';
 import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';
 import { computeNights } from '../../utils/computeNights.js';
+import StatusStepper from '../StatusStepper/StatusStepper.jsx';
+import styles from './BookingDetailPageContent.module.scss';
 
 // Mirrors `bookingStatusTransitions.js`'s domain rule exactly:
 // `PENDING_VENDOR` may only become CONFIRMED/REJECTED/EXPIRED — never a
@@ -88,6 +94,7 @@ export default function BookingDetailPageContent() {
       >
         <Skeleton variant="text" width="40%" height={32} />
         <Stack gap="4">
+          <Skeleton variant="rect" height={200} />
           <Card as="div" padding="lg">
             <Stack gap="4">
               <Inline gap="3" align="center">
@@ -132,10 +139,12 @@ export default function BookingDetailPageContent() {
     dateStyle: 'medium',
   });
   const canCancel = CANCELLABLE_STATUSES.includes(booking.status);
-  const listingTitle = listing
-    ? (getLocalizedTranslation(listing.translations, locale)?.title ??
-      listing.slug)
+  const translation = listing
+    ? getLocalizedTranslation(listing.translations, locale)
     : null;
+  const listingTitle = listing ? (translation?.title ?? listing.slug) : null;
+  const coverMedia =
+    listing?.media?.find((media) => media.is_cover) ?? listing?.media?.[0];
 
   async function handleCancel() {
     const confirmed = await confirm({
@@ -191,57 +200,86 @@ export default function BookingDetailPageContent() {
         ]}
       />
       <Stack gap="4">
-        <Card as="div" padding="lg">
-          <Stack gap="4">
-            <Inline gap="3" align="center">
+        <Card as="div" padding="none" elevated className={styles.headerCard}>
+          <div className={styles.headerMedia}>
+            {coverMedia ? (
+              <img src={coverMedia.url} alt="" className={styles.headerImage} />
+            ) : (
+              <DestinationArt
+                seed={booking.listing_id}
+                className={styles.headerImagePlaceholder}
+              />
+            )}
+          </div>
+          <div className={styles.headerBody}>
+            <Inline gap="3" align="center" wrap>
               <BookingStatusBadge status={booking.status} />
               <PriceTag
                 amount={booking.total_amount}
                 currencyCode={booking.currency}
+                locale={i18n.language}
                 suffix={t('bookings.detail.total')}
+                size="lg"
               />
             </Inline>
 
             {listingTitle && (
-              <p>
+              <h2 className={styles.listingTitle}>
                 <RouterLink href={`/${locale}/listings/${listing.slug}`}>
                   {listingTitle}
                 </RouterLink>
-              </p>
+              </h2>
             )}
 
-            <Stack gap="3">
+            <StatusStepper status={booking.status} />
+
+            {/* A plain list of per-item facts (dates, nights, guests), not
+                term/definition pairs — `<dl>`/`<dt>`/`<dd>` was a semantic
+                misuse (each entry rendered as a `<p>`, which `<dl>` doesn't
+                allow as a direct child), flagged by the axe accessibility
+                suite's `only-dlitems` rule. `<ul>`/`<li>` matches what this
+                content actually is. */}
+            <ul className={styles.metaGrid}>
               {booking.items.map((item) => {
                 const nights = computeNights(item);
                 return (
-                  <div key={item.id}>
+                  <li key={item.id} className={styles.metaItem}>
                     {item.unit_label && (
-                      <p>
-                        {t('bookings.detail.roomType')}: {item.unit_label}
+                      <p className={styles.metaLine}>
+                        <Hash aria-hidden="true" focusable="false" />
+                        <span>
+                          {t('bookings.detail.roomType')}: {item.unit_label}
+                        </span>
                       </p>
                     )}
-                    <p>
-                      {t('bookings.detail.dates')}:{' '}
-                      {dateFormatter.format(new Date(item.date_from))} –{' '}
-                      {dateFormatter.format(new Date(item.date_to))}
+                    <p className={styles.metaLine}>
+                      <Calendar aria-hidden="true" focusable="false" />
+                      <span>
+                        {dateFormatter.format(new Date(item.date_from))} –{' '}
+                        {dateFormatter.format(new Date(item.date_to))}
+                      </span>
                     </p>
                     {nights !== null && (
-                      <p>
-                        {t('bookings.detail.nights')}: {nights}
+                      <p className={styles.metaLine}>
+                        <Moon aria-hidden="true" focusable="false" />
+                        <span>
+                          {t('bookings.detail.nights')}: {nights}
+                        </span>
                       </p>
                     )}
-                    <p>
-                      {t('bookings.detail.quantity')}: {item.quantity}
-                    </p>
                     {item.guests.length > 0 && (
-                      <p>
-                        {t('bookings.detail.guests')}: {item.guests.length}
+                      <p className={styles.metaLine}>
+                        <Users2 aria-hidden="true" focusable="false" />
+                        <span>
+                          {t('bookings.detail.quantity')}: {item.quantity} ·{' '}
+                          {t('bookings.detail.guests')}: {item.guests.length}
+                        </span>
                       </p>
                     )}
-                  </div>
+                  </li>
                 );
               })}
-            </Stack>
+            </ul>
 
             <Stack gap="1">
               <p>
@@ -266,7 +304,7 @@ export default function BookingDetailPageContent() {
                 {booking.cancellation_reason}
               </p>
             )}
-          </Stack>
+          </div>
         </Card>
 
         <BookingPaymentSection booking={booking} />

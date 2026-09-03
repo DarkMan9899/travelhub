@@ -56,6 +56,22 @@
   }
 }
 
+// `variant="premium"` (2026 Customer Account redesign) — opt-in, see
+// MessagingPageContent.jsx's own header for why this is additive-only.
+.layout--premium {
+  border: none;
+  border-radius: tokens.$radius-xl;
+  @include tokens.elevation-1;
+}
+
+// `variant="operational"` (Partner Workspace Sprint 4) — opt-in, see
+// MessagingPageContent.jsx's own header. A thin navy top border, the same
+// restrained "workspace canvas" signature as `PartnerWorkspaceIdentity`'s
+// solid-navy anchor — no elevation, no gradient.
+.layout--operational {
+  border-top: 2px solid tokens.$color-navy;
+}
+
 .selectPrompt {
   display: flex;
   align-items: center;

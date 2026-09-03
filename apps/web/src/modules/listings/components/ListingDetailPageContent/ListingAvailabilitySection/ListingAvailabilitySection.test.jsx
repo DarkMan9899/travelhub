@@ -135,7 +135,7 @@ describe('ListingAvailabilitySection (Listing Details)', () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(
-        'Այս հայտարարության համար հասանելիության տվյալներ դեռ չկան:',
+        'Այս հայտարարության համար հասանելիության տվյալներ դեռ չկան։',
       ),
     ).not.toBeInTheDocument();
   });
@@ -190,7 +190,7 @@ describe('ListingAvailabilitySection (Listing Details)', () => {
     expect(screen.getByText('Սպառված է')).toBeInTheDocument();
     expect(
       screen.queryByText(
-        'Այս հայտարարության համար հասանելիության տվյալներ դեռ չկան:',
+        'Այս հայտարարության համար հասանելիության տվյալներ դեռ չկան։',
       ),
     ).not.toBeInTheDocument();
     // More than one unit — the day-status hook must never be called with
@@ -248,7 +248,7 @@ describe('ListingAvailabilitySection (Listing Details)', () => {
     render(<ListingAvailabilitySection listingId={9} />);
     expect(
       screen.getByText(
-        'Այս հայտարարության համար հասանելիության տվյալներ դեռ չկան:',
+        'Այս հայտարարության համար հասանելիության տվյալներ դեռ չկան։',
       ),
     ).toBeInTheDocument();
   });

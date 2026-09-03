@@ -6,7 +6,9 @@
 .resultCount {
   margin: 0 0 tokens.$space-4;
   font-size: tokens.$font-size-small;
+  font-weight: 600;
   color: tokens.$color-gray-600;
+  letter-spacing: 0.01em;
 }
 
 .grid {

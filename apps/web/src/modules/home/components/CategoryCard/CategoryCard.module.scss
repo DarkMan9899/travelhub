@@ -4,7 +4,33 @@
 @use 'mixins/respond' as respond;
 @use 'mixins/focus-ring' as focus;
 
+// Redesign phase (2026) — each of the five mesh washes is the same
+// `tokens.$gradient-mesh-N` `DestinationArt` uses for photo-style cards,
+// but layered UNDER an near-opaque white scrim here: enough to tint the
+// card with real brand color (no two adjacent categories read as
+// identical white tiles) while keeping the icon/label/count at full
+// body-text contrast — a functional navigation card, not a photo card,
+// stays legible first.
+@each $n in 1, 2, 3, 4, 5 {
+  .card--mesh-#{$n} {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.94)),
+      nth(tokens.$gradient-mesh-list, $n);
+  }
+}
+
 .card {
+  position: relative;
+  // `ScrollReveal`'s per-item `motion.div` wrapper is the actual CSS Grid
+  // item (see this module's own header comment) — a plain block element,
+  // which does NOT stretch a flex child to fill it the way a grid/flex
+  // parent would. Without an explicit 100%/100%, this card sized itself
+  // to its own content (~124px) inside a 2x2 featured cell the grid had
+  // already correctly sized to 316px, stranding the icon/label/count in
+  // the top-left corner with a dead empty block below — the "featured
+  // tile massively oversized, content poorly positioned" bug.
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -12,21 +38,22 @@
   gap: tokens.$space-3;
   padding: tokens.$space-6 tokens.$space-4;
   border-radius: tokens.$radius-lg;
-  background-color: tokens.$color-white;
   color: tokens.$color-gray-900;
   text-decoration: none;
   text-align: center;
+  overflow: hidden;
+  // Redesign phase (2026) — `--tilt-x`/`--tilt-y` (-1..1, written by
+  // `useTiltEffect` straight to this node, never through React state)
+  // feed a subtle pointer-tilt into the SAME transform the existing
+  // hover lift already used, rather than a JS-computed inline
+  // `transform` that would override this rule outright.
+  transform: translateY(var(--tilt-lift, 0)) perspective(700px)
+    rotateX(calc(var(--tilt-y, 0) * -4deg))
+    rotateY(calc(var(--tilt-x, 0) * 4deg));
   transition:
     transform tokens.$motion-micro tokens.$ease-out,
-    box-shadow tokens.$motion-micro tokens.$ease-out,
-    border-color tokens.$motion-micro tokens.$ease-out;
-  @include tokens.elevation-0;
-  // Overrides elevation-0's own 1px gray border with a thicker
-  // transparent one, so the hover ring below (border-color only) reads
-  // at the same 2px weight every other card in this module uses.
-  border-width: 2px;
-  border-style: solid;
-  border-color: transparent;
+    box-shadow tokens.$motion-transition tokens.$ease-out;
+  @include tokens.elevation-1;
   @include tokens.reduced-motion-safe;
   @include focus.focus-ring;
 
@@ -35,16 +62,49 @@
   }
 
   &:hover {
-    transform: translateY(-6px);
+    --tilt-lift: -6px;
+
     color: tokens.$color-royal-blue;
-    border-color: rgba(tokens.$color-royal-blue, 0.25);
-    @include tokens.elevation-3;
+    @include tokens.elevation-4;
   }
 
   &:hover .iconWrapper {
-    background-color: tokens.$color-royal-blue;
+    background: tokens.$gradient-navy-royal;
     color: tokens.$color-white;
     transform: scale(1.08);
+    box-shadow: 0 8px 16px rgba(29, 95, 214, 0.3);
+  }
+}
+
+// The bento grid's first tile (`CategoryCard`'s `featured` prop) — a
+// visibly larger card with the label/count floating over the bottom of
+// its own mesh backdrop, instead of the regular tile's centered
+// icon-then-label stack. Still the same component, same data, same
+// interaction — only the internal composition differs.
+.card--featured {
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: tokens.$space-6;
+  text-align: left;
+
+  .iconWrapper {
+    position: absolute;
+    top: tokens.$space-6;
+    left: tokens.$space-6;
+  }
+
+  .label {
+    font-family: tokens.$font-display;
+    font-size: tokens.$font-size-h4;
+    font-weight: 700;
+  }
+
+  @include respond.respond(laptop) {
+    padding: tokens.$space-8;
+
+    .label {
+      font-size: tokens.$font-size-h3;
+    }
   }
 }
 
@@ -55,12 +115,14 @@
   width: tokens.$space-16;
   height: tokens.$space-16;
   border-radius: tokens.$radius-full;
-  background-color: tokens.$color-gray-100;
+  background-color: tokens.$color-white;
   color: tokens.$color-royal-blue;
+  @include tokens.elevation-1;
   transition:
-    background-color tokens.$motion-micro tokens.$ease-out,
+    background tokens.$motion-micro tokens.$ease-out,
     color tokens.$motion-micro tokens.$ease-out,
-    transform tokens.$motion-micro tokens.$ease-out;
+    transform tokens.$motion-micro tokens.$ease-out,
+    box-shadow tokens.$motion-micro tokens.$ease-out;
   @include tokens.reduced-motion-safe;
 }
 

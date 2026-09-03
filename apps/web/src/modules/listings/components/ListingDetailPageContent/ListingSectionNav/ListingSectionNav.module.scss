@@ -1,13 +1,19 @@
 // ListingSectionNav — Phase 18 (Premium Listing Detail). Tokens only.
 
 @use 'tokens' as tokens;
+@use 'mixins/glass' as glass;
 
+// Redesign phase (2026) — frosted glass rather than a flat white bar:
+// this nav sits pinned over whatever section content scrolls beneath it,
+// which is exactly the "content sliding under a surface" case
+// glassmorphism communicates honestly (the bar is IN FRONT of the page,
+// not just colored the same as it).
 .nav {
   position: sticky;
   top: 0;
   z-index: 1;
-  background-color: tokens.$color-white;
-  border-bottom: 1px solid tokens.$color-gray-100;
+  border-bottom: 1px solid tokens.$color-gray-200;
+  @include glass.glass-surface(0.85, 12px);
 }
 
 .list {

@@ -16,7 +16,10 @@ function Harness() {
   const { mutate, isSuccess } = useReplaceListingIncludedItemsMutation();
   return (
     <div>
-      <button type="button" onClick={() => mutate({ id: 7, items: ITEMS })}>
+      <button
+        type="button"
+        onClick={() => mutate({ id: 7, items: ITEMS, languageCode: 'hy' })}
+      >
         save
       </button>
       <p data-testid="status">{isSuccess ? 'success' : 'idle'}</p>
@@ -37,7 +40,7 @@ describe('useReplaceListingIncludedItemsMutation (apps/web/src/modules/listings)
     });
   });
 
-  test('calls replaceListingIncludedItems(id, items) and invalidates the detail cache', async () => {
+  test('calls replaceListingIncludedItems(id, items, languageCode) and invalidates the detail cache', async () => {
     replaceListingIncludedItems.mockResolvedValue({ data: { id: 7 } });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const user = userEvent.setup();
@@ -53,7 +56,7 @@ describe('useReplaceListingIncludedItemsMutation (apps/web/src/modules/listings)
     await waitFor(() =>
       expect(screen.getByTestId('status')).toHaveTextContent('success'),
     );
-    expect(replaceListingIncludedItems).toHaveBeenCalledWith(7, ITEMS);
+    expect(replaceListingIncludedItems).toHaveBeenCalledWith(7, ITEMS, 'hy');
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: listingKeys.detail(7),
     });

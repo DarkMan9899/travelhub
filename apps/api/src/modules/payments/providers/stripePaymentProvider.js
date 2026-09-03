@@ -216,14 +216,45 @@ export class StripePaymentProvider extends PaymentProvider {
     currencyCode,
     paymentReference,
     bookingId,
+    metadata = {},
   }) {
     this.#assertConfigured();
+    // Stripe go-live preflight fix: the caller's own `metadata` object
+    // was previously silently dropped; every entry is now forwarded as
+    // its own `metadata[<key>]` form field, same convention as the two
+    // hardcoded keys below. `simulateScenario` — meaningful only to
+    // `LocalPaymentProvider` — never appears here at all:
+    // `PaymentService#createPaymentIntent` only ever includes it in the
+    // metadata object it builds when the active provider IS `local`
+    // (release-architecture requirement: no demo/simulation control may
+    // reach a real provider's request, not even as an inert tag).
+    const metadataFields = Object.fromEntries(
+      Object.entries(metadata)
+        .filter(([, value]) => value !== undefined && value !== null)
+        .map(([key, value]) => [`metadata[${key}]`, value]),
+    );
     const payload = await this.#request(
       'POST',
       '/payment_intents',
       {
         amount: toMinorUnitsString(amount),
         currency: currencyCode.toLowerCase(),
+        // Manual-capture booking payment flow: the customer's card is
+        // authorized at checkout, never captured until the vendor accepts
+        // the booking (`BookingService#confirmBooking` ->
+        // `PaymentService#capturePaymentForBookingSystemInternal` ->
+        // `capturePayment` below). A successful authorization resolves to
+        // Stripe's `requires_capture` status, mapped to this app's
+        // `AUTHORIZED` (STATUS_MAP above) — never straight to `SUCCEEDED`.
+        capture_method: 'manual',
+        // Lets Stripe Elements' Payment Element offer every payment method
+        // enabled on the Dashboard that's actually compatible with manual
+        // capture (Stripe silently filters out any that aren't) — never a
+        // single hardcoded `payment_method_types: ['card']`, which would
+        // require a code change every time the business enables a new
+        // method.
+        'automatic_payment_methods[enabled]': 'true',
+        ...metadataFields,
         'metadata[payment_reference]': paymentReference,
         'metadata[booking_id]': bookingId,
       },
@@ -235,6 +266,12 @@ export class StripePaymentProvider extends PaymentProvider {
     return {
       providerPaymentId: payload.id,
       status: STATUS_MAP[payload.status] ?? 'CREATED',
+      // The one value the frontend's `stripe.confirmPayment` call needs —
+      // safe to return to the browser (Stripe's own design: a client
+      // secret can only confirm/cancel THIS one PaymentIntent, never read
+      // or act on anything else). Never persisted — see paymentDto.js's
+      // header comment on why this is a request-time-only field.
+      clientSecret: payload.client_secret ?? null,
       raw: payload,
     };
   }
@@ -248,6 +285,11 @@ export class StripePaymentProvider extends PaymentProvider {
     return {
       providerPaymentId: payload.id,
       status: STATUS_MAP[payload.status] ?? 'CREATED',
+      // Re-fetched fresh each call — lets a page reload mid-checkout
+      // resume the same PaymentIntent (`PaymentService#getPayment`) rather
+      // than dead-ending on a payment `findActiveForBooking` still
+      // correctly refuses to let a second one be created against.
+      clientSecret: payload.client_secret ?? null,
       raw: payload,
     };
   }
@@ -317,29 +359,76 @@ export class StripePaymentProvider extends PaymentProvider {
     return timingSafeEqual(expectedBuffer, actualBuffer);
   }
 
+  /**
+   * Stripe go-live preflight fix: `data.object` is a DIFFERENT object
+   * shape depending on the event family — a PaymentIntent for
+   * `payment_intent.*` events, but a Refund (or a Charge, for
+   * `charge.refunded`) for refund-family events. Every Stripe object has
+   * its own `.id` (the previous `object.id ?? object.payment_intent`
+   * fallback could never actually trigger, and silently resolved refund/
+   * charge events to the WRONG id — a Refund's own id, misread as if it
+   * were the PaymentIntent id). Returns a `kind`-discriminated shape so
+   * `PaymentService#handleProviderWebhook` can route each family to the
+   * correct table (`payments` vs `refunds`) with the correct id and
+   * status vocabulary, rather than treating every event as a payment
+   * status change.
+   */
   // eslint-disable-next-line class-methods-use-this
   normalizeWebhookEvent(rawEvent) {
     const object = rawEvent.data?.object ?? {};
-    // A failed attempt does NOT give the PaymentIntent a distinct
-    // terminal "failed" status on Stripe's side — it typically reverts
-    // to `requires_payment_method` (retryable), which STATUS_MAP would
-    // otherwise silently normalize back to this app's `CREATED` and lose
-    // the failure entirely. `payment_intent.payment_failed` is the
-    // actual, authoritative signal Stripe sends for this case; the real
-    // reason lives on `last_payment_error`, not on `status`.
-    const isFailedAttempt = rawEvent.type === 'payment_intent.payment_failed';
+    const eventType = rawEvent.type;
+
+    if (eventType.startsWith('refund.') || eventType === 'charge.refunded') {
+      return {
+        kind: 'refund',
+        providerEventId: rawEvent.id,
+        eventType,
+        normalizedEventType: eventType,
+        providerRefundId: object.id ?? null,
+        providerPaymentId: object.payment_intent ?? null,
+        status: REFUND_STATUS_MAP[object.status] ?? null,
+      };
+    }
+
+    if (eventType.startsWith('payment_intent.')) {
+      // A failed attempt does NOT give the PaymentIntent a distinct
+      // terminal "failed" status on Stripe's side — it typically reverts
+      // to `requires_payment_method` (retryable), which STATUS_MAP would
+      // otherwise silently normalize back to this app's `CREATED` and
+      // lose the failure entirely. `payment_intent.payment_failed` is
+      // the actual, authoritative signal Stripe sends for this case; the
+      // real reason lives on `last_payment_error`, not on `status`.
+      const isFailedAttempt = eventType === 'payment_intent.payment_failed';
+      return {
+        kind: 'payment',
+        providerEventId: rawEvent.id,
+        eventType,
+        normalizedEventType: eventType,
+        providerPaymentId: object.id ?? null,
+        status: isFailedAttempt
+          ? 'FAILED'
+          : (STATUS_MAP[object.status] ?? null),
+        failureCode: isFailedAttempt
+          ? (object.last_payment_error?.code ?? null)
+          : undefined,
+        failureMessage: isFailedAttempt
+          ? (object.last_payment_error?.message ?? null)
+          : undefined,
+      };
+    }
+
+    // Any other Stripe event type this app doesn't act on yet
+    // (customer.*, charge.dispute.*, ...) — normalized but deliberately
+    // inert; `handleProviderWebhook` acks it without touching financial
+    // state, rather than misrouting it as a payment/refund status change.
     return {
+      kind: 'unhandled',
       providerEventId: rawEvent.id,
-      eventType: rawEvent.type,
-      normalizedEventType: rawEvent.type,
-      providerPaymentId: object.id ?? object.payment_intent ?? null,
-      status: isFailedAttempt ? 'FAILED' : (STATUS_MAP[object.status] ?? null),
-      failureCode: isFailedAttempt
-        ? (object.last_payment_error?.code ?? null)
-        : undefined,
-      failureMessage: isFailedAttempt
-        ? (object.last_payment_error?.message ?? null)
-        : undefined,
+      eventType,
+      normalizedEventType: eventType,
+      providerPaymentId: null,
+      providerRefundId: null,
+      status: null,
     };
   }
 }

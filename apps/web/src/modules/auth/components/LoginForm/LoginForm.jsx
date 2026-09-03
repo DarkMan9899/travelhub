@@ -130,6 +130,12 @@ export default function LoginForm() {
           )}
         />
 
+        <p>
+          <Link to={`/${locale}/auth/forgot-password`}>
+            {t('auth.login.forgotPasswordLink')}
+          </Link>
+        </p>
+
         <Button type="submit" variant="primary" fullWidth loading={isPending}>
           {t('auth.login.submit')}
         </Button>

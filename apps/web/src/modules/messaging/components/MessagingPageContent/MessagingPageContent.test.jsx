@@ -14,17 +14,19 @@ vi.mock('../ChatWindow/ChatWindow.jsx', () => ({
   default: ({ conversationId }) => <div>mock-chat-window-{conversationId}</div>,
 }));
 
-function renderPage(initialPath) {
+function renderPage(initialPath, props = {}) {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
         <Route
           path="/:locale/account/messages"
-          element={<MessagingPageContent />}
+          // eslint-disable-next-line react/jsx-props-no-spreading -- test-only prop passthrough
+          element={<MessagingPageContent {...props} />}
         />
         <Route
           path="/:locale/account/messages/:conversationId"
-          element={<MessagingPageContent />}
+          // eslint-disable-next-line react/jsx-props-no-spreading -- test-only prop passthrough
+          element={<MessagingPageContent {...props} />}
         />
       </Routes>
     </MemoryRouter>,
@@ -49,5 +51,14 @@ describe('MessagingPageContent (apps/web/src/modules/messaging)', () => {
     renderPage('/hy/account/messages');
     screen.getByText('mock-conversation-list').click();
     expect(await screen.findByText('mock-chat-window-7')).toBeInTheDocument();
+  });
+
+  test('variant="operational" (Partner Workspace) applies its own container class, not the customer premium one', () => {
+    renderPage('/hy/account/messages', { variant: 'operational' });
+    const layout = screen
+      .getByText('mock-conversation-list')
+      .closest('[class*="layout"]');
+    expect(layout.className).toMatch(/layout--operational/);
+    expect(layout.className).not.toMatch(/layout--premium/);
   });
 });

@@ -20,10 +20,22 @@
  * before Basic Information's creation point, since reaching that
  * `listingId` at all implies Category and Basic Information already
  * happened.
+ *
+ * 2026 Partner Workspace redesign (Sprint 3): `authoringLocale` is a
+ * third URL-persisted value (`?contentLocale=`), shared by
+ * `BasicInfoStep`/`ContentStep` — which listing translation a partner
+ * is currently editing. URL-persisted for the same "survives refresh/
+ * Back/Forward/a shared link" reason `step`/`listingId` already are,
+ * and deliberately its OWN param rather than reusing the route's
+ * `:locale` — the workspace's UI language and the content-authoring
+ * language are independent choices; switching one must never silently
+ * change the other.
  */
 
 import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { SUPPORTED_LOCALES } from '../../../../translations/i18n.js';
+import { DEFAULT_CONTENT_LOCALE } from '../../utils/getLocalizedItems.js';
 import { WIZARD_STEPS } from './wizardSteps.js';
 
 export function useListingWizardState() {
@@ -32,6 +44,28 @@ export function useListingWizardState() {
 
   const listingIdParam = searchParams.get('listingId');
   const listingId = listingIdParam ? Number(listingIdParam) : null;
+
+  // 2026 Partner Workspace redesign (Sprint 3): the CONTENT-authoring
+  // locale — deliberately its own URL param (`contentLocale`), never
+  // derived from the route's own `:locale` (the workspace's UI
+  // language). Defaults to the platform's content default ('en', same
+  // as `getLocalizedItems.js`'s `DEFAULT_CONTENT_LOCALE`), not whatever
+  // language the partner's dashboard happens to be in — switching UI
+  // language must never silently change which translation a partner is
+  // editing.
+  const authoringLocaleParam = searchParams.get('contentLocale');
+  const authoringLocale = SUPPORTED_LOCALES.includes(authoringLocaleParam)
+    ? authoringLocaleParam
+    : DEFAULT_CONTENT_LOCALE;
+
+  const setAuthoringLocale = useCallback(
+    (code) => {
+      const next = new URLSearchParams(searchParams);
+      next.set('contentLocale', code);
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
 
   const stepParam = searchParams.get('step');
   const currentStepId = WIZARD_STEPS.some((step) => step.id === stepParam)
@@ -107,6 +141,8 @@ export function useListingWizardState() {
     completeCreationStep,
     categoryId,
     setCategoryId,
+    authoringLocale,
+    setAuthoringLocale,
     completedStepIds,
     goToStep,
     goToNextStep,

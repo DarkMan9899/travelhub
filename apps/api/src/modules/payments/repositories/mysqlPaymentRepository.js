@@ -128,6 +128,25 @@ export class MySqlPaymentRepository {
     return toPaymentDomain(rows[0]);
   }
 
+  /**
+   * Manual-capture booking payment flow: the payment (if any) for a
+   * booking that is authorized but not yet captured — used by
+   * `BookingService#confirmBooking`/`#rejectBooking`/`#cancelBooking` to
+   * find the authorization that a vendor decision must now capture or
+   * void. A booking can only ever have one non-terminal payment at a time
+   * (`findActiveForBooking`'s own guard), so `LIMIT 1` is always
+   * unambiguous.
+   */
+  async findAuthorizedForBooking(bookingId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT ${PAYMENT_SELECT} ${PAYMENT_FROM}
+       WHERE p.booking_id = ? AND pis.code = 'AUTHORIZED'
+       ORDER BY p.created_at DESC LIMIT 1`,
+      [bookingId],
+    );
+    return toPaymentDomain(rows[0]);
+  }
+
   async findByIdempotencyKey(idempotencyKey, connection = this.#pool) {
     const [rows] = await connection.query(
       `SELECT ${PAYMENT_SELECT} ${PAYMENT_FROM} WHERE p.idempotency_key = ? LIMIT 1`,
@@ -213,6 +232,38 @@ export class MySqlPaymentRepository {
       [providerCode, providerPaymentId],
     );
     return toPaymentDomain(rows[0]);
+  }
+
+  /**
+   * Stripe go-live preflight — transaction-boundary fix: atomically
+   * reserves `amount` against the payment's refundable balance
+   * (`captured_amount - refunded_amount`) in ONE statement, matching zero
+   * rows if insufficient balance remains. This is the sole concurrency
+   * guard for `#executeRefund`'s two-transaction split (validate+reserve
+   * / call the provider / finalize) — no row lock needs to be held across
+   * the provider network call, because the reservation already committed
+   * to `refunded_amount` before that call ever starts, so a concurrent
+   * second refund request's own reservation attempt correctly sees the
+   * reduced balance. `releaseRefundAmount` undoes a reservation that
+   * never actually succeeded with the provider (network failure, or a
+   * definitive FAILED/CANCELLED result).
+   */
+  async reserveRefundAmount(id, amount, connection = this.#pool) {
+    const [result] = await connection.query(
+      `UPDATE payments
+       SET refunded_amount = refunded_amount + ?
+       WHERE id = ? AND (captured_amount - refunded_amount) >= ?`,
+      [amount, id, amount],
+    );
+    return result.affectedRows > 0;
+  }
+
+  /** Undoes a reservation made by `reserveRefundAmount` — see its own doc comment. */
+  async releaseRefundAmount(id, amount, connection = this.#pool) {
+    await connection.query(
+      'UPDATE payments SET refunded_amount = refunded_amount - ? WHERE id = ?',
+      [amount, id],
+    );
   }
 
   async updateStatus(

@@ -1075,7 +1075,19 @@ export class ListingService {
   // repository's own comment) so there's only ever one write method per
   // content type, no separate create/update/delete per row.
 
-  async replaceHighlights(principal, listingId, highlights) {
+  // 2026 Partner Workspace redesign (Sprint 3): `languageCode` is now an
+  // explicit, optional caller-supplied locale ('en'/'hy'/'ru') — resolved
+  // through the exact same `resolveLocaleIds(requestedCode)` every other
+  // locale-aware module already uses (search, listing metadata), which
+  // falls back to the platform default when omitted/unmatched, so every
+  // existing caller that never passed one keeps writing the default
+  // locale exactly as before. The repository's own DELETE is already
+  // scoped by `listing_id AND language_id` (verified end-to-end before
+  // this change), so passing a real per-request locale here only makes
+  // MORE locales reachable — it does not change the destructive-only-
+  // within-that-locale guarantee the repository already provided.
+
+  async replaceHighlights(principal, listingId, highlights, languageCode) {
     const listing = await this.#listingRepository.findById(listingId);
     if (!listing) throw new NotFoundError('Listing not found.');
     await this.#assertOwnerOrPermission(
@@ -1083,14 +1095,16 @@ export class ListingService {
       listing.partnerId,
       'listing.update',
     );
+    const { localeId } = await resolveLocaleIds(languageCode);
     return this.#listingRepository.replaceHighlights(
       listingId,
       highlights,
       principal.userId,
+      localeId,
     );
   }
 
-  async replaceItinerarySteps(principal, listingId, steps) {
+  async replaceItinerarySteps(principal, listingId, steps, languageCode) {
     const listing = await this.#listingRepository.findById(listingId);
     if (!listing) throw new NotFoundError('Listing not found.');
     await this.#assertOwnerOrPermission(
@@ -1098,14 +1112,16 @@ export class ListingService {
       listing.partnerId,
       'listing.update',
     );
+    const { localeId } = await resolveLocaleIds(languageCode);
     return this.#listingRepository.replaceItinerarySteps(
       listingId,
       steps,
       principal.userId,
+      localeId,
     );
   }
 
-  async replaceIncludedItems(principal, listingId, items) {
+  async replaceIncludedItems(principal, listingId, items, languageCode) {
     const listing = await this.#listingRepository.findById(listingId);
     if (!listing) throw new NotFoundError('Listing not found.');
     await this.#assertOwnerOrPermission(
@@ -1113,14 +1129,16 @@ export class ListingService {
       listing.partnerId,
       'listing.update',
     );
+    const { localeId } = await resolveLocaleIds(languageCode);
     return this.#listingRepository.replaceIncludedItems(
       listingId,
       items,
       principal.userId,
+      localeId,
     );
   }
 
-  async replaceFaqs(principal, listingId, faqs) {
+  async replaceFaqs(principal, listingId, faqs, languageCode) {
     const listing = await this.#listingRepository.findById(listingId);
     if (!listing) throw new NotFoundError('Listing not found.');
     await this.#assertOwnerOrPermission(
@@ -1128,10 +1146,12 @@ export class ListingService {
       listing.partnerId,
       'listing.update',
     );
+    const { localeId } = await resolveLocaleIds(languageCode);
     return this.#listingRepository.replaceFaqs(
       listingId,
       faqs,
       principal.userId,
+      localeId,
     );
   }
 

@@ -71,7 +71,20 @@ export default function Gallery({
                 src={item.url}
                 alt={item.alt}
                 className={styles.thumbnailMedia}
-                loading="lazy"
+                // 2026 SEO/performance audit: real Lighthouse trace
+                // evidence (largest-contentful-paint-element +
+                // lcp-lazy-loaded audits, against the real running page —
+                // ListingHero is this component's only current consumer)
+                // identified the FIRST/cover thumbnail as the actual LCP
+                // element on Listing Detail, with Load Delay alone
+                // accounting for 67% of a 4.9s LCP. It's this gallery's
+                // cover tile — by definition the most prominent
+                // above-the-fold image wherever `Gallery` is used — so
+                // unconditional `loading="lazy"` was never correct for
+                // it; every other thumbnail still defers.
+                loading={index === 0 ? 'eager' : 'lazy'}
+                // eslint-disable-next-line react/no-unknown-property -- this React version's JSX runtime doesn't yet know the camelCase `fetchPriority` DOM-property mapping; the lowercase spelling passes straight through as the real HTML attribute browsers read.
+                fetchpriority={index === 0 ? 'high' : undefined}
               />
             )}
             {index === THUMBNAIL_LIMIT - 1 && remainingCount > 0 && (

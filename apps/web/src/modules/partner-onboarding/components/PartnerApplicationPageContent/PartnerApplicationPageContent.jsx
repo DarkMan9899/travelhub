@@ -21,6 +21,16 @@
  * `REQUIRED_FIELDS_TO_SUBMIT` comment for that deliberate future
  * extension point; this page only collects what the backend already
  * requires to submit for review (displayName, legalName, email, phone).
+ *
+ * 2026 public-frontend audit: visual pass only — every hook, mutation,
+ * conditional, and handler is unchanged; same three-view state machine,
+ * same form fields, same validation. Replaces the bare `PageHeader` with
+ * `EditorialPageHero` (the same shared shell `Become a Partner` — the
+ * page this one is the natural continuation of — already uses), so the
+ * conversion journey reads as one continuous experience rather than a
+ * visual hand-off into a plainer page. The form itself gains calm
+ * visual grouping (business identity / contact / about) via spacing
+ * only — no new section headings/copy invented, no fields added.
  */
 
 import PropTypes from 'prop-types';
@@ -28,6 +38,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { Handshake } from 'lucide-react';
 import { Input, Textarea } from '@desavii/ui/components/form-controls';
 import { Button, Card, Badge } from '@desavii/ui/components/primitives';
 import {
@@ -35,8 +46,8 @@ import {
   Skeleton,
   ErrorState,
 } from '@desavii/ui/components/feedback-overlays';
-import { Section, Stack, Inline } from '@desavii/ui/components/layout';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import { Container, Stack, Inline } from '@desavii/ui/components/layout';
+import EditorialPageHero from '../../../../components/EditorialPageHero/EditorialPageHero.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import useNoIndex from '../../../../seo/useNoIndex.js';
 import { submitPartnerApplication } from '../../../../api/partners.js';
@@ -47,6 +58,7 @@ import { useApplicationQuery } from '../../queries/useApplicationQuery.js';
 import { useCreateApplicationMutation } from '../../mutations/useCreateApplicationMutation.js';
 import { useUpdateApplicationMutation } from '../../mutations/useUpdateApplicationMutation.js';
 import { useSubmitApplicationMutation } from '../../mutations/useSubmitApplicationMutation.js';
+import styles from './PartnerApplicationPageContent.module.scss';
 
 const IN_PROGRESS_STATUSES = ['DRAFT', 'PENDING', 'NEEDS_CHANGES'];
 const EDITABLE_STATUSES = ['DRAFT', 'NEEDS_CHANGES'];
@@ -87,109 +99,115 @@ function ApplicationForm({
   return (
     <form onSubmit={handleSubmit(onSaveDraft)} noValidate>
       <Stack gap="4">
-        <Controller
-          name="displayName"
-          control={control}
-          rules={{
-            required: t('partnerOnboarding.fields.displayNameRequired'),
-          }}
-          render={({ field }) => (
-            <Input
-              label={t('partnerOnboarding.fields.displayNameLabel')}
-              required
-              disabled={readOnly}
-              error={errors.displayName?.message}
-              // eslint-disable-next-line react/jsx-props-no-spreading
-              {...field}
-            />
-          )}
-        />
-
-        <Controller
-          name="legalName"
-          control={control}
-          render={({ field }) => (
-            <Input
-              label={t('partnerOnboarding.fields.legalNameLabel')}
-              disabled={readOnly}
-              helperText={t('partnerOnboarding.fields.legalNameHelper')}
-              // eslint-disable-next-line react/jsx-props-no-spreading
-              {...field}
-            />
-          )}
-        />
-
-        <Inline gap="4" wrap>
+        <div className={styles.fieldGroup}>
           <Controller
-            name="email"
+            name="displayName"
+            control={control}
+            rules={{
+              required: t('partnerOnboarding.fields.displayNameRequired'),
+            }}
+            render={({ field }) => (
+              <Input
+                label={t('partnerOnboarding.fields.displayNameLabel')}
+                required
+                disabled={readOnly}
+                error={errors.displayName?.message}
+                // eslint-disable-next-line react/jsx-props-no-spreading
+                {...field}
+              />
+            )}
+          />
+
+          <Controller
+            name="legalName"
+            control={control}
+            render={({ field }) => (
+              <Input
+                label={t('partnerOnboarding.fields.legalNameLabel')}
+                disabled={readOnly}
+                helperText={t('partnerOnboarding.fields.legalNameHelper')}
+                // eslint-disable-next-line react/jsx-props-no-spreading
+                {...field}
+              />
+            )}
+          />
+        </div>
+
+        <div className={styles.fieldGroup}>
+          <Inline gap="4" wrap>
+            <Controller
+              name="email"
+              control={control}
+              rules={{
+                pattern: {
+                  value: EMAIL_PATTERN,
+                  message: t('partnerOnboarding.fields.emailInvalid'),
+                },
+              }}
+              render={({ field }) => (
+                <Input
+                  type="email"
+                  label={t('partnerOnboarding.fields.emailLabel')}
+                  disabled={readOnly}
+                  error={errors.email?.message}
+                  // eslint-disable-next-line react/jsx-props-no-spreading
+                  {...field}
+                />
+              )}
+            />
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  type="tel"
+                  label={t('partnerOnboarding.fields.phoneLabel')}
+                  disabled={readOnly}
+                  // eslint-disable-next-line react/jsx-props-no-spreading
+                  {...field}
+                />
+              )}
+            />
+          </Inline>
+
+          <Controller
+            name="website"
             control={control}
             rules={{
               pattern: {
-                value: EMAIL_PATTERN,
-                message: t('partnerOnboarding.fields.emailInvalid'),
+                value: URL_PATTERN,
+                message: t('partnerOnboarding.fields.websiteInvalid'),
               },
             }}
             render={({ field }) => (
               <Input
-                type="email"
-                label={t('partnerOnboarding.fields.emailLabel')}
+                type="url"
+                label={t('partnerOnboarding.fields.websiteLabel')}
                 disabled={readOnly}
-                error={errors.email?.message}
+                placeholder="https://"
+                error={errors.website?.message}
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...field}
               />
             )}
           />
+        </div>
+
+        <div className={styles.fieldGroup}>
           <Controller
-            name="phone"
+            name="description"
             control={control}
             render={({ field }) => (
-              <Input
-                type="tel"
-                label={t('partnerOnboarding.fields.phoneLabel')}
+              <Textarea
+                label={t('partnerOnboarding.fields.descriptionLabel')}
                 disabled={readOnly}
+                rows={5}
                 // eslint-disable-next-line react/jsx-props-no-spreading
                 {...field}
               />
             )}
           />
-        </Inline>
-
-        <Controller
-          name="website"
-          control={control}
-          rules={{
-            pattern: {
-              value: URL_PATTERN,
-              message: t('partnerOnboarding.fields.websiteInvalid'),
-            },
-          }}
-          render={({ field }) => (
-            <Input
-              type="url"
-              label={t('partnerOnboarding.fields.websiteLabel')}
-              disabled={readOnly}
-              placeholder="https://"
-              error={errors.website?.message}
-              // eslint-disable-next-line react/jsx-props-no-spreading
-              {...field}
-            />
-          )}
-        />
-
-        <Controller
-          name="description"
-          control={control}
-          render={({ field }) => (
-            <Textarea
-              label={t('partnerOnboarding.fields.descriptionLabel')}
-              disabled={readOnly}
-              rows={5}
-              // eslint-disable-next-line react/jsx-props-no-spreading
-              {...field}
-            />
-          )}
-        />
+        </div>
 
         {!readOnly && (
           <Inline gap="3" wrap>
@@ -208,7 +226,9 @@ function ApplicationForm({
           </Inline>
         )}
         {!readOnly && !canSubmit && (
-          <p>{t('partnerOnboarding.status.submitRequiredFieldsHint')}</p>
+          <p className={styles.hint}>
+            {t('partnerOnboarding.status.submitRequiredFieldsHint')}
+          </p>
         )}
       </Stack>
     </form>
@@ -280,21 +300,21 @@ export default function PartnerApplicationPageContent() {
 
   if (applicationsQuery.isPending) {
     return (
-      <Section spacing="default">
+      <Container size="wide" className={styles.page}>
         <Skeleton variant="text" width="60%" />
-      </Section>
+      </Container>
     );
   }
 
   if (applicationsQuery.isError) {
     return (
-      <Section spacing="default">
+      <Container size="wide" className={styles.page}>
         <ErrorState
           title={t('partnerOnboarding.error.title')}
           retryLabel={t('partnerOnboarding.error.retry')}
           onRetry={applicationsQuery.refetch}
         />
-      </Section>
+      </Container>
     );
   }
 
@@ -367,81 +387,82 @@ export default function PartnerApplicationPageContent() {
     const readOnly = !EDITABLE_STATUSES.includes(status);
 
     return (
-      <Section spacing="default">
-        <PageHeader
+      <Container size="wide" className={styles.page}>
+        <EditorialPageHero
+          breadcrumbItems={breadcrumbs}
+          heroSeed="partner-apply"
+          icon={Handshake}
           title={t('partnerOnboarding.heading')}
-          breadcrumbs={breadcrumbs}
+          lead={t('partnerOnboarding.lead')}
         />
-        <Stack gap="6">
-          <Card padding="lg">
-            <Stack gap="4">
-              <Inline justify="space-between" align="center" wrap>
-                <strong>{inProgressSummary.display_name}</strong>
-                <Badge
-                  variant={STATUS_BADGE_VARIANT[status] ?? 'neutral'}
-                  label={t(`partnerOnboarding.status.${status}`)}
-                />
-              </Inline>
+        <Card padding="lg" elevated className={styles.formCard}>
+          <Stack gap="4">
+            <Inline justify="space-between" align="center" wrap>
+              <strong className={styles.applicationName}>
+                {inProgressSummary.display_name}
+              </strong>
+              <Badge
+                variant={STATUS_BADGE_VARIANT[status] ?? 'neutral'}
+                label={t(`partnerOnboarding.status.${status}`)}
+              />
+            </Inline>
 
-              {status === 'PENDING' && (
-                <Alert variant="info">
-                  {t('partnerOnboarding.status.pendingNotice')}
-                </Alert>
-              )}
-              {status === 'NEEDS_CHANGES' && application?.review_note && (
-                <Alert variant="warning">
-                  <strong>
-                    {t('partnerOnboarding.status.reviewNoteLabel')}
-                  </strong>
-                  <p>{application.review_note}</p>
-                </Alert>
-              )}
+            {status === 'PENDING' && (
+              <Alert variant="info">
+                {t('partnerOnboarding.status.pendingNotice')}
+              </Alert>
+            )}
+            {status === 'NEEDS_CHANGES' && application?.review_note && (
+              <Alert variant="warning">
+                <strong>{t('partnerOnboarding.status.reviewNoteLabel')}</strong>
+                <p>{application.review_note}</p>
+              </Alert>
+            )}
 
-              {applicationDetailQuery.isPending ? (
-                <Skeleton variant="text" width="100%" />
-              ) : (
-                <ApplicationForm
-                  defaultValues={toFormValues(application, locale)}
-                  readOnly={readOnly}
-                  onSaveDraft={(values) => handleSaveDraft(values)}
-                  onSubmitForReview={(values) => handleSubmitForReview(values)}
-                  isSaving={updateMutation.isPending}
-                  isSubmitting={
-                    updateMutation.isPending || submitMutation.isPending
-                  }
-                />
-              )}
-            </Stack>
-          </Card>
-        </Stack>
-      </Section>
+            {applicationDetailQuery.isPending ? (
+              <Skeleton variant="text" width="100%" />
+            ) : (
+              <ApplicationForm
+                defaultValues={toFormValues(application, locale)}
+                readOnly={readOnly}
+                onSaveDraft={(values) => handleSaveDraft(values)}
+                onSubmitForReview={(values) => handleSubmitForReview(values)}
+                isSaving={updateMutation.isPending}
+                isSubmitting={
+                  updateMutation.isPending || submitMutation.isPending
+                }
+              />
+            )}
+          </Stack>
+        </Card>
+      </Container>
     );
   }
 
   return (
-    <Section spacing="default">
-      <PageHeader
+    <Container size="wide" className={styles.page}>
+      <EditorialPageHero
+        breadcrumbItems={breadcrumbs}
+        heroSeed="partner-apply"
+        icon={Handshake}
         title={t('partnerOnboarding.heading')}
-        breadcrumbs={breadcrumbs}
+        lead={t('partnerOnboarding.lead')}
       />
-      <Stack gap="6">
-        <p>{t('partnerOnboarding.lead')}</p>
-        {applications.length > 0 && (
-          <Alert variant="info">
-            {t('partnerOnboarding.status.rejectedNotice')}
-          </Alert>
-        )}
-        <Card padding="lg">
-          <ApplicationForm
-            defaultValues={toFormValues(null)}
-            readOnly={false}
-            onSaveDraft={(values) => handleCreate(values)}
-            onSubmitForReview={(values) => handleCreateAndSubmit(values)}
-            isSaving={createMutation.isPending}
-            isSubmitting={createMutation.isPending}
-          />
-        </Card>
-      </Stack>
-    </Section>
+      {applications.length > 0 && (
+        <Alert variant="info">
+          {t('partnerOnboarding.status.rejectedNotice')}
+        </Alert>
+      )}
+      <Card padding="lg" elevated className={styles.formCard}>
+        <ApplicationForm
+          defaultValues={toFormValues(null)}
+          readOnly={false}
+          onSaveDraft={(values) => handleCreate(values)}
+          onSubmitForReview={(values) => handleCreateAndSubmit(values)}
+          isSaving={createMutation.isPending}
+          isSubmitting={createMutation.isPending}
+        />
+      </Card>
+    </Container>
   );
 }

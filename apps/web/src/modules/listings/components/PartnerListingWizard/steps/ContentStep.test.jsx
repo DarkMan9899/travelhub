@@ -1,6 +1,9 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
+import ToastProvider from '../../../../../providers/ToastProvider.jsx';
 import ContentStep from './ContentStep.jsx';
 import { useReplaceListingHighlightsMutation } from '../../../mutations/useReplaceListingHighlightsMutation.js';
 import { useReplaceListingItineraryMutation } from '../../../mutations/useReplaceListingItineraryMutation.js';
@@ -28,16 +31,93 @@ const REMOVE_ROW = 'Հեռացնել';
 const ADD_FAQ = 'Ավելացնել հարց';
 const QUESTION_LABEL = 'Հարց';
 const CONTINUE = 'Շարունակել';
-const REQUIRED_ERROR = 'Այս դաշտը պարտադիր է:';
+const REQUIRED_ERROR = 'Այս դաշտը պարտադիր է։';
 
-const INITIAL_VALUES = {
-  highlights: [{ icon_code: 'wifi', text: 'Free Wi-Fi throughout' }],
-  itinerarySteps: [
-    { title: 'Pickup', description: 'Hotel pickup', duration_minutes: 30 },
-  ],
-  includedItems: [{ item_text: 'Breakfast', is_included: true }],
-  faqs: [{ question: 'Is parking free?', answer: 'Yes, on-site.' }],
+// One locale's worth of real, persisted content per collection — same
+// shape `GET /listings/:id` returns (flat arrays across all locales,
+// each row tagged `language_code`), which is what `PartnerListingWizard`
+// now passes straight through unfiltered.
+const EN_HIGHLIGHTS = [
+  { language_code: 'en', icon_code: 'wifi', text: 'Free Wi-Fi throughout' },
+];
+const EN_STEPS = [
+  {
+    language_code: 'en',
+    title: 'Pickup',
+    description: 'Hotel pickup',
+    duration_minutes: 30,
+  },
+];
+const EN_INCLUDED = [
+  { language_code: 'en', item_text: 'Breakfast', is_included: true },
+];
+const EN_FAQS = [
+  {
+    language_code: 'en',
+    question: 'Is parking free?',
+    answer: 'Yes, on-site.',
+  },
+];
+
+// A real Wizard lifts `authoringLocale` — this harness mirrors that
+// contract instead of hardcoding a fixed prop.
+function Harness({
+  startLocale = 'en',
+  initialHighlights = [],
+  initialItinerarySteps = [],
+  initialIncludedItems = [],
+  initialFaqs = [],
+  onNext = vi.fn(),
+}) {
+  const [authoringLocale, setAuthoringLocale] = useState(startLocale);
+  return (
+    <ContentStep
+      listingId={7}
+      initialHighlights={initialHighlights}
+      initialItinerarySteps={initialItinerarySteps}
+      initialIncludedItems={initialIncludedItems}
+      initialFaqs={initialFaqs}
+      onNext={onNext}
+      authoringLocale={authoringLocale}
+      onAuthoringLocaleChange={setAuthoringLocale}
+    />
+  );
+}
+
+Harness.propTypes = {
+  startLocale: PropTypes.string,
+  // eslint-disable-next-line react/forbid-prop-types -- test harness passthrough
+  initialHighlights: PropTypes.array,
+  // eslint-disable-next-line react/forbid-prop-types -- test harness passthrough
+  initialItinerarySteps: PropTypes.array,
+  // eslint-disable-next-line react/forbid-prop-types -- test harness passthrough
+  initialIncludedItems: PropTypes.array,
+  // eslint-disable-next-line react/forbid-prop-types -- test harness passthrough
+  initialFaqs: PropTypes.array,
+  onNext: PropTypes.func,
 };
+
+function renderStep({
+  startLocale = 'en',
+  initialHighlights = [],
+  initialItinerarySteps = [],
+  initialIncludedItems = [],
+  initialFaqs = [],
+  onNext = vi.fn(),
+} = {}) {
+  return render(
+    <ToastProvider>
+      <Harness
+        startLocale={startLocale}
+        initialHighlights={initialHighlights}
+        initialItinerarySteps={initialItinerarySteps}
+        initialIncludedItems={initialIncludedItems}
+        initialFaqs={initialFaqs}
+        onNext={onNext}
+      />
+    </ToastProvider>,
+  );
+}
 
 describe('ContentStep (PartnerListingWizard)', () => {
   let highlightsMutateAsync;
@@ -73,14 +153,13 @@ describe('ContentStep (PartnerListingWizard)', () => {
     });
   });
 
-  test('renders existing highlights/itinerary/included items/faqs from initialValues', () => {
-    render(
-      <ContentStep
-        listingId={7}
-        initialValues={INITIAL_VALUES}
-        onNext={vi.fn()}
-      />,
-    );
+  test('renders existing highlights/itinerary/included items/faqs for the active locale', () => {
+    renderStep({
+      initialHighlights: EN_HIGHLIGHTS,
+      initialItinerarySteps: EN_STEPS,
+      initialIncludedItems: EN_INCLUDED,
+      initialFaqs: EN_FAQS,
+    });
     expect(
       screen.getByDisplayValue('Free Wi-Fi throughout'),
     ).toBeInTheDocument();
@@ -91,52 +170,50 @@ describe('ContentStep (PartnerListingWizard)', () => {
 
   test('adding a highlight row then removing it changes the row count without erroring', async () => {
     const user = userEvent.setup();
-    render(
-      <ContentStep
-        listingId={7}
-        initialValues={INITIAL_VALUES}
-        onNext={vi.fn()}
-      />,
-    );
+    renderStep({ initialHighlights: EN_HIGHLIGHTS });
     await user.click(screen.getByRole('button', { name: ADD_HIGHLIGHT }));
     const removeButtons = screen.getAllByRole('button', { name: REMOVE_ROW });
-    expect(removeButtons.length).toBeGreaterThan(3);
+    expect(removeButtons.length).toBeGreaterThan(1);
     await user.click(removeButtons[removeButtons.length - 1]);
     expect(
       screen.getAllByRole('button', { name: REMOVE_ROW }).length,
     ).toBeLessThan(removeButtons.length);
   });
 
-  test('Continue sends the full replace payload for all four collections and calls onNext', async () => {
+  test('Continue sends the full replace payload (tagged with the active languageCode) for all four collections and calls onNext', async () => {
     const user = userEvent.setup();
     const onNext = vi.fn();
-    render(
-      <ContentStep
-        listingId={7}
-        initialValues={INITIAL_VALUES}
-        onNext={onNext}
-      />,
-    );
+    renderStep({
+      initialHighlights: EN_HIGHLIGHTS,
+      initialItinerarySteps: EN_STEPS,
+      initialIncludedItems: EN_INCLUDED,
+      initialFaqs: EN_FAQS,
+      onNext,
+    });
 
     await user.click(screen.getByRole('button', { name: CONTINUE }));
 
     expect(highlightsMutateAsync).toHaveBeenCalledWith({
       id: 7,
       highlights: [{ iconCode: 'wifi', text: 'Free Wi-Fi throughout' }],
+      languageCode: 'en',
     });
     expect(itineraryMutateAsync).toHaveBeenCalledWith({
       id: 7,
       steps: [
         { title: 'Pickup', description: 'Hotel pickup', durationMinutes: 30 },
       ],
+      languageCode: 'en',
     });
     expect(includedItemsMutateAsync).toHaveBeenCalledWith({
       id: 7,
       items: [{ itemText: 'Breakfast', isIncluded: true }],
+      languageCode: 'en',
     });
     expect(faqsMutateAsync).toHaveBeenCalledWith({
       id: 7,
       faqs: [{ question: 'Is parking free?', answer: 'Yes, on-site.' }],
+      languageCode: 'en',
     });
     expect(onNext).toHaveBeenCalled();
   });
@@ -144,13 +221,7 @@ describe('ContentStep (PartnerListingWizard)', () => {
   test('a blank added row is silently dropped from the payload on Continue', async () => {
     const user = userEvent.setup();
     const onNext = vi.fn();
-    render(
-      <ContentStep
-        listingId={7}
-        initialValues={INITIAL_VALUES}
-        onNext={onNext}
-      />,
-    );
+    renderStep({ initialHighlights: EN_HIGHLIGHTS, onNext });
 
     await user.click(screen.getByRole('button', { name: ADD_HIGHLIGHT }));
     await user.click(screen.getByRole('button', { name: CONTINUE }));
@@ -158,6 +229,7 @@ describe('ContentStep (PartnerListingWizard)', () => {
     expect(highlightsMutateAsync).toHaveBeenCalledWith({
       id: 7,
       highlights: [{ iconCode: 'wifi', text: 'Free Wi-Fi throughout' }],
+      languageCode: 'en',
     });
     expect(onNext).toHaveBeenCalled();
   });
@@ -165,13 +237,7 @@ describe('ContentStep (PartnerListingWizard)', () => {
   test('a FAQ row with only a question filled in blocks Continue with an inline error', async () => {
     const user = userEvent.setup();
     const onNext = vi.fn();
-    render(
-      <ContentStep
-        listingId={7}
-        initialValues={INITIAL_VALUES}
-        onNext={onNext}
-      />,
-    );
+    renderStep({ initialFaqs: EN_FAQS, onNext });
 
     await user.click(screen.getByRole('button', { name: ADD_FAQ }));
     const questionInputs = screen.getAllByLabelText(QUESTION_LABEL);
@@ -186,10 +252,82 @@ describe('ContentStep (PartnerListingWizard)', () => {
     expect(faqsMutateAsync).not.toHaveBeenCalled();
   });
 
-  test('starts with empty collections when no initialValues are provided', () => {
-    render(<ContentStep listingId={9} onNext={vi.fn()} />);
+  test('starts with empty collections when nothing is persisted for any locale', () => {
+    renderStep({});
     expect(
       screen.queryByDisplayValue('Free Wi-Fi throughout'),
     ).not.toBeInTheDocument();
+  });
+
+  // 2026 Partner Workspace redesign (Sprint 3) — the core new guarantees.
+  describe('multilingual authoring', () => {
+    test('each locale shows only its own persisted content, never another locale as a fallback', () => {
+      renderStep({ initialHighlights: EN_HIGHLIGHTS, startLocale: 'hy' });
+      // hy has no persisted highlight row — must be genuinely empty, not
+      // the English one standing in for it.
+      expect(
+        screen.queryByDisplayValue('Free Wi-Fi throughout'),
+      ).not.toBeInTheDocument();
+    });
+
+    test('switching authoring locale preserves an unsaved edit', async () => {
+      const user = userEvent.setup();
+      renderStep({});
+
+      await user.click(screen.getByRole('button', { name: ADD_HIGHLIGHT }));
+      const highlightTextInputs = screen.getAllByLabelText(
+        'Առանձնահատկության տեքստ',
+      );
+      await user.type(
+        highlightTextInputs[highlightTextInputs.length - 1],
+        'Rooftop pool',
+      );
+
+      await user.click(screen.getByRole('tab', { name: /Հայերեն/ }));
+      expect(
+        screen.queryByDisplayValue('Rooftop pool'),
+      ).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('tab', { name: /English/ }));
+      expect(screen.getByDisplayValue('Rooftop pool')).toBeInTheDocument();
+    });
+
+    test('the standalone "Save translation" button saves only the active locale without advancing', async () => {
+      const user = userEvent.setup();
+      const onNext = vi.fn();
+      renderStep({ startLocale: 'hy', onNext });
+
+      await user.click(screen.getByRole('button', { name: ADD_FAQ }));
+      const questionInputs = screen.getAllByLabelText(QUESTION_LABEL);
+      await user.type(questionInputs[0], 'Ավտոկայանատեղի կա՞');
+      const answerInputs = screen.getAllByLabelText('Պատասխան');
+      await user.type(answerInputs[0], 'Այո, անվճար։');
+
+      await user.click(
+        screen.getByRole('button', {
+          name: /Պահպանել Հայերեն թարգմանությունը/,
+        }),
+      );
+
+      expect(faqsMutateAsync).toHaveBeenCalledWith({
+        id: 7,
+        faqs: [{ question: 'Ավտոկայանատեղի կա՞', answer: 'Այո, անվճար։' }],
+        languageCode: 'hy',
+      });
+      expect(onNext).not.toHaveBeenCalled();
+    });
+
+    test('the locale tabs show a completion mark only for locales with any real content', () => {
+      renderStep({ initialFaqs: EN_FAQS });
+      expect(
+        screen.getByRole('tab', { name: /English ✓/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('tab', { name: /Հայերեն ·/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('tab', { name: /Русский ·/ }),
+      ).toBeInTheDocument();
+    });
   });
 });

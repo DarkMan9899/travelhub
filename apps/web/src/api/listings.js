@@ -144,31 +144,37 @@ export function getListingMetadata(categoryId, locale) {
  * no partial/per-item write variant.
  */
 
-/** `PATCH /listings/:id/highlights` — `{ highlights: [{ iconCode, text }] }`. */
-export function replaceListingHighlights(id, highlights) {
+/**
+ * `PATCH /listings/:id/highlights` — `{ languageCode?, highlights: [{
+ * iconCode, text }] }`. `languageCode` ('en'/'hy'/'ru') is optional —
+ * omitted, the backend falls back to the platform default locale, same
+ * as before Sprint 3 (2026 Partner Workspace redesign) made it a real,
+ * request-driven parameter.
+ */
+export function replaceListingHighlights(id, highlights, languageCode) {
   return apiClient
-    .patch(`/listings/${id}/highlights`, { highlights })
+    .patch(`/listings/${id}/highlights`, { languageCode, highlights })
     .then((response) => response.data);
 }
 
-/** `PATCH /listings/:id/itinerary` — `{ steps: [{ title, description?, durationMinutes? }] }`. */
-export function replaceListingItinerarySteps(id, steps) {
+/** `PATCH /listings/:id/itinerary` — `{ languageCode?, steps: [{ title, description?, durationMinutes? }] }`. */
+export function replaceListingItinerarySteps(id, steps, languageCode) {
   return apiClient
-    .patch(`/listings/${id}/itinerary`, { steps })
+    .patch(`/listings/${id}/itinerary`, { languageCode, steps })
     .then((response) => response.data);
 }
 
-/** `PATCH /listings/:id/included-items` — `{ items: [{ itemText, isIncluded }] }`. */
-export function replaceListingIncludedItems(id, items) {
+/** `PATCH /listings/:id/included-items` — `{ languageCode?, items: [{ itemText, isIncluded }] }`. */
+export function replaceListingIncludedItems(id, items, languageCode) {
   return apiClient
-    .patch(`/listings/${id}/included-items`, { items })
+    .patch(`/listings/${id}/included-items`, { languageCode, items })
     .then((response) => response.data);
 }
 
-/** `PATCH /listings/:id/faqs` — `{ faqs: [{ question, answer }] }`. */
-export function replaceListingFaqs(id, faqs) {
+/** `PATCH /listings/:id/faqs` — `{ languageCode?, faqs: [{ question, answer }] }`. */
+export function replaceListingFaqs(id, faqs, languageCode) {
   return apiClient
-    .patch(`/listings/${id}/faqs`, { faqs })
+    .patch(`/listings/${id}/faqs`, { languageCode, faqs })
     .then((response) => response.data);
 }
 

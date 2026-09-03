@@ -119,17 +119,9 @@ export default function PartnerListingWizard({ partnerships }) {
             listingId={wizard.listingId}
             categoryId={categoryId}
             partnerships={partnerships}
-            initialValues={
-              listing
-                ? {
-                    partnerId: listing.partner_id,
-                    listingType: listing.listing_type,
-                    title: listing.translations[0]?.title,
-                    summary: listing.translations[0]?.summary,
-                    description: listing.translations[0]?.description,
-                  }
-                : {}
-            }
+            initialTranslations={listing?.translations ?? []}
+            authoringLocale={wizard.authoringLocale}
+            onAuthoringLocaleChange={wizard.setAuthoringLocale}
             onCreated={wizard.completeCreationStep}
             onBack={wizard.goToPreviousStep}
             onNext={wizard.goToNextStep}
@@ -241,12 +233,17 @@ export default function PartnerListingWizard({ partnerships }) {
         {wizard.currentStepId === 'content' && listing && (
           <ContentStep
             listingId={wizard.listingId}
-            initialValues={{
-              highlights: listing.highlights ?? [],
-              itinerarySteps: listing.itinerary_steps ?? [],
-              includedItems: listing.included_items ?? [],
-              faqs: listing.faqs ?? [],
-            }}
+            // 2026 Partner Workspace redesign (Sprint 3): `listing.highlights`/
+            // etc. carry every language's rows in one flat array — `ContentStep`
+            // now owns splitting that by locale itself (`getLocalizedItemsExact`,
+            // no fallback — this is the authoring UI, not a public reader), so
+            // the full arrays pass straight through unfiltered.
+            initialHighlights={listing.highlights}
+            initialItinerarySteps={listing.itinerary_steps}
+            initialIncludedItems={listing.included_items}
+            initialFaqs={listing.faqs}
+            authoringLocale={wizard.authoringLocale}
+            onAuthoringLocaleChange={wizard.setAuthoringLocale}
             onBack={wizard.goToPreviousStep}
             onNext={wizard.goToNextStep}
           />

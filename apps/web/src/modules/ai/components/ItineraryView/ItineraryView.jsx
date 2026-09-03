@@ -4,23 +4,29 @@
  * `tripPlannerService.planTrip` computed deterministically. Every
  * listing shown here is a real, currently published marketplace
  * listing — never fabricated.
+ *
+ * 2026 Customer Account redesign: each day renders as a node on a
+ * connected vertical route (brief: "itinerary nodes... subtle animated
+ * path") instead of a flat stack of `<h3>`+cards — purely a different
+ * arrangement of the exact same `plan.daily_plan` data, no new fields.
  */
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@desavii/ui/components/primitives';
-import { Stack, Section } from '@desavii/ui/components/layout';
+import { Stack } from '@desavii/ui/components/layout';
 import { PriceTag } from '@desavii/ui/components/data-display';
 import { EmptyState } from '@desavii/ui/components/feedback-overlays';
+import styles from './ItineraryView.module.scss';
 
 export default function ItineraryView({ plan }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return (
     <Stack gap="6">
-      <Card as="div" padding="lg">
+      <Card as="div" padding="lg" elevated className={styles.summaryCard}>
         <Stack gap="2">
-          <h2>
+          <h2 className={styles.summaryHeading}>
             {t('ai.tripPlanner.result.heading', {
               days: plan.days,
               destination:
@@ -28,43 +34,62 @@ export default function ItineraryView({ plan }) {
                 t('ai.tripPlanner.result.unknownDestination'),
             })}
           </h2>
-          <p>{plan.narrative}</p>
+          <p className={styles.narrative}>{plan.narrative}</p>
           <PriceTag
             amount={plan.total_estimated_budget}
             currencyCode={plan.currency}
+            locale={i18n.language}
             suffix={t('ai.tripPlanner.result.estimatedTotalSuffix')}
+            size="lg"
           />
         </Stack>
       </Card>
 
-      {plan.daily_plan.map((day) => (
-        <Section key={day.day} spacing="none">
-          <h3>{t('ai.tripPlanner.result.dayHeading', { day: day.day })}</h3>
-          {day.listings.length === 0 ? (
-            <EmptyState
-              title={t('ai.tripPlanner.result.emptyDayTitle')}
-              description={t('ai.tripPlanner.result.emptyDayDescription')}
-            />
-          ) : (
-            <Stack gap="3">
-              {day.listings.map((listing) => (
-                <Card key={listing.id} as="div" padding="md">
-                  <Stack gap="1">
-                    <strong>{listing.title}</strong>
-                    <span>{listing.city_name}</span>
-                    <PriceTag
-                      amount={listing.price_per_night}
-                      currencyCode={listing.currency}
-                      suffix={t('ai.tripPlanner.result.perNightSuffix')}
-                      size="sm"
-                    />
-                  </Stack>
-                </Card>
-              ))}
-            </Stack>
-          )}
-        </Section>
-      ))}
+      <ol className={styles.route}>
+        {plan.daily_plan.map((day) => (
+          <li key={day.day} className={styles.node}>
+            <span className={styles.marker} aria-hidden="true">
+              {day.day}
+            </span>
+            <div className={styles.nodeContent}>
+              <h3 className={styles.dayHeading}>
+                {t('ai.tripPlanner.result.dayHeading', { day: day.day })}
+              </h3>
+              {day.listings.length === 0 ? (
+                <EmptyState
+                  title={t('ai.tripPlanner.result.emptyDayTitle')}
+                  description={t('ai.tripPlanner.result.emptyDayDescription')}
+                />
+              ) : (
+                <div className={styles.dayListings}>
+                  {day.listings.map((listing) => (
+                    <Card
+                      key={listing.id}
+                      as="div"
+                      padding="md"
+                      className={styles.listingCard}
+                    >
+                      <Stack gap="1">
+                        <strong>{listing.title}</strong>
+                        <span className={styles.listingCity}>
+                          {listing.city_name}
+                        </span>
+                        <PriceTag
+                          amount={listing.price_per_night}
+                          currencyCode={listing.currency}
+                          locale={i18n.language}
+                          suffix={t('ai.tripPlanner.result.perNightSuffix')}
+                          size="sm"
+                        />
+                      </Stack>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
     </Stack>
   );
 }

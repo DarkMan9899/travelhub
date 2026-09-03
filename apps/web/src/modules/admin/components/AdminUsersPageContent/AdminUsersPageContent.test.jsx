@@ -93,7 +93,10 @@ describe('AdminUsersPageContent (apps/web/src/modules/admin)', () => {
 
     expect(screen.getByText('anna@example.com')).toBeInTheDocument();
     expect(screen.getByText('Ակտիվ')).toBeInTheDocument();
-    expect(screen.getByText('CUSTOMER')).toBeInTheDocument();
+    // Translated via admin.notifications.announcement.roles (the same 5
+    // global role codes, reused rather than duplicated) — not the raw
+    // 'CUSTOMER' code.
+    expect(screen.getByText('Հաճախորդ')).toBeInTheDocument();
   });
 
   test('suspending a user asks for confirmation, then calls the mutation on confirm', async () => {

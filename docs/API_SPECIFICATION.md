@@ -1623,6 +1623,7 @@ record will no longer exist to audit against).
 | `HOLD_LIMIT_EXCEEDED` | 429 | Booking Holds |
 | `HOLD_EXPIRED` | 409 | Booking Holds |
 | `PAYMENT_FAILED` | 402 | Payments |
+| `PAYMENTS_DISABLED` | 503 | Payments |
 | `COUPON_INVALID` | 422 | Coupons |
 | `BOOKING_NOT_CANCELLABLE` | 409 | Bookings |
 | `INVALID_OR_EXPIRED_CODE` | 401 | Check-In |

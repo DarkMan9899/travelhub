@@ -142,7 +142,17 @@ export default function AdminUsersPageContent() {
     {
       key: 'roles',
       header: t('admin.users.table.roles'),
-      render: (user) => user.role_codes.join(', ') || '—',
+      // Reuses the announcement composer's role labels (same 5 global
+      // role codes) rather than adding a second, duplicate translation
+      // map for identical values.
+      render: (user) =>
+        user.role_codes
+          .map((code) =>
+            t(`admin.notifications.announcement.roles.${code}`, {
+              defaultValue: code,
+            }),
+          )
+          .join(', ') || '—',
     },
     {
       key: 'actions',

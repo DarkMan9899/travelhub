@@ -1,0 +1,96 @@
+// NextTripPanel — tokens only. Background/radius/elevation/hover-lift
+// come from the shared `Card` `elevated` primitive; this file owns the
+// photo-backdrop + scrim + overlaid content layout only.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.panel {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  min-height: 300px;
+
+  @include respond.respond(tablet) {
+    min-height: 420px;
+  }
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.image,
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  @include tokens.scrim-navy-bottom;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+  padding: tokens.$space-6;
+  color: tokens.$color-white;
+}
+
+.eyebrow {
+  font-family: tokens.$font-body;
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: tokens.$color-gold;
+}
+
+.title {
+  margin: 0;
+  font-family: tokens.$font-display;
+  font-weight: 700;
+  font-size: clamp(24px, 2vw + 18px, 38px);
+  line-height: 1.15;
+  color: tokens.$color-white;
+  text-shadow: 0 4px 24px rgba(6, 15, 28, 0.45);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-3;
+  flex-wrap: wrap;
+}
+
+.dates {
+  font-size: tokens.$font-size-body;
+  color: rgba(tokens.$color-white, 0.92);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: tokens.$space-4;
+  margin-top: tokens.$space-2;
+}
+
+.cta {
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+  color: tokens.$color-white;
+  white-space: nowrap;
+}

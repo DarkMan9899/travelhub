@@ -4,11 +4,23 @@
 @use 'mixins/respond' as respond;
 @use 'mixins/focus-ring' as focus;
 
+// Redesign phase (2026) — the filter bar as one elevated, rounded panel
+// rather than controls floating loose on the page background. `radius-xl`
+// (not the usual `radius-lg`) reads more like an intentional "premium
+// instrument panel" for the search experience specifically.
 .filters {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-4;
   margin-block-end: tokens.$space-8;
+  padding: tokens.$space-4;
+  border-radius: tokens.$radius-xl;
+  background-color: tokens.$color-white;
+  @include tokens.elevation-2;
+
+  @include respond.respond(tablet) {
+    padding: tokens.$space-6;
+  }
 }
 
 .controls {

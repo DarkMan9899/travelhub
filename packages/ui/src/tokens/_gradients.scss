@@ -1,0 +1,154 @@
+// Design tokens — Gradients (redesign phase, 2026 premium public-journey
+// visual system).
+//
+// Every gradient here is built exclusively from the existing brand
+// palette (colors.scss's navy/royal-blue/gold) — never a new arbitrary
+// hue — so "modern gradients" reads as this product's own identity
+// intensified, not a generic template gradient dropped on top of it.
+// Used sparingly per UI_UX_GUIDELINES.md's existing restraint rules
+// (Hero.module.scss's own glow treatment is the precedent this file
+// generalizes into reusable tokens, so it stops being hand-duplicated
+// per section).
+
+@use 'colors';
+
+// The deep navy scrim + two-tone glow already established in
+// Hero.module.scss, generalized so other large dark surfaces (immersive
+// gallery overlays, premium section dividers) can reuse the exact same
+// treatment instead of re-deriving their own rgba values.
+@mixin scrim-navy-glow {
+  background:
+    radial-gradient(
+      55% 65% at 88% 12%,
+      rgba(29, 95, 214, 0.2) 0%,
+      rgba(29, 95, 214, 0) 100%
+    ),
+    radial-gradient(
+      60% 50% at 85% 100%,
+      rgba(201, 162, 75, 0.24) 0%,
+      rgba(201, 162, 75, 0) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(11, 26, 43, 0.32) 0%,
+      rgba(11, 26, 43, 0.68) 100%
+    );
+}
+
+// A calmer, bottom-weighted version of the same scrim for image cards —
+// only strong enough to guarantee white text/badge legibility over an
+// unpredictable photo, never a full wash.
+@mixin scrim-navy-bottom {
+  background: linear-gradient(
+    180deg,
+    rgba(11, 26, 43, 0) 40%,
+    rgba(11, 26, 43, 0.75) 100%
+  );
+}
+
+// The brand gradient used for filled premium surfaces that need to read
+// as an intensified extension of the primary navy, not a flat fill —
+// primary CTA-adjacent hero panels, the active state of premium chips.
+// Never used for body text (contrast against it is only verified for
+// large text/icons — colors.$color-white).
+$gradient-navy-royal: linear-gradient(
+  135deg,
+  colors.$color-navy 0%,
+  #143a70 50%,
+  colors.$color-royal-blue 100%
+);
+
+// The gold "premium accent" token intensified into a subtle sheen —
+// verified badges, the trust-focused checkout summary's accent edge.
+// Kept a narrow-range gradient (not gold-to-white) so it still reads as
+// the same restrained luxury accent color, just with material depth.
+$gradient-gold-sheen: linear-gradient(
+  135deg,
+  #d9b968 0%,
+  colors.$color-gold 55%,
+  #a8853a 100%
+);
+
+// Procedural per-item "art" backdrops for destination/category surfaces
+// that have no real photograph to show (no photo asset pipeline exists
+// yet — see docs note in DestinationArt.jsx). Five distinct navy/royal-
+// blue/gold-derived mesh gradients so a grid of cards reads as varied
+// and intentional rather than one illustration recolored per item.
+$gradient-mesh-1:
+  radial-gradient(
+    120% 100% at 15% 0%,
+    rgba(29, 95, 214, 0.55) 0%,
+    rgba(29, 95, 214, 0) 55%
+  ),
+  radial-gradient(
+    90% 90% at 90% 100%,
+    rgba(201, 162, 75, 0.35) 0%,
+    rgba(201, 162, 75, 0) 60%
+  ),
+  linear-gradient(160deg, #0f2a4a 0%, #0b1a2b 100%);
+
+$gradient-mesh-2:
+  radial-gradient(
+    110% 90% at 90% 10%,
+    rgba(201, 162, 75, 0.4) 0%,
+    rgba(201, 162, 75, 0) 55%
+  ),
+  radial-gradient(
+    100% 100% at 5% 95%,
+    rgba(29, 95, 214, 0.45) 0%,
+    rgba(29, 95, 214, 0) 60%
+  ),
+  linear-gradient(160deg, #143a70 0%, #0b1a2b 100%);
+
+$gradient-mesh-3:
+  radial-gradient(
+    100% 100% at 50% 0%,
+    rgba(29, 95, 214, 0.4) 0%,
+    rgba(29, 95, 214, 0) 60%
+  ),
+  radial-gradient(
+    90% 80% at 100% 100%,
+    rgba(201, 162, 75, 0.3) 0%,
+    rgba(201, 162, 75, 0) 55%
+  ),
+  linear-gradient(180deg, #0b1a2b 0%, #0f2a4a 100%);
+
+$gradient-mesh-4:
+  radial-gradient(
+    90% 110% at 0% 100%,
+    rgba(201, 162, 75, 0.38) 0%,
+    rgba(201, 162, 75, 0) 55%
+  ),
+  radial-gradient(
+    100% 90% at 100% 0%,
+    rgba(29, 95, 214, 0.5) 0%,
+    rgba(29, 95, 214, 0) 60%
+  ),
+  linear-gradient(160deg, #0f2a4a 0%, #143a70 100%);
+
+$gradient-mesh-5:
+  radial-gradient(
+    110% 100% at 80% 90%,
+    rgba(29, 95, 214, 0.45) 0%,
+    rgba(29, 95, 214, 0) 55%
+  ),
+  radial-gradient(
+    80% 80% at 10% 10%,
+    rgba(201, 162, 75, 0.32) 0%,
+    rgba(201, 162, 75, 0) 55%
+  ),
+  linear-gradient(160deg, #0b1a2b 0%, #143a70 100%);
+
+$gradient-mesh-list:
+  $gradient-mesh-1, $gradient-mesh-2, $gradient-mesh-3, $gradient-mesh-4,
+  $gradient-mesh-5;
+
+// Deterministic pick from the list above, keyed by any integer (a
+// destination/category id, an index) — every render of the same item
+// gets the same mesh, without either component needing to know how many
+// variants exist or pass one down explicitly.
+@function mesh-for-index($index) {
+  $count: length($gradient-mesh-list);
+  $position: ($index % $count) + 1;
+  @return nth($gradient-mesh-list, $position);
+}

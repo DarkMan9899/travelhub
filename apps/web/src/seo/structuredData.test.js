@@ -133,9 +133,14 @@ describe('buildListingSchema', () => {
       title: 'Boutique Yerevan Hotel',
       description: 'A charming stay in the city center.',
       slug: 'boutique-yerevan-hotel',
+      // 2026 SEO audit: real `media_type` values are the uppercase
+      // `media_types` lookup codes (`'IMAGE'`/`'DOCUMENT'`) — this
+      // fixture previously used lowercase, which happened to match the
+      // production filter's own (also-wrong) lowercase comparison and
+      // masked the bug from this very test.
       media: [
-        { media_type: 'image', url: 'https://cdn.test/1.jpg' },
-        { media_type: 'document', url: 'https://cdn.test/brochure.pdf' },
+        { media_type: 'IMAGE', url: 'https://cdn.test/1.jpg' },
+        { media_type: 'DOCUMENT', url: 'https://cdn.test/brochure.pdf' },
       ],
       location: {
         city_name: 'Yerevan',

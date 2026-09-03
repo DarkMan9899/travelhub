@@ -18,7 +18,9 @@ function Harness() {
     <div>
       <button
         type="button"
-        onClick={() => mutate({ id: 7, highlights: HIGHLIGHTS })}
+        onClick={() =>
+          mutate({ id: 7, highlights: HIGHLIGHTS, languageCode: 'hy' })
+        }
       >
         save
       </button>
@@ -40,7 +42,7 @@ describe('useReplaceListingHighlightsMutation (apps/web/src/modules/listings)', 
     });
   });
 
-  test('calls replaceListingHighlights(id, highlights) and invalidates the detail cache', async () => {
+  test('calls replaceListingHighlights(id, highlights, languageCode) and invalidates the detail cache', async () => {
     replaceListingHighlights.mockResolvedValue({ data: { id: 7 } });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
     const user = userEvent.setup();
@@ -56,7 +58,7 @@ describe('useReplaceListingHighlightsMutation (apps/web/src/modules/listings)', 
     await waitFor(() =>
       expect(screen.getByTestId('status')).toHaveTextContent('success'),
     );
-    expect(replaceListingHighlights).toHaveBeenCalledWith(7, HIGHLIGHTS);
+    expect(replaceListingHighlights).toHaveBeenCalledWith(7, HIGHLIGHTS, 'hy');
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: listingKeys.detail(7),
     });

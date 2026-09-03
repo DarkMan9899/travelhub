@@ -61,10 +61,12 @@ export default function Sidebar({
   linkComponent: Link = 'a',
   ariaLabel = 'Dashboard navigation',
   className = undefined,
+  variant = 'default',
 }) {
   const classNames = [
     styles.sidebar,
     collapsed && styles['sidebar--collapsed'],
+    variant === 'premium' && styles['sidebar--premium'],
     className,
   ]
     .filter(Boolean)
@@ -157,4 +159,5 @@ Sidebar.propTypes = {
   linkComponent: PropTypes.elementType,
   ariaLabel: PropTypes.string,
   className: PropTypes.string,
+  variant: PropTypes.oneOf(['default', 'premium']),
 };

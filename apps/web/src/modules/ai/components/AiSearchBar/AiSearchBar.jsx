@@ -18,6 +18,7 @@ import { Input } from '@desavii/ui/components/form-controls';
 import { Button } from '@desavii/ui/components/primitives';
 import { Stack, Inline } from '@desavii/ui/components/layout';
 import { useParseSearchQueryMutation } from '../../mutations/useParseSearchQueryMutation.js';
+import styles from './AiSearchBar.module.scss';
 
 export default function AiSearchBar({ onApply }) {
   const { t } = useTranslation();
@@ -49,8 +50,16 @@ export default function AiSearchBar({ onApply }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} aria-label={t('search.aiSearch.ariaLabel')}>
+    <form
+      onSubmit={handleSubmit}
+      aria-label={t('search.aiSearch.ariaLabel')}
+      className={styles.panel}
+    >
       <Stack gap="2">
+        <p className={styles.eyebrow}>
+          <Sparkles size={14} aria-hidden="true" />
+          {t('search.aiSearch.ariaLabel')}
+        </p>
         <Inline gap="2" align="flex-end">
           <Input
             aria-label={t('search.aiSearch.inputLabel')}
@@ -66,7 +75,7 @@ export default function AiSearchBar({ onApply }) {
           </Button>
         </Inline>
         {mutation.isError && (
-          <span role="alert">
+          <span role="alert" className={styles.error}>
             {mutation.error?.message ?? t('search.aiSearch.error')}
           </span>
         )}

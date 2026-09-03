@@ -403,9 +403,18 @@ export default function AdminPartnerDetailContent() {
                       <Badge
                         variant="neutral"
                         size="sm"
-                        label={t(`bookings.status.${booking.status}`, {
-                          defaultValue: booking.status,
-                        })}
+                        // The `bookings.status.partner.*` override exists
+                        // because the default copy is written from the
+                        // customer's point of view ("Cancelled by you") —
+                        // just as wrong for an admin looking at someone
+                        // else's booking (see BookingStatusBadge.jsx).
+                        label={
+                          booking.status === 'CANCELLED_BY_CUSTOMER'
+                            ? t('bookings.status.partner.CANCELLED_BY_CUSTOMER')
+                            : t(`bookings.status.${booking.status}`, {
+                                defaultValue: booking.status,
+                              })
+                        }
                       />
                       <span>
                         {new Intl.NumberFormat(i18n.language).format(

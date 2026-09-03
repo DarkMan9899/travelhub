@@ -1,28 +1,109 @@
 // AuthLayout — tokens only, consumed from @desavii/ui.
 
 @use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
 @use 'mixins/focus-ring' as focus;
 
 .authLayout {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  background-color: tokens.$color-gray-100;
 }
 
-.content {
+// Desktop+ only — a single-column form-first layout is the right call
+// on a phone/tablet, not a squeezed split.
+.brandPanel {
+  display: none;
+  position: relative;
+  overflow: hidden;
+
+  @include respond.respond(laptop) {
+    display: flex;
+    flex: 0 0 42%;
+  }
+}
+
+.brandArt {
+  position: absolute;
+  inset: 0;
+}
+
+.brandPanel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  @include tokens.scrim-navy-glow;
+}
+
+.brandContent {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: tokens.$space-8;
-  padding-block: tokens.$space-16;
+  justify-content: space-between;
+  width: 100%;
+  padding: tokens.$space-8;
+  color: tokens.$color-white;
 }
 
 .logo {
   font-family: tokens.$font-heading;
   font-weight: 700;
   font-size: 1.25rem;
+  color: tokens.$color-white;
+  text-decoration: none;
+  align-self: flex-start;
+  @include focus.focus-ring;
+}
+
+.brandMessage {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
+  max-width: 42ch;
+}
+
+.eyebrow {
+  font-size: tokens.$font-size-micro;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: tokens.$color-gold;
+}
+
+.tagline {
+  margin: 0;
+  font-family: tokens.$font-display;
+  font-size: tokens.$font-size-h2;
+  line-height: tokens.$line-height-h2;
+}
+
+.formPanel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: tokens.$color-gray-100;
+  padding-block: tokens.$space-12;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-6;
+  width: 100%;
+}
+
+.mobileLogo {
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  font-size: 1.25rem;
   color: tokens.$color-navy;
   text-decoration: none;
   @include focus.focus-ring;
+
+  @include respond.respond(laptop) {
+    display: none;
+  }
 }

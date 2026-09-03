@@ -51,3 +51,30 @@ export const refreshSchema = z.object({
   query: passthroughQuery,
   params: passthroughParams,
 });
+
+const SUPPORTED_LOCALES = ['en', 'hy', 'ru'];
+
+export const requestPasswordResetSchema = z.object({
+  body: z.object({
+    email: z.string().trim().email(),
+    // Which of the email template's EN/HY/RU renderings to send — same
+    // explicit-locale convention `partnerStaffService.js#inviteStaff`
+    // already established (there is no signed-in session here to resolve
+    // a preferred language from). Defaults to `en` rather than being
+    // required: a client that omits it still gets a real, working email.
+    locale: z.enum(SUPPORTED_LOCALES).default('en'),
+  }),
+  query: passthroughQuery,
+  params: passthroughParams,
+});
+
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().trim().min(1),
+    newPassword: z
+      .string()
+      .refine(isStrongPassword, { message: PASSWORD_POLICY_DESCRIPTION }),
+  }),
+  query: passthroughQuery,
+  params: passthroughParams,
+});

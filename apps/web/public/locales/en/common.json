@@ -33,7 +33,9 @@
     "save": "Save",
     "close": "Close",
     "dismiss": "Dismiss",
-    "dialog": "Dialog"
+    "dialog": "Dialog",
+    "quoteOpen": "“",
+    "quoteClose": "”"
   },
   "discovery": {
     "category": {
@@ -221,6 +223,7 @@
     },
     "status": {
       "DRAFT": "Draft",
+      "PENDING_REVIEW": "Pending review",
       "PUBLISHED": "Published",
       "UNPUBLISHED": "Unpublished",
       "ARCHIVED": "Archived"
@@ -255,7 +258,12 @@
       "loadMore": "Load more",
       "viewDetails": "View booking {{reference}}",
       "total": "Total",
-      "requestedOn": "Requested {{date}}"
+      "requestedOn": "Requested {{date}}",
+      "groups": {
+        "upcoming": "Upcoming",
+        "past": "Past trips",
+        "cancelled": "Cancelled"
+      }
     },
     "detail": {
       "heading": "Booking {{reference}}",
@@ -289,6 +297,9 @@
       "review": {
         "heading": "Your review",
         "alreadySubmitted": "You've already reviewed this booking. Thank you!"
+      },
+      "stepper": {
+        "requested": "Requested"
       }
     },
     "checkout": {
@@ -368,10 +379,20 @@
         "PROCESSING": "Processing (resolves shortly)"
       },
       "action": "Pay now",
+      "authorizedToast": "Payment authorized — you'll be charged once the host accepts your booking.",
       "successToast": "Payment successful.",
       "declinedToast": "The simulated payment was declined.",
       "processingToast": "Your payment is processing — this will resolve shortly.",
-      "errorToast": "We couldn't process this payment. Please try again."
+      "errorToast": "We couldn't process this payment. Please try again.",
+      "confirmAction": "Confirm payment",
+      "disabled": {
+        "title": "Online payments aren't available yet",
+        "description": "This marketplace hasn't switched on online payments. Please contact the host to arrange payment."
+      },
+      "configError": {
+        "title": "Payments are temporarily unavailable",
+        "description": "Something isn't configured correctly on our end. Please try again later or contact the host to arrange payment."
+      }
     },
     "list": {
       "heading": "My payments",
@@ -507,6 +528,10 @@
       "title": "Access restricted",
       "description": "You don't have permission to view this page.",
       "action": "Back to home"
+    },
+    "boundary": {
+      "title": "Something went wrong.",
+      "description": "Please reload the page."
     }
   },
   "auth": {
@@ -517,7 +542,29 @@
       "submit": "Log in",
       "noAccount": "Don't have an account?",
       "registerLink": "Sign up",
+      "forgotPasswordLink": "Forgot your password?",
       "genericError": "We couldn't log you in. Check your details and try again."
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "description": "Enter the email address on your account and we'll send you a link to reset your password.",
+      "email": "Email",
+      "submit": "Send reset link",
+      "success": "If an account exists for that email, we've sent a password reset link. Check your inbox.",
+      "backToLogin": "Back to log in",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "resetPassword": {
+      "title": "Choose a new password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "confirmRequired": "Confirm your new password.",
+      "confirmMismatch": "Passwords don't match.",
+      "submit": "Reset password",
+      "tokenExpired": "This password reset link has expired. Request a new one.",
+      "tokenInvalid": "This password reset link is invalid or has already been used.",
+      "requestNewLink": "Request a new reset link",
+      "genericError": "Something went wrong. Please try again."
     },
     "register": {
       "title": "Create your account",
@@ -551,6 +598,9 @@
       "tripPlanner": "Trip Planner",
       "messages": "Messages",
       "notifications": "Notifications"
+    },
+    "identity": {
+      "memberSince": "Joined {{year}}"
     }
   },
   "dashboard": {
@@ -575,6 +625,13 @@
       "emptyTitle": "No bookings yet",
       "emptyDescription": "When you book a stay or experience, it will show up here.",
       "emptyAction": "Browse listings"
+    },
+    "nextTrip": {
+      "heading": "Your next trip",
+      "viewDetails": "View trip details"
+    },
+    "favorites": {
+      "viewAll": "View all favorites"
     }
   },
   "profile": {
@@ -654,6 +711,8 @@
         "title": "We couldn't load your company profile.",
         "retry": "Try again"
       },
+      "viewPublicProfile": "View public company page",
+      "publicProfileNote": "This is your Partner Workspace profile editor. Changes you save here update your public company page, which customers can see.",
       "sections": {
         "media": "Logo & cover image",
         "identity": "Company identity",
@@ -711,6 +770,7 @@
       "revokeError": "Something went wrong. Please try again.",
       "emptyStaff": "No staff members yet",
       "emptyInvitations": "No pending invitations",
+      "membersHeading": "Team members",
       "pendingInvitationsHeading": "Pending invitations",
       "table": {
         "name": "Name",
@@ -719,6 +779,7 @@
         "expires": "Expires"
       },
       "roles": {
+        "OWNER": "Owner",
         "MANAGER": "Manager",
         "BOOKING_MANAGER": "Booking Manager",
         "EDITOR": "Editor",
@@ -842,6 +903,33 @@
       "heading": "Calendar",
       "listingLabel": "Listing",
       "unitLabel": "Bookable unit",
+      "views": {
+        "ariaLabel": "Calendar view",
+        "month": "Month",
+        "week": "Week",
+        "day": "Day"
+      },
+      "week": {
+        "previousWeek": "Previous week",
+        "nextWeek": "Next week"
+      },
+      "day": {
+        "previousDay": "Previous day",
+        "nextDay": "Next day",
+        "today": "Today",
+        "noData": "No availability data for this day yet."
+      },
+      "timeline": {
+        "noSlots": "This resource has no time-based departures.",
+        "slotAriaLabel": "{{label}}, {{start}} to {{end}}, {{status}}",
+        "status": {
+          "available": "Available",
+          "partial": "Partially available",
+          "full": "Fully booked",
+          "blocked": "Blocked",
+          "loading": "Loading"
+        }
+      },
       "noListings": {
         "title": "No listings yet",
         "description": "Create a listing to start managing its availability calendar."
@@ -1112,7 +1200,8 @@
         "unpublish": "Unpublish",
         "archive": "Archive",
         "delete": "Delete",
-        "manageRooms": "Manage rooms"
+        "manageRooms": "Manage rooms",
+        "more": "More actions"
       },
       "publishSuccess": "Your listing has been published.",
       "publishError": "This listing isn't ready to publish yet.",
@@ -1249,6 +1338,16 @@
           "translations.description": "A fuller description (200+ characters)"
         }
       },
+      "translationCompleteness": {
+        "title": "Translation completeness",
+        "hint": "What you've actually authored per language — optional, never required to publish.",
+        "fraction": "{{present}}/{{total}} fields",
+        "status": {
+          "complete": "Complete",
+          "partial": "Partial",
+          "missing": "Not started"
+        }
+      },
       "category": {
         "loading": "Loading categories…",
         "errorTitle": "We couldn't load categories."
@@ -1259,6 +1358,18 @@
         "title": "Title",
         "summary": "Short summary",
         "description": "Description"
+      },
+      "contentLocale": {
+        "hy": "Հայերեն",
+        "ru": "Русский",
+        "en": "English"
+      },
+      "locale": {
+        "switcherLabel": "Content language",
+        "notice": "You're editing the {{locale}} translation. Switching languages never discards what you've typed here.",
+        "saveTranslation": "Save {{locale}} translation",
+        "translationSaved": "{{locale}} translation saved.",
+        "emptyNotice": "No {{locale}} content yet. What you save here is stored as the {{locale}} translation — it is never copied from another language."
       },
       "listingTypes": {
         "HOTEL": "Hotel",
@@ -1288,7 +1399,17 @@
         "max_group_size": "Max group size",
         "languages_offered": "Languages offered",
         "transmission": "Transmission",
-        "seats": "Seats"
+        "seats": "Seats",
+        "doors": "Doors",
+        "floor_area_sqm": "Floor area",
+        "fuel_type": "Fuel type",
+        "luggage_capacity": "Luggage capacity",
+        "meeting_point_type": "Meeting point",
+        "mileage_policy": "Mileage policy",
+        "min_driver_age": "Minimum driver age",
+        "property_style": "Property style",
+        "total_rooms": "Total rooms",
+        "view_type": "View"
       },
       "units": {
         "rooms": "rooms",
@@ -1308,7 +1429,19 @@
         "guests_other": "guests",
         "seats": "seats",
         "seats_one": "seat",
-        "seats_other": "seats"
+        "seats_other": "seats",
+        "sqm": "m²",
+        "sqm_one": "m²",
+        "sqm_other": "m²",
+        "bags": "bags",
+        "bags_one": "bag",
+        "bags_other": "bags",
+        "years": "years",
+        "years_one": "year",
+        "years_other": "years",
+        "doors": "doors",
+        "doors_one": "door",
+        "doors_other": "doors"
       },
       "amenities": {
         "loading": "Loading amenities…",
@@ -1372,6 +1505,11 @@
         "advanceBookingMaxDays": "Maximum advance booking (days)",
         "unitLabel": "Room/unit name",
         "unitLabelPlaceholder": "e.g. Standard Room, Deluxe Suite",
+        "timeSlotStart": "Departure start time",
+        "timeSlotEnd": "Departure end time",
+        "timeSlotHint": "Leave blank for a date-only unit (a room, a vehicle, a full-day service). Set both for a scheduled departure (a tour, an activity).",
+        "timeSlotIncomplete": "Enter both a start and end time, or leave both blank.",
+        "timeSlotOutOfOrder": "The end time must be after the start time.",
         "capacity": "Inventory quantity",
         "capacityHint": "How many rooms of this type exist",
         "maxGuests": "Max guests per room",
@@ -1439,6 +1577,46 @@
           "EN": "English",
           "HY": "Armenian",
           "RU": "Russian"
+        },
+        "fuel_type": {
+          "DIESEL": "Diesel",
+          "ELECTRIC": "Electric",
+          "HYBRID": "Hybrid",
+          "PETROL": "Petrol"
+        },
+        "meeting_point_type": {
+          "FIXED_LOCATION": "Fixed location",
+          "HOTEL_PICKUP": "Hotel pickup"
+        },
+        "mileage_policy": {
+          "LIMITED": "Limited mileage",
+          "UNLIMITED": "Unlimited mileage"
+        },
+        "price_tier": {
+          "$": "$",
+          "$$": "$$",
+          "$$$": "$$$",
+          "$$$$": "$$$$"
+        },
+        "property_style": {
+          "BOUTIQUE": "Boutique",
+          "BUDGET": "Budget",
+          "BUSINESS": "Business",
+          "RESORT": "Resort"
+        },
+        "star_rating": {
+          "1": "1 star",
+          "2": "2 stars",
+          "3": "3 stars",
+          "4": "4 stars",
+          "5": "5 stars"
+        },
+        "view_type": {
+          "CITY": "City view",
+          "GARDEN": "Garden view",
+          "MOUNTAIN": "Mountain view",
+          "NONE": "No view",
+          "SEA": "Sea view"
         }
       },
       "publishIssues": {
@@ -1610,8 +1788,10 @@
         "NEEDS_CHANGES": "Needs changes"
       },
       "moderationStatus": {
+        "PENDING": "Pending review",
         "APPROVED": "Visible",
-        "FLAGGED": "Suspended"
+        "FLAGGED": "Suspended",
+        "REJECTED": "Rejected"
       },
       "empty": {
         "title": "No partners found",
@@ -1966,7 +2146,8 @@
         "name": {
           "booking-holds.expiry-sweep": "Hold expiry sweep",
           "bookings.pending-vendor-sla-sweep": "Pending-vendor SLA sweep",
-          "notifications.delivery": "Notification delivery"
+          "notifications.delivery": "Notification delivery",
+          "availability.inventory-reconciliation-sweep": "Inventory reconciliation"
         }
       },
       "error": {
@@ -2466,6 +2647,7 @@
         "viewImage": "View photo {{index}} of {{count}}",
         "viewPhoto": "View photo",
         "morePhotos": "+{{count}} photos",
+        "viewAllPhotos": "View all {{count}} photos",
         "closeLightbox": "Close gallery",
         "previousImage": "Previous photo",
         "nextImage": "Next photo",
@@ -2532,12 +2714,15 @@
         "title": "Couldn't load companies",
         "description": "Something went wrong loading the directory.",
         "retry": "Try again"
-      }
+      },
+      "subtitle": "Discover verified travel partners across Armenia — hotels, tour operators, and experience hosts you can book with confidence."
     },
     "card": {
       "viewProfile": "View {{name}}'s profile",
       "verified": "Verified",
-      "listingCount": "{{count}} listings"
+      "listingCount": "{{count}} listings",
+      "memberSince": "Partner since {{year}}",
+      "viewProfileCta": "View profile"
     },
     "profile": {
       "loading": "Loading company profile...",
@@ -2633,7 +2818,7 @@
         },
         "contactSupport": {
           "question": "How do I contact support?",
-          "answer": "Visit our Contact page for our support email, phone number, and hours."
+          "answer": "Visit our Contact page for our support email and hours."
         }
       }
     },
@@ -2854,7 +3039,8 @@
       "emptyAction": "Browse listings",
       "errorTitle": "We couldn't load your favorites.",
       "errorRetry": "Try again",
-      "loadMore": "Load more"
+      "loadMore": "Load more",
+      "otherPlaces": "Other places"
     }
   },
   "notifications": {
@@ -2902,6 +3088,8 @@
       "FAVORITE": "Favorites",
       "PARTNER": "Partner",
       "LISTING": "Listings",
+      "MESSAGE": "Messages",
+      "PAYMENT": "Payments",
       "ADMIN": "Announcements"
     },
     "preferences": {
@@ -2919,13 +3107,23 @@
       "bookingCancelled": "Booking {{reference}} was cancelled",
       "bookingCompleted": "Your trip ({{reference}}) is complete — leave a review?",
       "reviewSubmitted": "You received a new {{rating}}-star review",
+      "reviewRejected": "Your review was removed",
+      "messageReceived": "You have a new message",
       "favoriteAdded": "A traveler favorited your listing",
       "partnerApproved": "{{partnerName}} was approved",
       "partnerRejected": "Your application for {{partnerName}} was not approved",
       "partnerNeedsChanges": "Changes requested on your application for {{partnerName}}",
       "listingApproved": "Your listing was approved",
       "listingRejected": "Your listing was rejected",
-      "generic": "Notification: {{eventType}}"
+      "paymentSucceeded": "Payment {{reference}} succeeded",
+      "paymentFailed": "Payment {{reference}} failed",
+      "refundSucceeded": "Refund {{reference}} completed",
+      "inventorySyncFailed": "Sync failed for {{connectionName}}",
+      "inventorySyncConflict": "{{count}} sync conflicts found for {{connectionName}}",
+      "partnerStaffAdded": "You joined {{partnerName}}",
+      "reviewReported": "A review was reported for moderation",
+      "refundReviewRequired": "Refund for booking {{reference}} needs review",
+      "generic": "You have a new notification"
     }
   },
   "messaging": {

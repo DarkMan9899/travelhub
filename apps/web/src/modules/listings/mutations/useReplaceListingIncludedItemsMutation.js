@@ -12,7 +12,8 @@ export function useReplaceListingIncludedItemsMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, items }) => replaceListingIncludedItems(id, items),
+    mutationFn: ({ id, items, languageCode }) =>
+      replaceListingIncludedItems(id, items, languageCode),
     onSuccess: (_response, { id }) => {
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(id) });
     },

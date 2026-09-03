@@ -134,7 +134,7 @@ describe('MediaStep (PartnerListingWizard)', () => {
     render(<MediaStep listingId={7} media={[]} onNext={onNext} />);
     await user.click(screen.getByRole('button', { name: 'Շարունակել' }));
     expect(
-      screen.getByText('Շարունակելուց առաջ ավելացրեք առնվազն մեկ լուսանկար:'),
+      screen.getByText('Շարունակելուց առաջ ավելացրեք առնվազն մեկ լուսանկար։'),
     ).toBeInTheDocument();
     expect(onNext).not.toHaveBeenCalled();
   });

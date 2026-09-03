@@ -15,15 +15,43 @@
   }
 }
 
-.sidebar {
+.sidebarColumn {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
   flex-shrink: 0;
 
   @include respond.respond(tablet) {
     width: 260px;
+    position: sticky;
+    top: tokens.$space-8;
   }
+}
+
+// PartnerWorkspaceIdentity is desktop/tablet-only — same reasoning as
+// CustomerAccountLayout's identity card: the mobile bottom nav bar
+// already owns that strip, no room to spare above a fixed bottom bar on
+// every Partner screen.
+.sidebarColumn > :first-child {
+  display: none;
+
+  @include respond.respond(tablet) {
+    display: flex;
+  }
+}
+
+.sidebar {
+  // Layout only — Sidebar's own default (unstyled-variant) styles carry
+  // the restrained operational look this workspace wants.
 }
 
 .content {
   flex: 1;
   min-width: 0;
+  // Mobile: Sidebar becomes a fixed bottom bar — keep content clear of it.
+  padding-bottom: 72px;
+
+  @include respond.respond(tablet) {
+    padding-bottom: 0;
+  }
 }

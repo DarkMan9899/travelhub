@@ -112,6 +112,31 @@ describe('useSearchListingsQuery (apps/web/src/modules/search)', () => {
     );
   });
 
+  test('2026 SEO/performance audit: enabled:false skips the fetch entirely — no wasted unfiltered request while a caller is still waiting on a real filter value', async () => {
+    function DisabledHarness() {
+      const { isPending } = useSearchListingsQuery(
+        { categoryId: undefined },
+        { locale: 'en', enabled: false },
+      );
+      return <p data-testid="status">{queryStatus(isPending, false)}</p>;
+    }
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <DisabledHarness />
+      </QueryClientProvider>,
+    );
+
+    // Give any (incorrect) eager fetch a chance to fire before asserting
+    // it never did — a real regression here would show up as a call.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(searchListings).not.toHaveBeenCalled();
+  });
+
   test('translates destination/categoryId filter state into the real backend param names', async () => {
     searchListings.mockResolvedValue({
       data: [],

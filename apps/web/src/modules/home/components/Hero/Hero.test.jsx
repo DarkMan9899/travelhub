@@ -1,5 +1,6 @@
 import { describe, test, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import Hero from './Hero.jsx';
 import {
@@ -46,14 +47,22 @@ describe('Hero (apps/web/src/modules/home)', () => {
     expect(partnerLink).toBeInTheDocument();
   });
 
-  test('renders the search widget', () => {
+  test('renders the search widget', async () => {
+    const user = userEvent.setup();
     renderHero();
+    // The dock renders collapsed by default (SearchWidget.jsx) — expand
+    // it via its trigger before the submit control exists in the DOM.
+    await user.click(screen.getByRole('button', { name: 'Ո՞ւր եք գնում' }));
     expect(screen.getByRole('button', { name: /Որոնել/ })).toBeInTheDocument();
   });
 
-  test('hides the decorative backdrop image from assistive technology', () => {
+  test('hides the decorative depth scene from assistive technology', () => {
     renderHero();
-    const backdrop = document.querySelector('img[aria-hidden="true"]');
-    expect(backdrop).toHaveAttribute('alt', '');
+    // Redesign phase (2026) — the procedural terrain scene (SVG ridge
+    // layers, light glow, floating particles) replaced the old single
+    // `<img>` backdrop; the whole scene wrapper carries `aria-hidden`
+    // instead of one image's `alt=""`.
+    const scene = document.querySelector('[aria-hidden="true"] svg');
+    expect(scene?.closest('[aria-hidden="true"]')).toBeInTheDocument();
   });
 });

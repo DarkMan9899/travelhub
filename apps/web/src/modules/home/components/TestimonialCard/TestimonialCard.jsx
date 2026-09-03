@@ -22,7 +22,11 @@ export default function TestimonialCard({ testimonial }) {
       <Quote className={styles.quoteGlyph} aria-hidden="true" />
       <RatingStars value={testimonial.rating} size="sm" />
       <blockquote className={styles.quote}>
-        <p>&ldquo;{quote}&rdquo;</p>
+        <p>
+          {t('common.quoteOpen')}
+          {quote}
+          {t('common.quoteClose')}
+        </p>
       </blockquote>
       <figcaption className={styles.author}>
         <Avatar name={name} size="md" />

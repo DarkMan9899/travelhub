@@ -47,8 +47,9 @@ export function buildSitemapXml(manifest, origin, defaultLocale) {
       )
       .join('\n');
     const defaultSibling =
-      siblings.find((sibling) => sibling.path.split('/')[0] === defaultLocale) ??
-      siblings[0];
+      siblings.find(
+        (sibling) => sibling.path.split('/')[0] === defaultLocale,
+      ) ?? siblings[0];
     const xDefault = `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeXml(`${origin}/${defaultSibling.path}`)}"/>`;
     const lastmod = entry.lastmod
       ? `\n    <lastmod>${escapeXml(new Date(entry.lastmod).toISOString())}</lastmod>`
@@ -86,15 +87,27 @@ export function buildSitemapXml(manifest, origin, defaultLocale) {
  */
 const DISALLOWED_PATH_SEGMENTS = ['account', 'partner', 'admin'];
 
+/**
+ * 2026 SEO audit: `auth/reset-password/:token` is the one route left
+ * under the otherwise-deliberately-crawlable `/auth` prefix (see this
+ * function's own comment above) whose URL itself carries a real,
+ * single-use secret — unlike login/register/forgot-password, there is no
+ * "let Google see the noindex tag" upside worth the token being fetched
+ * by a crawler at all. Listed by its own full path rather than folded
+ * into `DISALLOWED_PATH_SEGMENTS`, since that array disallows an entire
+ * prefix and `/auth/login`/`/auth/register` must stay crawlable.
+ */
+const DISALLOWED_FULL_PATHS = ['booking/checkout', 'auth/reset-password'];
+
 export function buildRobotsTxt(origin) {
-  const disallowLines = DISALLOWED_PATH_SEGMENTS.map(
-    (segment) => `Disallow: /*/${segment}`,
-  ).join('\n');
+  const disallowLines = [
+    ...DISALLOWED_PATH_SEGMENTS.map((segment) => `Disallow: /*/${segment}`),
+    ...DISALLOWED_FULL_PATHS.map((path) => `Disallow: /*/${path}`),
+  ].join('\n');
   return (
     `User-agent: *\n` +
     `Allow: /\n` +
-    `${disallowLines}\n` +
-    `Disallow: /*/booking/checkout\n\n` +
+    `${disallowLines}\n\n` +
     `Sitemap: ${origin}/sitemap.xml\n`
   );
 }

@@ -3,28 +3,35 @@
 @use 'tokens' as tokens;
 @use 'mixins/focus-ring' as focus;
 
-.lead {
-  margin: 0;
-  max-width: 70ch;
-  font-size: tokens.$font-size-body-large;
-  line-height: tokens.$line-height-body-large;
-  color: tokens.$color-gray-600;
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-6;
+  padding-block: tokens.$space-6;
 }
 
 .list {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
   max-width: 70ch;
 }
 
 .item {
-  border: 1px solid tokens.$color-gray-200;
-  border-radius: tokens.$radius-md;
+  border-radius: tokens.$radius-lg;
   padding: tokens.$space-4;
-  transition: border-color tokens.$motion-micro tokens.$ease-out;
+  background-color: tokens.$color-white;
+  transition: box-shadow tokens.$motion-micro tokens.$ease-out;
   @include tokens.reduced-motion-safe;
+  @include tokens.elevation-0;
 
   &:hover {
-    border-color: tokens.$color-gray-400;
+    @include tokens.elevation-1;
   }
+}
+
+.item[open] {
+  @include tokens.elevation-1;
 }
 
 .question {
@@ -33,7 +40,9 @@
   justify-content: space-between;
   gap: tokens.$space-3;
   cursor: pointer;
-  font-weight: 600;
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  font-size: tokens.$font-size-body;
   color: tokens.$color-gray-900;
   list-style: none;
 
@@ -46,7 +55,7 @@
 
 .chevron {
   flex-shrink: 0;
-  color: tokens.$color-gray-600;
+  color: tokens.$color-royal-blue;
   transition: transform tokens.$motion-micro tokens.$ease-out;
   @include tokens.reduced-motion-safe;
 }

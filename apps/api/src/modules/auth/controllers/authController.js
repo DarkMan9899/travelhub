@@ -142,6 +142,51 @@ export function createAuthController(authenticationService) {
       }
     },
 
+    /**
+     * Always 200 with the same body, whether or not `email` matched a
+     * real account — see `AuthenticationService#requestPasswordReset`'s
+     * own comment. The controller layer is exactly where an
+     * account-enumeration leak would otherwise creep back in (e.g. a
+     * well-meaning `if (!result.found) return 404` here would defeat the
+     * Service's own care), so this stays a flat, unconditional response.
+     */
+    async requestPasswordReset(req, res, next) {
+      try {
+        await authenticationService.requestPasswordReset(
+          req.validated.body,
+          buildContext(req),
+        );
+        res.status(200).json({
+          success: true,
+          data: {
+            message:
+              "If an account exists for that email, we've sent a password reset link.",
+          },
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async resetPassword(req, res, next) {
+      try {
+        await authenticationService.resetPassword(
+          req.validated.body,
+          buildContext(req),
+        );
+        res.status(200).json({
+          success: true,
+          data: { reset: true },
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
     async me(req, res, next) {
       try {
         const result = await authenticationService.getPrincipal(

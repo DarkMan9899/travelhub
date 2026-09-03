@@ -66,7 +66,7 @@ describe('AdminAiModerationPageContent (apps/web/src/modules/admin)', () => {
     renderPage();
 
     expect(
-      screen.getByText('Ինչ-որ բան այն չգնաց մոդերացիայի հերթը բեռնելիս։'),
+      screen.getByText('Ինչ-որ բան սխալ գնաց մոդերացիայի հերթը բեռնելիս։'),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Կրկին փորձել' }));
     expect(refetch).toHaveBeenCalledTimes(1);

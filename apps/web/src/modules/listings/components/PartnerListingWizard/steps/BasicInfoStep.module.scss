@@ -1,0 +1,9 @@
+// BasicInfoStep — 2026 Partner Workspace redesign (Sprint 3). Tokens only.
+
+@use 'tokens' as tokens;
+
+.localeNotice {
+  margin: 0 0 tokens.$space-3;
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+}

@@ -259,6 +259,29 @@ const TEMPLATES = {
       body: `Ваше объявление «${listingTitle ?? ''}» отклонено.${notes ? ` Примечание: ${notes}` : ''}`,
     }),
   },
+  // Same "sent directly via `emailAdapter`, bypassing the notification
+  // pipeline" reason as `partner.staff_invited` below: a password-reset
+  // request is never authenticated, so there is no `recipientUserId`
+  // context to route through the normal event-driven pipeline even when
+  // the email genuinely does exist. `resetUrl` is `null` when the
+  // account was not found — see `authenticationService.js#requestPasswordReset`'s
+  // own comment on why no email is actually sent in that case at all;
+  // this branch exists for completeness/type-symmetry, not because it is
+  // ever reached with a null URL.
+  'auth.password_reset_requested': {
+    en: ({ resetUrl }) => ({
+      subject: 'Reset your Desavii password',
+      body: `We received a request to reset your password. This link expires in 1 hour and can only be used once: ${resetUrl ?? ''}\n\nIf you didn't request this, you can safely ignore this email.`,
+    }),
+    hy: ({ resetUrl }) => ({
+      subject: 'Վերականգնեք ձեր Desavii գաղտնաբառը',
+      body: `Մենք ստացել ենք ձեր գաղտնաբառի վերականգնման հայտ։ Այս հղումն ուժի մեջ է 1 ժամ և կարող է օգտագործվել միայն մեկ անգամ՝ ${resetUrl ?? ''}\n\nԵթե դուք չեք հայցել սա, կարող եք անտեսել այս նամակը։`,
+    }),
+    ru: ({ resetUrl }) => ({
+      subject: 'Сброс пароля Desavii',
+      body: `Мы получили запрос на сброс вашего пароля. Эта ссылка действительна 1 час и может быть использована только один раз: ${resetUrl ?? ''}\n\nЕсли вы не запрашивали это, просто проигнорируйте это письмо.`,
+    }),
+  },
   // P1.4 (Master Roadmap) — sent directly via `emailAdapter` from
   // `partnerStaffService.js`, bypassing the notification pipeline: the
   // invitee may not have a `users` row (and therefore no

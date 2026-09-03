@@ -36,7 +36,12 @@
   display: none;
   min-width: 0;
 
-  @include respond.respond(tablet) {
+  // Phase i18n remediation (2026): was `tablet` (768px) — at that width
+  // the full nav (all links + locale switcher + auth actions) has less
+  // room than the translated copy needs (worst case: Russian's longer
+  // "Стать партнёром"), so the locale switcher visibly overlapped the
+  // last nav link. `laptop` gives the row enough space in all 3 locales.
+  @include respond.respond(laptop) {
     display: block;
   }
 }
@@ -93,13 +98,14 @@
   display: none;
   flex-shrink: 0;
 
-  @include respond.respond(tablet) {
+  @include respond.respond(laptop) {
     display: flex;
   }
 }
 
 // Mobile hamburger — the mirror image of .nav/.actions: shown below
-// Tablet, hidden from Tablet up (FRONTEND_ARCHITECTURE.md §5.1).
+// Laptop, hidden from Laptop up (FRONTEND_ARCHITECTURE.md §5.1; bumped
+// from Tablet during the i18n remediation — see `.nav`'s comment above).
 .mobileToggle {
   display: inline-flex;
   align-items: center;
@@ -119,7 +125,7 @@
     height: 20px;
   }
 
-  @include respond.respond(tablet) {
+  @include respond.respond(laptop) {
     display: none;
   }
 }

@@ -1,0 +1,17 @@
+// Shared film-grain texture mixin — redesign phase (2026). A single,
+// tiny inline SVG noise filter tiled over a dark/immersive surface (Hero,
+// other large dark sections) so it reads as a real material rather than
+// a flat vector fill — the one "cheap-feeling flat illustration" tell a
+// pure gradient can't fix on its own. Deliberately very low opacity
+// (never a visible "static" effect) and CSS-only — no canvas, no WebGL,
+// negligible paint cost.
+
+@mixin grain-overlay($opacity: 0.05) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: $opacity;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}

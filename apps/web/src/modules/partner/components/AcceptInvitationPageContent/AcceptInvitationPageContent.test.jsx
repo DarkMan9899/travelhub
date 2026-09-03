@@ -134,4 +134,21 @@ describe('AcceptInvitationPageContent (apps/web/src/modules/partner)', () => {
       screen.queryByRole('button', { name: 'Ընդունել հրավերը' }),
     ).not.toBeInTheDocument();
   });
+
+  test('2026 SEO audit: sets an explicit noindex,nofollow robots meta tag — this URL carries a real single-use token', () => {
+    useInvitationPreviewQuery.mockReturnValue({
+      data: PREVIEW,
+      isPending: false,
+      isError: false,
+    });
+    useAcceptInvitationMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    renderPage();
+
+    const robotsTag = document.querySelector('meta[name="robots"]');
+    expect(robotsTag).not.toBeNull();
+    expect(robotsTag.getAttribute('content')).toBe('noindex, nofollow');
+  });
 });

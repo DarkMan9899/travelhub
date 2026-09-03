@@ -210,11 +210,190 @@ describe('GET /listings/:id — rich content round-trips through the read DTO', 
       .set('Authorization', `Bearer ${vendor.accessToken}`);
     expect(res.status).toBe(200);
     expect(res.body.data.highlights).toEqual([
-      { id: expect.any(Number), icon_code: 'wifi', text: 'Free WiFi' },
+      {
+        id: expect.any(Number),
+        language_code: 'en',
+        icon_code: 'wifi',
+        text: 'Free WiFi',
+      },
     ]);
     expect(res.body.data.itinerary_steps).toHaveLength(2);
     expect(res.body.data.included_items).toHaveLength(2);
     expect(res.body.data.faqs).toHaveLength(1);
+  });
+});
+
+describe('2026 Partner Workspace redesign (Sprint 3): rich content writes are per-language via the real endpoint', () => {
+  // Traced end-to-end before building the Sprint 3 UI on top of this:
+  // every replace-* repository method's DELETE is scoped by
+  // `listing_id AND language_id`, so a write was already destructive
+  // ONLY within its own locale — but until this sprint, `languageCode`
+  // wasn't threaded through from the request at all, so 'hy'/'ru' were
+  // never actually reachable via the API (only a direct SQL insert, as
+  // this file used to do). These tests exercise the now-real
+  // `languageCode` body field through the live HTTP endpoint, not a raw
+  // SQL shortcut, to prove the whole path — validator → controller →
+  // service → repository — honors it correctly.
+
+  test('writing highlights with languageCode: "hy" creates hy-only rows, leaving the existing en rows untouched', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/listings/${listingId}/highlights`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        languageCode: 'hy',
+        highlights: [{ iconCode: 'wifi', text: 'Անվճար Wi-Fi' }],
+      });
+    expect(res.status).toBe(200);
+    // The response mirrors the read side and returns every language's
+    // current rows, so the pre-existing 'en' row (from the earlier
+    // "second replace fully overwrites the first" test, text 'Free WiFi')
+    // must still be present alongside the new 'hy' one.
+    expect(res.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ language_code: 'en', text: 'Free WiFi' }),
+        expect.objectContaining({ language_code: 'hy', text: 'Անվճար Wi-Fi' }),
+      ]),
+    );
+    expect(res.body.data).toHaveLength(2);
+  });
+
+  test('a second hy-scoped replace only touches the hy rows, leaving en intact', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/listings/${listingId}/highlights`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        languageCode: 'hy',
+        highlights: [{ iconCode: 'wifi', text: 'Անվճար Wi-Fi, թարմացված' }],
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ language_code: 'en', text: 'Free WiFi' }),
+        expect.objectContaining({
+          language_code: 'hy',
+          text: 'Անվճար Wi-Fi, թարմացված',
+        }),
+      ]),
+    );
+    expect(res.body.data).toHaveLength(2);
+  });
+
+  test('a write with no languageCode still defaults to the platform default (en), for backward compatibility', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/listings/${listingId}/highlights`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        highlights: [{ iconCode: 'wifi', text: 'Free WiFi, no-code write' }],
+      });
+    expect(res.status).toBe(200);
+    // The 'en' row is the one that changed; 'hy' (from the prior test)
+    // must be completely unaffected by an omitted languageCode.
+    expect(res.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          language_code: 'en',
+          text: 'Free WiFi, no-code write',
+        }),
+        expect.objectContaining({
+          language_code: 'hy',
+          text: 'Անվճար Wi-Fi, թարմացված',
+        }),
+      ]),
+    );
+  });
+
+  test('itinerary/included-items/faqs all honor languageCode the same way', async () => {
+    const itineraryRes = await request(app)
+      .patch(`/api/v1/listings/${listingId}/itinerary`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        languageCode: 'ru',
+        steps: [{ title: 'Встреча в лобби отеля', durationMinutes: 15 }],
+      });
+    expect(itineraryRes.status).toBe(200);
+    expect(itineraryRes.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ language_code: 'en' }),
+        expect.objectContaining({
+          language_code: 'ru',
+          title: 'Встреча в лобби отеля',
+        }),
+      ]),
+    );
+
+    const includedRes = await request(app)
+      .patch(`/api/v1/listings/${listingId}/included-items`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        languageCode: 'ru',
+        items: [{ itemText: 'Завтрак', isIncluded: true }],
+      });
+    expect(includedRes.status).toBe(200);
+    expect(includedRes.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ language_code: 'en' }),
+        expect.objectContaining({ language_code: 'ru', item_text: 'Завтрак' }),
+      ]),
+    );
+
+    const faqsRes = await request(app)
+      .patch(`/api/v1/listings/${listingId}/faqs`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        languageCode: 'ru',
+        faqs: [
+          { question: 'Есть парковка?', answer: 'Да, бесплатная парковка.' },
+        ],
+      });
+    expect(faqsRes.status).toBe(200);
+    expect(faqsRes.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ language_code: 'en' }),
+        expect.objectContaining({
+          language_code: 'ru',
+          question: 'Есть парковка?',
+        }),
+      ]),
+    );
+
+    const getRes = await request(app)
+      .get(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(getRes.status).toBe(200);
+    // Full round-trip: 'en', 'hy' (highlights only), and 'ru' rows all
+    // coexist on the same listing across all four collections.
+    expect(
+      getRes.body.data.highlights.map((h) => h.language_code).sort(),
+    ).toEqual(['en', 'hy']);
+    // Two 'en' rows here is correct, not a bug in the app: the earlier
+    // "owner can replace the itinerary steps in order" test in this file
+    // already left 2 unrelated 'en' steps on this same listing — this
+    // ru-scoped write must add its own row alongside them, not touch or
+    // collapse them.
+    expect(
+      getRes.body.data.itinerary_steps.map((s) => s.language_code),
+    ).toEqual(['en', 'en', 'ru']);
+    // Two 'en' rows here too — "owner can replace included/not-included
+    // items" earlier in this file left 2 'en' items (Breakfast, Airport
+    // transfer) on this same listing.
+    expect(getRes.body.data.included_items.map((i) => i.language_code)).toEqual(
+      ['en', 'en', 'ru'],
+    );
+    expect(getRes.body.data.faqs.map((f) => f.language_code)).toEqual([
+      'en',
+      'ru',
+    ]);
+  });
+
+  test('an invalid languageCode is rejected by validation, not silently coerced to the default', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/listings/${listingId}/highlights`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        languageCode: 'fr',
+        highlights: [{ iconCode: 'wifi', text: 'nope' }],
+      });
+    expect(res.status).toBe(422);
   });
 });
 

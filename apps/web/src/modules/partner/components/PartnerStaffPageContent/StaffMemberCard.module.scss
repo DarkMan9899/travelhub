@@ -1,0 +1,21 @@
+// StaffMemberCard — 2026 Partner Workspace redesign (Sprint 4). Tokens only.
+
+@use 'tokens' as tokens;
+
+.card {
+  padding: tokens.$space-3 tokens.$space-4;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  background-color: tokens.$color-white;
+}
+
+.name {
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+}
+
+.email {
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+}

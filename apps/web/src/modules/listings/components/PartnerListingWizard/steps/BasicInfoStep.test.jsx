@@ -1,7 +1,10 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import ToastProvider from '../../../../../providers/ToastProvider.jsx';
 import BasicInfoStep from './BasicInfoStep.jsx';
 import { useCreateListingMutation } from '../../../mutations/useCreateListingMutation.js';
 import { useUpdateListingMutation } from '../../../mutations/useUpdateListingMutation.js';
@@ -21,23 +24,75 @@ const PARTNERSHIPS = [
   },
 ];
 
-function renderStep(props) {
+// A real Wizard lifts `authoringLocale` (see `useListingWizardState.js`)
+// — this harness mirrors that instead of hardcoding a fixed prop, so
+// these tests exercise the actual controlled-locale contract, not a
+// stand-in that could drift from it.
+function Harness({
+  startLocale = 'en',
+  partnerships = PARTNERSHIPS,
+  listingId = null,
+  categoryId = null,
+  initialTranslations = [],
+  onCreated = vi.fn(),
+  onNext = vi.fn(),
+}) {
+  const [authoringLocale, setAuthoringLocale] = useState(startLocale);
+  return (
+    <BasicInfoStep
+      partnerships={partnerships}
+      listingId={listingId}
+      categoryId={categoryId}
+      initialTranslations={initialTranslations}
+      onCreated={onCreated}
+      onNext={onNext}
+      authoringLocale={authoringLocale}
+      onAuthoringLocaleChange={setAuthoringLocale}
+    />
+  );
+}
+
+Harness.propTypes = {
+  startLocale: PropTypes.string,
+  // eslint-disable-next-line react/forbid-prop-types -- test harness passthrough
+  partnerships: PropTypes.array,
+  listingId: PropTypes.number,
+  categoryId: PropTypes.number,
+  // eslint-disable-next-line react/forbid-prop-types -- test harness passthrough
+  initialTranslations: PropTypes.array,
+  onCreated: PropTypes.func,
+  onNext: PropTypes.func,
+};
+
+function renderStep({
+  startLocale = 'en',
+  partnerships = PARTNERSHIPS,
+  listingId = null,
+  categoryId = null,
+  initialTranslations = [],
+  onCreated = vi.fn(),
+  onNext = vi.fn(),
+} = {}) {
   return render(
     <MemoryRouter initialEntries={['/en/partner/listings/new']}>
-      <Routes>
-        <Route
-          path="/:locale/partner/listings/new"
-          element={
-            <BasicInfoStep
-              partnerships={PARTNERSHIPS}
-              onCreated={vi.fn()}
-              onNext={vi.fn()}
-              // eslint-disable-next-line react/jsx-props-no-spreading -- test harness forwards per-test overrides
-              {...props}
-            />
-          }
-        />
-      </Routes>
+      <ToastProvider>
+        <Routes>
+          <Route
+            path="/:locale/partner/listings/new"
+            element={
+              <Harness
+                startLocale={startLocale}
+                partnerships={partnerships}
+                listingId={listingId}
+                categoryId={categoryId}
+                initialTranslations={initialTranslations}
+                onCreated={onCreated}
+                onNext={onNext}
+              />
+            }
+          />
+        </Routes>
+      </ToastProvider>
     </MemoryRouter>,
   );
 }
@@ -83,7 +138,7 @@ describe('BasicInfoStep (PartnerListingWizard)', () => {
     ).not.toBeInTheDocument();
   });
 
-  test('submitting with no listing yet calls createListing with translations + categoryIds, then onCreated + onNext', async () => {
+  test('submitting with no listing yet calls createListing with translations + categoryIds for the active locale, then onCreated', async () => {
     const user = userEvent.setup();
     const onCreated = vi.fn();
     const onNext = vi.fn();
@@ -104,7 +159,15 @@ describe('BasicInfoStep (PartnerListingWizard)', () => {
         listingType: 'HOTEL',
         categoryIds: [3],
         translations: [
-          expect.objectContaining({ title: 'Boutique Yerevan Hotel' }),
+          // authoringLocale defaults to 'en' (the platform content
+          // default), languageId 1 per LANGUAGE_ID_BY_LOCALE — not the
+          // route's ':locale' (this harness renders at /en, so it isn't
+          // distinguishing evidence on its own; the dedicated
+          // "authoringLocale, not UI locale" test below is).
+          expect.objectContaining({
+            languageId: 1,
+            title: 'Boutique Yerevan Hotel',
+          }),
         ],
       }),
     );
@@ -112,16 +175,17 @@ describe('BasicInfoStep (PartnerListingWizard)', () => {
     expect(onNext).not.toHaveBeenCalled();
   });
 
-  test('once a listing exists, only translations are editable and updateListing is called', async () => {
+  test('once a listing exists, only translations are editable; Continue saves the active locale and advances', async () => {
     const user = userEvent.setup();
     const onNext = vi.fn();
     renderStep({
       listingId: 7,
-      initialValues: { title: 'Existing title' },
+      initialTranslations: [{ language_code: 'en', title: 'Existing title' }],
       onNext,
     });
 
     expect(screen.queryByText('Հայտարարության տեսակ')).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Վերնագիր/)).toHaveValue('Existing title');
 
     await user.click(screen.getByRole('button', { name: 'Շարունակել' }));
 
@@ -129,18 +193,101 @@ describe('BasicInfoStep (PartnerListingWizard)', () => {
     expect(updateMutateAsync).toHaveBeenCalledWith({
       id: 7,
       payload: {
-        translations: [expect.objectContaining({ title: 'Existing title' })],
+        translations: [
+          expect.objectContaining({ languageId: 1, title: 'Existing title' }),
+        ],
       },
     });
     expect(onNext).toHaveBeenCalled();
   });
 
-  test('a missing title blocks submission with a validation error', async () => {
+  test('a missing title in the active locale blocks submission with a validation error', async () => {
     const user = userEvent.setup();
     renderStep({});
     await user.click(screen.getByRole('button', { name: 'Շարունակել' }));
-    const errors = await screen.findAllByText('Այս դաշտը պարտադիր է:');
+    const errors = await screen.findAllByText('Այս դաշտը պարտադիր է։');
     expect(errors.length).toBeGreaterThan(0);
     expect(createMutateAsync).not.toHaveBeenCalled();
+  });
+
+  // 2026 Partner Workspace redesign (Sprint 3) — the core new guarantee.
+  describe('multilingual authoring', () => {
+    test('each locale loads only its own persisted translation, never another locale as a fallback', () => {
+      renderStep({
+        listingId: 7,
+        startLocale: 'hy',
+        initialTranslations: [{ language_code: 'en', title: 'English title' }],
+      });
+      // hy has no persisted row — the editor must show genuinely empty,
+      // not the English title standing in for it.
+      expect(screen.getByLabelText(/Վերնագիր/)).toHaveValue('');
+    });
+
+    test('switching authoring locale preserves an unsaved edit — typing in en, switching to hy and back does not lose it', async () => {
+      const user = userEvent.setup();
+      renderStep({ listingId: 7, initialTranslations: [] });
+
+      await user.type(screen.getByLabelText(/Վերնագիր/), 'Draft in English');
+      await user.click(screen.getByRole('tab', { name: /Հայերեն/ }));
+      expect(screen.getByLabelText(/Վերնագիր/)).toHaveValue('');
+
+      await user.click(screen.getByRole('tab', { name: /English/ }));
+      expect(screen.getByLabelText(/Վերնագիր/)).toHaveValue('Draft in English');
+    });
+
+    test('the standalone "Save translation" button saves only the active locale, without advancing the step', async () => {
+      const user = userEvent.setup();
+      const onNext = vi.fn();
+      renderStep({
+        listingId: 7,
+        startLocale: 'hy',
+        initialTranslations: [],
+        onNext,
+      });
+
+      await user.type(screen.getByLabelText(/Վերնագիր/), 'Հայկական վերնագիր');
+      await user.click(
+        screen.getByRole('button', {
+          name: /Պահպանել Հայերեն թարգմանությունը/,
+        }),
+      );
+
+      await waitFor(() => expect(updateMutateAsync).toHaveBeenCalled());
+      expect(updateMutateAsync).toHaveBeenCalledWith({
+        id: 7,
+        payload: {
+          translations: [
+            expect.objectContaining({
+              languageId: 2,
+              title: 'Հայկական վերնագիր',
+            }),
+          ],
+        },
+      });
+      expect(onNext).not.toHaveBeenCalled();
+    });
+
+    test('the standalone save button is hidden before a listing exists', () => {
+      renderStep({});
+      expect(
+        screen.queryByRole('button', { name: /թարգմանությունը$/ }),
+      ).not.toBeInTheDocument();
+    });
+
+    test('the locale tabs show a completion mark only for locales with a real title', () => {
+      renderStep({
+        listingId: 7,
+        initialTranslations: [{ language_code: 'en', title: 'English title' }],
+      });
+      expect(
+        screen.getByRole('tab', { name: /English ✓/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('tab', { name: /Հայերեն ·/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('tab', { name: /Русский ·/ }),
+      ).toBeInTheDocument();
+    });
   });
 });

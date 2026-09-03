@@ -8,6 +8,13 @@
   color: tokens.$color-gray-600;
 }
 
+// 2026 Partner Workspace redesign (Sprint 3).
+.localeNotice {
+  margin: 0 0 tokens.$space-3;
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+}
+
 .sectionHint {
   margin: tokens.$space-1 0 tokens.$space-3;
   font-size: 0.875rem;

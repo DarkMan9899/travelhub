@@ -34,7 +34,7 @@ describe('PricingStep (PartnerListingWizard)', () => {
     });
     render(<PricingStep listingId={7} categoryId={3} onNext={onNext} />);
     expect(
-      screen.getByText('Այս կատեգորիան գների մոդել չունի:'),
+      screen.getByText('Այս կատեգորիան գների մոդել չունի։'),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Շարունակել' }));

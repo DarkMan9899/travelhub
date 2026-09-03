@@ -12,8 +12,8 @@ export function useReplaceListingHighlightsMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, highlights }) =>
-      replaceListingHighlights(id, highlights),
+    mutationFn: ({ id, highlights, languageCode }) =>
+      replaceListingHighlights(id, highlights, languageCode),
     onSuccess: (_response, { id }) => {
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(id) });
     },

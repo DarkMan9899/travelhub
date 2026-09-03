@@ -66,7 +66,7 @@ describe('PoliciesStep (PartnerListingWizard)', () => {
     render(<PoliciesStep listingId={7} categoryId={3} onNext={vi.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Շարունակել' }));
     expect(
-      await screen.findByText('Այս դաշտը պարտադիր է:'),
+      await screen.findByText('Այս դաշտը պարտադիր է։'),
     ).toBeInTheDocument();
     expect(mutateAsync).not.toHaveBeenCalled();
   });
@@ -109,7 +109,7 @@ describe('PoliciesStep (PartnerListingWizard)', () => {
     });
     render(<PoliciesStep listingId={7} categoryId={3} onNext={vi.fn()} />);
     expect(
-      screen.getByText('Այս կատեգորիան կանոններ չունի:'),
+      screen.getByText('Այս կատեգորիան կանոններ չունի։'),
     ).toBeInTheDocument();
   });
 });

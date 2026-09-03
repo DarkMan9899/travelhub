@@ -54,7 +54,7 @@ describe('PartnerAiUsagePageContent (apps/web/src/modules/ai)', () => {
     renderPage();
 
     expect(
-      screen.getByText('Ինչ-որ բան այն չգնաց AI օգտագործումը բեռնելիս։'),
+      screen.getByText('Ինչ-որ բան սխալ գնաց AI օգտագործումը բեռնելիս։'),
     ).toBeInTheDocument();
   });
 

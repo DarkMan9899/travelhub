@@ -1024,15 +1024,37 @@ export class MySqlListingRepository extends ListingRepositoryPort {
   // `replaceAttributeValues` already established for MULTI_ENUM entries:
   // the partner wizard always resends the complete desired list on save,
   // so there is no separate per-item update/reorder endpoint to build.
+  //
+  // 2026 stabilization audit (migration 0037): each row now carries a
+  // `language_id`, mirroring `listing_translations`' own shape rather than
+  // inventing a new one — `list*` returns EVERY language's rows (tagged
+  // with `languageCode`), exactly like `#assembleListing` already returns
+  // every `listing_translations` row and leaves locale selection to the
+  // caller (`getLocalizedTranslation.js` on the frontend). Filtering to
+  // one locale, with its default-locale fallback, is intentionally a
+  // single shared frontend concern (`getLocalizedItems.js`) rather than
+  // four near-identical SQL fallback branches here.
+  //
+  // `replace*` still fully replaces exactly one language's list per call
+  // (`DELETE ... WHERE listing_id = ? AND language_id = ?`, never
+  // touching the other languages' rows) — the Partner Listing Wizard has
+  // no per-field language selector yet (real, separate Partner Workspace
+  // UI work, out of this audit's scope), so every write from it targets
+  // `listingService`'s resolved default language, same as before this
+  // migration effectively only ever had one language to write to.
 
   async listHighlights(listingId, connection = this.#pool) {
     const [rows] = await connection.query(
-      `SELECT id, icon_code, text, sort_order
-       FROM listing_highlights WHERE listing_id = ? ORDER BY sort_order ASC, id ASC`,
+      `SELECT lh.id, lh.language_id, lang.code AS language_code, lh.icon_code, lh.text, lh.sort_order
+       FROM listing_highlights lh
+       JOIN languages lang ON lang.id = lh.language_id
+       WHERE lh.listing_id = ? ORDER BY lh.language_id ASC, lh.sort_order ASC, lh.id ASC`,
       [listingId],
     );
     return rows.map((row) => ({
       id: row.id,
+      languageId: row.language_id,
+      languageCode: row.language_code,
       iconCode: row.icon_code,
       text: row.text,
       sortOrder: row.sort_order,
@@ -1043,19 +1065,28 @@ export class MySqlListingRepository extends ListingRepositoryPort {
     listingId,
     highlights,
     userId,
+    languageId,
     connection = this.#pool,
   ) {
     await connection.query(
-      'DELETE FROM listing_highlights WHERE listing_id = ?',
-      [listingId],
+      'DELETE FROM listing_highlights WHERE listing_id = ? AND language_id = ?',
+      [listingId, languageId],
     );
     // eslint-disable-next-line no-restricted-syntax -- ordered insert, must preserve sequence
     for (const [index, highlight] of highlights.entries()) {
       // eslint-disable-next-line no-await-in-loop -- sequential by design
       await connection.query(
-        `INSERT INTO listing_highlights (listing_id, icon_code, text, sort_order, created_by, updated_by)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [listingId, highlight.iconCode, highlight.text, index, userId, userId],
+        `INSERT INTO listing_highlights (listing_id, language_id, icon_code, text, sort_order, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          listingId,
+          languageId,
+          highlight.iconCode,
+          highlight.text,
+          index,
+          userId,
+          userId,
+        ],
       );
     }
     return this.listHighlights(listingId, connection);
@@ -1063,12 +1094,16 @@ export class MySqlListingRepository extends ListingRepositoryPort {
 
   async listItinerarySteps(listingId, connection = this.#pool) {
     const [rows] = await connection.query(
-      `SELECT id, sort_order, title, description, duration_minutes
-       FROM listing_itinerary_steps WHERE listing_id = ? ORDER BY sort_order ASC, id ASC`,
+      `SELECT lis.id, lis.language_id, lang.code AS language_code, lis.sort_order, lis.title, lis.description, lis.duration_minutes
+       FROM listing_itinerary_steps lis
+       JOIN languages lang ON lang.id = lis.language_id
+       WHERE lis.listing_id = ? ORDER BY lis.language_id ASC, lis.sort_order ASC, lis.id ASC`,
       [listingId],
     );
     return rows.map((row) => ({
       id: row.id,
+      languageId: row.language_id,
+      languageCode: row.language_code,
       sortOrder: row.sort_order,
       title: row.title,
       description: row.description,
@@ -1080,21 +1115,23 @@ export class MySqlListingRepository extends ListingRepositoryPort {
     listingId,
     steps,
     userId,
+    languageId,
     connection = this.#pool,
   ) {
     await connection.query(
-      'DELETE FROM listing_itinerary_steps WHERE listing_id = ?',
-      [listingId],
+      'DELETE FROM listing_itinerary_steps WHERE listing_id = ? AND language_id = ?',
+      [listingId, languageId],
     );
     // eslint-disable-next-line no-restricted-syntax -- ordered insert, must preserve sequence
     for (const [index, step] of steps.entries()) {
       // eslint-disable-next-line no-await-in-loop -- sequential by design
       await connection.query(
         `INSERT INTO listing_itinerary_steps
-           (listing_id, sort_order, title, description, duration_minutes, created_by, updated_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+           (listing_id, language_id, sort_order, title, description, duration_minutes, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           listingId,
+          languageId,
           index,
           step.title,
           step.description ?? null,
@@ -1109,12 +1146,16 @@ export class MySqlListingRepository extends ListingRepositoryPort {
 
   async listIncludedItems(listingId, connection = this.#pool) {
     const [rows] = await connection.query(
-      `SELECT id, item_text, is_included, sort_order
-       FROM listing_included_items WHERE listing_id = ? ORDER BY is_included DESC, sort_order ASC, id ASC`,
+      `SELECT lii.id, lii.language_id, lang.code AS language_code, lii.item_text, lii.is_included, lii.sort_order
+       FROM listing_included_items lii
+       JOIN languages lang ON lang.id = lii.language_id
+       WHERE lii.listing_id = ? ORDER BY lii.language_id ASC, lii.is_included DESC, lii.sort_order ASC, lii.id ASC`,
       [listingId],
     );
     return rows.map((row) => ({
       id: row.id,
+      languageId: row.language_id,
+      languageCode: row.language_code,
       itemText: row.item_text,
       isIncluded: Boolean(row.is_included),
       sortOrder: row.sort_order,
@@ -1125,21 +1166,23 @@ export class MySqlListingRepository extends ListingRepositoryPort {
     listingId,
     items,
     userId,
+    languageId,
     connection = this.#pool,
   ) {
     await connection.query(
-      'DELETE FROM listing_included_items WHERE listing_id = ?',
-      [listingId],
+      'DELETE FROM listing_included_items WHERE listing_id = ? AND language_id = ?',
+      [listingId, languageId],
     );
     // eslint-disable-next-line no-restricted-syntax -- ordered insert, must preserve sequence
     for (const [index, item] of items.entries()) {
       // eslint-disable-next-line no-await-in-loop -- sequential by design
       await connection.query(
         `INSERT INTO listing_included_items
-           (listing_id, item_text, is_included, sort_order, created_by, updated_by)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+           (listing_id, language_id, item_text, is_included, sort_order, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           listingId,
+          languageId,
           item.itemText,
           item.isIncluded ? 1 : 0,
           index,
@@ -1153,29 +1196,48 @@ export class MySqlListingRepository extends ListingRepositoryPort {
 
   async listFaqs(listingId, connection = this.#pool) {
     const [rows] = await connection.query(
-      `SELECT id, question, answer, sort_order
-       FROM listing_faqs WHERE listing_id = ? ORDER BY sort_order ASC, id ASC`,
+      `SELECT lf.id, lf.language_id, lang.code AS language_code, lf.question, lf.answer, lf.sort_order
+       FROM listing_faqs lf
+       JOIN languages lang ON lang.id = lf.language_id
+       WHERE lf.listing_id = ? ORDER BY lf.language_id ASC, lf.sort_order ASC, lf.id ASC`,
       [listingId],
     );
     return rows.map((row) => ({
       id: row.id,
+      languageId: row.language_id,
+      languageCode: row.language_code,
       question: row.question,
       answer: row.answer,
       sortOrder: row.sort_order,
     }));
   }
 
-  async replaceFaqs(listingId, faqs, userId, connection = this.#pool) {
-    await connection.query('DELETE FROM listing_faqs WHERE listing_id = ?', [
-      listingId,
-    ]);
+  async replaceFaqs(
+    listingId,
+    faqs,
+    userId,
+    languageId,
+    connection = this.#pool,
+  ) {
+    await connection.query(
+      'DELETE FROM listing_faqs WHERE listing_id = ? AND language_id = ?',
+      [listingId, languageId],
+    );
     // eslint-disable-next-line no-restricted-syntax -- ordered insert, must preserve sequence
     for (const [index, faq] of faqs.entries()) {
       // eslint-disable-next-line no-await-in-loop -- sequential by design
       await connection.query(
-        `INSERT INTO listing_faqs (listing_id, question, answer, sort_order, created_by, updated_by)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [listingId, faq.question, faq.answer, index, userId, userId],
+        `INSERT INTO listing_faqs (listing_id, language_id, question, answer, sort_order, created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          listingId,
+          languageId,
+          faq.question,
+          faq.answer,
+          index,
+          userId,
+          userId,
+        ],
       );
     }
     return this.listFaqs(listingId, connection);

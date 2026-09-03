@@ -22,9 +22,12 @@ export const SEARCH_RESULTS_LIMIT = 12;
 
 /**
  * @param {{ destination?: string, categoryId?: number, listingType?: string, sort?: string }} filters
- * @param {{ locale?: string }} [options]
+ * @param {{ locale?: string, enabled?: boolean }} [options]
  */
-export function useSearchListingsQuery(filters, { locale } = {}) {
+export function useSearchListingsQuery(
+  filters,
+  { locale, enabled = true } = {},
+) {
   const queryParams = toSearchQueryParams(filters, locale);
 
   return useInfiniteQuery({
@@ -40,6 +43,7 @@ export function useSearchListingsQuery(filters, { locale } = {}) {
     initialPageParam: null,
     getNextPageParam: (lastPage) => lastPage.meta?.next_cursor ?? undefined,
     staleTime: 60 * 1000,
+    enabled,
   });
 }
 

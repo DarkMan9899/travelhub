@@ -23,11 +23,14 @@
   @include focus.focus-ring;
 
   &:hover .image {
-    transform: scale(1.06);
+    transform: scale(1.08);
   }
 
+  // Redesign phase (2026) — the same subtle perspective tilt as
+  // `Card--elevated` (`packages/ui`), so every showcase-carousel card
+  // shares one "physically tilts toward the viewer" hover language.
   &:hover {
-    transform: translateY(-4px);
+    transform: perspective(1000px) rotateX(2deg) translateY(-4px);
     border-color: rgba(tokens.$color-white, 0.5);
     @include tokens.elevation-3;
   }

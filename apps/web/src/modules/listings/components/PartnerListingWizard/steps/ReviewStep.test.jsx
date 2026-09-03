@@ -19,7 +19,11 @@ vi.mock('../ListingCompletenessWidget.jsx', () => ({
 
 const LISTING = {
   id: 7,
-  translations: [{ title: 'Boutique Yerevan Hotel' }],
+  translations: [{ language_code: 'en', title: 'Boutique Yerevan Hotel' }],
+  highlights: [],
+  included_items: [],
+  faqs: [],
+  itinerary_steps: [],
   location: { latitude: 40.18, longitude: 44.5 },
   media: [{ id: 1 }, { id: 2 }],
   amenity_ids: [1, 2, 3],
@@ -83,7 +87,7 @@ describe('ReviewStep (PartnerListingWizard)', () => {
       'One or more fields are invalid.',
     );
     expect(
-      screen.getByText('Հրապարակելուց առաջ ավելացրեք առնվազն մեկ լուսանկար:'),
+      screen.getByText('Հրապարակելուց առաջ ավելացրեք առնվազն մեկ լուսանկար։'),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Հրապարակել' }));
@@ -98,5 +102,41 @@ describe('ReviewStep (PartnerListingWizard)', () => {
       />,
     );
     expect(screen.getAllByText('Նշված չէ')).toHaveLength(2);
+  });
+
+  // 2026 Partner Workspace redesign (Sprint 3 closeout).
+  describe('translation completeness', () => {
+    test('shows a per-locale status distinct from the required-to-publish widget, using real authored data', () => {
+      render(
+        <ReviewStep
+          listing={{
+            ...LISTING,
+            translations: [
+              { language_code: 'en', title: 'Boutique Yerevan Hotel' },
+              { language_code: 'hy', title: 'Բուտիկ հյուրանոց' },
+            ],
+            highlights: [{ language_code: 'en', text: 'Great location' }],
+          }}
+          onPublished={vi.fn()}
+        />,
+      );
+      expect(
+        screen.getByText('Թարգմանության ամբողջականություն'),
+      ).toBeInTheDocument();
+      // en has title + highlights (2/7) => "Մասնակի" (partial); hy has
+      // only title (1/7) => also partial; ru has nothing => "Չսկսված".
+      expect(screen.getAllByText('Մասնակի')).toHaveLength(2);
+      expect(screen.getByText('Չսկսված')).toBeInTheDocument();
+    });
+
+    test('a locale missing every translated field never blocks the Publish action', async () => {
+      const user = userEvent.setup();
+      const onPublished = vi.fn();
+      render(<ReviewStep listing={LISTING} onPublished={onPublished} />);
+      // Two locales are completely untranslated in the base LISTING
+      // fixture — the publish button must still be enabled and callable.
+      await user.click(screen.getByRole('button', { name: 'Հրապարակել' }));
+      await waitFor(() => expect(onPublished).toHaveBeenCalled());
+    });
   });
 });

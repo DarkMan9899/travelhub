@@ -70,35 +70,63 @@ export default function ListingGallery({ media = [], title = undefined }) {
   return (
     <>
       <div className={styles.grid}>
-        {items.map((item, index) => (
-          <button
-            key={item.id}
-            type="button"
-            className={styles.thumbnailButton}
-            onClick={() => setOpenIndex(index)}
-            aria-label={t('pages.listingDetail.gallery.viewImage', {
-              index: index + 1,
-              count: total,
-            })}
-          >
-            {item.media_type === 'VIDEO' ? (
-              // eslint-disable-next-line jsx-a11y/media-has-caption -- a decorative silent thumbnail preview, not the primary viewing experience (the lightbox's <video controls> is)
-              <video
-                src={item.url}
-                className={styles.thumbnail}
-                muted
-                aria-hidden="true"
-              />
-            ) : (
-              <img
-                src={item.thumbnail_url ?? item.url}
-                alt={resolveAltText(item, index, total, title, t)}
-                className={styles.thumbnail}
-                loading="lazy"
-              />
-            )}
-          </button>
-        ))}
+        {items.map((item, index) => {
+          // The grid itself only ever displays the hero + 4 more tiles
+          // (ListingGallery.module.scss's `:nth-child(n + 6)` rule) — the
+          // 5th tile (index 4) is the last one visible, so that's where
+          // a "+N more" overlay belongs when the listing has more photos
+          // than fit.
+          const isLastVisible = index === 4 && total > 5;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={styles.thumbnailButton}
+              onClick={() => setOpenIndex(index)}
+              aria-label={
+                isLastVisible
+                  ? t('pages.listingDetail.gallery.viewAllPhotos', {
+                      count: total,
+                    })
+                  : t('pages.listingDetail.gallery.viewImage', {
+                      index: index + 1,
+                      count: total,
+                    })
+              }
+            >
+              {item.media_type === 'VIDEO' ? (
+                // eslint-disable-next-line jsx-a11y/media-has-caption -- a decorative silent thumbnail preview, not the primary viewing experience (the lightbox's <video controls> is)
+                <video
+                  src={item.url}
+                  className={styles.thumbnail}
+                  muted
+                  aria-hidden="true"
+                />
+              ) : (
+                <img
+                  src={item.thumbnail_url ?? item.url}
+                  alt={resolveAltText(item, index, total, title, t)}
+                  className={styles.thumbnail}
+                  // 2026 SEO/performance audit: the first tile is this
+                  // page's LCP candidate (the largest above-the-fold
+                  // image) — lazy-loading it actively delays LCP, the
+                  // opposite of what `loading="lazy"` is for. Only the
+                  // remaining, below-the-fold tiles defer.
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  // eslint-disable-next-line react/no-unknown-property -- this React version's JSX runtime doesn't yet know the camelCase `fetchPriority` DOM-property mapping; the lowercase spelling passes straight through as the real HTML attribute browsers read.
+                  fetchpriority={index === 0 ? 'high' : undefined}
+                />
+              )}
+              {isLastVisible && (
+                <span className={styles.moreOverlay} aria-hidden="true">
+                  {t('pages.listingDetail.gallery.morePhotos', {
+                    count: total - 5,
+                  })}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <Modal

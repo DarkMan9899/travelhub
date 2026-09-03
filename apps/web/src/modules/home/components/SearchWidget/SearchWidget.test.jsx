@@ -39,6 +39,16 @@ function renderSearchWidget() {
   );
 }
 
+// Redesign phase (2026) — the widget now renders as a compact "command
+// dock" trigger first; every field lives in a panel that only mounts
+// once the trigger is activated (see SearchWidget.jsx's `isExpanded`
+// state). The trigger's accessible name is the untouched destination
+// placeholder copy (its only non-decorative text content), so this is
+// the one new step every test below needs before it can reach a field.
+async function expandDock(user) {
+  await user.click(screen.getByRole('button', { name: 'Ո՞ւր եք գնում' }));
+}
+
 describe('SearchWidget (apps/web/src/modules/home)', () => {
   beforeEach(() => {
     navigateMock.mockClear();
@@ -46,8 +56,19 @@ describe('SearchWidget (apps/web/src/modules/home)', () => {
     useSuggestionsQuery.mockReturnValue({ data: [], isPending: false });
   });
 
-  test('renders the destination field and submit control', () => {
+  test('renders a compact trigger, collapsed by default', () => {
     renderSearchWidget();
+    expect(
+      screen.getByRole('button', { name: 'Ո՞ւր եք գնում' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+  });
+
+  test('expanding the trigger reveals the destination field and submit control', async () => {
+    const user = userEvent.setup();
+    renderSearchWidget();
+    await expandDock(user);
+
     expect(
       screen.getByRole('combobox', { name: /Ուղղություն/ }),
     ).toBeInTheDocument();
@@ -58,6 +79,7 @@ describe('SearchWidget (apps/web/src/modules/home)', () => {
     const user = userEvent.setup();
 
     renderSearchWidget();
+    await expandDock(user);
     await user.type(
       screen.getByRole('combobox', { name: /Ուղղություն/ }),
       'Yerevan',
@@ -71,17 +93,20 @@ describe('SearchWidget (apps/web/src/modules/home)', () => {
     const user = userEvent.setup();
 
     renderSearchWidget();
+    await expandDock(user);
     await user.click(screen.getByRole('button', { name: /Որոնել/ }));
 
     expect(navigateMock).toHaveBeenCalledWith('/en/search');
   });
 
-  test('renders real categories from the API as select options', () => {
+  test('renders real categories from the API as select options', async () => {
+    const user = userEvent.setup();
     useCategoriesQuery.mockReturnValue({
       data: [{ id: 1, slug: 'hotels', name: 'Hotels', listing_count: 4 }],
       isPending: false,
     });
     renderSearchWidget();
+    await expandDock(user);
     expect(screen.getAllByTestId('select-trigger').length).toBeGreaterThan(0);
   });
 
@@ -94,6 +119,7 @@ describe('SearchWidget (apps/web/src/modules/home)', () => {
   test('(P1.1) selecting a date range and submitting navigates with real dateFrom/dateTo params', async () => {
     const user = userEvent.setup();
     renderSearchWidget();
+    await expandDock(user);
 
     await user.click(screen.getByLabelText('Ամսաթվեր'));
     const grid = screen.getByRole('grid');
@@ -110,5 +136,18 @@ describe('SearchWidget (apps/web/src/modules/home)', () => {
     expect(url).toMatch(
       /^\/en\/search\?dateFrom=\d{4}-\d{2}-\d{2}&dateTo=\d{4}-\d{2}-\d{2}$/,
     );
+  });
+
+  test('the collapse control returns to the compact trigger', async () => {
+    const user = userEvent.setup();
+    renderSearchWidget();
+    await expandDock(user);
+
+    await user.click(screen.getByRole('button', { name: 'Փակել' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Ո՞ւր եք գնում' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 });

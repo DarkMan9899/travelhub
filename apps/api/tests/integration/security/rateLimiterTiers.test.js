@@ -9,31 +9,54 @@
  * at the public ceiling, and an authenticated burst of the same size does
  * not, because it's judged against the higher authenticated ceiling.
  *
- * Deliberately does NOT run with the RATE_LIMIT_*_PER_MINUTE overrides the
- * rest of the suite uses to avoid rate-limit interference — this file
- * needs the real default limits (public=20/min, authenticated=300/min) to
- * observe the tiering behavior at all.
+ * Deliberately does NOT run with the RATE_LIMIT_*_PER_MINUTE overrides
+ * `package.json`'s `test:integration`/`test:contract` scripts set for the
+ * rest of the suite (test-readiness remediation, 2026 — those scripts set
+ * generous ceilings so that the other ~130 integration files' combined
+ * request volume never collides on the real, tight production limits) —
+ * this file needs the real production default limits (public=20/min,
+ * authenticated=300/min, from `.env`/config's own defaults) to observe
+ * the tiering behavior at all, so it force-overrides those two env vars
+ * back down for itself before `app.js`/`config/index.js` ever evaluates
+ * them, using the same file-scoped dynamic-import opt-out pattern
+ * `paymentsDisabledGate.test.js` established for `PAYMENTS_ENABLED`.
  */
 
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
-import { up } from '../../../src/infrastructure/database/migrate.js';
-import { seedAll } from '../../../src/infrastructure/database/seeds/index.js';
-import app from '../../../src/app.js';
-import { closeMysqlPool } from '../../../src/infrastructure/database/mysqlPool.js';
-import { closeRedisConnection } from '../../../src/infrastructure/cache/redisClient.js';
-import { resetRateLimits } from '../helpers/resetRateLimits.js';
+
+let up;
+let seedAll;
+let app;
+let closeMysqlPool;
+let closeRedisConnection;
+let resetRateLimits;
 
 function uniqueEmail(prefix) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}@example.com`;
 }
 
 beforeAll(async () => {
+  process.env.RATE_LIMIT_PUBLIC_PER_MINUTE = '20';
+  process.env.RATE_LIMIT_AUTHENTICATED_PER_MINUTE = '300';
+
+  ({ up } = await import('../../../src/infrastructure/database/migrate.js'));
+  ({ seedAll } =
+    await import('../../../src/infrastructure/database/seeds/index.js'));
+  ({ default: app } = await import('../../../src/app.js'));
+  ({ closeMysqlPool } =
+    await import('../../../src/infrastructure/database/mysqlPool.js'));
+  ({ closeRedisConnection } =
+    await import('../../../src/infrastructure/cache/redisClient.js'));
+  ({ resetRateLimits } = await import('../helpers/resetRateLimits.js'));
+
   await up();
   await seedAll();
 }, 60_000);
 
 afterAll(async () => {
+  delete process.env.RATE_LIMIT_PUBLIC_PER_MINUTE;
+  delete process.env.RATE_LIMIT_AUTHENTICATED_PER_MINUTE;
   await closeMysqlPool();
   await closeRedisConnection();
 });

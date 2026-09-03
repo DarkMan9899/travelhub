@@ -14,3 +14,4 @@
 export { default as MessagingBell } from './components/MessagingBell/MessagingBell.jsx';
 export { default as MessagingPageContent } from './components/MessagingPageContent/MessagingPageContent.jsx';
 export { useCreateConversationMutation } from './mutations/useCreateConversationMutation.js';
+export { useUnreadConversationCountQuery } from './queries/useUnreadConversationCountQuery.js';

@@ -1,8 +1,35 @@
 // Design tokens — Typography.
 // Source of truth: UI_UX_GUIDELINES.md §4.
+//
+// Multilingual fallback strategy (verified against Google Fonts' own
+// subset metadata, not assumed): of ~1,950 Google Fonts families, only
+// 6 support Armenian at all, and none of them are premium editorial
+// display faces — Playfair Display, Inter, and Manrope all cover Latin
+// + Cyrillic (EN/RU) but have zero Armenian glyphs. Rather than swap the
+// whole system to a generic "supports everything" face (the Noto
+// family's own designs read as utilitarian, not premium/editorial —
+// exactly what this token file is trying to avoid), each stack lists a
+// same-role Noto companion as an explicit fallback: the browser already
+// substitutes per-glyph when a font lacks a character, so Armenian text
+// automatically renders in the Noto companion while Latin/Cyrillic text
+// renders in the primary face — no per-locale font-switching logic
+// needed. Noto's own cross-script design mandate keeps the fallback's
+// weight/x-height reasonably close to its companion, though it will
+// never be a perfect metric match for a display serif specifically (see
+// $font-display below).
+$font-heading: 'Manrope', 'Noto Sans Armenian', sans-serif;
+$font-body: 'Inter', 'Noto Sans Armenian', sans-serif;
 
-$font-heading: 'Manrope', sans-serif;
-$font-body: 'Inter', sans-serif;
+// The premium editorial display face — Hero headline, major public-page
+// section titles, and destination/editorial headings (UI_UX_GUIDELINES.md
+// pending update). Playfair Display: a high-contrast, classical serif
+// with real weight range (400-900) and italics, the same "travel
+// magazine / luxury hospitality" register used across most premium
+// hotel and destination branding — deliberately not the geometric-sans
+// $font-heading, so the display/UI contrast the brief asks for actually
+// reads. $font-heading stays the un-migrated heading face everywhere
+// outside the Hero, pending its own rollout.
+$font-display: 'Playfair Display', 'Noto Serif Armenian', serif;
 
 // Size / line-height pairs, in px (converted to rem via the rem() function
 // in functions.scss at point of use — FRONTEND_ARCHITECTURE.md §9.3).

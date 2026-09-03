@@ -88,7 +88,7 @@ describe('DynamicAttributesStep (PartnerListingWizard)', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Շարունակել' }));
     expect(
-      await screen.findByText('Այս դաշտը պարտադիր է:'),
+      await screen.findByText('Այս դաշտը պարտադիր է։'),
     ).toBeInTheDocument();
     expect(mutateAsync).not.toHaveBeenCalled();
   });
@@ -136,7 +136,7 @@ describe('DynamicAttributesStep (PartnerListingWizard)', () => {
       <DynamicAttributesStep listingId={7} categoryId={3} onNext={vi.fn()} />,
     );
     expect(
-      screen.getByText('Այս կատեգորիան լրացուցիչ մանրամասներ չունի:'),
+      screen.getByText('Այս կատեգորիան լրացուցիչ մանրամասներ չունի։'),
     ).toBeInTheDocument();
   });
 });

@@ -44,15 +44,24 @@
 
 .title {
   margin: 0;
-  font-family: tokens.$font-heading;
-  font-weight: 700;
+  // The same display face as the Hero headline (Playfair Display, with
+  // a Noto Serif Armenian fallback — tokens/_typography.scss), not
+  // $font-heading — the page-wide typography pass: every major Home
+  // section title now shares the Hero's editorial register, so the
+  // page reads as one continuous premium identity instead of "modern
+  // Hero, ordinary SaaS headings everywhere after it."
+  font-family: tokens.$font-display;
+  font-weight: 800;
   font-size: tokens.$font-size-h2;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
   color: tokens.$color-gray-900;
 
   @include respond.respond(laptop) {
-    font-size: calc(#{tokens.$font-size-h2} * 1.15);
+    // A larger jump than the previous 1.15x — an editorial-scale
+    // headline is one of the cheapest, highest-impact ways to stop a
+    // section header reading as a generic "boxed template" title.
+    font-size: calc(#{tokens.$font-size-h2} * 1.35);
   }
 }
 
@@ -94,5 +103,31 @@
 
   &:hover::after {
     transform: translateX(3px);
+  }
+}
+
+// `tone="dark"` — Popular Experiences' own cinematic panel. Only the
+// text colors change; layout/spacing/typography stay identical to the
+// light tone so the two read as the same heading system on a different
+// backdrop, not a different component.
+.header--dark {
+  .title {
+    color: tokens.$color-white;
+  }
+
+  .subtitle {
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .eyebrow {
+    color: tokens.$color-gold;
+  }
+
+  .viewAll {
+    color: tokens.$color-white;
+
+    &:hover {
+      color: tokens.$color-gold;
+    }
   }
 }

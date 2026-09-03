@@ -20,7 +20,7 @@
  * gets the generic retryable `ErrorState`.
  */
 
-import { Fragment, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -42,6 +42,7 @@ import { useListingQuery } from '../../queries/useListingQuery.js';
 import { useListingMetadataQuery } from '../../queries/useListingMetadataQuery.js';
 import { useListingCategoriesQuery } from '../../queries/useListingCategoriesQuery.js';
 import getLocalizedTranslation from '../../utils/getLocalizedTranslation.js';
+import getLocalizedItems from '../../utils/getLocalizedItems.js';
 import ListingHero from './ListingHero/ListingHero.jsx';
 import ListingSectionNav from './ListingSectionNav/ListingSectionNav.jsx';
 import ListingAboutSection from './ListingAboutSection/ListingAboutSection.jsx';
@@ -77,6 +78,22 @@ const SECTION_LOCATION = 'location';
 const SECTION_REVIEWS = 'reviews';
 const SECTION_FAQ = 'faq';
 
+// 2026 stabilization audit — the lower page previously read as a long
+// stack of identical giant white cards (every section shared one blanket
+// `.main > section` treatment). Structured, browsable content —
+// Amenities/Included/Policies/FAQ, each already its own tight list or
+// accordion — reads better with editorial rhythm (typography + a subtle
+// rule, no card chrome) than boxed in yet another elevated card; the
+// remaining sections (About, Attributes, Availability, Location,
+// Reviews) genuinely are prose/dense-data blocks that still benefit from
+// a card's visual grouping.
+const EDITORIAL_SECTION_IDS = new Set([
+  SECTION_INCLUDED,
+  SECTION_AMENITIES,
+  SECTION_POLICIES,
+  SECTION_FAQ,
+]);
+
 export default function ListingDetailPageContent() {
   const { t } = useTranslation();
   // `id` is the raw path segment — Phase 20 (SEO) route accepts either the
@@ -111,6 +128,25 @@ export default function ListingDetailPageContent() {
     ? getLocalizedTranslation(listing.translations, locale)
     : null;
 
+  // Phase 18's highlights/itinerary/included-items/FAQs are now per-locale
+  // rows (migration 0037, 2026 stabilization audit) — the API returns
+  // every language's rows in one flat array (tagged with `language_code`,
+  // exactly like `listing.translations` already is), and this is the one
+  // place that picks the current locale's subset for the whole page.
+  // Computed unconditionally (not after the loading/error early-returns
+  // below) since `faqJsonLd`, built from `faqs`, feeds the `useSeo` hook
+  // call, which itself must run before any early return.
+  const highlights = listing
+    ? getLocalizedItems(listing.highlights, locale)
+    : [];
+  const itinerarySteps = listing
+    ? getLocalizedItems(listing.itinerary_steps, locale)
+    : [];
+  const includedItems = listing
+    ? getLocalizedItems(listing.included_items, locale)
+    : [];
+  const faqs = listing ? getLocalizedItems(listing.faqs, locale) : [];
+
   // Canonicalizes on the slug: a visit via the legacy numeric-id URL (or
   // any URL that no longer matches the listing's current slug, e.g. after
   // a partner renames it) is swapped to the slug URL once it's known —
@@ -144,7 +180,7 @@ export default function ListingDetailPageContent() {
           path: canonicalPath,
         })
       : null;
-  const faqJsonLd = listing ? buildFaqPageSchema(listing.faqs) : null;
+  const faqJsonLd = listing ? buildFaqPageSchema(faqs) : null;
   const breadcrumbItems = listing
     ? [
         { label: t('nav.home'), href: `/${locale}` },
@@ -154,6 +190,15 @@ export default function ListingDetailPageContent() {
         },
       ]
     : [];
+
+  // 2026 SEO audit: every listing has real photos, but OG/Twitter cards
+  // were falling back to the link-only "summary" card with no image —
+  // the lowest-`position` real photo, same source `ListingGallery`'s own
+  // hero tile uses, never a stock/placeholder image.
+  const seoImage = (listing?.media ?? [])
+    .filter((item) => item.media_type === 'IMAGE')
+    .slice()
+    .sort((a, b) => a.position - b.position)[0]?.url;
 
   const cityName = listing?.location?.city_name;
   let seoPageTitle;
@@ -170,6 +215,7 @@ export default function ListingDetailPageContent() {
     description: seoDescription,
     locale,
     path: canonicalPath,
+    image: seoImage,
     noindex: listing
       ? !listing.is_indexable || listing.status !== 'PUBLISHED'
       : true,
@@ -236,11 +282,11 @@ export default function ListingDetailPageContent() {
       id: SECTION_ABOUT,
       label: t('pages.listingDetail.about.heading'),
     },
-    listing.itinerary_steps?.length > 0 && {
+    itinerarySteps.length > 0 && {
       id: SECTION_ITINERARY,
       label: t('pages.listingDetail.itinerary.heading'),
     },
-    listing.included_items?.length > 0 && {
+    includedItems.length > 0 && {
       id: SECTION_INCLUDED,
       label: t('pages.listingDetail.included.heading'),
     },
@@ -266,7 +312,7 @@ export default function ListingDetailPageContent() {
       label: t('pages.listingDetail.location.heading'),
     },
     { id: SECTION_REVIEWS, label: t('pages.listingDetail.reviews.heading') },
-    listing.faqs?.length > 0 && {
+    faqs.length > 0 && {
       id: SECTION_FAQ,
       label: t('pages.listingDetail.faq.heading'),
     },
@@ -289,13 +335,13 @@ export default function ListingDetailPageContent() {
     ),
     [SECTION_ITINERARY]: (
       <ListingItinerarySection
-        steps={listing.itinerary_steps}
+        steps={itinerarySteps}
         sectionId={SECTION_ITINERARY}
       />
     ),
     [SECTION_INCLUDED]: (
       <ListingIncludedSection
-        items={listing.included_items}
+        items={includedItems}
         sectionId={SECTION_INCLUDED}
       />
     ),
@@ -342,9 +388,7 @@ export default function ListingDetailPageContent() {
         sectionId={SECTION_REVIEWS}
       />
     ),
-    [SECTION_FAQ]: (
-      <ListingFaqSection faqs={listing.faqs} sectionId={SECTION_FAQ} />
-    ),
+    [SECTION_FAQ]: <ListingFaqSection faqs={faqs} sectionId={SECTION_FAQ} />,
   };
 
   return (
@@ -359,7 +403,7 @@ export default function ListingDetailPageContent() {
         countryName={listing.location?.country_name ?? null}
         ratingAverage={listing.rating_average}
         reviewCount={listing.review_count}
-        highlights={listing.highlights}
+        highlights={highlights}
         reviewsAnchorId={SECTION_REVIEWS}
         actions={
           <Inline gap="2" align="center">
@@ -382,9 +426,14 @@ export default function ListingDetailPageContent() {
       <div className={styles.layout}>
         <div className={styles.main}>
           {isMetadataPending && (
-            <Section aria-label={t('pages.listingDetail.loading')}>
-              <Skeleton variant="rect" height={160} />
-            </Section>
+            <div className={styles.sectionCard}>
+              <Section
+                spacing="none"
+                aria-label={t('pages.listingDetail.loading')}
+              >
+                <Skeleton variant="rect" height={160} />
+              </Section>
+            </div>
           )}
           {isMetadataError && (
             <ErrorState
@@ -395,7 +444,16 @@ export default function ListingDetailPageContent() {
           )}
 
           {orderedSections.map(({ id: sectionId }) => (
-            <Fragment key={sectionId}>{sectionElements[sectionId]}</Fragment>
+            <div
+              key={sectionId}
+              className={
+                EDITORIAL_SECTION_IDS.has(sectionId)
+                  ? styles.sectionEditorial
+                  : styles.sectionCard
+              }
+            >
+              {sectionElements[sectionId]}
+            </div>
           ))}
 
           <RelatedListings

@@ -7,6 +7,7 @@
 
 @use 'tokens' as tokens;
 @use 'mixins/truncate-lines' as truncate;
+@use 'mixins/glass' as glass;
 
 .card {
   display: flex;
@@ -78,10 +79,10 @@
   gap: tokens.$space-1;
   padding: tokens.$space-1 tokens.$space-2;
   border-radius: tokens.$radius-sm;
-  background-color: rgba(11, 26, 43, 0.6);
   color: tokens.$color-white;
   font-size: tokens.$font-size-small;
   font-weight: 600;
+  @include glass.glass-surface-dark(0.5, 8px);
 }
 
 .body {

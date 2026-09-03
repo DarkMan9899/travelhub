@@ -1,0 +1,82 @@
+// BookingDetailPageContent — tokens only.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.headerCard {
+  overflow: hidden;
+}
+
+.headerMedia {
+  height: 160px;
+
+  @include respond.respond(tablet) {
+    height: 220px;
+  }
+}
+
+.headerImage,
+.headerImagePlaceholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.headerBody {
+  padding: tokens.$space-6;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-4;
+}
+
+.listingTitle {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h3;
+  line-height: tokens.$line-height-h3;
+
+  a {
+    color: tokens.$color-gray-900;
+    text-decoration: none;
+
+    &:hover {
+      color: tokens.$color-royal-blue;
+    }
+  }
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  @include respond.respond(mobile-large) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-1;
+}
+
+.metaLine {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  margin: 0;
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: tokens.$color-gray-400;
+  }
+}

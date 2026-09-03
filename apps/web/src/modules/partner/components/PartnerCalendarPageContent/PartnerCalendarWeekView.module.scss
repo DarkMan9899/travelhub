@@ -1,0 +1,156 @@
+// PartnerCalendarWeekView — Partner Workspace Sprint 5. Tokens only.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+.weekView {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+}
+
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-sm;
+  background-color: tokens.$color-white;
+  color: tokens.$color-gray-900;
+  cursor: pointer;
+  @include focus.focus-ring;
+
+  &:hover {
+    border-color: tokens.$color-royal-blue;
+  }
+}
+
+.rangeLabel {
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+// Time-sliced shape: shared hour axis + 7 day-columns.
+.timeline {
+  display: flex;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  overflow-x: auto;
+}
+
+.hourLabels {
+  flex-shrink: 0;
+  width: 56px;
+  border-right: 1px solid tokens.$color-gray-200;
+  background-color: tokens.$color-gray-100;
+}
+
+.hourLabelsSpacer {
+  height: 32px;
+  border-bottom: 1px solid tokens.$color-gray-200;
+}
+
+.hourLabel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: tokens.$space-1;
+  font-size: tokens.$font-size-micro;
+  color: tokens.$color-gray-600;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid tokens.$color-gray-200;
+  box-sizing: border-box;
+}
+
+.days {
+  display: flex;
+  flex: 1;
+  min-width: 700px;
+}
+
+.dayColumn {
+  flex: 1;
+  min-width: 100px;
+  border-right: 1px solid tokens.$color-gray-200;
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.dayColumnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  border-bottom: 1px solid tokens.$color-gray-200;
+  background-color: tokens.$color-gray-100;
+  font-size: tokens.$font-size-micro;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+}
+
+.slotsLayer {
+  position: relative;
+}
+
+.hourGridline {
+  border-bottom: 1px solid tokens.$color-gray-200;
+  box-sizing: border-box;
+}
+
+// Date-only shape: a plain 7-cell status strip.
+.weekStrip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: tokens.$space-2;
+}
+
+.dayCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: tokens.$space-2;
+  padding: tokens.$space-3;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  background-color: tokens.$color-white;
+  cursor: pointer;
+  @include focus.focus-ring;
+
+  &:hover {
+    border-color: tokens.$color-royal-blue;
+  }
+
+  &--available {
+    border-color: tokens.$color-success;
+  }
+
+  &--blocked {
+    background-color: tokens.$color-gray-100;
+  }
+
+  &--selected {
+    outline: 2px solid tokens.$color-royal-blue;
+    outline-offset: 1px;
+  }
+}
+
+.dayCellDate {
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+  font-variant-numeric: tabular-nums;
+}

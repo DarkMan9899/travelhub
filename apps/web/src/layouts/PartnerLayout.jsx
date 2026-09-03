@@ -12,10 +12,35 @@
  * `partnerships` field specifically to make `RequirePartner` a real
  * partner-membership check — this layout previously flagged that no such
  * check was possible yet; that limitation is resolved.
+ *
+ * 2026 Partner Workspace redesign: each nav item now carries a
+ * `lucide-react` icon (`Sidebar` already supported `item.icon`, unused
+ * here until now) and `PartnerWorkspaceIdentity` sits above the nav —
+ * the same structural placement as `CustomerAccountLayout`'s
+ * `AccountIdentityCard`, but its own component with its own restrained
+ * navy styling rather than that card's soft-elevation "premium" look
+ * (see the component's own header for why). `Sidebar` intentionally does
+ * NOT get `variant="premium"` here — that variant is the Customer
+ * Account visual language; Partner Workspace's brief calls for a calmer,
+ * denser, more operational register, which the component's *default*
+ * (white surface, thin border, royal-blue active state) already reads
+ * as, so no variant override is needed.
  */
 
 import { Outlet, useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  LayoutDashboard,
+  ListChecks,
+  CalendarCheck,
+  CalendarRange,
+  Plug,
+  Building2,
+  Users,
+  MessageCircle,
+  Bell,
+  Sparkles,
+} from 'lucide-react';
 import { Sidebar } from '@desavii/ui/components/navigation';
 import { Container } from '@desavii/ui/components/layout';
 import AppLayout from './AppLayout.jsx';
@@ -26,6 +51,8 @@ import RouterLink from '../components/RouterLink.jsx';
 import { NotificationBell } from '../modules/notifications/index.js';
 import { MessagingBell } from '../modules/messaging/index.js';
 import { AiAssistantTrigger } from '../modules/ai/index.js';
+import { PartnerWorkspaceIdentity } from '../modules/partner/index.js';
+import { usePartnerContext } from '../contexts/PartnerContext.jsx';
 import useNoIndex from '../seo/useNoIndex.js';
 import styles from './PartnerLayout.module.scss';
 
@@ -33,6 +60,7 @@ export default function PartnerLayout() {
   const { t } = useTranslation();
   const { locale } = useParams();
   const location = useLocation();
+  const { activePartner } = usePartnerContext();
   useNoIndex();
 
   const navItems = [
@@ -40,51 +68,61 @@ export default function PartnerLayout() {
       id: 'dashboard',
       label: t('partner.nav.dashboard'),
       href: `/${locale}/partner`,
+      icon: <LayoutDashboard aria-hidden="true" focusable="false" />,
     },
     {
       id: 'listings',
       label: t('partner.nav.listings'),
       href: `/${locale}/partner/listings`,
+      icon: <ListChecks aria-hidden="true" focusable="false" />,
     },
     {
       id: 'bookings',
       label: t('partner.nav.bookings'),
       href: `/${locale}/partner/bookings`,
+      icon: <CalendarCheck aria-hidden="true" focusable="false" />,
     },
     {
       id: 'calendar',
       label: t('partner.nav.calendar'),
       href: `/${locale}/partner/calendar`,
+      icon: <CalendarRange aria-hidden="true" focusable="false" />,
     },
     {
       id: 'connections',
       label: t('partner.nav.connections'),
       href: `/${locale}/partner/connections`,
+      icon: <Plug aria-hidden="true" focusable="false" />,
     },
     {
       id: 'profile',
       label: t('partner.nav.profile'),
       href: `/${locale}/partner/profile`,
+      icon: <Building2 aria-hidden="true" focusable="false" />,
     },
     {
       id: 'staff',
       label: t('partner.nav.staff'),
       href: `/${locale}/partner/staff`,
+      icon: <Users aria-hidden="true" focusable="false" />,
     },
     {
       id: 'messages',
       label: t('partner.nav.messages'),
       href: `/${locale}/partner/messages`,
+      icon: <MessageCircle aria-hidden="true" focusable="false" />,
     },
     {
       id: 'notifications',
       label: t('partner.nav.notifications'),
       href: `/${locale}/partner/notifications`,
+      icon: <Bell aria-hidden="true" focusable="false" />,
     },
     {
       id: 'ai-usage',
       label: t('partner.nav.aiUsage'),
       href: `/${locale}/partner/ai/usage`,
+      icon: <Sparkles aria-hidden="true" focusable="false" />,
     },
   ];
 
@@ -122,13 +160,19 @@ export default function PartnerLayout() {
       }
     >
       <Container size="wide" className={styles.body}>
-        <Sidebar
-          items={[{ id: 'partner', items: navItems }]}
-          activeItemId={activeItemId}
-          linkComponent={RouterLink}
-          ariaLabel={t('nav.partner')}
-          className={styles.sidebar}
-        />
+        <div className={styles.sidebarColumn}>
+          <PartnerWorkspaceIdentity
+            activePartner={activePartner}
+            locale={locale}
+          />
+          <Sidebar
+            items={[{ id: 'partner', items: navItems }]}
+            activeItemId={activeItemId}
+            linkComponent={RouterLink}
+            ariaLabel={t('nav.partner')}
+            className={styles.sidebar}
+          />
+        </div>
         <div className={styles.content}>
           <Outlet />
         </div>

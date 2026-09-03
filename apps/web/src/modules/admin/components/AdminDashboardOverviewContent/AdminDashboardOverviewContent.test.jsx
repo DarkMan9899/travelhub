@@ -48,7 +48,7 @@ describe('AdminDashboardOverviewContent (apps/web/src/modules/admin)', () => {
     renderPage();
 
     expect(
-      screen.getByText('Վահանակը բեռնելիս ինչ-որ բան այն չգնաց։'),
+      screen.getByText('Վահանակը բեռնելիս ինչ-որ բան սխալ գնաց։'),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Կրկին փորձել' }));
     expect(refetch).toHaveBeenCalledTimes(1);

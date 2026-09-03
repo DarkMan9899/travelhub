@@ -28,12 +28,14 @@ vi.mock('../../mutations/useUploadCompanyCoverMutation.js', () => ({
 
 const PROFILE = {
   id: 3,
+  slug: 'sevan-lakeside-tours',
   display_name: 'Sevan Lakeside Tours',
   email: 'contact@sevanlakeside.example',
   phone: '+37400000000',
   website: 'https://sevanlakeside.example',
   logo_url: null,
   cover_url: null,
+  is_verified: true,
   social_links: { facebook: 'https://facebook.com/sevan' },
   translations: [
     { language_id: 2, language_code: 'hy', description: 'Մեր մասին' },
@@ -156,6 +158,48 @@ describe('PartnerProfilePageContent (apps/web/src/modules/partner)', () => {
         }),
       );
     });
+  });
+
+  test('a verified partner sees the verified badge and a link to the real public company page', async () => {
+    useMyCompanyProfileQuery.mockReturnValue({
+      data: PROFILE,
+      isPending: false,
+      isError: false,
+    });
+    useUpdateCompanyProfileMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    renderPage();
+
+    await screen.findByDisplayValue('Sevan Lakeside Tours');
+    expect(screen.getByText('Ստուգված')).toBeInTheDocument();
+    const publicLink = screen.getByRole('link', {
+      name: /Դիտել հանրային էջը/,
+    });
+    expect(publicLink).toHaveAttribute(
+      'href',
+      '/hy/companies/sevan-lakeside-tours',
+    );
+  });
+
+  test('an unverified partner sees no verified badge, but still sees the public-profile relationship note', async () => {
+    useMyCompanyProfileQuery.mockReturnValue({
+      data: { ...PROFILE, is_verified: false },
+      isPending: false,
+      isError: false,
+    });
+    useUpdateCompanyProfileMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    renderPage();
+
+    await screen.findByDisplayValue('Sevan Lakeside Tours');
+    expect(screen.queryByText('Ստուգված')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Գործընկերոջ աշխատավայրի պրոֆիլի խմբագրիչն է/),
+    ).toBeInTheDocument();
   });
 
   test('a non-manager role (EDITOR) sees a read-only form with no save action', async () => {

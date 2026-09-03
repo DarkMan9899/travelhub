@@ -46,7 +46,7 @@ export default function Categories() {
           {Array.from({ length: SKELETON_COUNT }, (_, index) => (
             // eslint-disable-next-line react/no-array-index-key -- skeleton
             // placeholders are positionally static, non-reorderable.
-            <Skeleton key={index} variant="rect" height={132} />
+            <Skeleton key={index} variant="rect" height={148} />
           ))}
         </div>
       )}
@@ -68,9 +68,13 @@ export default function Categories() {
       )}
 
       {!isPending && !isError && categories.length > 0 && (
-        <ScrollReveal stagger className={styles.grid}>
-          {categories.map((category) => (
-            <CategoryCard key={category.id} category={category} />
+        <ScrollReveal stagger variant="depth" className={styles.grid}>
+          {categories.map((category, index) => (
+            <CategoryCard
+              key={category.id}
+              category={category}
+              featured={index === 0}
+            />
           ))}
         </ScrollReveal>
       )}

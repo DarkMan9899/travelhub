@@ -45,6 +45,7 @@ import RequirePartner from '../guards/RequirePartner.jsx';
 import RequireRole from '../guards/RequireRole.jsx';
 import PartnerProvider from '../providers/PartnerProvider.jsx';
 import PageLoader from '../components/PageLoader/PageLoader.jsx';
+import ScrollRestoration from './ScrollRestoration.jsx';
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from '../translations/i18n.js';
 
 const HomePage = lazy(() => import('../pages/HomePage.jsx'));
@@ -64,6 +65,12 @@ const BecomePartnerPage = lazy(() => import('../pages/BecomePartnerPage.jsx'));
 const BlogPage = lazy(() => import('../pages/BlogPage.jsx'));
 const LoginPage = lazy(() => import('../pages/auth/LoginPage.jsx'));
 const RegisterPage = lazy(() => import('../pages/auth/RegisterPage.jsx'));
+const ForgotPasswordPage = lazy(
+  () => import('../pages/auth/ForgotPasswordPage.jsx'),
+);
+const ResetPasswordPage = lazy(
+  () => import('../pages/auth/ResetPasswordPage.jsx'),
+);
 const DashboardPage = lazy(() => import('../pages/account/DashboardPage.jsx'));
 const BookingsPage = lazy(() => import('../pages/account/BookingsPage.jsx'));
 const BookingDetailPage = lazy(
@@ -226,132 +233,158 @@ LocaleValidator.propTypes = {
 
 export default function AppRoutes() {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        {/* Root — redirect to the default locale.
+    <>
+      <ScrollRestoration />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Root — redirect to the default locale.
             A future sprint upgrades this to an Accept-Language-aware
             redirect (FRONTEND_ARCHITECTURE.md §4.1); a fixed default is
             the correct, honest interim behavior. */}
-        <Route
-          path="/"
-          element={<Navigate to={`/${DEFAULT_LOCALE}`} replace />}
-        />
+          <Route
+            path="/"
+            element={<Navigate to={`/${DEFAULT_LOCALE}`} replace />}
+          />
 
-        <Route
-          path="/:locale"
-          element={
-            <LocaleValidator>
-              <Outlet />
-            </LocaleValidator>
-          }
-        >
-          {/* Customer Website (§4.2) */}
-          <Route element={<PublicLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="search" element={<SearchPage />} />
-            <Route path="listings/:id" element={<ListingDetailPage />} />
-            {/* Companies/Partners directory (Phase 10 redesign) —
+          <Route
+            path="/:locale"
+            element={
+              <LocaleValidator>
+                <Outlet />
+              </LocaleValidator>
+            }
+          >
+            {/* Customer Website (§4.2) */}
+            <Route element={<PublicLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="search" element={<SearchPage />} />
+              <Route path="listings/:id" element={<ListingDetailPage />} />
+              {/* Companies/Partners directory (Phase 10 redesign) —
                 registered before `listings/:id`'s sibling routes matter
                 less here since the segments don't overlap; kept adjacent
                 to it since both are public content-browsing routes. */}
-            <Route path="companies" element={<CompaniesPage />} />
-            <Route path="companies/:slug" element={<CompanyProfilePage />} />
-            {/* Category/Destination landing pages (Phase 20, SEO) — real
+              <Route path="companies" element={<CompaniesPage />} />
+              <Route path="companies/:slug" element={<CompanyProfilePage />} />
+              {/* Category/Destination landing pages (Phase 20, SEO) — real
                 indexable entry points into each category's/city's
                 inventory, since Search itself is deliberately `noindex`
                 (arbitrary filter combinations are a crawl trap). */}
-            <Route path="categories/:categorySlug" element={<CategoryPage />} />
-            <Route
-              path="destinations/:citySlug"
-              element={<DestinationPage />}
-            />
-            {/* Static/info pages (Phase 10 redesign) — previously dead
+              <Route
+                path="categories/:categorySlug"
+                element={<CategoryPage />}
+              />
+              <Route
+                path="destinations/:citySlug"
+                element={<DestinationPage />}
+              />
+              {/* Static/info pages (Phase 10 redesign) — previously dead
                 footer/nav links, now real routed content. */}
-            <Route path="about" element={<AboutPage />} />
-            <Route path="contact" element={<ContactPage />} />
-            <Route path="faq" element={<FaqPage />} />
-            <Route path="help" element={<HelpCenterPage />} />
-            <Route path="become-a-partner" element={<BecomePartnerPage />} />
-            <Route path="blog" element={<BlogPage />} />
-          </Route>
+              <Route path="about" element={<AboutPage />} />
+              <Route path="contact" element={<ContactPage />} />
+              <Route path="faq" element={<FaqPage />} />
+              <Route path="help" element={<HelpCenterPage />} />
+              <Route path="become-a-partner" element={<BecomePartnerPage />} />
+              <Route path="blog" element={<BlogPage />} />
+            </Route>
 
-          {/* Booking Flow (Phase 7) — checkout is RequireAuth-gated (a
+            {/* Booking Flow (Phase 7) — checkout is RequireAuth-gated (a
               hold's `booking-holds` API is authenticated) but deliberately
               stays under the focused `PublicLayout` chrome rather than
               `CustomerAccountLayout`'s sidebar, matching a typical
               checkout flow's minimal-distraction convention. */}
-          <Route
-            element={
-              <RequireAuth>
-                <PublicLayout />
-              </RequireAuth>
-            }
-          >
-            <Route path="booking/checkout" element={<BookingCheckoutPage />} />
-          </Route>
-
-          {/* Auth (§4.2/§5.2) */}
-          <Route element={<AuthLayout />}>
-            <Route path="auth/login" element={<LoginPage />} />
-            <Route path="auth/register" element={<RegisterPage />} />
-          </Route>
-
-          {/* Customer Account (§4.2/§5.3) — RequireAuth */}
-          <Route
-            element={
-              <RequireAuth>
-                <CustomerAccountLayout />
-              </RequireAuth>
-            }
-          >
-            <Route path="account" element={<DashboardPage />} />
-            <Route path="account/bookings" element={<BookingsPage />} />
             <Route
-              path="account/bookings/:id"
-              element={<BookingDetailPage />}
-            />
-            <Route path="account/payments" element={<PaymentsPage />} />
-            <Route path="account/profile" element={<ProfilePage />} />
-            <Route path="account/favorites" element={<FavoritesPage />} />
-            <Route path="account/trip-planner" element={<TripPlannerPage />} />
-            <Route
-              path="account/notifications"
-              element={<NotificationsPage />}
-            />
-            <Route path="account/messages" element={<MessagesPage />} />
-            <Route
-              path="account/messages/:conversationId"
-              element={<MessagesPage />}
-            />
-            <Route path="account/settings" element={<SettingsPage />} />
-          </Route>
+              element={
+                <RequireAuth>
+                  <PublicLayout />
+                </RequireAuth>
+              }
+            >
+              <Route
+                path="booking/checkout"
+                element={<BookingCheckoutPage />}
+              />
+            </Route>
 
-          {/* Partner Onboarding (P1.2, Master Roadmap) — RequireAuth only,
+            {/* Auth (§4.2/§5.2) */}
+            <Route element={<AuthLayout />}>
+              <Route path="auth/login" element={<LoginPage />} />
+              <Route path="auth/register" element={<RegisterPage />} />
+              {/* Password reset (P0/P1 launch-audit remediation) — the
+                token lives in the path, matching the existing
+                `partner/invitations/:token` single-use-link convention;
+                the user never sees or types it. */}
+              <Route
+                path="auth/forgot-password"
+                element={<ForgotPasswordPage />}
+              />
+              <Route
+                path="auth/reset-password/:token"
+                element={<ResetPasswordPage />}
+              />
+            </Route>
+
+            {/* Customer Account (§4.2/§5.3) — RequireAuth */}
+            <Route
+              element={
+                <RequireAuth>
+                  <CustomerAccountLayout />
+                </RequireAuth>
+              }
+            >
+              <Route path="account" element={<DashboardPage />} />
+              <Route path="account/bookings" element={<BookingsPage />} />
+              <Route
+                path="account/bookings/:id"
+                element={<BookingDetailPage />}
+              />
+              <Route path="account/payments" element={<PaymentsPage />} />
+              <Route path="account/profile" element={<ProfilePage />} />
+              <Route path="account/favorites" element={<FavoritesPage />} />
+              <Route
+                path="account/trip-planner"
+                element={<TripPlannerPage />}
+              />
+              <Route
+                path="account/notifications"
+                element={<NotificationsPage />}
+              />
+              <Route path="account/messages" element={<MessagesPage />} />
+              <Route
+                path="account/messages/:conversationId"
+                element={<MessagesPage />}
+              />
+              <Route path="account/settings" element={<SettingsPage />} />
+            </Route>
+
+            {/* Partner Onboarding (P1.2, Master Roadmap) — RequireAuth only,
               deliberately NOT RequirePartner: an applicant has no
               partnership yet, so gating this behind `RequirePartner`
               would make the application flow unreachable. Kept under the
               focused `PublicLayout` chrome, same precedent as the
               Booking Flow group above — a form-centric flow, not a
               partner-dashboard page. */}
-          <Route
-            element={
-              <RequireAuth>
-                <PublicLayout />
-              </RequireAuth>
-            }
-          >
-            <Route path="partner/apply" element={<PartnerApplicationPage />} />
-            {/* P1.4 (Master Roadmap) — accepted by the INVITEE, who has
+            <Route
+              element={
+                <RequireAuth>
+                  <PublicLayout />
+                </RequireAuth>
+              }
+            >
+              <Route
+                path="partner/apply"
+                element={<PartnerApplicationPage />}
+              />
+              {/* P1.4 (Master Roadmap) — accepted by the INVITEE, who has
                 no partnership yet (that's the whole point), so this is
                 RequireAuth only, same grouping reason as `partner/apply`
                 above. */}
-            <Route
-              path="partner/invitations/:token"
-              element={<AcceptInvitationPage />}
-            />
-          </Route>
+              <Route
+                path="partner/invitations/:token"
+                element={<AcceptInvitationPage />}
+              />
+            </Route>
 
-          {/* Partner (§4.2/§5.4) — RequireAuth + RequirePartner (Phase 5:
+            {/* Partner (§4.2/§5.4) — RequireAuth + RequirePartner (Phase 5:
               the `partners` backend module now exists, so this is a real
               partner-membership check, not the RequireAuth-only
               placeholder PartnerLayout.jsx previously flagged).
@@ -359,134 +392,147 @@ export default function AppRoutes() {
               `RequirePartner` — its "which partner org am I acting as"
               state has nothing meaningful to hold before
               `partnerships.length > 0` is already guaranteed. */}
-          <Route
-            element={
-              <RequireAuth>
-                <RequirePartner>
-                  <PartnerProvider>
-                    <PartnerLayout />
-                  </PartnerProvider>
-                </RequirePartner>
-              </RequireAuth>
-            }
-          >
-            <Route path="partner" element={<PartnerDashboardPage />} />
-            <Route path="partner/listings" element={<PartnerListingsPage />} />
             <Route
-              path="partner/listings/new"
-              element={<PartnerListingWizardPage />}
-            />
-            <Route
-              path="partner/listings/:id/rooms"
-              element={<PartnerListingRoomsPage />}
-            />
-            <Route path="partner/bookings" element={<PartnerBookingsPage />} />
-            <Route
-              path="partner/bookings/:id"
-              element={<PartnerBookingDetailPage />}
-            />
-            <Route path="partner/calendar" element={<PartnerCalendarPage />} />
-            <Route
-              path="partner/connections"
-              element={<PartnerConnectionsPage />}
-            />
-            <Route path="partner/profile" element={<PartnerProfilePage />} />
-            <Route path="partner/staff" element={<PartnerStaffPage />} />
-            <Route
-              path="partner/notifications"
-              element={<PartnerNotificationsPage />}
-            />
-            <Route path="partner/messages" element={<PartnerMessagesPage />} />
-            <Route
-              path="partner/messages/:conversationId"
-              element={<PartnerMessagesPage />}
-            />
-            <Route path="partner/ai/usage" element={<PartnerAiUsagePage />} />
-          </Route>
+              element={
+                <RequireAuth>
+                  <RequirePartner>
+                    <PartnerProvider>
+                      <PartnerLayout />
+                    </PartnerProvider>
+                  </RequirePartner>
+                </RequireAuth>
+              }
+            >
+              <Route path="partner" element={<PartnerDashboardPage />} />
+              <Route
+                path="partner/listings"
+                element={<PartnerListingsPage />}
+              />
+              <Route
+                path="partner/listings/new"
+                element={<PartnerListingWizardPage />}
+              />
+              <Route
+                path="partner/listings/:id/rooms"
+                element={<PartnerListingRoomsPage />}
+              />
+              <Route
+                path="partner/bookings"
+                element={<PartnerBookingsPage />}
+              />
+              <Route
+                path="partner/bookings/:id"
+                element={<PartnerBookingDetailPage />}
+              />
+              <Route
+                path="partner/calendar"
+                element={<PartnerCalendarPage />}
+              />
+              <Route
+                path="partner/connections"
+                element={<PartnerConnectionsPage />}
+              />
+              <Route path="partner/profile" element={<PartnerProfilePage />} />
+              <Route path="partner/staff" element={<PartnerStaffPage />} />
+              <Route
+                path="partner/notifications"
+                element={<PartnerNotificationsPage />}
+              />
+              <Route
+                path="partner/messages"
+                element={<PartnerMessagesPage />}
+              />
+              <Route
+                path="partner/messages/:conversationId"
+                element={<PartnerMessagesPage />}
+              />
+              <Route path="partner/ai/usage" element={<PartnerAiUsagePage />} />
+            </Route>
 
-          {/* Admin (Phase 11) — RequireAuth + RequireRole (not
+            {/* Admin (Phase 11) — RequireAuth + RequireRole (not
               RequirePartner: admin access is a global role, not a
               partner-membership relationship). Ships in stages — only
               the Dashboard exists as of 11.0; later stages add
               users/partners/listings/bookings/etc. routes here. */}
-          <Route
-            element={
-              <RequireAuth>
-                <RequireRole roles={ADMIN_AREA_ROLES}>
-                  <AdminLayout />
-                </RequireRole>
-              </RequireAuth>
-            }
-          >
-            <Route path="admin" element={<AdminDashboardPage />} />
-            <Route path="admin/users" element={<AdminUsersPage />} />
-            <Route path="admin/users/:id" element={<AdminUserDetailPage />} />
-            <Route path="admin/partners" element={<AdminPartnersPage />} />
             <Route
-              path="admin/partners/:id"
-              element={<AdminPartnerDetailPage />}
-            />
-            <Route
-              path="admin/listings"
-              element={<AdminListingModerationPage />}
-            />
-            <Route
-              path="admin/listings/:id"
-              element={<AdminListingDetailPage />}
-            />
-            <Route
-              path="admin/reviews"
-              element={<AdminReviewModerationPage />}
-            />
-            <Route path="admin/inventory" element={<AdminInventoryPage />} />
-            <Route path="admin/bookings" element={<AdminBookingsPage />} />
-            <Route
-              path="admin/bookings/:id"
-              element={<AdminBookingDetailPage />}
-            />
-            <Route path="admin/payments" element={<AdminPaymentsPage />} />
-            <Route
-              path="admin/payments/:id"
-              element={<AdminPaymentDetailPage />}
-            />
-            <Route
-              path="admin/marketplace-config"
-              element={<AdminMarketplaceConfigPage />}
-            />
-            <Route path="admin/cms" element={<AdminCmsPage />} />
-            <Route path="admin/cms/:id" element={<AdminCmsDetailPage />} />
-            <Route path="admin/audit-logs" element={<AdminAuditLogsPage />} />
-            <Route
-              path="admin/system-health"
-              element={<AdminSystemHealthPage />}
-            />
-            <Route path="admin/settings" element={<AdminSettingsPage />} />
-            <Route
-              path="admin/ai/moderation"
-              element={<AdminAiModerationPage />}
-            />
-            <Route path="admin/ai/usage" element={<AdminAiUsagePage />} />
-            <Route
-              path="admin/notifications"
-              element={<AdminNotificationsPage />}
-            />
-            <Route path="admin/messages" element={<AdminMessagesPage />} />
-            <Route
-              path="admin/messages/:conversationId"
-              element={<AdminMessagesPage />}
-            />
+              element={
+                <RequireAuth>
+                  <RequireRole roles={ADMIN_AREA_ROLES}>
+                    <AdminLayout />
+                  </RequireRole>
+                </RequireAuth>
+              }
+            >
+              <Route path="admin" element={<AdminDashboardPage />} />
+              <Route path="admin/users" element={<AdminUsersPage />} />
+              <Route path="admin/users/:id" element={<AdminUserDetailPage />} />
+              <Route path="admin/partners" element={<AdminPartnersPage />} />
+              <Route
+                path="admin/partners/:id"
+                element={<AdminPartnerDetailPage />}
+              />
+              <Route
+                path="admin/listings"
+                element={<AdminListingModerationPage />}
+              />
+              <Route
+                path="admin/listings/:id"
+                element={<AdminListingDetailPage />}
+              />
+              <Route
+                path="admin/reviews"
+                element={<AdminReviewModerationPage />}
+              />
+              <Route path="admin/inventory" element={<AdminInventoryPage />} />
+              <Route path="admin/bookings" element={<AdminBookingsPage />} />
+              <Route
+                path="admin/bookings/:id"
+                element={<AdminBookingDetailPage />}
+              />
+              <Route path="admin/payments" element={<AdminPaymentsPage />} />
+              <Route
+                path="admin/payments/:id"
+                element={<AdminPaymentDetailPage />}
+              />
+              <Route
+                path="admin/marketplace-config"
+                element={<AdminMarketplaceConfigPage />}
+              />
+              <Route path="admin/cms" element={<AdminCmsPage />} />
+              <Route path="admin/cms/:id" element={<AdminCmsDetailPage />} />
+              <Route path="admin/audit-logs" element={<AdminAuditLogsPage />} />
+              <Route
+                path="admin/system-health"
+                element={<AdminSystemHealthPage />}
+              />
+              <Route path="admin/settings" element={<AdminSettingsPage />} />
+              <Route
+                path="admin/ai/moderation"
+                element={<AdminAiModerationPage />}
+              />
+              <Route path="admin/ai/usage" element={<AdminAiUsagePage />} />
+              <Route
+                path="admin/notifications"
+                element={<AdminNotificationsPage />}
+              />
+              <Route path="admin/messages" element={<AdminMessagesPage />} />
+              <Route
+                path="admin/messages/:conversationId"
+                element={<AdminMessagesPage />}
+              />
+            </Route>
           </Route>
-        </Route>
 
-        <Route
-          path="*"
-          element={
-            <ErrorLayout>
-              <NotFoundPage />
-            </ErrorLayout>
-          }
-        />
-      </Routes>
-    </Suspense>
+          <Route
+            path="*"
+            element={
+              <ErrorLayout>
+                <NotFoundPage />
+              </ErrorLayout>
+            }
+          />
+        </Routes>
+      </Suspense>
+    </>
   );
 }

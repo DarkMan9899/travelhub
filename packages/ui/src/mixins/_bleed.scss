@@ -1,0 +1,40 @@
+// Redesign phase (2026) — lets a full-width row (a carousel, an
+// edge-peeking image band) sit as a direct sibling of a `Container`-wrapped
+// heading while its LEFT edge still lines up exactly with that heading's
+// text, and its right edge bleeds all the way to the viewport edge. The
+// `max()` of the grid gutter and the container's own half-overflow
+// reproduces `Container`'s centering math without duplicating its
+// breakpoint stack in every section that wants this effect.
+
+@use '../tokens/grid' as grid;
+@use '../tokens/container' as container;
+@use './respond' as respond;
+
+@mixin bleed-start($container-max-width: container.$container-wide) {
+  padding-inline-start: max(
+    #{grid.$grid-margin-mobile},
+    calc((100% - #{$container-max-width}) / 2)
+  );
+  padding-inline-end: 0;
+
+  @include respond.respond(mobile-large) {
+    padding-inline-start: max(
+      #{grid.$grid-margin-mobile-large},
+      calc((100% - #{$container-max-width}) / 2)
+    );
+  }
+
+  @include respond.respond(tablet) {
+    padding-inline-start: max(
+      #{grid.$grid-margin-tablet},
+      calc((100% - #{$container-max-width}) / 2)
+    );
+  }
+
+  @include respond.respond(laptop) {
+    padding-inline-start: max(
+      #{grid.$grid-margin-laptop},
+      calc((100% - #{$container-max-width}) / 2)
+    );
+  }
+}

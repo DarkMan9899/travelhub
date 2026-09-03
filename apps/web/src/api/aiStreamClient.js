@@ -7,14 +7,14 @@
  * client-side.
  */
 
-import { DEFAULT_LOCALE } from '../translations/i18n.js';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '../translations/i18n.js';
 import { getAccessToken } from './tokenStore.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 function resolveLocale() {
   const pathLocale = window.location.pathname.split('/')[1];
-  return ['hy', 'ru', 'en'].includes(pathLocale) ? pathLocale : DEFAULT_LOCALE;
+  return SUPPORTED_LOCALES.includes(pathLocale) ? pathLocale : DEFAULT_LOCALE;
 }
 
 /**

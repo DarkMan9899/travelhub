@@ -42,12 +42,14 @@ describe('DestinationCard (apps/web/src/modules/home)', () => {
     expect(screen.queryByText(/հայտարարություն/)).not.toBeInTheDocument();
   });
 
-  test('hides the decorative image from assistive technology', () => {
-    // `alt=""` gives the image an implicit "presentation" role, not
-    // "img" — queried directly rather than via getByRole, same as
-    // Hero.test.jsx's equivalent check.
+  test('hides the decorative backdrop art from assistive technology', () => {
+    // Redesign phase (2026): the backdrop is `DestinationArt` (a
+    // procedural div+svg, keyed by the real destination id — no
+    // per-destination photography exists yet), not an `<img>` — it
+    // still carries `aria-hidden="true"` itself, same intent as the
+    // `alt=""` image it replaced.
     renderCard();
-    const backdrop = document.querySelector('img[aria-hidden="true"]');
-    expect(backdrop).toHaveAttribute('alt', '');
+    const backdrop = document.querySelector('div[aria-hidden="true"]');
+    expect(backdrop).toBeInTheDocument();
   });
 });

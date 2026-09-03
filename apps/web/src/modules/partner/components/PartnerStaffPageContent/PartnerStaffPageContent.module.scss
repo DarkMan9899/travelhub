@@ -1,0 +1,47 @@
+// PartnerStaffPageContent — 2026 Partner Workspace redesign (Sprint 4).
+// Tokens only.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.panelHeading {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+
+  svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: tokens.$color-royal-blue;
+  }
+}
+
+// DataTable (desktop/tablet) vs. card list (mobile) — same data, same
+// handlers, CSS-toggled by breakpoint, exactly how `Sidebar` itself
+// already reflows between its two responsive treatments.
+.desktopOnly {
+  display: none;
+
+  @include respond.respond(tablet) {
+    display: block;
+  }
+}
+
+.mobileOnly {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-2;
+
+  @include respond.respond(tablet) {
+    display: none;
+  }
+}

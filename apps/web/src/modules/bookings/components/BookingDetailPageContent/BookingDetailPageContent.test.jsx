@@ -124,7 +124,10 @@ describe('BookingDetailPageContent (apps/web/src/modules/bookings)', () => {
     });
     renderPage();
 
-    expect(screen.getByText('Հաստատված')).toBeInTheDocument();
+    // "Հաստատված" (Confirmed) now renders twice: once in the status badge
+    // and once as the StatusStepper's matching "done" step label — a real,
+    // intentional consequence of the 2026 redesign's progress stepper.
+    expect(screen.getAllByText('Հաստատված').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Ana Smith/)).toBeInTheDocument();
     expect(screen.getByText(/ana@example.com/)).toBeInTheDocument();
   });

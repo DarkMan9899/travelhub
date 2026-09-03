@@ -38,7 +38,16 @@ export default function PayNowPanel({ booking, onPaid = undefined }) {
         bookingId: booking.id,
         simulateScenario: scenario,
       });
-      if (data.status === 'SUCCEEDED') {
+      // Manual capture: a checkout attempt normally resolves to AUTHORIZED
+      // (funds held, captured only once the vendor accepts the booking).
+      // SUCCEEDED is still possible — a booking that was already CONFIRMED
+      // before checkout is captured immediately (see `PaymentService
+      // #createPaymentIntent`'s own comment).
+      if (data.status === 'AUTHORIZED') {
+        showToast(t('payments.payNow.authorizedToast'), {
+          variant: 'success',
+        });
+      } else if (data.status === 'SUCCEEDED') {
         showToast(t('payments.payNow.successToast'), { variant: 'success' });
       } else if (data.status === 'FAILED') {
         showToast(t('payments.payNow.declinedToast'), { variant: 'danger' });

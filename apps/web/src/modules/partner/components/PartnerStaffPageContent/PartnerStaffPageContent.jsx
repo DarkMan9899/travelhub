@@ -18,9 +18,14 @@ import PropTypes from 'prop-types';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { Users, Mail } from 'lucide-react';
 import { Input, Select } from '@desavii/ui/components/form-controls';
 import { Button, Badge } from '@desavii/ui/components/primitives';
-import { Modal } from '@desavii/ui/components/feedback-overlays';
+import {
+  Modal,
+  Skeleton,
+  EmptyState,
+} from '@desavii/ui/components/feedback-overlays';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import { DataTable } from '@desavii/ui/components/dashboard';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
@@ -37,6 +42,9 @@ import { useInviteStaffMutation } from '../../mutations/useInviteStaffMutation.j
 import { useRevokeInvitationMutation } from '../../mutations/useRevokeInvitationMutation.js';
 import { useUpdateStaffRoleMutation } from '../../mutations/useUpdateStaffRoleMutation.js';
 import { useRemoveStaffMutation } from '../../mutations/useRemoveStaffMutation.js';
+import StaffMemberCard from './StaffMemberCard.jsx';
+import StaffInvitationCard from './StaffInvitationCard.jsx';
+import styles from './PartnerStaffPageContent.module.scss';
 
 const ASSIGNABLE_ROLES = [
   'MANAGER',
@@ -225,7 +233,13 @@ export default function PartnerStaffPageContent() {
             onChange={(roleCode) => handleRoleChange(row.id, roleCode)}
           />
         ) : (
-          <Badge variant="neutral" label={row.role_name} />
+          <Badge
+            variant={row.role === 'OWNER' ? 'info' : 'neutral'}
+            filled={row.role === 'OWNER'}
+            label={t(`partner.staff.roles.${row.role}`, {
+              defaultValue: row.role_name,
+            })}
+          />
         ),
     },
     {
@@ -244,8 +258,17 @@ export default function PartnerStaffPageContent() {
   const invitationColumns = [
     { key: 'email', header: t('partner.staff.table.email') },
     {
-      key: 'role_name',
+      key: 'role',
       header: t('partner.staff.table.role'),
+      // `role_name` (used here as `defaultValue: row.role_name` only)
+      // is `partner_employee_roles.name` straight from the DB — a
+      // single hardcoded English string, never localized. Rendering it
+      // directly (the previous behavior) leaked raw English role names
+      // into HY/RU pending-invitation rows; `role` (the real code) is
+      // what the staff table's own role column already translates
+      // correctly.
+      render: (row) =>
+        t(`partner.staff.roles.${row.role}`, { defaultValue: row.role_name }),
     },
     {
       key: 'expires_at',
@@ -289,22 +312,97 @@ export default function PartnerStaffPageContent() {
       />
 
       <Stack gap="6">
-        <DataTable
-          columns={staffColumns}
-          rows={staffQuery.data ?? []}
-          isLoading={staffQuery.isPending}
-          emptyTitle={t('partner.staff.emptyStaff')}
-        />
+        <Stack gap="3">
+          <h2 className={styles.panelHeading}>
+            <Users aria-hidden="true" focusable="false" />
+            {t('partner.staff.membersHeading')}
+          </h2>
+
+          <div className={styles.desktopOnly}>
+            <DataTable
+              columns={staffColumns}
+              rows={staffQuery.data ?? []}
+              isLoading={staffQuery.isPending}
+              emptyTitle={t('partner.staff.emptyStaff')}
+            />
+          </div>
+
+          {staffQuery.isPending && (
+            <Stack gap="2" className={styles.mobileOnly}>
+              <Skeleton variant="rect" height={72} />
+              <Skeleton variant="rect" height={72} />
+              <Skeleton variant="rect" height={72} />
+            </Stack>
+          )}
+          {!staffQuery.isPending && (staffQuery.data ?? []).length === 0 && (
+            <div className={styles.mobileOnly}>
+              <EmptyState title={t('partner.staff.emptyStaff')} />
+            </div>
+          )}
+          {!staffQuery.isPending && (staffQuery.data ?? []).length > 0 && (
+            <ul
+              className={styles.mobileOnly}
+              aria-label={t('partner.staff.membersHeading')}
+            >
+              {staffQuery.data.map((staff) => (
+                <StaffMemberCard
+                  key={staff.id}
+                  staff={staff}
+                  assignableRoles={ASSIGNABLE_ROLES}
+                  canManage={canManageStaff}
+                  onRoleChange={(employeeId, roleCode) =>
+                    handleRoleChange(employeeId, roleCode)
+                  }
+                  onRemove={(member) => handleRemove(member)}
+                />
+              ))}
+            </ul>
+          )}
+        </Stack>
 
         {canManageStaff && (
           <Stack gap="3">
-            <h2>{t('partner.staff.pendingInvitationsHeading')}</h2>
-            <DataTable
-              columns={invitationColumns}
-              rows={invitationsQuery.data ?? []}
-              isLoading={invitationsQuery.isPending}
-              emptyTitle={t('partner.staff.emptyInvitations')}
-            />
+            <h2 className={styles.panelHeading}>
+              <Mail aria-hidden="true" focusable="false" />
+              {t('partner.staff.pendingInvitationsHeading')}
+            </h2>
+
+            <div className={styles.desktopOnly}>
+              <DataTable
+                columns={invitationColumns}
+                rows={invitationsQuery.data ?? []}
+                isLoading={invitationsQuery.isPending}
+                emptyTitle={t('partner.staff.emptyInvitations')}
+              />
+            </div>
+
+            {invitationsQuery.isPending && (
+              <Stack gap="2" className={styles.mobileOnly}>
+                <Skeleton variant="rect" height={72} />
+                <Skeleton variant="rect" height={72} />
+              </Stack>
+            )}
+            {!invitationsQuery.isPending &&
+              (invitationsQuery.data ?? []).length === 0 && (
+                <div className={styles.mobileOnly}>
+                  <EmptyState title={t('partner.staff.emptyInvitations')} />
+                </div>
+              )}
+            {!invitationsQuery.isPending &&
+              (invitationsQuery.data ?? []).length > 0 && (
+                <ul
+                  className={styles.mobileOnly}
+                  aria-label={t('partner.staff.pendingInvitationsHeading')}
+                >
+                  {invitationsQuery.data.map((invitation) => (
+                    <StaffInvitationCard
+                      key={invitation.id}
+                      invitation={invitation}
+                      onRevoke={(revoked) => handleRevoke(revoked)}
+                    />
+                  ))}
+                </ul>
+              )}
           </Stack>
         )}
       </Stack>

@@ -14,7 +14,7 @@
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { ReviewSummary } from '@desavii/ui/components/data-display';
-import { Stack } from '@desavii/ui/components/layout';
+import { Section, Stack } from '@desavii/ui/components/layout';
 import { ReviewsList } from '../../../../reviews/index.js';
 
 export default function ListingReviewsSection({
@@ -27,13 +27,23 @@ export default function ListingReviewsSection({
   const { t } = useTranslation();
 
   return (
-    <Stack gap="4">
-      <h2 id={sectionId}>{t('pages.listingDetail.reviews.heading')}</h2>
-      {ratingAverage !== null && (
-        <ReviewSummary average={ratingAverage} reviewCount={reviewCount} />
-      )}
-      <ReviewsList listingId={listingId} partnerId={partnerId} />
-    </Stack>
+    // Redesign phase (2026) — `<Section spacing="none">`, matching every
+    // sibling section's own root shape, so `ListingDetailPageContent.
+    // module.scss`'s shared `.main > section` card treatment applies here
+    // too (this was previously the one section rendering a bare `Stack`,
+    // the one section that stayed un-carded and visually inconsistent).
+    <Section
+      spacing="none"
+      aria-label={t('pages.listingDetail.reviews.heading')}
+    >
+      <Stack gap="4">
+        <h2 id={sectionId}>{t('pages.listingDetail.reviews.heading')}</h2>
+        {ratingAverage !== null && (
+          <ReviewSummary average={ratingAverage} reviewCount={reviewCount} />
+        )}
+        <ReviewsList listingId={listingId} partnerId={partnerId} />
+      </Stack>
+    </Section>
   );
 }
 

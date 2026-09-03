@@ -3,6 +3,30 @@
 @use 'tokens' as tokens;
 @use 'mixins/respond' as respond;
 
+// A restrained top-of-page wash — establishes the "premium" register
+// without borrowing Home's full cinematic scene (brief: "do not copy
+// Home's cinematic intensity directly into a dashboard"). Fixed behind
+// the content, fades to transparent well before the fold.
+.ambient {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  height: 420px;
+  z-index: -1;
+  background:
+    radial-gradient(
+      1200px 420px at 15% -10%,
+      rgba(tokens.$color-royal-blue, 0.07),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 380px at 85% -15%,
+      rgba(tokens.$color-gold, 0.05),
+      transparent 55%
+    ),
+    linear-gradient(180deg, rgba(tokens.$color-navy, 0.03), transparent);
+}
+
 .body {
   display: flex;
   flex-direction: column;
@@ -15,15 +39,44 @@
   }
 }
 
-.sidebar {
+.sidebarColumn {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
   flex-shrink: 0;
 
   @include respond.respond(tablet) {
-    width: 240px;
+    width: 260px;
+    position: sticky;
+    top: tokens.$space-8;
   }
+}
+
+// The identity card is desktop/tablet-only — the mobile bottom nav
+// already carries the account entry point (Header's own UserMenu), and
+// there's no room to spare above a fixed bottom bar without pushing page
+// content down on every single Account screen.
+.sidebarColumn > :first-child {
+  display: none;
+
+  @include respond.respond(tablet) {
+    display: flex;
+  }
+}
+
+.sidebar {
+  // Layout only — all premium visual treatment lives in Sidebar's own
+  // `variant="premium"` styles.
 }
 
 .content {
   flex: 1;
   min-width: 0;
+  // Mobile: the Sidebar becomes a fixed bottom bar (`Sidebar.module.scss`)
+  // — keep the last section's content clear of it.
+  padding-bottom: 72px;
+
+  @include respond.respond(tablet) {
+    padding-bottom: 0;
+  }
 }

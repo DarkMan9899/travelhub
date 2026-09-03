@@ -2,9 +2,27 @@
 
 @use 'tokens' as tokens;
 
+// Redesign phase (2026) — the one surface on this page that should read
+// as genuinely floating (elevation-4, the same "premium instrument
+// panel" treatment `SearchFilters` uses for its bar): this is the
+// highest-intent element on the whole listing page, the sticky anchor a
+// visitor's eye returns to while reading everything else. A slim gold
+// top edge — the platform's own "premium accent, never a button" token
+// — marks it as the trusted, primary surface without competing with the
+// real primary-action Button inside it.
 .widget {
+  position: relative;
   padding: tokens.$space-4;
-  border-radius: tokens.$radius-lg;
+  border-radius: tokens.$radius-xl;
   background-color: tokens.$color-white;
-  @include tokens.elevation-2;
+  overflow: hidden;
+  @include tokens.elevation-4;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: tokens.$gradient-gold-sheen;
+  }
 }

@@ -747,7 +747,37 @@ export class BookingService {
       principal,
       booking,
     );
+    // Manual-capture booking payment flow: capturing money is a separate
+    // unit of work from the status transition above (the same "own
+    // transaction, never held open across a call into another module"
+    // rule as `#resolvePaymentForCancelledBooking`), so it runs only after
+    // the confirmation has already committed.
+    await this.#capturePaymentForConfirmedBooking(booking);
     return booking;
+  }
+
+  async #capturePaymentForConfirmedBooking(booking) {
+    if (!this.#paymentService) return;
+    const authorizedPayment =
+      await this.#paymentService.getAuthorizedPaymentForBookingSystemInternal(
+        booking.id,
+      );
+    if (!authorizedPayment) return;
+    try {
+      await this.#paymentService.capturePaymentForBookingSystemInternal(
+        authorizedPayment.id,
+      );
+    } catch (err) {
+      // The booking is already CONFIRMED — that decision is not rolled
+      // back by a capture failure. The payment itself stays AUTHORIZED
+      // (safe to retry; see `PaymentService#executeCaptureOrVoid`'s own
+      // comment), so this is a queryable, recoverable operational state,
+      // not silently lost money.
+      log.error(
+        { err, bookingId: booking.id, paymentId: authorizedPayment.id },
+        'Payment capture failed on booking confirmation',
+      );
+    }
   }
 
   async rejectBooking(principal, id, { reason } = {}) {
@@ -777,7 +807,48 @@ export class BookingService {
       principal,
       booking,
     );
+    // Manual-capture booking payment flow: releasing the customer's
+    // authorization is a separate unit of work from the status transition
+    // above, run only after the rejection has already committed — same
+    // reasoning as `#capturePaymentForConfirmedBooking`.
+    await this.#voidAuthorizedPaymentForBooking(
+      booking,
+      'Payment void failed on booking rejection',
+    );
     return booking;
+  }
+
+  /**
+   * Shared by `rejectBooking` and `#resolvePaymentForCancelledBooking`:
+   * releases an `AUTHORIZED`-but-not-yet-captured payment for a booking, if
+   * one exists (each caller resolves its own, since one needs the lookup
+   * result to decide whether to fall through to refund-policy logic). A
+   * void failure never rolls back the booking decision that already
+   * committed (`rejectBooking`'s/`cancelBooking`'s own transaction) — the
+   * payment simply stays `AUTHORIZED`, a queryable, recoverable
+   * operational state, never silently lost money.
+   */
+  async #voidAuthorizedPaymentForBooking(booking, logMessage) {
+    if (!this.#paymentService) return;
+    const authorizedPayment =
+      await this.#paymentService.getAuthorizedPaymentForBookingSystemInternal(
+        booking.id,
+      );
+    if (!authorizedPayment) return;
+    await this.#executePaymentVoid(booking, authorizedPayment, logMessage);
+  }
+
+  async #executePaymentVoid(booking, authorizedPayment, logMessage) {
+    try {
+      await this.#paymentService.voidPaymentForBookingSystemInternal(
+        authorizedPayment.id,
+      );
+    } catch (err) {
+      log.error(
+        { err, bookingId: booking.id, paymentId: authorizedPayment.id },
+        logMessage,
+      );
+    }
   }
 
   /**
@@ -827,14 +898,38 @@ export class BookingService {
     // across a call into another module, see transaction.js's header
     // comment), so it runs after the cancellation has already committed.
     // A refund outcome — success, failure, or "needs a human" — must
-    // never be silent; `resolveRefundForCancelledBooking` always leaves
+    // never be silent; `resolvePaymentForCancelledBooking` always leaves
     // `bookings.refund_status` in a well-defined, queryable state.
-    await this.#resolveRefundForCancelledBooking(booking, cancelledByRole);
+    await this.#resolvePaymentForCancelledBooking(booking, cancelledByRole);
     return this.#bookingRepository.findById(booking.id);
   }
 
-  async #resolveRefundForCancelledBooking(booking, cancelledByRole) {
+  /**
+   * Manual-capture booking payment flow: a booking can be cancelled by
+   * its customer (or the vendor, via `booking.cancel_any`) BEFORE the
+   * vendor has ever confirmed/rejected it — at that point the payment is
+   * still `AUTHORIZED`, not yet captured, so there is no money to refund
+   * at all, only an authorization to release. That case is handled first
+   * and is mutually exclusive with the refund-policy branch below (a
+   * booking has at most one non-terminal payment at a time —
+   * `findActiveForBooking`'s own guard).
+   */
+  async #resolvePaymentForCancelledBooking(booking, cancelledByRole) {
     if (!this.#paymentService) return;
+
+    const authorizedPayment =
+      await this.#paymentService.getAuthorizedPaymentForBookingSystemInternal(
+        booking.id,
+      );
+    if (authorizedPayment) {
+      await this.#executePaymentVoid(
+        booking,
+        authorizedPayment,
+        'Payment void failed on booking cancellation',
+      );
+      return;
+    }
+
     const refundablePayment =
       await this.#paymentService.getRefundablePaymentForBookingSystemInternal(
         booking.id,
@@ -934,6 +1029,21 @@ export class BookingService {
       booking,
     );
     return booking;
+  }
+
+  /**
+   * Stripe go-live preflight (manual-capture async-authorization case) —
+   * a plain, no-principal read of `bookings.status_id`'s own code, so
+   * `PaymentService`'s webhook handler can decide whether a just-completed
+   * Stripe authorization should be captured (booking already CONFIRMED)
+   * or voided (booking already REJECTED/cancelled) without needing a
+   * second Repository over `bookings` (same cross-module rule every other
+   * `*SystemInternal` method on this class already follows). Never
+   * exposed via any HTTP route.
+   */
+  async getBookingStatusSystemInternal(bookingId) {
+    const booking = await this.#bookingRepository.findById(bookingId);
+    return booking?.statusCode ?? null;
   }
 
   /**

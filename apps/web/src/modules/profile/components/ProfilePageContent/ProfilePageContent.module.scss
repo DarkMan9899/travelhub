@@ -1,0 +1,23 @@
+// ProfilePageContent — tokens only.
+
+@use 'tokens' as tokens;
+
+.sectionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: tokens.$radius-full;
+  background-color: rgba(tokens.$color-royal-blue, 0.08);
+  color: tokens.$color-royal-blue;
+}
+
+.sectionHeading {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  line-height: tokens.$line-height-h4;
+  color: tokens.$color-gray-900;
+}

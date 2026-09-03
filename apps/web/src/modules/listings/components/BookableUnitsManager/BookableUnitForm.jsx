@@ -10,6 +10,17 @@
  * deliberately two separate fields, never conflated — the exact
  * distinction the P2.2A audit found `bookable_units.capacity` was
  * missing a counterpart for.
+ *
+ * Sprint 5 (Calendar P0): start/end time — real, optional `TIME` columns
+ * (`bookable_units.time_slot_start/end`) already read by the Calendar's
+ * Week/Day views to render a genuine hour-axis timeline for a tour/
+ * activity departure. `registerUnitSchema` (backend) accepts them at
+ * creation; `updateUnitSchema` deliberately does not (a departure's time
+ * isn't editable post-creation, mirroring `bookableUnitType`'s own
+ * create-only rule) — so, like the type selector, these fields only show
+ * when `showTypeSelector` is true. Leaving both blank keeps a unit
+ * date-only (a hotel room, a vehicle, a full-day guide) — this is an
+ * opt-in field, never a forced one.
  */
 
 import { useState } from 'react';
@@ -46,6 +57,12 @@ export default function BookableUnitForm({
     initialValues.bookableUnitType ?? BOOKABLE_UNIT_TYPES[0],
   );
   const [unitLabel, setUnitLabel] = useState(initialValues.unitLabel ?? '');
+  const [timeSlotStart, setTimeSlotStart] = useState(
+    initialValues.timeSlotStart ?? '',
+  );
+  const [timeSlotEnd, setTimeSlotEnd] = useState(
+    initialValues.timeSlotEnd ?? '',
+  );
   const [capacity, setCapacity] = useState(
     initialValues.capacity != null ? String(initialValues.capacity) : '',
   );
@@ -86,6 +103,12 @@ export default function BookableUnitForm({
   function handleSubmit() {
     onSubmit({
       ...(showTypeSelector ? { bookableUnitType } : {}),
+      ...(showTypeSelector
+        ? {
+            timeSlotStart: timeSlotStart === '' ? undefined : timeSlotStart,
+            timeSlotEnd: timeSlotEnd === '' ? undefined : timeSlotEnd,
+          }
+        : {}),
       unitLabel: unitLabel.trim() === '' ? undefined : unitLabel.trim(),
       capacity: toOptionalInt(capacity),
       maxGuests: toOptionalInt(maxGuests),
@@ -101,6 +124,11 @@ export default function BookableUnitForm({
   const priceIncomplete =
     (basePriceAmount !== '' && !basePriceCurrency) ||
     (basePriceAmount === '' && Boolean(basePriceCurrency));
+  const timeSlotIncomplete =
+    (timeSlotStart !== '' && timeSlotEnd === '') ||
+    (timeSlotStart === '' && timeSlotEnd !== '');
+  const timeSlotOutOfOrder =
+    timeSlotStart !== '' && timeSlotEnd !== '' && timeSlotEnd <= timeSlotStart;
 
   return (
     <Stack gap="4">
@@ -124,6 +152,31 @@ export default function BookableUnitForm({
         value={unitLabel}
         onChange={(event) => setUnitLabel(event.target.value)}
       />
+      {showTypeSelector && (
+        <Inline gap="4" wrap align="flex-end">
+          <Input
+            type="time"
+            label={t('partner.listingWizard.availability.timeSlotStart')}
+            helperText={t('partner.listingWizard.availability.timeSlotHint')}
+            value={timeSlotStart}
+            onChange={(event) => setTimeSlotStart(event.target.value)}
+          />
+          <Input
+            type="time"
+            label={t('partner.listingWizard.availability.timeSlotEnd')}
+            value={timeSlotEnd}
+            onChange={(event) => setTimeSlotEnd(event.target.value)}
+            error={
+              timeSlotOutOfOrder
+                ? t('partner.listingWizard.availability.timeSlotOutOfOrder')
+                : undefined
+            }
+          />
+        </Inline>
+      )}
+      {showTypeSelector && timeSlotIncomplete && (
+        <p>{t('partner.listingWizard.availability.timeSlotIncomplete')}</p>
+      )}
       <Inline gap="4" wrap>
         <Input
           type="number"
@@ -200,7 +253,7 @@ export default function BookableUnitForm({
         <Button
           variant="primary"
           loading={isSubmitting}
-          disabled={priceIncomplete}
+          disabled={priceIncomplete || timeSlotIncomplete || timeSlotOutOfOrder}
           onClick={() => handleSubmit()}
         >
           {submitLabel}
@@ -219,6 +272,8 @@ BookableUnitForm.propTypes = {
   initialValues: PropTypes.shape({
     bookableUnitType: PropTypes.string,
     unitLabel: PropTypes.string,
+    timeSlotStart: PropTypes.string,
+    timeSlotEnd: PropTypes.string,
     capacity: PropTypes.number,
     maxGuests: PropTypes.number,
     bedConfiguration: PropTypes.arrayOf(

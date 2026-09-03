@@ -1,0 +1,21 @@
+// StaffInvitationCard — 2026 Partner Workspace redesign (Sprint 4). Tokens only.
+
+@use 'tokens' as tokens;
+
+.card {
+  padding: tokens.$space-3 tokens.$space-4;
+  border: 1px solid tokens.$color-gray-200;
+  border-radius: tokens.$radius-md;
+  background-color: tokens.$color-gray-100;
+}
+
+.email {
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+}
+
+.meta {
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+}

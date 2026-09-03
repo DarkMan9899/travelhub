@@ -1,15 +1,20 @@
 /**
  * CompanyProfilePageContent — `/:locale/companies/:slug` (Phase 10
- * redesign). Real `GET /partners/:slug` data (logo/cover/description/
- * contact — Sprint 5 columns no UI had ever surfaced) plus a "Listings"
- * section reusing `search`'s own `useSearchListingsQuery`/
- * `SearchResultCard` filtered by `partnerId`, exactly like
- * `RelatedListings` reuses them filtered by `categoryId` — no new
- * listings-fetching path invented; each listing's rating (Phase 12's
- * Reviews module) already shows up for free via that same
- * `SearchResultCard` reuse. No separate partner-level aggregate rating —
- * that would mean averaging across an owner's entire portfolio, a
- * different metric this phase doesn't build.
+ * redesign; editorial hero + `ListingGrid` in the 2026 public-frontend
+ * audit's Company Profile pass). Real `GET /partners/:slug` data (logo/
+ * cover/description/contact — Sprint 5 columns no UI had ever surfaced)
+ * plus a "Listings" section reusing `search`'s own
+ * `useSearchListingsQuery`/`SearchResultCard` filtered by `partnerId`,
+ * exactly like `RelatedListings` reuses them filtered by `categoryId` —
+ * no new listings-fetching path invented; each listing's rating (Phase
+ * 12's Reviews module) already shows up for free via that same
+ * `SearchResultCard` reuse. `rating_average`/`review_count` ARE real,
+ * already-returned `GET /partners/:slug` fields (an aggregate across the
+ * partner's own reviews, computed server-side — see
+ * `mysqlPartnerRepository.js`'s `PUBLIC_SELECT_COLUMNS`) and now surface
+ * in the hero; there is still no per-review listing UI at the company
+ * level (no `GET /partners/:slug/reviews` endpoint exists) — only the
+ * aggregate metric, not fabricated further.
  *
  * Same two-distinct-error-states convention as
  * `ListingDetailPageContent`: a genuine 404 (unapproved/deleted/
@@ -25,9 +30,13 @@ import {
   ErrorState,
   EmptyState,
 } from '@desavii/ui/components/feedback-overlays';
-import { Section, Stack, Inline } from '@desavii/ui/components/layout';
+import { Breadcrumbs } from '@desavii/ui/components/navigation';
+import { RatingStars } from '@desavii/ui/components/data-display';
 import { Icon } from '@desavii/ui/components/primitives';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import RouterLink from '../../../../components/RouterLink.jsx';
+import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
+import CompanyAvatar from '../../../../components/CompanyAvatar/CompanyAvatar.jsx';
+import ListingGrid from '../../../../components/ListingGrid/ListingGrid.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
 import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';
@@ -106,15 +115,15 @@ export default function CompanyProfilePageContent() {
 
   if (isPending) {
     return (
-      <Stack
-        gap="6"
+      <div
+        className={styles.page}
         aria-busy="true"
         aria-label={t('companies.profile.loading')}
       >
-        <Skeleton variant="text" width="40%" height={32} />
-        <Skeleton variant="rect" height={240} />
+        <Skeleton variant="text" width="30%" height={20} />
+        <Skeleton variant="rect" height={280} className={styles.heroSkeleton} />
         <Skeleton variant="rect" height={120} />
-      </Stack>
+      </div>
     );
   }
 
@@ -138,52 +147,86 @@ export default function CompanyProfilePageContent() {
     );
   }
 
-  return (
-    <Stack gap="6">
-      <PageHeader title={company.display_name} breadcrumbs={breadcrumbItems} />
+  const memberSinceYear = company.member_since
+    ? new Date(company.member_since).getFullYear()
+    : null;
 
-      <div className={styles.hero}>
-        {company.cover_url && (
+  return (
+    <div className={styles.page}>
+      <Breadcrumbs
+        items={breadcrumbItems}
+        linkComponent={RouterLink}
+        className={styles.breadcrumbs}
+      />
+
+      <section className={styles.hero}>
+        {company.cover_url ? (
           <img
             src={company.cover_url}
             alt=""
             className={styles.coverImage}
             loading="lazy"
           />
+        ) : (
+          <DestinationArt seed={company.id} className={styles.coverArt} />
         )}
-        <div className={styles.heroBody}>
-          {company.logo_url && (
-            <img src={company.logo_url} alt="" className={styles.logo} />
-          )}
-          <div>
-            {/* PageHeader above already renders this page's one `<h1>`
-                (its own file header: "a page composes this once, never
-                its own separate heading") — this is a styled restatement
-                inside the hero visual, not a second heading. */}
-            <Inline gap="2" align="center">
-              <p className={styles.name}>{company.display_name}</p>
+        <div className={styles.heroContent}>
+          <span className={styles.logo}>
+            <CompanyAvatar
+              name={company.display_name}
+              logoUrl={company.logo_url}
+              seed={company.id}
+              size={96}
+            />
+          </span>
+          <div className={styles.heroText}>
+            <div className={styles.nameRow}>
+              <h1 className={styles.name}>{company.display_name}</h1>
               {company.is_verified && (
                 <span className={styles.verifiedBadge}>
-                  <Icon icon={ShieldCheck} size="md" />
+                  <ShieldCheck size={16} aria-hidden="true" />
                   {t('companies.card.verified')}
                 </span>
               )}
-            </Inline>
+            </div>
+            <div className={styles.metaRow}>
+              {company.review_count > 0 && (
+                <span className={styles.rating}>
+                  <RatingStars
+                    value={company.rating_average}
+                    reviewCount={company.review_count}
+                    size="sm"
+                    showCount={false}
+                  />
+                  {t('pages.listingDetail.hero.reviewsLink', {
+                    count: company.review_count,
+                  })}
+                </span>
+              )}
+              {memberSinceYear && (
+                <span className={styles.memberSince}>
+                  {t('companies.card.memberSince', { year: memberSinceYear })}
+                </span>
+              )}
+            </div>
             {description && <p className={styles.description}>{description}</p>}
           </div>
         </div>
-      </div>
+      </section>
 
-      {(company.email || company.phone || company.website) && (
-        <Inline gap="6" className={styles.contactRow}>
+      {(company.email ||
+        company.phone ||
+        company.website ||
+        socialLinks.length > 0) && (
+        <div className={styles.contactRow}>
           {company.email && (
-            <a href={`mailto:${company.email}`} className={styles.contactLink}>
+            <a href={`mailto:${company.email}`} className={styles.contactChip}>
               <Icon icon={Mail} size="sm" />
               {company.email}
             </a>
           )}
           {company.phone && (
-            <a href={`tel:${company.phone}`} className={styles.contactLink}>
+            <a href={`tel:${company.phone}`} className={styles.contactChip}>
               <Icon icon={Phone} size="sm" />
               {company.phone}
             </a>
@@ -193,45 +236,39 @@ export default function CompanyProfilePageContent() {
               href={company.website}
               target="_blank"
               rel="noreferrer"
-              className={styles.contactLink}
+              className={styles.contactChip}
             >
               <Icon icon={Globe} size="sm" />
               {company.website}
             </a>
           )}
-        </Inline>
-      )}
-
-      {socialLinks.length > 0 && (
-        <Inline gap="6" className={styles.contactRow}>
           {socialLinks.map(([platform, url]) => (
             <a
               key={platform}
               href={url}
               target="_blank"
               rel="noreferrer"
-              className={styles.contactLink}
+              className={styles.contactChip}
             >
               <Icon icon={Globe} size="sm" />
               {SOCIAL_PLATFORM_LABELS[platform] ?? platform}
             </a>
           ))}
-        </Inline>
+        </div>
       )}
 
       {listings.length > 0 && (
-        <Section
-          spacing="none"
-          aria-label={t('companies.profile.listingsHeading')}
-        >
-          <h2>{t('companies.profile.listingsHeading')}</h2>
-          <div className={styles.listingsGrid}>
+        <section aria-label={t('companies.profile.listingsHeading')}>
+          <h2 className={styles.listingsHeading}>
+            {t('companies.profile.listingsHeading')}
+          </h2>
+          <ListingGrid>
             {listings.map((listing) => (
               <SearchResultCard key={listing.id} result={listing} />
             ))}
-          </div>
-        </Section>
+          </ListingGrid>
+        </section>
       )}
-    </Stack>
+    </div>
   );
 }

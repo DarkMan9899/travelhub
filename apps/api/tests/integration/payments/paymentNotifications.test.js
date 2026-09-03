@@ -5,20 +5,23 @@
  * notification row appears for the right recipient"). `PaymentService`
  * has zero references to `notificationService` anywhere; this is the
  * event-bus subscription in `notificationListener.js` doing its job.
+ *
+ * Explicitly opts into `PAYMENTS_ENABLED=true` (test-readiness remediation,
+ * 2026) — see `paymentLifecycle.test.js`'s header comment for why this is
+ * a forced, file-scoped opt-in rather than an ambient assumption.
  */
 
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
-import { up } from '../../../src/infrastructure/database/migrate.js';
-import { seedAll } from '../../../src/infrastructure/database/seeds/index.js';
-import app from '../../../src/app.js';
-import {
-  getMysqlPool,
-  closeMysqlPool,
-} from '../../../src/infrastructure/database/mysqlPool.js';
-import { closeRedisConnection } from '../../../src/infrastructure/cache/redisClient.js';
-import { resetRateLimits } from '../helpers/resetRateLimits.js';
-import { DEV_CREDENTIALS } from '../../../src/infrastructure/database/seeds/005_dev_accounts.js';
+
+let up;
+let seedAll;
+let app;
+let getMysqlPool;
+let closeMysqlPool;
+let closeRedisConnection;
+let resetRateLimits;
+let DEV_CREDENTIALS;
 
 let vendor;
 let admin;
@@ -117,6 +120,27 @@ async function createBookingFixture(customerAuth, desiredTotal = 10_000) {
   return res.body.data;
 }
 
+async function confirmBooking(bookingId) {
+  return request(app)
+    .post(`/api/v1/bookings/${bookingId}/confirm`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`);
+}
+
+/**
+ * Manual-capture booking payment flow: a payment only reaches SUCCEEDED
+ * (and only then publishes `payment.succeeded`) once the vendor confirms
+ * the booking — see `PaymentService#createPaymentIntent`'s own comment.
+ */
+async function createConfirmAndPay(customerAuth, desiredTotal) {
+  const booking = await createBookingFixture(customerAuth, desiredTotal);
+  const payment = await request(app)
+    .post('/api/v1/payments')
+    .set('Authorization', `Bearer ${customerAuth.accessToken}`)
+    .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+  await confirmBooking(booking.id);
+  return payment;
+}
+
 async function paymentNotificationsFor(authToken) {
   const res = await request(app)
     .get('/api/v1/notifications?category=PAYMENT')
@@ -125,6 +149,20 @@ async function paymentNotificationsFor(authToken) {
 }
 
 beforeAll(async () => {
+  process.env.PAYMENTS_ENABLED = 'true';
+
+  ({ up } = await import('../../../src/infrastructure/database/migrate.js'));
+  ({ seedAll } =
+    await import('../../../src/infrastructure/database/seeds/index.js'));
+  ({ default: app } = await import('../../../src/app.js'));
+  ({ getMysqlPool, closeMysqlPool } =
+    await import('../../../src/infrastructure/database/mysqlPool.js'));
+  ({ closeRedisConnection } =
+    await import('../../../src/infrastructure/cache/redisClient.js'));
+  ({ resetRateLimits } = await import('../helpers/resetRateLimits.js'));
+  ({ DEV_CREDENTIALS } =
+    await import('../../../src/infrastructure/database/seeds/005_dev_accounts.js'));
+
   await up();
   await seedAll();
   await resetRateLimits();
@@ -151,17 +189,14 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
+  delete process.env.PAYMENTS_ENABLED;
   await closeMysqlPool();
   await closeRedisConnection();
 });
 
 describe('Payment domain events -> Notifications (Phase 16 x Phase 13 wiring)', () => {
   test('PAYMENT_SUCCEEDED notifies both the customer and the partner owner', async () => {
-    const booking = await createBookingFixture(customer, 9_000);
-    await request(app)
-      .post('/api/v1/payments')
-      .set('Authorization', `Bearer ${customer.accessToken}`)
-      .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+    await createConfirmAndPay(customer, 9_000);
 
     const customerNotifications = await paymentNotificationsFor(
       customer.accessToken,
@@ -197,11 +232,7 @@ describe('Payment domain events -> Notifications (Phase 16 x Phase 13 wiring)', 
   });
 
   test('REFUND_SUCCEEDED notifies the customer', async () => {
-    const booking = await createBookingFixture(customer, 6_000);
-    const payment = await request(app)
-      .post('/api/v1/payments')
-      .set('Authorization', `Bearer ${customer.accessToken}`)
-      .send({ bookingId: booking.id, simulateScenario: 'SUCCESS' });
+    const payment = await createConfirmAndPay(customer, 6_000);
     await request(app)
       .post(`/api/v1/payments/${payment.body.data.id}/refunds`)
       .set('Authorization', `Bearer ${admin.accessToken}`)

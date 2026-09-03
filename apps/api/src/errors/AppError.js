@@ -93,6 +93,15 @@ export class RateLimitError extends AppError {
   }
 }
 
+export class ServiceUnavailableError extends AppError {
+  constructor(
+    message = 'This service is temporarily unavailable.',
+    code = 'SERVICE_UNAVAILABLE',
+  ) {
+    super(message, { code, httpStatus: 503 });
+  }
+}
+
 export class ExternalServiceError extends AppError {
   constructor(
     message = 'An upstream service failed. Please try again.',

@@ -12,7 +12,7 @@
  */
 
 import axios from 'axios';
-import { DEFAULT_LOCALE } from '../translations/i18n.js';
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '../translations/i18n.js';
 import {
   getAccessToken,
   setAccessToken,
@@ -43,7 +43,7 @@ const apiClient = axios.create({
 // before routing has resolved.
 apiClient.interceptors.request.use((requestConfig) => {
   const pathLocale = window.location.pathname.split('/')[1];
-  const locale = ['hy', 'ru', 'en'].includes(pathLocale)
+  const locale = SUPPORTED_LOCALES.includes(pathLocale)
     ? pathLocale
     : DEFAULT_LOCALE;
   requestConfig.headers['Accept-Language'] = locale;

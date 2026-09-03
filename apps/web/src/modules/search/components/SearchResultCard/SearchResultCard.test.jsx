@@ -26,11 +26,20 @@ const RESULT = {
   price_currency_code: null,
 };
 
-function renderCard(result = RESULT, initialEntry = '/en') {
+function renderCard(
+  result = RESULT,
+  initialEntry = '/en',
+  hideTypeBadge = false,
+) {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
-        <Route path="/:locale" element={<SearchResultCard result={result} />} />
+        <Route
+          path="/:locale"
+          element={
+            <SearchResultCard result={result} hideTypeBadge={hideTypeBadge} />
+          }
+        />
       </Routes>
     </MemoryRouter>,
   );
@@ -112,5 +121,15 @@ describe('SearchResultCard (apps/web/src/modules/search)', () => {
   test('omits the query string entirely when the current search has no dates/guests', () => {
     renderCard(RESULT, '/en?sort=newest');
     expect(screen.getByRole('link')).toHaveAttribute('href', '/en/listings/7');
+  });
+
+  test('renders the localized type badge by default', () => {
+    renderCard();
+    expect(screen.getByText('Հյուրանոց')).toBeInTheDocument();
+  });
+
+  test('hides the type badge when hideTypeBadge is set (e.g. a category page where it is redundant)', () => {
+    renderCard(RESULT, '/en', true);
+    expect(screen.queryByText('Հյուրանոց')).not.toBeInTheDocument();
   });
 });

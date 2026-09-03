@@ -32,6 +32,14 @@ const CLICK_DRAG_THRESHOLD_PX = 8;
 // brief's "side-card visibility").
 const SCALE_FALLOFF = 0.32;
 const OPACITY_FALLOFF = 0.45;
+// Redesign phase (2026) — a subtle pointer-following tilt on whichever
+// slide is currently hovered, the "soft perspective tilt on pointer
+// movement" the page-wide depth system asks every slider to share.
+// Capped small deliberately: this rides on top of the existing
+// center-focus scale, not instead of it — a few degrees reads as a
+// premium material response, more would fight the scale/opacity
+// emphasis for attention.
+const MAX_TILT_DEG = 5;
 
 export default function Showcase({
   children,
@@ -68,6 +76,10 @@ export default function Showcase({
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState([]);
+  // A ref, not state — every pointermove would otherwise trigger a React
+  // re-render; the tilt itself is written straight to the DOM inside the
+  // same rAF-batched pass the center-focus emphasis already uses below.
+  const pointerTiltRef = useRef({ x: 0, y: 0, node: null });
 
   // Embla's loop engine only repositions a "wrapped" slide (e.g. the
   // last slide, moved to sit just before the first) in response to an
@@ -102,6 +114,7 @@ export default function Showcase({
       rafId = null;
       const viewportRect = emblaApi.rootNode().getBoundingClientRect();
       const viewportCenter = viewportRect.left + viewportRect.width / 2;
+      const { x: tiltX, y: tiltY, node: tiltNode } = pointerTiltRef.current;
 
       emblaApi.slideNodes().forEach((slideNode) => {
         // Measured from the outer slide node (Embla's own box, stable
@@ -116,7 +129,14 @@ export default function Showcase({
           Math.abs(viewportCenter - slideCenter) / maxDistance,
           1,
         );
-        inner.style.transform = `scale(${(1 - t2 * SCALE_FALLOFF).toFixed(3)})`;
+        const scale = (1 - t2 * SCALE_FALLOFF).toFixed(3);
+        // Only the slide currently under the pointer tilts — everything
+        // else stays at a neutral 0deg, so the effect reads as "this one
+        // card responding to you," not the whole row wobbling together.
+        const isTilted = slideNode === tiltNode;
+        const rotateX = isTilted ? (-tiltY * MAX_TILT_DEG).toFixed(2) : 0;
+        const rotateY = isTilted ? (tiltX * MAX_TILT_DEG).toFixed(2) : 0;
+        inner.style.transform = `perspective(900px) scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
         inner.style.opacity = (1 - t2 * OPACITY_FALLOFF).toFixed(3);
       });
     }
@@ -136,12 +156,53 @@ export default function Showcase({
     // move, leaving every slide at full scale/opacity.
     emblaApi.on('select', scheduleEmphasis);
 
+    // Pointer-tilt: one delegated listener on the viewport (never one per
+    // slide — the brief's own "avoid dozens of simultaneously animated
+    // elements" caution), skipped entirely on coarse/touch pointers,
+    // where a hover-driven tilt has no equivalent gesture.
+    const isCoarsePointer =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(pointer: coarse)').matches;
+    const container = emblaApi.rootNode();
+
+    function handlePointerMove(event) {
+      const slideNode = event.target.closest('[aria-roledescription="slide"]');
+      if (!slideNode) return;
+      const rect = slideNode.getBoundingClientRect();
+      pointerTiltRef.current = {
+        x: Math.max(
+          -1,
+          Math.min(1, ((event.clientX - rect.left) / rect.width) * 2 - 1),
+        ),
+        y: Math.max(
+          -1,
+          Math.min(1, ((event.clientY - rect.top) / rect.height) * 2 - 1),
+        ),
+        node: slideNode,
+      };
+      scheduleEmphasis();
+    }
+
+    function handlePointerLeave() {
+      pointerTiltRef.current = { x: 0, y: 0, node: null };
+      scheduleEmphasis();
+    }
+
+    if (!isCoarsePointer) {
+      container.addEventListener('pointermove', handlePointerMove);
+      container.addEventListener('pointerleave', handlePointerLeave);
+    }
+
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       emblaApi.off('scroll', scheduleEmphasis);
       emblaApi.off('reInit', scheduleEmphasis);
       emblaApi.off('resize', scheduleEmphasis);
       emblaApi.off('select', scheduleEmphasis);
+      if (!isCoarsePointer) {
+        container.removeEventListener('pointermove', handlePointerMove);
+        container.removeEventListener('pointerleave', handlePointerLeave);
+      }
     };
   }, [emblaApi, prefersReducedMotion]);
 

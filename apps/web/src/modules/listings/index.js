@@ -48,3 +48,7 @@ export { default as ListingFaqSection } from './components/ListingDetailPageCont
 export { default as ListingLocationSection } from './components/ListingDetailPageContent/ListingLocationSection/ListingLocationSection.jsx';
 export { default as ListingAboutSection } from './components/ListingDetailPageContent/ListingAboutSection/ListingAboutSection.jsx';
 export { default as getLocalizedTranslation } from './utils/getLocalizedTranslation.js';
+export {
+  default as getLocalizedItems,
+  DEFAULT_CONTENT_LOCALE,
+} from './utils/getLocalizedItems.js';

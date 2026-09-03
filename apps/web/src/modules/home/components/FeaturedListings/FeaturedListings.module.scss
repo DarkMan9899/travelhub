@@ -2,6 +2,34 @@
 
 @use 'tokens' as tokens;
 @use 'mixins/respond' as respond;
+@use 'mixins/bleed' as bleed;
+
+// Redesign phase (2026) — see FeaturedDestinations.module.scss's
+// `.bleedRow` for the full rationale.
+.bleedRow {
+  @include bleed.bleed-start;
+}
+
+// The mirror of `FeaturedDestinations.module.scss`'s `.section` glow —
+// bottom-left/gold here instead of top-right/blue, so the two full-bleed
+// sections either side of the tinted `PopularExperiences` panel don't
+// repeat the same background composition.
+.section {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(
+      50% 65% at 4% 100%,
+      rgba(201, 162, 75, 0.07) 0%,
+      rgba(201, 162, 75, 0) 100%
+    );
+  }
+}
 
 // ListingCard's media is a fixed 4:3 aspect ratio plus a content-driven
 // text body — a moderate bump over the original basis (was 30%) reads
@@ -21,6 +49,19 @@
 
   @include respond.respond(laptop) {
     flex: 0 0 34%;
+    // Redesign phase (2026) — "neighboring cards slightly offset,"
+    // alternating cards riding slightly lower than their neighbors
+    // instead of one flat top-aligned row. `align-self` (not touching
+    // Showcase.module.scss's shared `.container`) overrides that
+    // component's own default stretch for this section only; `margin`,
+    // not `transform`, so it never competes with Embla's own translate3d
+    // on this same node or the center-focus/tilt transform one level in
+    // on `.slideInner`.
+    align-self: flex-start;
+
+    &:nth-child(even) {
+      margin-block-start: tokens.$space-8;
+    }
   }
 }
 

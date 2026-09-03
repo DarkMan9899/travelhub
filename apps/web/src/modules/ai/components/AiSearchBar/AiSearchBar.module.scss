@@ -1,0 +1,39 @@
+// AiSearchBar — tokens only, consumed from @desavii/ui.
+//
+// Redesign phase (2026) — a distinct "premium AI" surface: a soft
+// brand-gradient wash (the same `gradient-mesh` family `DestinationArt`
+// draws from, at very low strength) inside a rounded, elevated panel, so
+// this reads as a different, special kind of search input rather than a
+// second copy of the classic filter bar sitting right above it.
+
+@use 'tokens' as tokens;
+
+.panel {
+  position: relative;
+  overflow: hidden;
+  padding: tokens.$space-4;
+  border-radius: tokens.$radius-xl;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)),
+    tokens.$gradient-mesh-3;
+  margin-block-end: tokens.$space-4;
+  @include tokens.elevation-2;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-1;
+  margin: 0 0 tokens.$space-2;
+  font-family: tokens.$font-body;
+  font-size: tokens.$font-size-micro;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: tokens.$color-royal-blue;
+}
+
+.error {
+  color: tokens.$color-danger;
+  font-size: tokens.$font-size-small;
+}

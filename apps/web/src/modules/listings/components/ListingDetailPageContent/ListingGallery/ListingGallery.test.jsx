@@ -37,6 +37,15 @@ describe('ListingGallery (Listing Details)', () => {
     expect(screen.getAllByRole('button')).toHaveLength(2);
   });
 
+  test('2026 SEO/performance audit: only the first (LCP-candidate) thumbnail loads eagerly — the rest stay lazy', () => {
+    render(<ListingGallery media={MEDIA} title="Villa" />);
+    const images = screen.getAllByRole('img');
+    expect(images[0]).toHaveAttribute('loading', 'eager');
+    expect(images[0]).toHaveAttribute('fetchpriority', 'high');
+    expect(images[1]).toHaveAttribute('loading', 'lazy');
+    expect(images[1]).not.toHaveAttribute('fetchpriority');
+  });
+
   test('clicking a thumbnail opens the lightbox on that image', async () => {
     const user = userEvent.setup();
     render(<ListingGallery media={MEDIA} title="Villa" />);

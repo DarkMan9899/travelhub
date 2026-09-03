@@ -24,7 +24,7 @@ import FieldWrapper from '../internal/FieldWrapper.jsx';
 import styles from './Input.module.scss';
 
 const SIZES = ['sm', 'md', 'lg'];
-const TYPES = ['text', 'email', 'password', 'number', 'tel'];
+const TYPES = ['text', 'email', 'password', 'number', 'tel', 'time'];
 
 const Input = forwardRef(function Input(
   {

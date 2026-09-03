@@ -21,7 +21,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section } from '@desavii/ui/components/layout';
+import { Container, Section } from '@desavii/ui/components/layout';
 import {
   Skeleton,
   EmptyState,
@@ -33,6 +33,7 @@ import {
 } from '../../../search/index.js';
 import SectionHeader from '../SectionHeader/SectionHeader.jsx';
 import Showcase from '../Showcase/Showcase.jsx';
+import ScrollReveal from '../ScrollReveal/ScrollReveal.jsx';
 import styles from './FeaturedListings.module.scss';
 
 const HEADING_ID = 'featured-listings-heading';
@@ -44,53 +45,65 @@ export default function FeaturedListings() {
   const listings = data?.pages[0]?.results ?? [];
 
   return (
-    <Section aria-labelledby={HEADING_ID}>
-      <SectionHeader
-        id={HEADING_ID}
-        eyebrow={t('home.featured.eyebrow')}
-        title={t('home.featured.title')}
-        subtitle={t('home.featured.subtitle')}
-        viewAllHref={`/${locale}/search`}
-        viewAllLabel={t('home.showcase.viewAll')}
-      />
+    <Section aria-labelledby={HEADING_ID} className={styles.section}>
+      <Container size="wide">
+        <ScrollReveal variant="depth">
+          <SectionHeader
+            id={HEADING_ID}
+            eyebrow={t('home.featured.eyebrow')}
+            title={t('home.featured.title')}
+            subtitle={t('home.featured.subtitle')}
+            viewAllHref={`/${locale}/search`}
+            viewAllLabel={t('home.showcase.viewAll')}
+          />
+        </ScrollReveal>
+      </Container>
 
       {isPending && (
-        <div className={styles.skeletonRow}>
-          {Array.from({ length: 4 }, (_, index) => (
-            // eslint-disable-next-line react/no-array-index-key -- skeleton
-            // placeholders are positionally static, non-reorderable.
-            <Skeleton
-              key={index}
-              variant="rect"
-              height={280}
-              className={styles.slide}
-            />
-          ))}
-        </div>
+        <Container size="wide">
+          <div className={styles.skeletonRow}>
+            {Array.from({ length: 4 }, (_, index) => (
+              // eslint-disable-next-line react/no-array-index-key -- skeleton
+              // placeholders are positionally static, non-reorderable.
+              <Skeleton
+                key={index}
+                variant="rect"
+                height={280}
+                className={styles.slide}
+              />
+            ))}
+          </div>
+        </Container>
       )}
 
       {isError && (
-        <Alert variant="danger" title={t('home.featured.error.title')}>
-          {t('home.featured.error.description')}
-        </Alert>
+        <Container size="wide">
+          <Alert variant="danger" title={t('home.featured.error.title')}>
+            {t('home.featured.error.description')}
+          </Alert>
+        </Container>
       )}
 
       {!isPending && !isError && listings.length === 0 && (
-        <EmptyState
-          title={t('home.featured.empty.title')}
-          description={t('home.featured.empty.description')}
-        />
+        <Container size="wide">
+          <EmptyState
+            title={t('home.featured.empty.title')}
+            description={t('home.featured.empty.description')}
+          />
+        </Container>
       )}
 
       {!isPending && !isError && listings.length > 0 && (
-        <Showcase
-          ariaLabel={t('home.featured.title')}
-          slideClassName={styles.slide}
-        >
-          {listings.map((listing) => (
-            <SearchResultCard key={listing.id} result={listing} />
-          ))}
-        </Showcase>
+        <ScrollReveal delay={0.1} variant="depth" className={styles.bleedRow}>
+          <Showcase
+            ariaLabel={t('home.featured.title')}
+            slideClassName={styles.slide}
+          >
+            {listings.map((listing) => (
+              <SearchResultCard key={listing.id} result={listing} />
+            ))}
+          </Showcase>
+        </ScrollReveal>
       )}
     </Section>
   );

@@ -1,0 +1,106 @@
+// ItineraryView — tokens only.
+
+@use 'tokens' as tokens;
+
+.summaryCard {
+  background: tokens.$gradient-navy-royal;
+  color: tokens.$color-white;
+}
+
+.summaryHeading {
+  margin: 0;
+  font-family: tokens.$font-display;
+  font-size: tokens.$font-size-h3;
+  line-height: tokens.$line-height-h3;
+  color: tokens.$color-white;
+}
+
+.narrative {
+  margin: 0;
+  color: rgba(tokens.$color-white, 0.88);
+  max-width: 68ch;
+}
+
+.route {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.node {
+  position: relative;
+  display: flex;
+  gap: tokens.$space-4;
+  padding-bottom: tokens.$space-8;
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  // The connecting "path" — a single vertical line running behind every
+  // marker, drawn once per node rather than as a separate absolutely-
+  // positioned overlay, so it naturally stretches to fit variable-height
+  // day content.
+  &:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    top: 40px;
+    bottom: 0;
+    left: 19px;
+    width: 2px;
+    background: linear-gradient(
+      180deg,
+      rgba(tokens.$color-royal-blue, 0.4),
+      rgba(tokens.$color-royal-blue, 0.08)
+    );
+  }
+}
+
+.marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: tokens.$radius-full;
+  background: tokens.$gradient-navy-royal;
+  color: tokens.$color-white;
+  font-family: tokens.$font-heading;
+  font-weight: 700;
+  font-size: tokens.$font-size-body;
+}
+
+.nodeContent {
+  flex: 1;
+  min-width: 0;
+  padding-top: tokens.$space-2;
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-3;
+}
+
+.dayHeading {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  line-height: tokens.$line-height-h4;
+  color: tokens.$color-gray-900;
+}
+
+.dayListings {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-3;
+}
+
+.listingCard {
+  border-left: 3px solid tokens.$color-gold;
+}
+
+.listingCity {
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+}

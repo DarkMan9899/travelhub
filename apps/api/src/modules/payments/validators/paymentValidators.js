@@ -18,8 +18,14 @@ const decimalAmount = z
   .regex(/^\d+(\.\d{1,2})?$/, 'amount must be a positive decimal string.');
 
 // Only meaningful for `LocalPaymentProvider` (Phase 16 spec §5) — a real
-// provider adapter never reads this field, so accepting it unconditionally
-// here is harmless once a real provider is configured.
+// provider adapter never reads this field for behavior, but Layer 2
+// (this file) is shape-only by design and has no business-rule access to
+// "which provider is currently active." `PaymentService#createPaymentIntent`
+// (Layer 3) is what actually refuses this field outright whenever the
+// configured provider isn't `local` — see its own comment. Release-
+// architecture requirement: no demo/simulation control may be part of
+// the real Stripe request contract, so this is a hard rejection, not a
+// silently-ignored value.
 const simulateScenarioEnum = z.enum([
   'SUCCESS',
   'DECLINE',

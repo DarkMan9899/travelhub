@@ -61,14 +61,19 @@ export function registerLocalProviderSettlementWorker({ paymentService }) {
       const { paymentId } = job.data;
       const payment = await paymentService.getPaymentSystemInternal(paymentId);
       if (!payment || payment.statusCode !== 'PROCESSING') return; // already resolved — idempotent no-op
+      // Manual-capture booking payment flow: a PROCESSING attempt settles
+      // to AUTHORIZED, not SUCCEEDED — money is only ever captured once
+      // the vendor accepts the booking (`BookingService#confirmBooking`),
+      // exactly like every other provider's synchronous 'SUCCESS'
+      // scenario (see `LocalPaymentProvider#createPaymentIntent`).
       await paymentService.handleProviderWebhook('local', {
         rawBody: JSON.stringify({ paymentId }),
         signatureHeader: null,
         parsedEvent: {
           id: `local_evt_settle_${paymentId}`,
-          type: 'local.payment.succeeded',
+          type: 'local.payment.authorized',
           providerPaymentId: payment.providerPaymentId,
-          status: 'SUCCEEDED',
+          status: 'AUTHORIZED',
         },
       });
     },

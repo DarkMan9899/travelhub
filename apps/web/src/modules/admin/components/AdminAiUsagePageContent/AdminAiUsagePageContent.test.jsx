@@ -48,7 +48,7 @@ describe('AdminAiUsagePageContent (apps/web/src/modules/admin)', () => {
     renderPage();
 
     expect(
-      screen.getByText('Ինչ-որ բան այն չգնաց AI օգտագործումը բեռնելիս։'),
+      screen.getByText('Ինչ-որ բան սխալ գնաց AI օգտագործումը բեռնելիս։'),
     ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Կրկին փորձել' }));
     expect(refetch).toHaveBeenCalledTimes(1);

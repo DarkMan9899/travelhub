@@ -1,8 +1,11 @@
 /**
- * FaqPageContent — `/:locale/faq` (Phase 10 redesign). Accordion-style
- * Q&A built on native `<details>/<summary>` — no dedicated Accordion
- * primitive exists in packages/ui yet, and native disclosure elements
- * already give correct keyboard/screen-reader behavior for free.
+ * FaqPageContent — `/:locale/faq` (Phase 10 redesign; editorial redesign
+ * in the 2026 public-frontend audit's static-page pass — see
+ * `EditorialPageHero`'s own file header for the shared shell this now
+ * uses). Accordion-style Q&A built on native `<details>/<summary>` — no
+ * dedicated Accordion primitive exists in packages/ui yet, and native
+ * disclosure elements already give correct keyboard/screen-reader
+ * behavior for free.
  *
  * P1.6 (Master Roadmap): title/lead now come from the real CMS backend
  * (see `AboutPageContent.jsx`'s identical comment for the fallback
@@ -17,10 +20,8 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
-import { Section, Stack } from '@desavii/ui/components/layout';
-import { Icon } from '@desavii/ui/components/primitives';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import { ChevronDown, HelpCircle } from 'lucide-react';
+import EditorialPageHero from '../../../../components/EditorialPageHero/EditorialPageHero.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import {
   buildBreadcrumbListSchema,
@@ -66,24 +67,31 @@ export default function FaqPageContent() {
   });
 
   return (
-    <Section spacing="default">
-      <PageHeader title={title} breadcrumbs={breadcrumbItems} />
-      <Stack gap="6">
-        <p className={styles.lead}>{lead}</p>
-        <Stack gap="3" className={styles.list}>
-          {QUESTION_KEYS.map((key) => (
-            <details key={key} className={styles.item}>
-              <summary className={styles.question}>
-                <span>{t(`cms.faq.questions.${key}.question`)}</span>
-                <Icon icon={ChevronDown} size="sm" className={styles.chevron} />
-              </summary>
-              <p className={styles.answer}>
-                {t(`cms.faq.questions.${key}.answer`)}
-              </p>
-            </details>
-          ))}
-        </Stack>
-      </Stack>
-    </Section>
+    <div className={styles.page}>
+      <EditorialPageHero
+        breadcrumbItems={breadcrumbItems}
+        heroSeed="faq"
+        icon={HelpCircle}
+        title={title}
+        lead={lead}
+      />
+      <div className={styles.list}>
+        {QUESTION_KEYS.map((key) => (
+          <details key={key} className={styles.item}>
+            <summary className={styles.question}>
+              <span>{t(`cms.faq.questions.${key}.question`)}</span>
+              <ChevronDown
+                size={18}
+                aria-hidden="true"
+                className={styles.chevron}
+              />
+            </summary>
+            <p className={styles.answer}>
+              {t(`cms.faq.questions.${key}.answer`)}
+            </p>
+          </details>
+        ))}
+      </div>
+    </div>
   );
 }

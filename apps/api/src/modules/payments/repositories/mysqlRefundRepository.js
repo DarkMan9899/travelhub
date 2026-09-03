@@ -116,6 +116,26 @@ export class MySqlRefundRepository {
     return toRefundDomain(rows[0]);
   }
 
+  /** Must run inside a transaction. Used by `#executeRefund`'s TX-2 to re-lock the refund row it created in TX-1, after the provider call. */
+  async lockById(id, connection) {
+    const [rows] = await connection.query(
+      `SELECT ${REFUND_SELECT} ${REFUND_FROM} WHERE r.id = ? FOR UPDATE`,
+      [id],
+    );
+    return toRefundDomain(rows[0]);
+  }
+
+  /** Must run inside a transaction. Used by webhook processing for a `refund.*`/`charge.refunded` event, which only knows the provider's own refund id. */
+  async lockByProviderRefundId(providerCode, providerRefundId, connection) {
+    if (!providerRefundId) return null;
+    const [rows] = await connection.query(
+      `SELECT ${REFUND_SELECT} ${REFUND_FROM}
+       WHERE r.provider_code = ? AND r.provider_refund_id = ? FOR UPDATE`,
+      [providerCode, providerRefundId],
+    );
+    return toRefundDomain(rows[0]);
+  }
+
   async updateStatus(
     id,
     {

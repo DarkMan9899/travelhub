@@ -1,25 +1,31 @@
 /**
  * CompaniesDirectoryPageContent — `/:locale/companies` (Phase 10
- * redesign). Real `GET /partners` results — the Companies/Partners
- * public directory the audit confirmed was completely missing before
- * this phase. No filters (unlike Search) — the directory is small
- * enough that a filter bar would be premature; "Load more", matching
- * the established infinite-scroll-button pattern
- * (`Search`/`Listings`/`Bookings`) over the new `Pagination` primitive,
- * since a cursor-paginated backend has no natural "jump to page N".
+ * redesign; editorial hero added in the 2026 public-frontend audit's
+ * Companies Directory pass, matching the same restrained hero treatment
+ * `CategoryPageContent`/`DestinationPageContent` already use — a compact
+ * breadcrumb, then a dark gradient band with a large `$font-display`
+ * heading, rather than the previous bare `PageHeader` + grid). Real
+ * `GET /partners` results — the Companies/Partners public directory the
+ * audit confirmed was completely missing before this phase. No filters
+ * (unlike Search) — the directory is small enough that a filter bar
+ * would be premature; "Load more", matching the established
+ * infinite-scroll-button pattern (`Search`/`Listings`/`Bookings`) over
+ * the new `Pagination` primitive, since a cursor-paginated backend has no
+ * natural "jump to page N".
  */
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section } from '@desavii/ui/components/layout';
+import { Building2 } from 'lucide-react';
 import {
   Skeleton,
   EmptyState,
   ErrorState,
 } from '@desavii/ui/components/feedback-overlays';
+import { Breadcrumbs } from '@desavii/ui/components/navigation';
 import { Button } from '@desavii/ui/components/primitives';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import RouterLink from '../../../../components/RouterLink.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
 import { useCompaniesQuery } from '../../queries/useCompaniesQuery.js';
@@ -60,11 +66,22 @@ export default function CompaniesDirectoryPageContent() {
   });
 
   return (
-    <Section spacing="default">
-      <PageHeader
-        title={t('companies.directory.title')}
-        breadcrumbs={breadcrumbItems}
+    <div className={styles.page}>
+      <Breadcrumbs
+        items={breadcrumbItems}
+        linkComponent={RouterLink}
+        className={styles.breadcrumbs}
       />
+
+      <section className={styles.hero}>
+        <div className={styles.heroContent}>
+          <span className={styles.heroIcon} aria-hidden="true">
+            <Building2 size={28} />
+          </span>
+          <h1 className={styles.title}>{t('companies.directory.title')}</h1>
+          <p className={styles.subtitle}>{t('companies.directory.subtitle')}</p>
+        </div>
+      </section>
 
       {isPending && (
         <div className={styles.grid}>
@@ -111,6 +128,6 @@ export default function CompaniesDirectoryPageContent() {
           )}
         </div>
       )}
-    </Section>
+    </div>
   );
 }

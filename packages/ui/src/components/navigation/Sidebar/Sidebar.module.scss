@@ -4,6 +4,7 @@
 @use '../../../tokens/spacing' as spacing;
 @use '../../../tokens/radius' as radius;
 @use '../../../tokens/motion' as motion;
+@use '../../../tokens/elevation' as elevation;
 @use '../../../tokens/z-index' as z;
 @use '../../../mixins/respond' as respond;
 @use '../../../mixins/focus-ring' as focus;
@@ -48,6 +49,51 @@
   @include respond.respond(tablet) {
     width: 72px;
   }
+}
+
+// `variant="premium"` (2026 Customer Account redesign) — an opt-in
+// visual upgrade to a floating panel + softer pill active-state. Purely
+// additive: no existing consumer (PartnerLayout/AdminLayout) passes
+// `variant`, so their rendering is byte-for-byte unchanged by this block.
+.sidebar--premium {
+  border-top-color: rgba(colors.$color-gray-200, 0.7);
+
+  @include respond.respond(tablet) {
+    border-inline-end: none;
+    border-radius: radius.$radius-xl;
+    padding: spacing.$space-2;
+    @include elevation.elevation-1;
+  }
+}
+
+.sidebar--premium .group {
+  @include respond.respond(tablet) {
+    padding: spacing.$space-2;
+  }
+}
+
+.sidebar--premium .item {
+  border-inline-start: none;
+  border-radius: radius.$radius-md;
+
+  @include respond.respond(tablet) {
+    border-radius: radius.$radius-md;
+  }
+}
+
+.sidebar--premium .item:hover {
+  color: colors.$color-royal-blue;
+  background-color: rgba(colors.$color-royal-blue, 0.05);
+}
+
+.sidebar--premium .item--active {
+  color: colors.$color-royal-blue;
+  background-color: rgba(colors.$color-royal-blue, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(colors.$color-royal-blue, 0.14);
+}
+
+.sidebar--premium .icon {
+  color: inherit;
 }
 
 .nav {

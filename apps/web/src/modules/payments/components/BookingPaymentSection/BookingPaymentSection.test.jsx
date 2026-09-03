@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import BookingPaymentSection from './BookingPaymentSection.jsx';
 import { usePaymentsForBookingQuery } from '../../queries/usePaymentsForBookingQuery.js';
 import { usePaymentQuery } from '../../queries/usePaymentQuery.js';
+import { usePaymentsConfigQuery } from '../../queries/usePaymentsConfigQuery.js';
 
 vi.mock('../../queries/usePaymentsForBookingQuery.js', () => ({
   usePaymentsForBookingQuery: vi.fn(),
@@ -10,8 +11,14 @@ vi.mock('../../queries/usePaymentsForBookingQuery.js', () => ({
 vi.mock('../../queries/usePaymentQuery.js', () => ({
   usePaymentQuery: vi.fn(),
 }));
+vi.mock('../../queries/usePaymentsConfigQuery.js', () => ({
+  usePaymentsConfigQuery: vi.fn(),
+}));
 vi.mock('../PayNowPanel/PayNowPanel.jsx', () => ({
   default: () => <div>PayNowPanel</div>,
+}));
+vi.mock('../StripeCheckoutPanel/StripeCheckoutPanel.jsx', () => ({
+  default: () => <div>StripeCheckoutPanel</div>,
 }));
 vi.mock('../PaymentSummaryCard/PaymentSummaryCard.jsx', () => ({
   default: () => <div>PaymentSummaryCard</div>,
@@ -24,6 +31,10 @@ describe('BookingPaymentSection (apps/web/src/modules/payments)', () => {
     usePaymentsForBookingQuery.mockReset();
     usePaymentQuery.mockReset();
     usePaymentQuery.mockReturnValue({ data: undefined });
+    usePaymentsConfigQuery.mockReset();
+    usePaymentsConfigQuery.mockReturnValue({
+      data: { enabled: true, provider: 'local' },
+    });
   });
 
   test('renders nothing while the booking is not yet resolved', () => {
@@ -96,6 +107,74 @@ describe('BookingPaymentSection (apps/web/src/modules/payments)', () => {
     usePaymentQuery.mockReturnValue({ data: { id: 3, status: 'SUCCEEDED' } });
     render(<BookingPaymentSection booking={BOOKING} />);
     expect(screen.getByText('PaymentSummaryCard')).toBeInTheDocument();
+  });
+
+  test('go-live sequencing: renders a disabled notice instead of PayNowPanel when payments are not enabled', () => {
+    usePaymentsForBookingQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    usePaymentsConfigQuery.mockReturnValue({ data: { enabled: false } });
+    render(<BookingPaymentSection booking={BOOKING} />);
+    expect(screen.queryByText('PayNowPanel')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Առցանց վճարումները դեռ հասանելի չեն'),
+    ).toBeInTheDocument();
+  });
+
+  test('go-live sequencing: renders nothing (never guesses) while the payments-config fetch is still pending — avoids ever showing the wrong "Pay Now" control', () => {
+    usePaymentsForBookingQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    usePaymentsConfigQuery.mockReturnValue({ data: undefined });
+    const { container } = render(<BookingPaymentSection booking={BOOKING} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  test('go-live sequencing: renders StripeCheckoutPanel (never PayNowPanel) when the active provider is stripe', async () => {
+    usePaymentsForBookingQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    usePaymentsConfigQuery.mockReturnValue({
+      data: {
+        enabled: true,
+        provider: 'stripe',
+        stripe_publishable_key: 'pk_test_dummy',
+      },
+    });
+    render(<BookingPaymentSection booking={BOOKING} />);
+    // StripeCheckoutPanel is now React.lazy()-loaded (2026 SEO/performance
+    // audit fix to keep Stripe out of the shared chunk on non-payment
+    // pages), so it resolves behind a Suspense boundary instead of
+    // rendering synchronously.
+    expect(await screen.findByText('StripeCheckoutPanel')).toBeInTheDocument();
+    expect(screen.queryByText('PayNowPanel')).not.toBeInTheDocument();
+  });
+
+  test('go-live sequencing: PAYMENTS_ENABLED=true with Stripe selected but no publishable key configured fails safely and clearly, instead of rendering a broken checkout control', () => {
+    usePaymentsForBookingQuery.mockReturnValue({
+      data: [],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    usePaymentsConfigQuery.mockReturnValue({
+      data: { enabled: true, provider: 'stripe', stripe_publishable_key: null },
+    });
+    render(<BookingPaymentSection booking={BOOKING} />);
+    expect(screen.queryByText('StripeCheckoutPanel')).not.toBeInTheDocument();
+    expect(screen.queryByText('PayNowPanel')).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Վճարումները ժամանակավորապես անհասանելի են'),
+    ).toBeInTheDocument();
   });
 
   test('renders nothing while the active payment detail is still loading', () => {

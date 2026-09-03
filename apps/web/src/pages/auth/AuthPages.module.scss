@@ -1,20 +1,20 @@
-// Shared LoginPage/RegisterPage card shell — tokens only, consumed from
-// @desavii/ui.
+// Shared LoginPage/RegisterPage/ForgotPasswordPage/ResetPasswordPage
+// card shell — tokens only, consumed from @desavii/ui.
 
 @use 'tokens' as tokens;
 
 .card {
   width: 100%;
   padding: tokens.$space-8;
-  border-radius: tokens.$radius-lg;
+  border-radius: tokens.$radius-xl;
   background-color: tokens.$color-white;
   @include tokens.elevation-1;
 }
 
 .title {
-  font-family: tokens.$font-heading;
-  font-size: tokens.$font-size-h3;
-  line-height: tokens.$line-height-h3;
+  font-family: tokens.$font-display;
+  font-size: tokens.$font-size-h2;
+  line-height: tokens.$line-height-h2;
   color: tokens.$color-gray-900;
   margin: 0 0 tokens.$space-6;
   text-align: center;

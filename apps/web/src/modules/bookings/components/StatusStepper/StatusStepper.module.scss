@@ -1,0 +1,65 @@
+// StatusStepper — tokens only.
+
+@use 'tokens' as tokens;
+
+.stepper {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+}
+
+.marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: tokens.$radius-full;
+  flex-shrink: 0;
+  color: tokens.$color-white;
+}
+
+.marker--done {
+  background-color: tokens.$color-success;
+}
+
+.marker--current {
+  background-color: tokens.$color-royal-blue;
+  box-shadow: 0 0 0 4px rgba(tokens.$color-royal-blue, 0.16);
+}
+
+.marker--stopped {
+  background-color: tokens.$color-danger;
+}
+
+.label {
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+  color: tokens.$color-gray-600;
+  white-space: nowrap;
+}
+
+.connector {
+  width: 28px;
+  height: 2px;
+  margin-inline: tokens.$space-1;
+  background-color: tokens.$color-gray-200;
+  flex-shrink: 0;
+}
+
+.connector--done {
+  background-color: tokens.$color-success;
+}
+
+.connector--stopped {
+  background-color: tokens.$color-gray-200;
+}

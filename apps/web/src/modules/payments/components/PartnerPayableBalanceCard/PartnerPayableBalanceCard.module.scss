@@ -1,0 +1,33 @@
+// PartnerPayableBalanceCard — 2026 Partner Workspace redesign. Tokens
+// only. Same panel-heading recipe as PartnerDashboardOverviewContent's
+// own two panels (Bookings/Listings) — this component is Partner
+// Dashboard-only (verified: its one other reference is its own test),
+// so the visual language stays consistent across all three panels on
+// that page without needing a new shared component for three call
+// sites.
+
+@use 'tokens' as tokens;
+
+.panelHeading {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+
+  svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: tokens.$color-royal-blue;
+  }
+}
+
+.empty {
+  margin: 0;
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+}

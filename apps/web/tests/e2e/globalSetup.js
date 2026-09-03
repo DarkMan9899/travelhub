@@ -29,11 +29,25 @@
  *
  * Mirrors `apps/api/tests/integration/helpers/resetRateLimits.js`'s
  * identical fix for the backend integration suite (same two prefixes).
+ *
+ * 3. Vite dev-server route warm-up. The actual root cause behind the
+ *    flake this was originally written to chase turned out to be local
+ *    machine CPU contention under Playwright's default worker count —
+ *    see `playwright.config.js`'s `workers` comment for the full
+ *    evidence trail (concurrent logins tested clean at the API level via
+ *    `curl`, the same test passed reliably alone, only failed alongside
+ *    several others). That's the real, confirmed fix. This warm-up stays
+ *    as a cheap, harmless belt-and-suspenders addition: Vite dev still
+ *    compiles each route's modules on first request, and forcing that
+ *    for the two most-visited routes here — before the parallel run
+ *    starts, while nothing is competing for the compile — means no
+ *    worker's first real test pays that one-time cost under contention.
  */
 
+import { chromium } from '@playwright/test';
 import Redis from 'ioredis';
 
-export default async function globalSetup() {
+export default async function globalSetup(config) {
   const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
     lazyConnect: true,
     maxRetriesPerRequest: 1,
@@ -57,5 +71,27 @@ export default async function globalSetup() {
     // worth failing the whole E2E run over.
   } finally {
     redis.disconnect();
+  }
+
+  const baseURL = config.projects[0]?.use?.baseURL ?? 'http://localhost:5173';
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    // Home and the login form are the two routes almost every spec
+    // reaches first — warming both, sequentially, covers the actual
+    // race observed without trying to enumerate every route.
+    await page.goto(`${baseURL}/en`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${baseURL}/en/auth/login`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await page
+      .getByRole('button', { name: 'Log in' })
+      .waitFor({ state: 'visible', timeout: 30_000 });
+  } catch {
+    // Best-effort warm-up — if this fails for any reason, the parallel
+    // run still proceeds; worst case is a reversion to the pre-fix cold-
+    // start behavior, not a broken run.
+  } finally {
+    await browser.close();
   }
 }

@@ -4,6 +4,48 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>desavii</title>
+    <!-- tokens/_typography.scss's $font-heading/$font-body/$font-display
+         — Playfair Display, Inter, and Manrope have zero Armenian
+         glyphs (verified against Google Fonts' own subset metadata —
+         only 6 of ~1,950 families support Armenian at all, none of them
+         premium display faces), so each is paired with a same-role Noto
+         Armenian companion the browser substitutes per-glyph
+         automatically; see _typography.scss's own header for the full
+         reasoning. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin="anonymous"
+    />
+    <!-- 2026 SEO/performance audit: real Lighthouse trace evidence
+         (render-blocking-resources audit) measured this stylesheet
+         costing ~960ms of render-blocking time under throttled mobile —
+         a plain `<link rel="stylesheet">` blocks first paint on fetching
+         it regardless of `display=swap` (that only controls when the
+         REAL font swaps in, not whether the CSS file itself blocks
+         rendering). The standard preload+async-apply pattern
+         (web.dev/Google's own recommended fix for exactly this) fetches
+         it without blocking paint, then applies it once loaded; the
+         `<noscript>` fallback keeps it a normal blocking stylesheet for
+         the rare case JS is disabled. -->
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@700;800;900&family=Noto+Serif+Armenian:wght@700;800;900&family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@700;800;900&family=Noto+Serif+Armenian:wght@700;800;900&family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap"
+      media="print"
+      onload="this.media='all'; this.onload=null;"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Playfair+Display:wght@700;800;900&family=Noto+Serif+Armenian:wght@700;800;900&family=Noto+Sans+Armenian:wght@400;500;600;700;800&display=swap"
+      />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

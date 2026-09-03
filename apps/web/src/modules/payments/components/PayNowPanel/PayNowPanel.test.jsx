@@ -59,6 +59,22 @@ describe('PayNowPanel (apps/web/src/modules/payments)', () => {
     expect(onPaid).toHaveBeenCalledTimes(1);
   });
 
+  test('manual capture: an AUTHORIZED response (the normal checkout outcome) shows the authorized toast, not the success one', async () => {
+    createPayment.mockResolvedValue({ data: { status: 'AUTHORIZED' } });
+    const onPaid = vi.fn();
+    const user = userEvent.setup();
+    renderPanel(onPaid);
+
+    await user.click(screen.getByRole('button', { name: 'Վճարել հիմա' }));
+
+    expect(
+      await screen.findByText(
+        'Վճարումը հաստատված է․ գումարը կգանձվի հենց հյուրընկալողը հաստատի ամրագրումը։',
+      ),
+    ).toBeInTheDocument();
+    expect(onPaid).toHaveBeenCalledTimes(1);
+  });
+
   test('a DECLINE-scenario response shows the declined toast, not the success one', async () => {
     createPayment.mockResolvedValue({ data: { status: 'FAILED' } });
     const user = userEvent.setup();

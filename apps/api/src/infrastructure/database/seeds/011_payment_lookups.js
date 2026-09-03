@@ -44,5 +44,21 @@ export default async function seedPaymentLookups(connection) {
     { code: 'PAYMENT_FAILED', name: 'Payment Failed' },
     { code: 'PARTIALLY_REFUNDED_ONLINE', name: 'Partially Refunded Online' },
     { code: 'REFUNDED_ONLINE', name: 'Refunded Online' },
+    // Manual-capture booking payment flow: the customer authorizes funds
+    // at checkout, but they are only ever captured once the vendor
+    // accepts the booking (see paymentService.js's
+    // BOOKING_PAYMENT_STATUS_BY_INTENT_STATUS). Distinct from
+    // AWAITING_PAYMENT (no funds committed at all) and PAYMENT_FAILED
+    // (nothing declined here — the vendor simply hasn't acted yet).
+    {
+      code: 'AUTHORIZED_AWAITING_CAPTURE',
+      name: 'Authorized, Awaiting Capture',
+    },
+    // The vendor rejected the booking (or the customer cancelled it)
+    // before the authorization was ever captured — the hold on the
+    // customer's card is released, never charged. Distinct from
+    // PAYMENT_FAILED (a declined/errored payment attempt) and from
+    // REFUNDED_ONLINE (money was actually captured, then returned).
+    { code: 'PAYMENT_VOIDED', name: 'Payment Voided' },
   ]);
 }

@@ -71,3 +71,24 @@
   font-size: tokens.$font-size-small;
   color: tokens.$color-gray-600;
 }
+
+// `variant="premium"` (2026 Customer Account redesign) — larger media, a
+// touch more breathing room. Opt-in, see BookingCard.jsx's own header.
+.card--premium {
+  gap: tokens.$space-4;
+}
+
+.card--premium .media {
+  flex-basis: 160px;
+  border-radius: tokens.$radius-lg 0 0 tokens.$radius-lg;
+}
+
+.card--premium .body {
+  padding: tokens.$space-4 tokens.$space-6 tokens.$space-4 0;
+  gap: tokens.$space-2;
+}
+
+.card--premium .title {
+  font-size: tokens.$font-size-h3;
+  line-height: tokens.$line-height-h3;
+}

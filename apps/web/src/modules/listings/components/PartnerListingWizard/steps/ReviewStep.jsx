@@ -16,6 +16,7 @@ import { Stack } from '@desavii/ui/components/layout';
 import { usePublishListingMutation } from '../../../mutations/usePublishListingMutation.js';
 import { PartnerAiToolsPanel, AskAiButton } from '../../../../ai/index.js';
 import ListingCompletenessWidget from '../ListingCompletenessWidget.jsx';
+import TranslationCompletenessWidget from '../TranslationCompletenessWidget.jsx';
 import WizardStepActions from '../WizardStepActions.jsx';
 
 export default function ReviewStep({
@@ -105,6 +106,8 @@ export default function ReviewStep({
 
       <ListingCompletenessWidget listingId={listing.id} />
 
+      <TranslationCompletenessWidget listing={listing} />
+
       <PartnerAiToolsPanel listingId={listing.id} />
 
       <AskAiButton
@@ -126,12 +129,28 @@ export default function ReviewStep({
   );
 }
 
+const localizedRowShape = PropTypes.shape({
+  language_code: PropTypes.string.isRequired,
+});
+
 ReviewStep.propTypes = {
   listing: PropTypes.shape({
     id: PropTypes.number.isRequired,
     translations: PropTypes.arrayOf(
-      PropTypes.shape({ title: PropTypes.string }),
+      PropTypes.shape({
+        language_code: PropTypes.string.isRequired,
+        title: PropTypes.string,
+        summary: PropTypes.string,
+        description: PropTypes.string,
+      }),
     ).isRequired,
+    // 2026 Partner Workspace redesign (Sprint 3 closeout):
+    // TranslationCompletenessWidget reads these — same rich-content
+    // arrays ContentStep already authors, passed straight through.
+    highlights: PropTypes.arrayOf(localizedRowShape),
+    included_items: PropTypes.arrayOf(localizedRowShape),
+    faqs: PropTypes.arrayOf(localizedRowShape),
+    itinerary_steps: PropTypes.arrayOf(localizedRowShape),
     location: PropTypes.shape({
       latitude: PropTypes.number,
       longitude: PropTypes.number,

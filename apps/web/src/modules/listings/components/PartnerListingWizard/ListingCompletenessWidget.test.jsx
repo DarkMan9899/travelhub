@@ -59,7 +59,7 @@ describe('ListingCompletenessWidget', () => {
     });
     render(<ListingCompletenessWidget listingId={7} />);
     expect(
-      screen.getByText('Ձեր հայտարարությունը պատրաստ է հրապարակման:'),
+      screen.getByText('Ձեր հայտարարությունը պատրաստ է հրապարակման։'),
     ).toBeInTheDocument();
   });
 });

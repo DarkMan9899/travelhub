@@ -1,7 +1,72 @@
 // CompaniesDirectoryPageContent — tokens only, consumed from @desavii/ui.
+// Hero treatment mirrors CategoryPageContent.module.scss's restrained
+// editorial hero (a fixed brand gradient here, not a per-item
+// DestinationArt seed — this page has no single subject to seed with).
 
 @use 'tokens' as tokens;
 @use 'mixins/respond' as respond;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-6;
+  padding-block: tokens.$space-6;
+}
+
+.breadcrumbs {
+  font-size: tokens.$font-size-small;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: tokens.$radius-xl;
+  background: tokens.$gradient-navy-royal;
+  @include tokens.elevation-2;
+}
+
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: tokens.$space-2;
+  padding: tokens.$space-6;
+  color: tokens.$color-white;
+
+  @include respond.respond(tablet) {
+    padding: tokens.$space-8;
+  }
+}
+
+.heroIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: tokens.$radius-full;
+  background-color: rgba(tokens.$color-white, 0.14);
+  margin-block-end: tokens.$space-1;
+}
+
+.title {
+  margin: 0;
+  font-family: tokens.$font-display;
+  font-size: tokens.$font-size-h2;
+  line-height: tokens.$line-height-h2;
+
+  @include respond.respond(tablet) {
+    font-size: tokens.$font-size-display;
+    line-height: tokens.$line-height-display;
+  }
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 58ch;
+  font-size: tokens.$font-size-body-large;
+  color: rgba(tokens.$color-white, 0.86);
+}
 
 .grid {
   display: grid;

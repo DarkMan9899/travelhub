@@ -101,7 +101,7 @@ describe('Seed determinism (Sprint 5 §15/§17)', () => {
     );
   });
 
-  test("every payment_statuses row from Sprint 5 §9 (plus Phase 16's online-payment extension) is present after seeding", async () => {
+  test("every payment_statuses row from Sprint 5 §9 (plus Phase 16's online-payment extension, plus the Stripe go-live preflight's manual-capture extension) is present after seeding", async () => {
     const pool = getMysqlPool();
     const [rows] = await pool.query(
       'SELECT code FROM payment_statuses ORDER BY code',
@@ -117,6 +117,12 @@ describe('Seed determinism (Sprint 5 §15/§17)', () => {
         'PAYMENT_FAILED',
         'PARTIALLY_REFUNDED_ONLINE',
         'REFUNDED_ONLINE',
+        // Manual-capture booking payment flow (seed 011): a payment is
+        // AUTHORIZED (funds held) before it's ever captured, and an
+        // authorization that's voided before capture is distinct from a
+        // genuinely FAILED/declined attempt.
+        'AUTHORIZED_AWAITING_CAPTURE',
+        'PAYMENT_VOIDED',
       ].sort(),
     );
   });

@@ -26,6 +26,47 @@ describe('buildLocaleUrl', () => {
   test('defaults path to empty string when omitted', () => {
     expect(buildLocaleUrl('ru')).toBe(`${getSiteOrigin()}/ru`);
   });
+
+  describe('query normalization (2026 SEO audit — centralized canonical builder)', () => {
+    test('strips non-canonical noise params from a path carrying a query string', () => {
+      expect(
+        buildLocaleUrl(
+          'en',
+          'search?sort=price&utm_source=newsletter&cursor=abc',
+        ),
+      ).toBe(`${getSiteOrigin()}/en/search`);
+    });
+
+    test('preserves params that genuinely identify distinct indexable content', () => {
+      expect(buildLocaleUrl('en', 'search?keyword=yerevan')).toBe(
+        `${getSiteOrigin()}/en/search?keyword=yerevan`,
+      );
+    });
+
+    test('keeps genuine params while dropping noise params in the same URL', () => {
+      expect(
+        buildLocaleUrl('en', 'search?keyword=yerevan&sort=price&ref=home'),
+      ).toBe(`${getSiteOrigin()}/en/search?keyword=yerevan`);
+    });
+
+    test('canonicalizes param order so equivalent URLs collapse to one canonical string', () => {
+      const a = buildLocaleUrl('en', 'search?categoryId=5&keyword=yerevan');
+      const b = buildLocaleUrl('en', 'search?keyword=yerevan&categoryId=5');
+      expect(a).toBe(b);
+    });
+
+    test('a path with no query string is unaffected (every current page-level caller)', () => {
+      expect(buildLocaleUrl('en', 'listings/villa-in-yerevan')).toBe(
+        `${getSiteOrigin()}/en/listings/villa-in-yerevan`,
+      );
+    });
+
+    test('drops a trailing "?" with no real params left after stripping', () => {
+      expect(buildLocaleUrl('en', 'search?sort=price')).toBe(
+        `${getSiteOrigin()}/en/search`,
+      );
+    });
+  });
 });
 
 describe('buildHreflangAlternates', () => {

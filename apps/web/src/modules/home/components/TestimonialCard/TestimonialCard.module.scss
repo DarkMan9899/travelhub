@@ -18,8 +18,11 @@
   @include tokens.elevation-1;
   @include tokens.reduced-motion-safe;
 
+  // Redesign phase (2026) — the same subtle perspective tilt as
+  // `Card--elevated` (`packages/ui`), so every showcase-carousel card
+  // shares one "physically tilts toward the viewer" hover language.
   &:hover {
-    transform: translateY(-6px);
+    transform: perspective(1000px) rotateX(2deg) translateY(-6px);
     border-color: rgba(tokens.$color-gold, 0.3);
     @include tokens.elevation-3;
   }

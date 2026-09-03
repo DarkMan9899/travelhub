@@ -20,3 +20,17 @@
 @mixin elevation-3 {
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
 }
+
+// Redesign phase (2026, premium public-journey visual system) — a fourth,
+// deliberately rare level for the handful of surfaces that should read as
+// genuinely floating above the page (hero search widget, sticky booking
+// card, elevated destination/category art) rather than merely "raised."
+// Two shadows stacked, not one scaled-up value: a soft, wide ambient
+// shadow (depth) plus a tighter, darker contact shadow close to the edge
+// (grounding) — a single large blur alone reads as blurry, not floating.
+// Still cool-neutral black per this file's own header rule.
+@mixin elevation-4 {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    0 32px 64px -12px rgba(11, 26, 43, 0.28);
+}

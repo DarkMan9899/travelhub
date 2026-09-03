@@ -1,0 +1,62 @@
+// PartnerProfilePageContent — 2026 Partner Workspace redesign (Sprint 4).
+// Tokens only.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+
+// Same recipe as PartnerDashboardOverviewContent/PartnerStaffPageContent's
+// own `.panelHeading` — the established operational-workspace section
+// heading (icon + Manrope), reused here rather than re-invented.
+.panelHeading {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+
+  svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: tokens.$color-royal-blue;
+  }
+}
+
+.publicProfileLink {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-1;
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+  color: tokens.$color-royal-blue;
+  text-decoration: none;
+  @include focus.focus-ring;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.verifiedBanner {
+  padding: tokens.$space-2 tokens.$space-3;
+  border-radius: tokens.$radius-md;
+  background-color: rgba(tokens.$color-gold, 0.1);
+  color: tokens.$color-ink;
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+
+  svg {
+    flex-shrink: 0;
+    color: tokens.$color-gold;
+  }
+}
+
+.publicProfileNote {
+  margin: 0;
+  color: tokens.$color-gray-600;
+  font-size: tokens.$font-size-small;
+  font-weight: 400;
+}

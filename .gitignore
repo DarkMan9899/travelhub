@@ -33,6 +33,7 @@ Thumbs.db
 coverage/
 playwright-report/
 test-results/
+apps/web/lighthouse-results.json
 
 # Docker volumes (bind-mounted local data, never versioned)
 docker/mysql/data/

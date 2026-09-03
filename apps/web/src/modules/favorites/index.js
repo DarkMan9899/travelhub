@@ -7,3 +7,4 @@
 
 export { default as FavoriteButton } from './components/FavoriteButton/FavoriteButton.jsx';
 export { default as FavoritesPageContent } from './components/FavoritesPageContent/FavoritesPageContent.jsx';
+export { useFavoritesQuery } from './queries/useFavoritesQuery.js';

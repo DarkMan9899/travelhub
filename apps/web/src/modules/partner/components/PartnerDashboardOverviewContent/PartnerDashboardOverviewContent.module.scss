@@ -1,0 +1,29 @@
+// PartnerDashboardOverviewContent — 2026 Partner Workspace redesign.
+// Tokens only. Purely a heading/hierarchy pass on top of the existing
+// Card/Grid composition — no layout primitive is replaced, so every
+// existing loading/empty/error state keeps working unmodified.
+
+@use 'tokens' as tokens;
+
+// The dashboard's bare native `<h2>`s (Bookings/Listings panels, and
+// PartnerPayableBalanceCard's own) had zero typographic treatment —
+// browser-default serif-ish heading, no color, no icon. A restrained
+// operational workspace needs stronger scanability than that; this is
+// the one recipe reused (with its own small icon) at each panel.
+.panelHeading {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+
+  svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: tokens.$color-royal-blue;
+  }
+}

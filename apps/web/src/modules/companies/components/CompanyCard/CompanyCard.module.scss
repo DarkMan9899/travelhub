@@ -1,7 +1,8 @@
 // CompanyCard — tokens only, consumed from @desavii/ui. The `Card`
 // primitive supplies the base surface/hover-lift/elevation treatment;
 // this file only adds what's specific to a company card (cover/logo
-// media block, verified badge, listing-count line).
+// media block, verified badge, rating, listing-count/member-since footer,
+// view-profile affordance).
 
 @use 'tokens' as tokens;
 @use 'mixins/truncate-lines' as truncate;
@@ -20,7 +21,8 @@
   overflow: hidden;
 }
 
-.image {
+.image,
+.imageArt {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -29,34 +31,26 @@
   @include tokens.reduced-motion-safe;
 }
 
-.card:hover .image {
+.card:hover .image,
+.card:hover .imageArt {
   transform: scale(1.05);
 }
 
-.imagePlaceholder {
-  width: 100%;
-  height: 100%;
-  background-color: tokens.$color-gray-100;
-}
-
+// A normal-flow element pulled up over `.media`'s bottom edge via
+// negative margin (not `position: absolute`, which `.media`'s own
+// `overflow: hidden` would clip) — same overlap technique
+// `TripPlannerPageContent` already uses for its form-over-hero overlap.
 .logo {
-  position: absolute;
-  left: tokens.$space-4;
-  bottom: -24px;
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: tokens.$radius-full;
-  border: 3px solid tokens.$color-white;
-  background-color: tokens.$color-white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  display: block;
+  width: fit-content;
+  margin-top: -32px;
 }
 
 .body {
   display: flex;
   flex-direction: column;
   gap: tokens.$space-2;
-  padding: tokens.$space-8 tokens.$space-4 tokens.$space-4;
+  padding: tokens.$space-4;
 }
 
 .nameRow {
@@ -76,7 +70,14 @@
 
 .verifiedBadge {
   display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-1;
+  padding: tokens.$space-1 tokens.$space-2;
+  border-radius: tokens.$radius-full;
+  background-color: rgba(tokens.$color-royal-blue, 0.1);
   color: tokens.$color-royal-blue;
+  font-size: tokens.$font-size-micro;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
@@ -88,9 +89,42 @@
   @include truncate.truncate-lines(2);
 }
 
+.footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: tokens.$space-2;
+  margin-block-start: tokens.$space-1;
+}
+
 .listingCount {
-  margin: 0;
   font-size: tokens.$font-size-small;
   font-weight: 600;
-  color: tokens.$color-gray-600;
+  color: tokens.$color-gray-900;
+}
+
+.memberSince {
+  font-size: tokens.$font-size-micro;
+  color: tokens.$color-gray-400;
+  white-space: nowrap;
+}
+
+.viewProfile {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-1;
+  margin-block-start: tokens.$space-1;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+  color: tokens.$color-royal-blue;
+
+  svg {
+    transition: transform tokens.$motion-micro tokens.$ease-out;
+    @include tokens.reduced-motion-safe;
+  }
+}
+
+.card:hover .viewProfile svg {
+  transform: translateX(3px);
 }

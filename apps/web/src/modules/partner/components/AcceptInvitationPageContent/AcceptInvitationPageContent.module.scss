@@ -1,0 +1,19 @@
+// AcceptInvitationPageContent — tokens only, consumed from @desavii/ui.
+
+@use 'tokens' as tokens;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-6;
+  padding-block: tokens.$space-6;
+}
+
+.actionCard {
+  border-radius: tokens.$radius-xl;
+}
+
+.mismatch {
+  margin: 0;
+  color: tokens.$color-gray-600;
+}

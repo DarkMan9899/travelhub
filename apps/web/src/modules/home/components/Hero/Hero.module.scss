@@ -1,109 +1,326 @@
 // Hero — tokens only, consumed from @desavii/ui.
+//
+// Redesign phase (2026, composition rebuild #2) — a centered spatial
+// "portal" (depth rings + core glow + route arcs + orbiting particles)
+// is the scene's real focal object, positioned center-right and large
+// enough that its glow bleeds left under the copy column — text and
+// scene genuinely overlap instead of sitting in two separate halves.
+// The terrain shrinks to a low grounding band at the very bottom. Four
+// depth planes total: sky (far atmospheric) → terrain (midground) →
+// portal (primary focal object) → search dock (foreground UI), each with
+// its own parallax rate, driven from Hero.jsx's scroll-progress/pointer
+// hooks via inline `transform`; this file owns color, layout, and the
+// CSS-only keyframe animations (ring rotation, route flow, particle
+// float) that don't need per-frame JS.
 
 @use 'tokens' as tokens;
 @use 'mixins/respond' as respond;
 @use 'mixins/focus-ring' as focus;
+@use 'mixins/grain' as grain;
 
 .hero {
   position: relative;
   overflow: hidden;
-  border-radius: tokens.$radius-xl;
   isolation: isolate;
   display: flex;
   flex-direction: column;
+  // Vertically centered, not bottom-anchored — the copy/dock block sits
+  // in the middle of the viewport, level with the portal beside it,
+  // instead of being pushed into a corner.
   justify-content: center;
 
-  // Content-driven height at every breakpoint — no forced near-viewport
-  // minimum. A premium hero reads as confidently *proportioned*, not as
-  // large as the viewport allows; this section's own copy/CTA/search
-  // stack now sets the height, capped only so a very short content set
-  // never collapses awkwardly thin on a tall laptop screen.
-  @include respond.respond(laptop) {
-    min-height: 480px;
-  }
+  // "Approximately 90-100svh" per the brief — `svh` (small viewport
+  // height) excludes a mobile browser's collapsible chrome, so this
+  // stays a genuine near-full first viewport instead of overshooting it
+  // on load and settling shorter once the address bar collapses. `vh`
+  // first as a fallback for browsers without `svh` support.
+  min-height: 92vh;
+  min-height: 92svh;
+}
 
-  // Depth: a directional dark scrim for text contrast, plus two soft
-  // glows (gold bottom-right, royal-blue upper-left) — the "premium
-  // accent, never a button" use of the gold token (UI_UX_GUIDELINES.md).
-  // Lighter than a flat dark wash so the backdrop art still reads
-  // through instead of the whole hero looking like a solid navy block.
-  &::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(
-        55% 65% at 88% 12%,
-        rgba(29, 95, 214, 0.2) 0%,
-        rgba(29, 95, 214, 0) 100%
-      ),
-      radial-gradient(
-        60% 50% at 85% 100%,
-        rgba(201, 162, 75, 0.24) 0%,
-        rgba(201, 162, 75, 0) 100%
-      ),
-      linear-gradient(
-        180deg,
-        rgba(11, 26, 43, 0.32) 0%,
-        rgba(11, 26, 43, 0.68) 100%
-      );
-    z-index: -1;
+// The full decorative scene — every layer inside is `aria-hidden` at the
+// wrapper level (Hero.jsx), so nothing here needs its own alt text/label.
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+// Atmospheric sky — dark at the top (depth/night-sky read), warming
+// toward a royal-blue "light near the horizon" band the terrain sits in
+// front of.
+.sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #060f1c 0%,
+    #0b1a2b 38%,
+    #0f2a4a 62%,
+    #143a70 82%,
+    #1d5fd6 100%
+  );
+}
+
+// Positions the portal (flexbox, not `transform` — so it never fights
+// the pointer-parallax offset `.portal` itself carries as an inline
+// style) center-right, vertically centered, large enough that its own
+// glow reaches back toward the copy column on its left.
+.portalStage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+
+  @include respond.respond(laptop) {
+    justify-content: flex-end;
+    padding-inline-end: 2vw;
   }
 }
 
-// Slow, continuous ambient zoom — the "Ken Burns" treatment premium
-// travel hero sections use so a static image never reads as inert.
-@keyframes hero-ken-burns {
+.portal {
+  position: relative;
+  width: min(78vw, 460px);
+  aspect-ratio: 1;
+  // Multiplied by Hero.jsx's `--portal-fade` (its own scroll-driven
+  // recede), not a plain `opacity` — each breakpoint keeps its own base
+  // dimness (mobile stays dimmer so a busier scene never fights the
+  // headline for legibility) while still fading further as the viewer
+  // scrolls past. `var(--portal-fade, 1)` falls back to fully opaque
+  // under `prefers-reduced-motion` (the property is never set there —
+  // `useScrollProgress` never attaches its listener).
+  opacity: calc(0.55 * var(--portal-fade, 1));
+
+  @include respond.respond(mobile-large) {
+    opacity: calc(0.75 * var(--portal-fade, 1));
+  }
+
+  @include respond.respond(laptop) {
+    width: min(50vw, 640px);
+    opacity: var(--portal-fade, 1);
+  }
+}
+
+.portalGlow {
+  position: absolute;
+  inset: 8%;
+  border-radius: tokens.$radius-full;
+  background: radial-gradient(
+    circle,
+    rgba(201, 162, 75, 0.55) 0%,
+    rgba(201, 162, 75, 0.22) 42%,
+    rgba(29, 95, 214, 0.12) 68%,
+    rgba(29, 95, 214, 0) 100%
+  );
+  filter: blur(4px);
+  animation: hero-glow-pulse 9s tokens.$ease-out infinite alternate;
+  @include tokens.reduced-motion-safe;
+}
+
+@keyframes hero-glow-pulse {
   from {
+    opacity: 0.7;
     transform: scale(1);
   }
 
   to {
-    transform: scale(1.08);
+    opacity: 1;
+    transform: scale(1.06);
   }
 }
 
-.backdrop {
+.portalRings {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  z-index: -2;
-  animation: hero-ken-burns 20s tokens.$ease-out infinite alternate;
+  fill: none;
+  overflow: visible;
+}
+
+.ringOuter,
+.ringMid,
+.ringInner {
+  transform-origin: 300px 300px;
   @include tokens.reduced-motion-safe;
 }
 
-// A large, faint compass-rose motif filling the otherwise-empty right
-// side of the hero at laptop+ — decorative, ties into the travel theme,
-// breaks up what would otherwise be a flat dark void beside the copy.
-.compassMotif {
-  display: none;
+.ringOuter {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1;
+  animation: hero-ring-spin 90s linear infinite;
+}
 
-  @include respond.respond(laptop) {
-    display: block;
-    position: absolute;
-    top: 50%;
-    right: -60px;
-    transform: translateY(-50%);
-    width: 320px;
-    height: 320px;
-    z-index: -1;
-    opacity: 0.12;
-    color: tokens.$color-white;
-    pointer-events: none;
+.ringMid {
+  stroke: rgba(201, 162, 75, 0.4);
+  stroke-width: 1.25;
+  stroke-dasharray: 2 10;
+  animation: hero-ring-spin 60s linear infinite reverse;
+}
+
+.ringInner {
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 1;
+  animation: hero-ring-spin 40s linear infinite;
+}
+
+@keyframes hero-ring-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
+.routeArc,
+.routeArcAlt {
+  stroke: rgba(201, 162, 75, 0.55);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 6 14;
+  animation: hero-route-flow 6s linear infinite;
+  @include tokens.reduced-motion-safe;
+}
+
+.routeArcAlt {
+  stroke: rgba(255, 255, 255, 0.28);
+  animation-duration: 8s;
+  animation-direction: reverse;
+}
+
+@keyframes hero-route-flow {
+  to {
+    stroke-dashoffset: -80;
+  }
+}
+
+.portalParticles {
+  position: absolute;
+  inset: -6%;
+}
+
+.portalParticle {
+  position: absolute;
+  border-radius: tokens.$radius-full;
+  filter: blur(1px);
+  animation: hero-particle-orbit 16s linear infinite;
+  @include tokens.reduced-motion-safe;
+
+  &:nth-child(1) {
+    top: 4%;
+    left: 48%;
+    width: 8px;
+    height: 8px;
+    background: rgba(201, 162, 75, 0.7);
+    animation-duration: 14s;
+  }
+
+  &:nth-child(2) {
+    top: 30%;
+    left: 96%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.55);
+    animation-duration: 18s;
+    animation-delay: -4s;
+  }
+
+  &:nth-child(3) {
+    top: 78%;
+    left: 88%;
+    width: 7px;
+    height: 7px;
+    background: rgba(29, 95, 214, 0.6);
+    animation-duration: 20s;
+    animation-delay: -9s;
+  }
+
+  &:nth-child(4) {
+    top: 92%;
+    left: 30%;
+    width: 6px;
+    height: 6px;
+    background: rgba(201, 162, 75, 0.55);
+    animation-duration: 15s;
+    animation-delay: -6s;
+  }
+
+  &:nth-child(5) {
+    top: 14%;
+    left: 4%;
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.45);
+    animation-duration: 19s;
+    animation-delay: -12s;
+  }
+}
+
+@keyframes hero-particle-orbit {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: translate(-8px, -16px);
+    opacity: 0.95;
+  }
+}
+
+// Midground — a low grounding band, not the whole scene (the portal is
+// the focal object now). Positioning/parallax transforms live on each
+// `<g>` in Hero.jsx; this file only owns fill color and full-bleed sizing.
+.terrain {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ridgeFar {
+  fill: rgba(20, 58, 112, 0.75);
+}
+
+.ridgeNear {
+  fill: #0b1a2b;
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  @include grain.grain-overlay(0.05);
+}
+
+// The Hero's own "recede into the page" edge — a soft fade to the app
+// background color at the very bottom, so the boundary with the first
+// content section reads as a deliberate transition rather than a hard
+// cut between two flat rectangles.
+.horizonFade {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 18%;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 15, 28, 0) 0%,
+    tokens.$color-white 100%
+  );
+}
+
 .content {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: tokens.$space-6;
-  padding-block: tokens.$space-12;
+  align-items: center;
+  gap: tokens.$space-8;
+  padding-block: tokens.$space-12 tokens.$space-16;
 
   @include respond.respond(laptop) {
-    padding-block: tokens.$space-16;
+    align-items: flex-start;
     gap: tokens.$space-8;
+    padding-block: tokens.$space-16 tokens.$space-24;
   }
 }
 
@@ -111,14 +328,21 @@
   display: flex;
   flex-direction: column;
   gap: tokens.$space-3;
-  max-width: 640px;
+  max-width: 620px;
   color: tokens.$color-white;
   text-align: center;
-  margin-inline: auto;
 
   @include respond.respond(laptop) {
+    // Center-left, not flush against the container edge — a moderate
+    // inset so the block reads as placed within the composition rather
+    // than pinned to the left wall, with the portal's own glow (its
+    // large soft-edged radial fill) reaching back underneath this
+    // column's right edge for the "text and scene overlap" the brief
+    // asks for — no per-word string splitting needed for that (unsafe
+    // across EN/HY/RU word order/length), it's the light doing the work.
+    max-width: 580px;
+    margin-inline-start: clamp(0px, 4vw, 64px);
     text-align: left;
-    margin-inline: 0;
   }
 }
 
@@ -127,22 +351,40 @@
   font-family: tokens.$font-body;
   font-size: tokens.$font-size-small;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  // Wider tracking than the token system's usual uppercase-label
+  // spacing (0.1em) — a premium editorial "kicker" line reads
+  // deliberately more open than a functional UI label.
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: tokens.$color-gold;
 }
 
 .title {
   margin: 0;
-  font-family: tokens.$font-heading;
-  font-weight: 700;
-  // A restrained scale — the previous laptop-only 1.2x amplification
-  // (67px) is what made the section read as oversized; the token's own
-  // display size, un-inflated, sits in better proportion against a
-  // content-driven (no longer near-viewport) hero height.
-  font-size: tokens.$font-size-display;
+  // The display face (Playfair Display, a classical high-contrast
+  // serif — see tokens/_typography.scss's header for why it's a
+  // separate token from $font-heading, and its Armenian fallback
+  // strategy), not $font-heading: the brief's explicit "strong contrast
+  // between display and UI typography" only reads if the Hero headline
+  // is a genuinely different typeface family from the rest of the UI,
+  // not just a bigger weight of the same one.
+  font-family: tokens.$font-display;
+  font-weight: 800;
+  // Fluid, not a fixed per-breakpoint token size — an editorial-scale
+  // headline needs to keep scaling smoothly with the viewport rather
+  // than jumping between a handful of fixed steps.
+  font-size: clamp(38px, 4.4vw + 18px, 92px);
+  // A serif's ascenders/descenders and fine hairlines need more
+  // breathing room than the previous geometric-sans line-height (1) —
+  // and gentler tracking: Playfair's own letterforms are already fairly
+  // tight, so the old -0.03em (tuned for a bold grotesque sans) reads as
+  // collision, not elegance, on this face.
   line-height: 1.08;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  // A soft depth shadow, not a hard drop-shadow — reinforces that the
+  // headline sits in front of the portal/terrain/light layers rather
+  // than being printed flat onto them.
+  text-shadow: 0 8px 40px rgba(6, 15, 28, 0.55);
 }
 
 .subtitle {
@@ -150,7 +392,10 @@
   font-size: tokens.$font-size-body-large;
   line-height: tokens.$line-height-body-large;
   color: tokens.$color-gray-100;
-  max-width: 520px;
+  // A measure (line length) tuned for this column's own width, not an
+  // arbitrary round number — comfortably inside the ~45-75 character
+  // readable range at this font-size/weight.
+  max-width: 490px;
   margin-inline: auto;
 
   @include respond.respond(laptop) {
@@ -161,50 +406,114 @@
 .ctas {
   display: flex;
   flex-wrap: wrap;
-  gap: tokens.$space-3;
+  align-items: center;
+  gap: tokens.$space-6;
   justify-content: center;
+  margin-block-start: tokens.$space-2;
 
   @include respond.respond(laptop) {
     justify-content: flex-start;
   }
 }
 
-.ctaSecondary {
+// The primary CTA — deliberately not the shared `Button` primitive's
+// rectangular/filled shape (UI_UX_GUIDELINES.md's boxed button is
+// exactly the "ordinary marketplace CTA" look this scene avoids): a
+// circular gold-ringed dial paired with the label, so the interactive
+// affordance itself reads as an object placed in the spatial scene
+// rather than a flat UI rectangle on top of it.
+.ctaPrimary {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  height: tokens.$button-height-lg;
-  padding-inline: tokens.$space-8;
-  border-radius: tokens.$radius-md;
-  border: 1px solid tokens.$color-white;
+  gap: tokens.$space-3;
+  border: none;
+  background: none;
+  padding: 0;
   color: tokens.$color-white;
   font-family: tokens.$font-body;
   font-weight: 600;
-  font-size: tokens.$font-size-body-large;
-  text-decoration: none;
-  transition:
-    background-color tokens.$motion-micro tokens.$ease-out,
-    transform tokens.$motion-micro tokens.$ease-out;
-  @include tokens.reduced-motion-safe;
+  font-size: tokens.$font-size-body;
+  // A tracked uppercase treatment — the same "premium hospitality
+  // label" register the eyebrow uses, so the two CTAs read as
+  // considered typography rather than default button-copy casing.
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
   @include focus.focus-ring;
 
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.12);
-    transform: translateY(-2px);
+  &:hover .ctaPrimaryDial,
+  &:focus-visible .ctaPrimaryDial {
+    background: tokens.$gradient-gold-sheen;
+    color: tokens.$color-ink;
+    transform: scale(1.08);
+    box-shadow: 0 0 0 6px rgba(201, 162, 75, 0.2);
   }
 }
 
+.ctaPrimaryDial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: tokens.$radius-full;
+  border: 1.5px solid rgba(201, 162, 75, 0.65);
+  color: tokens.$color-white;
+  transition:
+    background tokens.$motion-transition tokens.$ease-out,
+    color tokens.$motion-transition tokens.$ease-out,
+    transform tokens.$motion-transition tokens.$ease-out,
+    box-shadow tokens.$motion-transition tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+}
+
+// The secondary CTA — a plain underline-reveal link, not a bordered box
+// either, so the two CTAs read as "one refined action + one quiet
+// alternative," not two competing buttons.
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: tokens.$space-1;
+  color: tokens.$color-white;
+  font-family: tokens.$font-body;
+  font-weight: 600;
+  font-size: tokens.$font-size-small;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  padding-block-end: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  transition: border-color tokens.$motion-micro tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+  @include focus.focus-ring;
+
+  &:hover,
+  &:focus-visible {
+    border-color: tokens.$color-white;
+  }
+}
+
+.ctaSecondaryIcon {
+  transition: transform tokens.$motion-micro tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+
+  .ctaSecondary:hover &,
+  .ctaSecondary:focus-visible & {
+    transform: translate(2px, -2px);
+  }
+}
+
+// The search dock — a sibling of `.copy` (Hero.jsx), centered across the
+// whole content column at every breakpoint (not left-aligned like the
+// copy block) so it reads as its own floating object near the portal's
+// base rather than a continuation of the text column underneath it.
 .searchWrapper {
+  position: relative;
   margin-inline: auto;
-  margin-block-start: tokens.$space-2;
   width: 100%;
-  // Capped well below the copy column's own width so the search bar
-  // reads as an integrated extension of the Hero's message, not a
-  // second, competing block that spans (and dominates) the section.
-  max-width: 640px;
+  max-width: 620px;
 
   @include respond.respond(laptop) {
-    margin-inline: 0;
-    max-width: 620px;
+    max-width: 560px;
   }
 }

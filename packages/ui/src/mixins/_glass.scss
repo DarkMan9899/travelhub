@@ -10,3 +10,13 @@
   backdrop-filter: blur($blur);
   -webkit-backdrop-filter: blur($blur);
 }
+
+// The dark counterpart — a frosted navy surface for content sitting
+// directly over unpredictable imagery (gallery caption bars, on-image
+// chips) where a light glass panel would fail contrast. Same "used
+// sparingly" rule as the light variant above.
+@mixin glass-surface-dark($opacity: 0.55, $blur: 12px) {
+  background-color: rgba(colors.$color-ink, $opacity);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+}

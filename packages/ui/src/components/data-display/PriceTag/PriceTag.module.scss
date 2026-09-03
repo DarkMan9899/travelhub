@@ -35,3 +35,12 @@
   font-weight: 400;
   color: colors.$color-gray-600;
 }
+
+// Opt-in only — see PriceTag.jsx's `onDark` prop doc.
+.priceTag--onDark .amount {
+  color: colors.$color-white;
+}
+
+.priceTag--onDark .suffix {
+  color: rgba(colors.$color-white, 0.75);
+}

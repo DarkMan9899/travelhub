@@ -10,3 +10,4 @@
 export { default as NotificationBell } from './components/NotificationBell/NotificationBell.jsx';
 export { default as NotificationsPageContent } from './components/NotificationsPageContent/NotificationsPageContent.jsx';
 export { default as NotificationPreferencesSection } from './components/NotificationPreferences/NotificationPreferencesSection.jsx';
+export { useUnreadCountQuery } from './queries/useUnreadCountQuery.js';

@@ -19,6 +19,7 @@ export default function PriceTag({
   locale = 'en',
   size = 'md',
   suffix = undefined,
+  onDark = false,
 }) {
   const formatted = new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -27,7 +28,15 @@ export default function PriceTag({
   }).format(Number(amount));
 
   return (
-    <span className={[styles.priceTag, styles[`priceTag--${size}`]].join(' ')}>
+    <span
+      className={[
+        styles.priceTag,
+        styles[`priceTag--${size}`],
+        onDark && styles['priceTag--onDark'],
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <span className={styles.amount}>{formatted}</span>
       {suffix && <span className={styles.suffix}>{suffix}</span>}
     </span>
@@ -40,6 +49,10 @@ PriceTag.propTypes = {
   locale: PropTypes.string,
   size: PropTypes.oneOf(SIZES),
   suffix: PropTypes.node,
+  // Opt-in only (2026 Customer Account redesign's `NextTripPanel`, a
+  // dark photo-backdrop hero) — every existing caller keeps its default
+  // light-surface coloring untouched.
+  onDark: PropTypes.bool,
 };
 
 export { SIZES as PRICE_TAG_SIZES };

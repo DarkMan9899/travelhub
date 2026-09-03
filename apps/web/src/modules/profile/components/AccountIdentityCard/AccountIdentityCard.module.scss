@@ -1,0 +1,45 @@
+// AccountIdentityCard — tokens only.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+@use 'mixins/truncate-lines' as truncate;
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-3;
+  padding: tokens.$space-3 tokens.$space-4;
+  border-radius: tokens.$radius-xl;
+  background-color: tokens.$color-white;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    background-color tokens.$motion-micro tokens.$ease-out,
+    box-shadow tokens.$motion-micro tokens.$ease-out;
+  @include tokens.elevation-1;
+  @include focus.focus-ring;
+
+  &:hover {
+    background-color: tokens.$color-gray-100;
+  }
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-body;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+  @include truncate.truncate-lines(1);
+}
+
+.meta {
+  font-size: tokens.$font-size-micro;
+  color: tokens.$color-gray-600;
+}

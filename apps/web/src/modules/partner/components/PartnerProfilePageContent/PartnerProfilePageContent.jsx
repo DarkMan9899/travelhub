@@ -31,11 +31,19 @@ import PropTypes from 'prop-types';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import {
+  Image,
+  Building2,
+  Share2,
+  ShieldCheck,
+  ExternalLink,
+} from 'lucide-react';
 import { Input, Textarea } from '@desavii/ui/components/form-controls';
 import { Button, Card } from '@desavii/ui/components/primitives';
 import { Skeleton, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import { Section, Stack, Inline, Grid } from '@desavii/ui/components/layout';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import RouterLink from '../../../../components/RouterLink.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';
 import {
@@ -47,6 +55,7 @@ import { useMyCompanyProfileQuery } from '../../queries/useMyCompanyProfileQuery
 import { useUpdateCompanyProfileMutation } from '../../mutations/useUpdateCompanyProfileMutation.js';
 import { useUploadCompanyLogoMutation } from '../../mutations/useUploadCompanyLogoMutation.js';
 import { useUploadCompanyCoverMutation } from '../../mutations/useUploadCompanyCoverMutation.js';
+import styles from './PartnerProfilePageContent.module.scss';
 
 const ACCEPTED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -155,7 +164,10 @@ function ProfileForm({ defaultValues, canManage, onSave, isSaving }) {
   return (
     <form onSubmit={handleSubmit(onSave)} noValidate>
       <Stack gap="4">
-        <h2>{t('partner.profile.sections.identity')}</h2>
+        <h2 className={styles.panelHeading}>
+          <Building2 aria-hidden="true" focusable="false" />
+          {t('partner.profile.sections.identity')}
+        </h2>
         <Controller
           name="displayName"
           control={control}
@@ -244,7 +256,10 @@ function ProfileForm({ defaultValues, canManage, onSave, isSaving }) {
           )}
         />
 
-        <h2>{t('partner.profile.sections.social')}</h2>
+        <h2 className={styles.panelHeading}>
+          <Share2 aria-hidden="true" focusable="false" />
+          {t('partner.profile.sections.social')}
+        </h2>
         <Grid columns={2} gap="4">
           {SOCIAL_PLATFORMS.map((platform) => (
             <Controller
@@ -376,15 +391,44 @@ export default function PartnerProfilePageContent() {
             href: `/${locale}/partner/profile`,
           },
         ]}
+        actions={
+          profile?.slug && (
+            <RouterLink
+              href={`/${locale}/companies/${profile.slug}`}
+              className={styles.publicProfileLink}
+            >
+              <ExternalLink size={14} aria-hidden="true" focusable="false" />
+              {t('partner.profile.viewPublicProfile')}
+            </RouterLink>
+          )
+        }
       />
 
       {profileQuery.isPending ? (
         <Skeleton variant="text" width="60%" />
       ) : (
         <Stack gap="6">
+          {profile.is_verified && (
+            <Inline gap="2" align="center" className={styles.verifiedBanner}>
+              <ShieldCheck size={16} aria-hidden="true" focusable="false" />
+              <span>{t('companies.card.verified')}</span>
+              <span className={styles.publicProfileNote}>
+                {t('partner.profile.publicProfileNote')}
+              </span>
+            </Inline>
+          )}
+          {!profile.is_verified && (
+            <p className={styles.publicProfileNote}>
+              {t('partner.profile.publicProfileNote')}
+            </p>
+          )}
+
           <Card padding="lg">
             <Stack gap="3">
-              <h2>{t('partner.profile.sections.media')}</h2>
+              <h2 className={styles.panelHeading}>
+                <Image aria-hidden="true" focusable="false" />
+                {t('partner.profile.sections.media')}
+              </h2>
               <Grid columns={2} gap="4">
                 <ImageUploadTrigger
                   label={t('partner.profile.uploadLogo')}

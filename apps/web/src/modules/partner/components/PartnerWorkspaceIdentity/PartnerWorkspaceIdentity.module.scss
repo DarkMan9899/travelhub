@@ -1,0 +1,55 @@
+// PartnerWorkspaceIdentity — tokens only. A flat navy anchor, not a
+// floating soft-elevation card (Partner Workspace's brief explicitly
+// wants restrained/operational, unlike Customer Account's premium chrome
+// — see the .jsx header for why this isn't a shared component).
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+@use 'mixins/truncate-lines' as truncate;
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-3;
+  padding: tokens.$space-3 tokens.$space-4;
+  border-radius: tokens.$radius-md;
+  background-color: tokens.$color-navy;
+  text-decoration: none;
+  color: tokens.$color-white;
+  transition: background-color tokens.$motion-micro tokens.$ease-out;
+  @include focus.focus-ring;
+
+  &:hover {
+    background-color: tokens.$color-ink;
+  }
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.name {
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+  color: tokens.$color-white;
+  @include truncate.truncate-lines(1);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  font-size: tokens.$font-size-micro;
+  color: rgba(tokens.$color-white, 0.68);
+}
+
+.verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: tokens.$color-gold;
+}

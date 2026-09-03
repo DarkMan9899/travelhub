@@ -67,6 +67,15 @@ export function toPaymentResponse(payment) {
     // badge keys off this flag, never a string-compare scattered across
     // components.
     is_simulated: payment.providerCode === 'local',
+    // Stripe Elements checkout flow — the one value `stripe.confirmPayment`
+    // needs. Set only by `PaymentService#createPaymentIntent` (the direct
+    // create response) and `#getPayment` (re-fetched fresh, only while
+    // still confirmable) — never a real database column, so every other
+    // caller of this DTO (list responses, webhook-applied results,
+    // anything past the confirmable window, `LocalPaymentProvider`) is
+    // `null`, same convention as `provider_payment_id`/`failure_code`
+    // above.
+    client_secret: payment.clientSecret ?? null,
     status: payment.statusCode,
     base_amount: payment.baseAmount,
     fees_amount: payment.feesAmount,

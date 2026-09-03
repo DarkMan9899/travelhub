@@ -13,6 +13,30 @@ vi.mock('../contexts/AuthContext.jsx', () => ({
   }),
 }));
 
+// PartnerWorkspaceIdentity (2026 Partner Workspace redesign) reads the
+// active partner via `usePartnerContext`, so this layout can no longer
+// render without a provider for it — mocked here the same way
+// `PartnerDashboardOverviewContent.test.jsx` mocks it, rather than
+// wrapping every `renderAt` call in a real `PartnerProvider` (which
+// would also need a real `partnerships` array from `useAuth`).
+vi.mock('../contexts/PartnerContext.jsx', () => ({
+  usePartnerContext: () => ({
+    activePartner: {
+      partner_id: 3,
+      display_name: 'Ararat Travel',
+      role: 'OWNER',
+      verification_status: 'APPROVED',
+    },
+  }),
+}));
+
+// Avoids a real (jsdom-cross-origin-rejected) network attempt for the
+// identity card's logo lookup — this layout test only cares about nav
+// highlighting, not the company-profile fetch.
+vi.mock('../modules/partner/queries/useMyCompanyProfileQuery.js', () => ({
+  useMyCompanyProfileQuery: () => ({ data: undefined }),
+}));
+
 function renderAt(path) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },

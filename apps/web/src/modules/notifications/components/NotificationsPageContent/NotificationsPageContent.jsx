@@ -8,6 +8,16 @@
  * Search is local debounced state (`DestinationAutocomplete`'s manual
  * `setTimeout`/`clearTimeout` idiom), not URL-synced — this page has no
  * shareable/bookmarkable-filter requirement the way `search` does.
+ *
+ * 2026 Customer Account redesign: reuses the existing `audience` prop
+ * (already required to pick `NotificationRow`'s copy) as the opt-in
+ * signal for this component's OWN container chrome only — `NotificationRow`
+ * itself is untouched, so its appearance is identical everywhere it
+ * renders. `pages/account/NotificationsPage.jsx` doesn't pass `audience`
+ * at all, so it already gets the default `'customer'` value below;
+ * Partner's `<NotificationsPageContent audience="partner" />` is
+ * unaffected. Admin uses a completely separate `AdminNotificationsPageContent`
+ * and never touches this file.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -38,6 +48,8 @@ const CATEGORIES = [
   'FAVORITE',
   'PARTNER',
   'LISTING',
+  'MESSAGE',
+  'PAYMENT',
   'ADMIN',
 ];
 
@@ -54,6 +66,7 @@ function NotificationsSkeletonList() {
 
 export default function NotificationsPageContent({ audience = 'customer' }) {
   const { t } = useTranslation();
+  const isPremium = audience === 'customer';
   const [status, setStatus] = useState('all');
   const [category, setCategory] = useState(undefined);
   const [searchInput, setSearchInput] = useState('');
@@ -132,6 +145,7 @@ export default function NotificationsPageContent({ audience = 'customer' }) {
               type="button"
               className={[
                 styles.chip,
+                isPremium && styles['chip--premium'],
                 category === undefined && styles['chip--active'],
               ]
                 .filter(Boolean)
@@ -146,6 +160,7 @@ export default function NotificationsPageContent({ audience = 'customer' }) {
                 type="button"
                 className={[
                   styles.chip,
+                  isPremium && styles['chip--premium'],
                   category === code && styles['chip--active'],
                 ]
                   .filter(Boolean)
@@ -173,7 +188,11 @@ export default function NotificationsPageContent({ audience = 'customer' }) {
           />
         )}
         {!isError && !isPending && notifications.length > 0 && (
-          <ul className={styles.list}>
+          <ul
+            className={[styles.list, isPremium && styles['list--premium']]
+              .filter(Boolean)
+              .join(' ')}
+          >
             {notifications.map((notification) => (
               <NotificationRow
                 key={notification.id}

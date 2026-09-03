@@ -135,7 +135,14 @@ export default function AdminBookingsPageContent() {
     {
       key: 'status',
       header: t('admin.bookings.table.status'),
-      render: (booking) => <BookingStatusBadge status={booking.status} />,
+      // `audience="partner"` reuses the third-person "cancelled by the
+      // customer" override (BookingStatusBadge's own header comment) —
+      // the default customer-audience copy ("Cancelled by you") is just
+      // as wrong for an admin looking at someone else's booking as it is
+      // for a partner.
+      render: (booking) => (
+        <BookingStatusBadge status={booking.status} audience="partner" />
+      ),
     },
     {
       key: 'total',

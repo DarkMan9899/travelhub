@@ -4,6 +4,13 @@
 // per card to stay readable.
 
 @use 'mixins/respond' as respond;
+@use 'mixins/bleed' as bleed;
+
+// Redesign phase (2026) — see FeaturedDestinations.module.scss's
+// `.bleedRow` for the full rationale.
+.bleedRow {
+  @include bleed.bleed-start;
+}
 
 .slide {
   flex: 0 0 90%;

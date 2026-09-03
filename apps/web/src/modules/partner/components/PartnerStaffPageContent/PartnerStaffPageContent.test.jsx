@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ToastProvider from '../../../../providers/ToastProvider.jsx';
@@ -132,10 +132,28 @@ describe('PartnerStaffPageContent (apps/web/src/modules/partner)', () => {
     const user = userEvent.setup();
     renderPage();
 
-    expect(screen.getByText('owner@example.com')).toBeInTheDocument();
-    expect(screen.getByText('editor@example.com')).toBeInTheDocument();
+    // Sprint 4: each row now renders twice in the DOM — once in the
+    // desktop `DataTable` (a real `<table>`), once in an aria-labeled
+    // mobile card `<ul>` — CSS-toggled by breakpoint, not conditionally
+    // mounted. jsdom's default viewport doesn't match the `tablet`
+    // breakpoint, so only the mobile lists are accessible here; scope to
+    // them by their aria-label so assertions don't ambiguously match
+    // both renderings (and don't depend on jsdom's media-query fidelity).
+    const staffList = screen.getByRole('list', { name: 'Թիմի անդամներ' });
+    const invitationsList = screen.getByRole('list', {
+      name: 'Սպասող հրավերներ',
+    });
+
+    expect(
+      within(staffList).getByText('owner@example.com'),
+    ).toBeInTheDocument();
+    expect(
+      within(staffList).getByText('editor@example.com'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Սպասող հրավերներ')).toBeInTheDocument();
-    expect(screen.getByText('pending@example.com')).toBeInTheDocument();
+    expect(
+      within(invitationsList).getByText('pending@example.com'),
+    ).toBeInTheDocument();
 
     await user.click(
       screen.getByRole('button', { name: 'Հրավիրել աշխատակցի' }),
@@ -164,7 +182,11 @@ describe('PartnerStaffPageContent (apps/web/src/modules/partner)', () => {
     });
     renderPage();
 
-    expect(screen.getByText('owner@example.com')).toBeInTheDocument();
+    // No MANAGE_STAFF capability → no invitations section renders at all.
+    const staffList = screen.getByRole('list', { name: 'Թիմի անդամներ' });
+    expect(
+      within(staffList).getByText('owner@example.com'),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Հրավիրել աշխատակցի' }),
     ).not.toBeInTheDocument();
@@ -179,7 +201,10 @@ describe('PartnerStaffPageContent (apps/web/src/modules/partner)', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByRole('button', { name: 'Հեռացնել' }));
+    const staffList = screen.getByRole('list', { name: 'Թիմի անդամներ' });
+    await user.click(
+      within(staffList).getByRole('button', { name: 'Հեռացնել' }),
+    );
     expect(screen.getByText('Հեռացնե՞լ Ed Itor֊ին։')).toBeInTheDocument();
 
     const removeButtons = screen.getAllByRole('button', {
@@ -198,7 +223,12 @@ describe('PartnerStaffPageContent (apps/web/src/modules/partner)', () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByRole('button', { name: 'Չեղարկել' }));
+    const invitationsList = screen.getByRole('list', {
+      name: 'Սպասող հրավերներ',
+    });
+    await user.click(
+      within(invitationsList).getByRole('button', { name: 'Չեղարկել' }),
+    );
     const revokeButtons = screen.getAllByRole('button', {
       name: 'Այո, չեղարկել',
     });

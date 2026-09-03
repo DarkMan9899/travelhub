@@ -12,11 +12,13 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
+import { Wallet } from 'lucide-react';
 import { Card } from '@desavii/ui/components/primitives';
 import { Stack, Inline } from '@desavii/ui/components/layout';
 import { Skeleton } from '@desavii/ui/components/feedback-overlays';
 import { PriceTag } from '@desavii/ui/components/data-display';
 import { usePartnerBalanceQuery } from '../../queries/usePartnerBalanceQuery.js';
+import styles from './PartnerPayableBalanceCard.module.scss';
 
 export default function PartnerPayableBalanceCard({ partnerId }) {
   const { t } = useTranslation();
@@ -26,11 +28,16 @@ export default function PartnerPayableBalanceCard({ partnerId }) {
   return (
     <Card as="div" padding="lg">
       <Stack gap="3">
-        <h2>{t('payments.partnerBalance.heading')}</h2>
+        <h2 className={styles.panelHeading}>
+          <Wallet aria-hidden="true" focusable="false" />
+          {t('payments.partnerBalance.heading')}
+        </h2>
         {isPending && <Skeleton variant="text" width="40%" height={28} />}
-        {!isPending && isError && <p>{t('payments.partnerBalance.error')}</p>}
+        {!isPending && isError && (
+          <p className={styles.empty}>{t('payments.partnerBalance.error')}</p>
+        )}
         {!isPending && !isError && balances.length === 0 && (
-          <p>{t('payments.partnerBalance.empty')}</p>
+          <p className={styles.empty}>{t('payments.partnerBalance.empty')}</p>
         )}
         {!isPending &&
           !isError &&

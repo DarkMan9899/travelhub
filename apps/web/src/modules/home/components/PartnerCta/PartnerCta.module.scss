@@ -1,13 +1,17 @@
 // PartnerCta — tokens only, consumed from @desavii/ui.
 //
-// Dark navy/royal-blue gradient (same premium language as Hero) — safe
-// here because this section only ever uses Button's `primary` variant
-// (a self-contained solid fill), never `secondary`/`ghost` (which are
-// styled for a light background only — see Hero.jsx's own header
-// comment for where that distinction actually matters).
+// Redesign phase (2026) — the homepage's "cinematic final chapter,"
+// deliberately echoing Hero's own scene family (the same deep sky
+// gradient, a faint ring motif, grain) rather than introducing a fourth
+// unrelated dark treatment (Popular Experiences already has its own) —
+// closing the page on the same visual identity it opened on. Still safe
+// for Button's `primary` variant only (a self-contained solid fill),
+// never `secondary`/`ghost` (styled for a light background only — see
+// Hero.jsx's own header comment for where that distinction matters).
 
 @use 'tokens' as tokens;
 @use 'mixins/respond' as respond;
+@use 'mixins/grain' as grain;
 
 .banner {
   position: relative;
@@ -17,12 +21,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  gap: tokens.$space-6;
-  padding: tokens.$space-12 tokens.$space-6;
+  gap: tokens.$space-8;
+  padding: tokens.$space-16 tokens.$space-6;
   border-radius: tokens.$radius-xl;
   background: linear-gradient(
-    135deg,
-    tokens.$color-navy 0%,
+    160deg,
+    #060f1c 0%,
+    tokens.$color-navy 45%,
     tokens.$color-royal-blue 100%
   );
   text-align: center;
@@ -34,16 +39,48 @@
     inset: 0;
     z-index: -1;
     background: radial-gradient(
-      50% 60% at 90% 10%,
-      rgba(tokens.$color-gold, 0.25) 0%,
+      55% 65% at 88% 12%,
+      rgba(tokens.$color-gold, 0.22) 0%,
       rgba(tokens.$color-gold, 0) 100%
     );
+  }
+
+  &::before {
+    z-index: 0;
+    @include grain.grain-overlay(0.04);
   }
 
   @include respond.respond(laptop) {
     flex-direction: row;
     text-align: left;
-    padding: tokens.$space-16;
+    padding: tokens.$space-24 tokens.$space-16;
+  }
+}
+
+// A faint echo of the Hero portal's own concentric rings — the same
+// motif closing the page it opened on, kept small/quiet enough to read
+// as a signature rather than a second focal object competing with the
+// headline and CTA.
+.ringEcho {
+  position: absolute;
+  top: 50%;
+  right: -8%;
+  z-index: -1;
+  width: min(60vw, 420px);
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  opacity: 0.35;
+  pointer-events: none;
+
+  circle {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.16);
+    stroke-width: 1;
+  }
+
+  circle:nth-child(2) {
+    stroke: rgba(201, 162, 75, 0.3);
+    stroke-dasharray: 2 10;
   }
 }
 
@@ -56,9 +93,14 @@
 
 .title {
   margin: 0;
-  font-family: tokens.$font-heading;
-  font-size: tokens.$font-size-h2;
-  line-height: tokens.$line-height-h2;
+  // The editorial display face — "cinematic final chapter" needs the
+  // same weight of typographic drama the Hero opened with, not a
+  // functional-UI heading in a dark box.
+  font-family: tokens.$font-display;
+  font-weight: 800;
+  font-size: clamp(#{tokens.$font-size-h2}, 4vw, 48px);
+  line-height: 1.1;
+  letter-spacing: -0.005em;
   color: tokens.$color-white;
 }
 

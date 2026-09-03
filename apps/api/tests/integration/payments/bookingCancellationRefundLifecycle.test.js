@@ -13,20 +13,23 @@
  * Helper functions mirror `paymentLifecycle.test.js`'s own (this
  * codebase's established per-file-duplication convention for small
  * integration-test fixtures, not a shared import).
+ *
+ * Explicitly opts into `PAYMENTS_ENABLED=true` (test-readiness remediation,
+ * 2026) — see `paymentLifecycle.test.js`'s header comment for why this is
+ * a forced, file-scoped opt-in rather than an ambient assumption.
  */
 
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
-import { up } from '../../../src/infrastructure/database/migrate.js';
-import { seedAll } from '../../../src/infrastructure/database/seeds/index.js';
-import app from '../../../src/app.js';
-import {
-  getMysqlPool,
-  closeMysqlPool,
-} from '../../../src/infrastructure/database/mysqlPool.js';
-import { closeRedisConnection } from '../../../src/infrastructure/cache/redisClient.js';
-import { resetRateLimits } from '../helpers/resetRateLimits.js';
-import { DEV_CREDENTIALS } from '../../../src/infrastructure/database/seeds/005_dev_accounts.js';
+
+let up;
+let seedAll;
+let app;
+let getMysqlPool;
+let closeMysqlPool;
+let closeRedisConnection;
+let resetRateLimits;
+let DEV_CREDENTIALS;
 
 let vendor;
 let admin;
@@ -174,6 +177,20 @@ async function getBooking(customerAuth, bookingId) {
 }
 
 beforeAll(async () => {
+  process.env.PAYMENTS_ENABLED = 'true';
+
+  ({ up } = await import('../../../src/infrastructure/database/migrate.js'));
+  ({ seedAll } =
+    await import('../../../src/infrastructure/database/seeds/index.js'));
+  ({ default: app } = await import('../../../src/app.js'));
+  ({ getMysqlPool, closeMysqlPool } =
+    await import('../../../src/infrastructure/database/mysqlPool.js'));
+  ({ closeRedisConnection } =
+    await import('../../../src/infrastructure/cache/redisClient.js'));
+  ({ resetRateLimits } = await import('../helpers/resetRateLimits.js'));
+  ({ DEV_CREDENTIALS } =
+    await import('../../../src/infrastructure/database/seeds/005_dev_accounts.js'));
+
   await up();
   await seedAll();
   await resetRateLimits();
@@ -200,6 +217,7 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
+  delete process.env.PAYMENTS_ENABLED;
   await closeMysqlPool();
   await closeRedisConnection();
 });

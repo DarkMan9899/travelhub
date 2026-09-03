@@ -18,6 +18,8 @@ function Harness() {
     goToStep,
     goToNextStep,
     goToPreviousStep,
+    authoringLocale,
+    setAuthoringLocale,
   } = useListingWizardState();
 
   return (
@@ -28,6 +30,7 @@ function Harness() {
       <p data-testid="completed">{completedStepIds.join(',')}</p>
       <p data-testid="isFirstStep">{String(isFirstStep)}</p>
       <p data-testid="isLastStep">{String(isLastStep)}</p>
+      <p data-testid="authoringLocale">{authoringLocale}</p>
       <button type="button" onClick={() => setCategoryId(3)}>
         pick category
       </button>
@@ -45,6 +48,9 @@ function Harness() {
       </button>
       <button type="button" onClick={() => goToStep('review')}>
         jump to review
+      </button>
+      <button type="button" onClick={() => setAuthoringLocale('hy')}>
+        author in hy
       </button>
     </div>
   );
@@ -135,5 +141,26 @@ describe('useListingWizardState (PartnerListingWizard)', () => {
     await user.click(screen.getByRole('button', { name: 'jump to review' }));
     expect(screen.getByTestId('step')).toHaveTextContent('review');
     expect(screen.getByTestId('isLastStep')).toHaveTextContent('true');
+  });
+
+  // 2026 Partner Workspace redesign (Sprint 3).
+  test('authoringLocale defaults to the platform content default (en), not the route UI locale', () => {
+    renderHarness('/hy/partner/listings/new');
+    expect(screen.getByTestId('authoringLocale')).toHaveTextContent('en');
+  });
+
+  test('setAuthoringLocale updates it and persists across a step navigation', async () => {
+    const user = userEvent.setup();
+    renderHarness();
+    await user.click(screen.getByRole('button', { name: 'author in hy' }));
+    expect(screen.getByTestId('authoringLocale')).toHaveTextContent('hy');
+    await user.click(screen.getByRole('button', { name: 'next' }));
+    expect(screen.getByTestId('step')).toHaveTextContent('basicInfo');
+    expect(screen.getByTestId('authoringLocale')).toHaveTextContent('hy');
+  });
+
+  test('an unrecognized ?contentLocale= value falls back to the platform default', () => {
+    renderHarness('/hy/partner/listings/new?contentLocale=fr');
+    expect(screen.getByTestId('authoringLocale')).toHaveTextContent('en');
   });
 });

@@ -1,0 +1,24 @@
+// ListingGrid — tokens only. Matches SearchResults.module.scss's
+// breakpoint scale exactly, since both render the same SearchResultCard.
+
+@use 'tokens' as tokens;
+@use 'mixins/respond' as respond;
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-4;
+
+  @include respond.respond(mobile-large) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include respond.respond(tablet) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @include respond.respond(laptop) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: tokens.$space-6;
+  }
+}

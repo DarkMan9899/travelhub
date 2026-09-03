@@ -43,6 +43,7 @@ import {
   useListingMetadataQuery,
   useListingCategoriesQuery,
   getLocalizedTranslation,
+  getLocalizedItems,
   ListingStatusBadge,
   ListingAttributesSection,
   ListingAmenitiesSection,
@@ -131,6 +132,16 @@ export default function AdminListingDetailContent() {
     : null;
   const title = translation?.title ?? listing?.slug ?? '';
   const description = translation?.description ?? translation?.summary ?? '';
+
+  // 2026 stabilization audit (migration 0037): `listing.itinerary_steps`/
+  // `included_items`/`faqs` now carry every language's rows in one flat
+  // array (same reason `ListingDetailPageContent.jsx` needs this) — an
+  // admin reviewing a listing sees the page in one locale like anyone
+  // else, so this preview picks that same locale's subset rather than a
+  // raw multi-language dump.
+  const itinerarySteps = getLocalizedItems(listing?.itinerary_steps, locale);
+  const includedItems = getLocalizedItems(listing?.included_items, locale);
+  const faqs = getLocalizedItems(listing?.faqs, locale);
 
   async function handleApprove() {
     const confirmed = await confirm({
@@ -340,18 +351,18 @@ export default function AdminListingDetailContent() {
               as the customer detail page — never gated on the category
               metadata fetch below, which only Attributes/Amenities/
               Policies actually need. */}
-          {listing.itinerary_steps?.length > 0 && (
+          {itinerarySteps.length > 0 && (
             <Card as="div" padding="lg">
               <ListingItinerarySection
-                steps={listing.itinerary_steps}
+                steps={itinerarySteps}
                 sectionId={SECTION_ITINERARY}
               />
             </Card>
           )}
-          {listing.included_items?.length > 0 && (
+          {includedItems.length > 0 && (
             <Card as="div" padding="lg">
               <ListingIncludedSection
-                items={listing.included_items}
+                items={includedItems}
                 sectionId={SECTION_INCLUDED}
               />
             </Card>
@@ -392,9 +403,9 @@ export default function AdminListingDetailContent() {
             </Card>
           )}
 
-          {listing.faqs?.length > 0 && (
+          {faqs.length > 0 && (
             <Card as="div" padding="lg">
-              <ListingFaqSection faqs={listing.faqs} sectionId={SECTION_FAQ} />
+              <ListingFaqSection faqs={faqs} sectionId={SECTION_FAQ} />
             </Card>
           )}
 

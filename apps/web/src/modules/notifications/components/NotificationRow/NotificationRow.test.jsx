@@ -42,6 +42,17 @@ describe('NotificationRow (apps/web/src/modules/notifications)', () => {
     expect(screen.getByText(/BK-42/)).toBeInTheDocument();
   });
 
+  test('an unrecognized event type never renders its raw code in the DOM', () => {
+    const { container } = renderRow({
+      ...BASE_NOTIFICATION,
+      event_type: 'inventory.hold_expired',
+      category: 'PARTNER',
+      payload: { holdId: 55 },
+    });
+    expect(container.textContent).not.toContain('inventory.hold_expired');
+    expect(screen.getByText('Դուք ունեք նոր ծանուցում')).toBeInTheDocument();
+  });
+
   test('renders an unread indicator only when unread', () => {
     const { rerender } = renderRow(BASE_NOTIFICATION);
     expect(screen.getByLabelText('Չկարդացած')).toBeInTheDocument();
@@ -82,20 +93,22 @@ describe('NotificationRow (apps/web/src/modules/notifications)', () => {
   test('calls onMarkRead when the mark-as-read action is clicked', () => {
     const onMarkRead = vi.fn();
     renderRow(BASE_NOTIFICATION, { onMarkRead });
-    screen.getByText('Նշել որպես կարդացած').click();
+    screen.getByRole('button', { name: 'Նշել որպես կարդացած' }).click();
     expect(onMarkRead).toHaveBeenCalledWith(1);
   });
 
   test('calls onDelete when the delete action is clicked', () => {
     const onDelete = vi.fn();
     renderRow(BASE_NOTIFICATION, { onDelete });
-    screen.getByText('Ջնջել').click();
+    screen.getByRole('button', { name: 'Ջնջել' }).click();
     expect(onDelete).toHaveBeenCalledWith(1);
   });
 
   test('does not show an archive action for an already-archived notification', () => {
     renderRow({ ...BASE_NOTIFICATION, is_archived: true });
-    expect(screen.queryByText('Արխիվացնել')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Արխիվացնել' }),
+    ).not.toBeInTheDocument();
   });
 
   test('P2.2E: a BOOKING_* notification (resource_type/resource_id) links to the audience-correct booking detail page', () => {

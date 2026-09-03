@@ -3,17 +3,17 @@
  * `GET /search/destinations` row (`id`, `slug`, `name`, `listing_count`)
  * — not placeholder data. Always links to its real, indexable
  * `/destinations/:slug` landing page (`DestinationPageContent` resolves
- * any seeded city slug, not just a curated subset). The motif image is
- * generic/decorative (`alt=""`), not a per-city photo — no real city
- * imagery exists yet, same "real data, no per-row photo" honesty as
- * `CategoryCard`'s icon-instead-of-photo choice.
+ * any seeded city slug, not just a curated subset). The backdrop is
+ * `DestinationArt` (procedural, `id`-seeded) rather than a per-city
+ * photo — no real city imagery exists yet, same "real data, no per-row
+ * photo" honesty as `CategoryCard`'s icon-instead-of-photo choice.
  */
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { destinationMotif } from '../../../../assets/images/index.js';
 import RouterLink from '../../../../components/RouterLink.jsx';
+import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
 import styles from './DestinationCard.module.scss';
 
 export default function DestinationCard({ destination }) {
@@ -26,13 +26,7 @@ export default function DestinationCard({ destination }) {
       className={styles.card}
     >
       <div className={styles.media}>
-        <img
-          src={destinationMotif}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          className={styles.image}
-        />
+        <DestinationArt seed={destination.id} className={styles.image} />
       </div>
       <div className={styles.body}>
         <h3 className={styles.name}>{destination.name}</h3>

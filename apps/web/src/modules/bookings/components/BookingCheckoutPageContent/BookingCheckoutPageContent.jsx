@@ -17,18 +17,32 @@
  * whether the hold is still valid; the authoritative check happens
  * server-side inside `POST /bookings`, which fails plainly (a normal,
  * surfaced error) if the hold already expired.
+ *
+ * 2026 public-frontend audit: visual pass only — every hook, mutation,
+ * conditional, and handler above is unchanged. The bare `PageHeader` +
+ * plain-text order summary is replaced with a compact breadcrumb, a
+ * calm (not editorial-hero) heading — a transactional page should stay
+ * quiet, not decorative — an urgency-aware countdown badge, and a sticky
+ * `ListingCardBase`-language summary card reusing the listing's own
+ * cover photo/`DestinationArt` fallback. This page deliberately never
+ * collects payment (`PAYMENTS_ENABLED=false`; the flow here creates a
+ * `PENDING_VENDOR` request, not a charge), so there's no payment-status
+ * messaging to add — nothing was invented to fill that gap.
  */
 
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Clock } from 'lucide-react';
 import { Input, Textarea } from '@desavii/ui/components/form-controls';
 import { Button, Card } from '@desavii/ui/components/primitives';
 import { PriceTag } from '@desavii/ui/components/data-display';
 import { Alert, EmptyState } from '@desavii/ui/components/feedback-overlays';
-import { Section, Stack, Inline } from '@desavii/ui/components/layout';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import { Breadcrumbs } from '@desavii/ui/components/navigation';
+import { Stack } from '@desavii/ui/components/layout';
+import RouterLink from '../../../../components/RouterLink.jsx';
+import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import useNoIndex from '../../../../seo/useNoIndex.js';
@@ -36,6 +50,9 @@ import { useListingQuery } from '../../../listings/queries/useListingQuery.js';
 import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';
 import { useCreateBookingMutation } from '../../mutations/useCreateBookingMutation.js';
 import { useReleaseBookingHoldMutation } from '../../mutations/useReleaseBookingHoldMutation.js';
+import styles from './BookingCheckoutPageContent.module.scss';
+
+const URGENT_THRESHOLD_MS = 2 * 60_000;
 
 function useRemainingMs(expiresAt) {
   const [remainingMs, setRemainingMs] = useState(() =>
@@ -93,6 +110,9 @@ export default function BookingCheckoutPageContent() {
   const translation = listing
     ? getLocalizedTranslation(listing.translations, locale)
     : null;
+  const coverImageUrl =
+    listing?.media?.find((item) => item.is_cover)?.thumbnail_url ??
+    listing?.media?.[0]?.thumbnail_url;
 
   const createBookingMutation = useCreateBookingMutation();
   const releaseHoldMutation = useReleaseBookingHoldMutation();
@@ -184,160 +204,222 @@ export default function BookingCheckoutPageContent() {
     .toString()
     .padStart(2, '0');
   const isBlocked = bookingConflict || isExpired;
+  const isUrgent =
+    !isBlocked && remainingMs > 0 && remainingMs <= URGENT_THRESHOLD_MS;
+
+  const breadcrumbItems = [
+    { label: t('nav.home'), href: `/${locale}` },
+    {
+      label: t('bookings.checkout.heading'),
+      href: `/${locale}/booking/checkout`,
+    },
+  ];
 
   return (
-    <Section spacing="default">
-      <PageHeader
-        title={t('bookings.checkout.heading')}
-        breadcrumbs={[{ label: t('nav.home'), href: `/${locale}` }]}
+    <div className={styles.page}>
+      <Breadcrumbs
+        items={breadcrumbItems}
+        linkComponent={RouterLink}
+        className={styles.breadcrumbs}
       />
-      <Stack gap="4">
-        <Card as="div" padding="lg">
-          <Stack gap="3">
-            <h2>{t('bookings.checkout.summary.heading')}</h2>
-            {translation && <p>{translation.title ?? listing.slug}</p>}
-            {unitLabel && (
-              <Inline justify="space-between">
-                <span>{t('bookings.checkout.summary.roomType')}</span>
-                <span>{unitLabel}</span>
-              </Inline>
-            )}
-            <Inline justify="space-between">
-              <span>{t('bookings.checkout.summary.dates')}</span>
-              <span>
-                {holdItem.date_from} – {holdItem.date_to}
-              </span>
-            </Inline>
-            {nights !== null && (
-              <Inline justify="space-between">
-                <span>{t('bookings.checkout.summary.nights')}</span>
-                <span>{nights}</span>
-              </Inline>
-            )}
-            {holdItem.quantity > 1 && (
-              <Inline justify="space-between">
-                <span>{t('bookings.checkout.summary.quantity')}</span>
-                <span>{holdItem.quantity}</span>
-              </Inline>
-            )}
-            {guestCount && (
-              <Inline justify="space-between">
-                <span>{t('bookings.checkout.summary.guests')}</span>
-                <span>{guestCount}</span>
-              </Inline>
-            )}
-            <Inline justify="space-between" align="center">
-              <strong>{t('bookings.checkout.summary.total')}</strong>
-              {estimatedTotal ? (
-                <PriceTag
-                  amount={estimatedTotal.amount}
-                  currencyCode={estimatedTotal.currency}
-                  suffix={t('bookings.checkout.summary.estimateSuffix')}
+      <h1 className={styles.title}>{t('bookings.checkout.heading')}</h1>
+
+      <div className={styles.layout}>
+        <div className={styles.main}>
+          {isBlocked && (
+            <Alert variant="danger">
+              {t(
+                bookingConflict
+                  ? 'bookings.checkout.conflictError'
+                  : 'bookings.checkout.holdExpired',
+              )}
+            </Alert>
+          )}
+          {!isBlocked && (
+            <div
+              className={[
+                styles.countdownBadge,
+                isUrgent && styles['countdownBadge--urgent'],
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-live="polite"
+            >
+              <Clock size={16} aria-hidden="true" />
+              {t('bookings.checkout.holdExpiresIn', { minutes, seconds })}
+            </div>
+          )}
+
+          <Card
+            as="form"
+            padding="lg"
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            elevated
+            className={styles.formCard}
+          >
+            <Stack gap="4">
+              <h2 className={styles.formHeading}>
+                {t('bookings.checkout.guestContact.heading')}
+              </h2>
+              <Controller
+                name="fullName"
+                control={control}
+                rules={{
+                  required: t(
+                    'bookings.checkout.guestContact.fullNameRequired',
+                  ),
+                }}
+                render={({ field }) => (
+                  <Input
+                    label={t('bookings.checkout.guestContact.fullNameLabel')}
+                    required
+                    error={errors.fullName?.message}
+                    // eslint-disable-next-line react/jsx-props-no-spreading
+                    {...field}
+                  />
+                )}
+              />
+              <Controller
+                name="email"
+                control={control}
+                rules={{
+                  required: t('bookings.checkout.guestContact.emailRequired'),
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: t('bookings.checkout.guestContact.emailInvalid'),
+                  },
+                }}
+                render={({ field }) => (
+                  <Input
+                    type="email"
+                    label={t('bookings.checkout.guestContact.emailLabel')}
+                    required
+                    error={errors.email?.message}
+                    // eslint-disable-next-line react/jsx-props-no-spreading
+                    {...field}
+                  />
+                )}
+              />
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    type="tel"
+                    label={t('bookings.checkout.guestContact.phoneLabel')}
+                    // eslint-disable-next-line react/jsx-props-no-spreading
+                    {...field}
+                  />
+                )}
+              />
+              <Controller
+                name="notes"
+                control={control}
+                render={({ field }) => (
+                  <Textarea
+                    label={t('bookings.checkout.notesLabel')}
+                    // eslint-disable-next-line react/jsx-props-no-spreading
+                    {...field}
+                  />
+                )}
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isBlocked}
+                loading={createBookingMutation.isPending}
+              >
+                {t('bookings.checkout.confirmAction')}
+              </Button>
+            </Stack>
+          </Card>
+
+          <Button
+            variant="ghost"
+            onClick={() => handleCancelHold()}
+            loading={releaseHoldMutation.isPending}
+          >
+            {t('bookings.checkout.cancelHoldAction')}
+          </Button>
+        </div>
+
+        <aside className={styles.summaryColumn}>
+          <Card as="div" padding="none" elevated className={styles.summaryCard}>
+            <div className={styles.summaryMedia}>
+              {coverImageUrl ? (
+                <img
+                  src={coverImageUrl}
+                  alt=""
+                  className={styles.summaryImage}
+                  loading="lazy"
                 />
               ) : (
-                <span>{t('bookings.checkout.summary.unavailable')}</span>
-              )}
-            </Inline>
-          </Stack>
-        </Card>
-
-        {isBlocked && (
-          <Alert variant="danger">
-            {t(
-              bookingConflict
-                ? 'bookings.checkout.conflictError'
-                : 'bookings.checkout.holdExpired',
-            )}
-          </Alert>
-        )}
-        {!isBlocked && (
-          <p aria-live="polite">
-            {t('bookings.checkout.holdExpiresIn', { minutes, seconds })}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <Stack gap="4">
-            <Controller
-              name="fullName"
-              control={control}
-              rules={{
-                required: t('bookings.checkout.guestContact.fullNameRequired'),
-              }}
-              render={({ field }) => (
-                <Input
-                  label={t('bookings.checkout.guestContact.fullNameLabel')}
-                  required
-                  error={errors.fullName?.message}
-                  // eslint-disable-next-line react/jsx-props-no-spreading
-                  {...field}
+                <DestinationArt
+                  seed={listingId ?? 'checkout'}
+                  className={styles.summaryArt}
                 />
               )}
-            />
-            <Controller
-              name="email"
-              control={control}
-              rules={{
-                required: t('bookings.checkout.guestContact.emailRequired'),
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: t('bookings.checkout.guestContact.emailInvalid'),
-                },
-              }}
-              render={({ field }) => (
-                <Input
-                  type="email"
-                  label={t('bookings.checkout.guestContact.emailLabel')}
-                  required
-                  error={errors.email?.message}
-                  // eslint-disable-next-line react/jsx-props-no-spreading
-                  {...field}
-                />
+            </div>
+            <div className={styles.summaryBody}>
+              <h2 className={styles.summaryTitle}>
+                {t('bookings.checkout.summary.heading')}
+              </h2>
+              {translation && (
+                <p className={styles.summaryListingTitle}>
+                  {translation.title ?? listing.slug}
+                </p>
               )}
-            />
-            <Controller
-              name="phone"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  type="tel"
-                  label={t('bookings.checkout.guestContact.phoneLabel')}
-                  // eslint-disable-next-line react/jsx-props-no-spreading
-                  {...field}
-                />
-              )}
-            />
-            <Controller
-              name="notes"
-              control={control}
-              render={({ field }) => (
-                <Textarea
-                  label={t('bookings.checkout.notesLabel')}
-                  // eslint-disable-next-line react/jsx-props-no-spreading
-                  {...field}
-                />
-              )}
-            />
-
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={isBlocked}
-              loading={createBookingMutation.isPending}
-            >
-              {t('bookings.checkout.confirmAction')}
-            </Button>
-          </Stack>
-        </form>
-
-        <Button
-          variant="ghost"
-          onClick={() => handleCancelHold()}
-          loading={releaseHoldMutation.isPending}
-        >
-          {t('bookings.checkout.cancelHoldAction')}
-        </Button>
-      </Stack>
-    </Section>
+              <dl className={styles.summaryList}>
+                {unitLabel && (
+                  <div className={styles.summaryRow}>
+                    <dt>{t('bookings.checkout.summary.roomType')}</dt>
+                    <dd>{unitLabel}</dd>
+                  </div>
+                )}
+                <div className={styles.summaryRow}>
+                  <dt>{t('bookings.checkout.summary.dates')}</dt>
+                  <dd>
+                    {holdItem.date_from} – {holdItem.date_to}
+                  </dd>
+                </div>
+                {nights !== null && (
+                  <div className={styles.summaryRow}>
+                    <dt>{t('bookings.checkout.summary.nights')}</dt>
+                    <dd>{nights}</dd>
+                  </div>
+                )}
+                {holdItem.quantity > 1 && (
+                  <div className={styles.summaryRow}>
+                    <dt>{t('bookings.checkout.summary.quantity')}</dt>
+                    <dd>{holdItem.quantity}</dd>
+                  </div>
+                )}
+                {guestCount && (
+                  <div className={styles.summaryRow}>
+                    <dt>{t('bookings.checkout.summary.guests')}</dt>
+                    <dd>{guestCount}</dd>
+                  </div>
+                )}
+              </dl>
+              <div className={styles.summaryTotalRow}>
+                <strong>{t('bookings.checkout.summary.total')}</strong>
+                {estimatedTotal ? (
+                  <PriceTag
+                    amount={estimatedTotal.amount}
+                    currencyCode={estimatedTotal.currency}
+                    suffix={t('bookings.checkout.summary.estimateSuffix')}
+                    locale={locale}
+                  />
+                ) : (
+                  <span>{t('bookings.checkout.summary.unavailable')}</span>
+                )}
+              </div>
+            </div>
+          </Card>
+        </aside>
+      </div>
+    </div>
   );
 }

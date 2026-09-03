@@ -1,5 +1,4 @@
 @use 'tokens' as tokens;
-@use 'mixins/respond' as respond;
 
 .row {
   display: flex;
@@ -8,6 +7,7 @@
   padding: tokens.$space-3 tokens.$space-4;
   border-bottom: 1px solid tokens.$color-gray-200;
   position: relative;
+  min-width: 0;
 
   &--unread {
     background-color: rgba(29, 95, 214, 0.05);
@@ -15,6 +15,7 @@
 }
 
 .iconWrap {
+  position: relative;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -36,6 +37,11 @@
   font-size: tokens.$font-size-small;
   color: tokens.$color-gray-900;
   line-height: 1.4;
+  overflow-wrap: anywhere;
+
+  .row--unread & {
+    font-weight: 600;
+  }
 }
 
 .timestamp {
@@ -45,21 +51,29 @@
   color: tokens.$color-gray-600;
 }
 
+// Anchored to the icon avatar's corner rather than sitting as its own
+// flex child — three flex siblings (icon / body / dot) squeezed the
+// message column narrower than it needed to be for no visual reason.
 .unreadDot {
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
-  margin-top: tokens.$space-1;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
   border-radius: tokens.$radius-full;
   background-color: tokens.$color-royal-blue;
+  border: 2px solid tokens.$color-white;
 }
 
+// Icon-only Buttons (COMPONENT_LIBRARY's `iconOnly` variant) — never
+// full-text labels here. `Button`'s own CSS sets `white-space: nowrap`,
+// so three text-labeled actions ("Mark as read" / "Archive" / "Delete",
+// long words in Armenian/Russian) reliably forced this row wider than a
+// notification popover ever gets, squeezing `.message` down to a
+// one-word-per-line column and pushing the row into horizontal scroll.
 .actions {
-  display: none;
   flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
   gap: tokens.$space-1;
-
-  @include respond.respond(tablet) {
-    display: flex;
-  }
 }

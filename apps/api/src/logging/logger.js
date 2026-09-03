@@ -33,6 +33,15 @@ const REDACT_PATHS = [
   '*.secret',
   'apiKey',
   '*.apiKey',
+  // Stripe go-live preflight hardening: `config.payments.stripe`'s own
+  // field names (`secretKey`/`webhookSecret`) don't match any pattern
+  // above (pino's `redact.paths` is exact-key matching, not substring) —
+  // no current call site logs that object wholesale, but this closes the
+  // gap defensively rather than relying on that staying true forever.
+  'secretKey',
+  '*.secretKey',
+  'webhookSecret',
+  '*.webhookSecret',
 ];
 
 /**

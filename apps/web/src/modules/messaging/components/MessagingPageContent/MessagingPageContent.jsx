@@ -10,9 +10,25 @@
  * The selected conversation lives in the URL (`:conversationId`), not
  * local-only state, so a thread is directly linkable/bookmarkable and
  * survives a refresh.
+ *
+ * `variant="premium"` (2026 Customer Account redesign): an additive,
+ * opt-in visual upgrade to this component's OWN container chrome only
+ * (`ConversationListItem`/`MessageBubble`/`ChatWindow` — separate shared
+ * components — are untouched, so their appearance is identical everywhere
+ * they render). Defaults to `"default"`; only `pages/account/
+ * MessagesPage.jsx` passes `"premium"` — Admin's identical
+ * `<MessagingPageContent />` call site renders byte-for-byte as before.
+ *
+ * `variant="operational"` (Partner Workspace Sprint 4): the same additive
+ * pattern, this time for the Partner Workspace's own restrained register
+ * (Sprints 1-3's navy-anchor/Manrope canvas) rather than the customer's
+ * cinematic one — a thin navy top border on the two-pane container, no
+ * elevation/gradient. Only `pages/partner/PartnerMessagesPage.jsx` passes
+ * it.
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Section } from '@desavii/ui/components/layout';
@@ -26,8 +42,10 @@ import styles from './MessagingPageContent.module.scss';
 
 const DEBOUNCE_MS = 300;
 
-export default function MessagingPageContent() {
+export default function MessagingPageContent({ variant = 'default' }) {
   const { t } = useTranslation();
+  const isPremium = variant === 'premium';
+  const isOperational = variant === 'operational';
   const { conversationId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -63,7 +81,15 @@ export default function MessagingPageContent() {
   return (
     <Section spacing="none">
       <PageHeader title={t('messaging.page.heading')} />
-      <div className={styles.layout}>
+      <div
+        className={[
+          styles.layout,
+          isPremium && styles['layout--premium'],
+          isOperational && styles['layout--operational'],
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <div
           className={[
             styles.listPane,
@@ -119,3 +145,7 @@ export default function MessagingPageContent() {
     </Section>
   );
 }
+
+MessagingPageContent.propTypes = {
+  variant: PropTypes.oneOf(['default', 'premium', 'operational']),
+};

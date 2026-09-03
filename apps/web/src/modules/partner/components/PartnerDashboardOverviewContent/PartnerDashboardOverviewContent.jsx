@@ -26,6 +26,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
+import { CalendarCheck, ListChecks } from 'lucide-react';
 import { Section, Stack, Grid, Inline } from '@desavii/ui/components/layout';
 import { StatCard, ListingTableRow } from '@desavii/ui/components/dashboard';
 import { Badge, Card } from '@desavii/ui/components/primitives';
@@ -35,6 +36,7 @@ import {
   ErrorState,
 } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import styles from './PartnerDashboardOverviewContent.module.scss';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import { usePartnerContext } from '../../../../contexts/PartnerContext.jsx';
 import {
@@ -181,7 +183,10 @@ export default function PartnerDashboardOverviewContent() {
           <Card as="div" padding="lg">
             <Stack gap="3">
               <Inline justify="space-between" align="center">
-                <h2>{t('partner.dashboard.bookings.heading')}</h2>
+                <h2 className={styles.panelHeading}>
+                  <CalendarCheck aria-hidden="true" focusable="false" />
+                  {t('partner.dashboard.bookings.heading')}
+                </h2>
                 {bookings.length > 0 && (
                   <RouterLink href={`/${locale}/partner/bookings`}>
                     {t('partner.dashboard.bookings.viewAll')}
@@ -213,7 +218,10 @@ export default function PartnerDashboardOverviewContent() {
           <Card as="div" padding="lg">
             <Stack gap="3">
               <Inline justify="space-between" align="center">
-                <h2>{t('partner.dashboard.listings.heading')}</h2>
+                <h2 className={styles.panelHeading}>
+                  <ListChecks aria-hidden="true" focusable="false" />
+                  {t('partner.dashboard.listings.heading')}
+                </h2>
                 {listings.length > 0 && (
                   <RouterLink href={`/${locale}/partner/listings`}>
                     {t('partner.dashboard.listings.viewAll')}

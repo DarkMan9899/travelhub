@@ -126,8 +126,13 @@ function buildOffers(listing) {
  */
 export function buildListingSchema({ listing, categoryCode, locale, path }) {
   const schemaType = CATEGORY_SCHEMA_TYPE[categoryCode] ?? 'Product';
+  // 2026 SEO audit: `media_type` is the real `media_types` lookup code
+  // (`001_lookups.js` seeds it as `'IMAGE'`, and every listing DTO
+  // mapper echoes that same casing straight through) — this previously
+  // compared against lowercase `'image'`, which never matched real data
+  // and silently dropped `image` from every listing's JSON-LD.
   const images = (listing.media ?? [])
-    .filter((item) => item.media_type === 'image')
+    .filter((item) => item.media_type === 'IMAGE')
     .map((item) => item.url)
     .filter(Boolean);
   const address = buildAddress(listing.location);

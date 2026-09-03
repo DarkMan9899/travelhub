@@ -210,6 +210,28 @@ export class UserService {
   }
 
   /**
+   * Sets a user's password with no current-password check and no
+   * `principal` — unlike `changePassword` above, this is called by
+   * `AuthenticationService#resetPassword` for a signed-out user whose
+   * possession of a valid, single-use reset token (already verified by
+   * the caller) IS the authorization; there is no session to check
+   * ownership against. System-internal only, same naming convention as
+   * `bookingService.js`'s `getBookingStatusSystemInternal` — never
+   * exposed on any route, and Auth reaches it only through this public
+   * Service method, never a second Repository over `users`
+   * (BACKEND_ARCHITECTURE.md §4).
+   */
+  async setPasswordHashSystemInternal(userId, newPasswordHash) {
+    await this.#userRepository.updatePasswordHash(userId, newPasswordHash);
+    await this.#auditLogger.record({
+      actorId: userId,
+      action: 'user.password_reset',
+      targetType: 'user',
+      targetId: userId,
+    });
+  }
+
+  /**
    * Sprint 6 §5: "Avatar field support (storage abstraction only, no
    * cloud integration)" — stores via the injected StorageProvider
    * (LocalStorageProvider in this sprint), creates the backing `media`

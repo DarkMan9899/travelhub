@@ -1,27 +1,39 @@
 /**
- * CompanyCard — one `GET /partners` directory row (Phase 10 redesign).
- * First real consumer of the new shared `Card` primitive
- * (`packages/ui/components/primitives/Card`) — built directly on it
- * rather than hand-rolling the hover-lift/scrim/hover-scale treatment a
- * third time (`ListingCard`/`SearchResultCard` each already do), which
- * is exactly the duplication `Card` exists to remove (see its own file
- * header). Only fields `GET /partners` actually returns are rendered —
- * no rating (no Reviews module exists anywhere in this schema).
+ * CompanyCard — one `GET /partners` directory row (Phase 10 redesign;
+ * restyled in the 2026 public-frontend audit's Companies Directory pass).
+ * Built on the shared `Card` primitive's `elevated`/`interactive`
+ * treatment — the same premium surface `ListingCardBase`/`BookingCard`
+ * already use, so a company card reads as the same product as a listing
+ * card rather than a separate, plainer "contact card" system.
+ *
+ * `rating_average`/`review_count` (Reviews module, aggregated per
+ * partner — `apps/api/.../dto/partnerDto.js`'s `toPartnerSummaryResponse`)
+ * and `member_since` are real `GET /partners` fields that were always
+ * returned but never rendered anywhere; both surface here now. No
+ * category/city badge — `GET /partners` has no such column (a company
+ * isn't itself categorized or located; its individual listings are), so
+ * one isn't fabricated here.
  */
 
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
-import { Card, Icon } from '@desavii/ui/components/primitives';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { Card } from '@desavii/ui/components/primitives';
+import { RatingStars } from '@desavii/ui/components/data-display';
 import RouterLink from '../../../../components/RouterLink.jsx';
+import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
+import CompanyAvatar from '../../../../components/CompanyAvatar/CompanyAvatar.jsx';
 import styles from './CompanyCard.module.scss';
 
 export default function CompanyCard({ company }) {
   const { t } = useTranslation();
   const { locale } = useParams();
   const [imageFailed, setImageFailed] = useState(false);
+  const memberSinceYear = company.member_since
+    ? new Date(company.member_since).getFullYear()
+    : null;
 
   return (
     <Card
@@ -29,6 +41,7 @@ export default function CompanyCard({ company }) {
       href={`/${locale}/companies/${company.slug}`}
       padding="none"
       interactive
+      elevated
       className={styles.card}
       aria-label={t('companies.card.viewProfile', {
         name: company.display_name,
@@ -44,36 +57,57 @@ export default function CompanyCard({ company }) {
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <div className={styles.imagePlaceholder} aria-hidden="true" />
-        )}
-        {company.logo_url && (
-          <img
-            src={company.logo_url}
-            alt=""
-            className={styles.logo}
-            loading="lazy"
-          />
+          <DestinationArt seed={company.id} className={styles.imageArt} />
         )}
       </div>
       <div className={styles.body}>
+        <span className={styles.logo}>
+          <CompanyAvatar
+            name={company.display_name}
+            logoUrl={company.logo_url}
+            seed={company.id}
+            size={64}
+          />
+        </span>
         <div className={styles.nameRow}>
           <h3 className={styles.name}>{company.display_name}</h3>
           {company.is_verified && (
             <span className={styles.verifiedBadge}>
-              <Icon
-                icon={ShieldCheck}
-                size="sm"
-                label={t('companies.card.verified')}
-              />
+              <ShieldCheck size={14} aria-hidden="true" />
+              {t('companies.card.verified')}
             </span>
           )}
         </div>
+
+        {company.review_count > 0 && (
+          <RatingStars
+            value={company.rating_average}
+            reviewCount={company.review_count}
+            size="sm"
+          />
+        )}
+
         {company.description && (
           <p className={styles.description}>{company.description}</p>
         )}
-        <p className={styles.listingCount}>
-          {t('companies.card.listingCount', { count: company.listing_count })}
-        </p>
+
+        <div className={styles.footer}>
+          <span className={styles.listingCount}>
+            {t('companies.card.listingCount', {
+              count: company.listing_count,
+            })}
+          </span>
+          {memberSinceYear && (
+            <span className={styles.memberSince}>
+              {t('companies.card.memberSince', { year: memberSinceYear })}
+            </span>
+          )}
+        </div>
+
+        <span className={styles.viewProfile}>
+          {t('companies.card.viewProfileCta')}
+          <ArrowRight size={14} aria-hidden="true" />
+        </span>
       </div>
     </Card>
   );

@@ -7,3 +7,11 @@
   justify-content: center;
   margin-block-start: tokens.$space-4;
 }
+
+.groupHeading {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  line-height: tokens.$line-height-h4;
+  color: tokens.$color-gray-900;
+}

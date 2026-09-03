@@ -3,6 +3,13 @@
  * block reused by every homepage section, so the pattern is written once
  * instead of once per section (Component architecture: "shared section
  * headers").
+ *
+ * `tone`: `'light'` (default, unchanged) is this component's original
+ * dark-text-on-light-background palette. `'dark'` is the redesign
+ * phase's white-text-on-dark-scene palette (Popular Experiences' own
+ * cinematic panel) — a prop, not a second component, so every section
+ * still shares one heading implementation regardless of which scene it
+ * sits in.
  */
 
 import PropTypes from 'prop-types';
@@ -16,9 +23,14 @@ export default function SectionHeader({
   subtitle = undefined,
   viewAllHref = undefined,
   viewAllLabel = undefined,
+  tone = 'light',
 }) {
   return (
-    <div className={styles.header}>
+    <div
+      className={[styles.header, tone === 'dark' && styles['header--dark']]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className={styles.text}>
         {eyebrow && (
           <>
@@ -47,4 +59,5 @@ SectionHeader.propTypes = {
   subtitle: PropTypes.string,
   viewAllHref: PropTypes.string,
   viewAllLabel: PropTypes.string,
+  tone: PropTypes.oneOf(['light', 'dark']),
 };

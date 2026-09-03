@@ -15,7 +15,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section } from '@desavii/ui/components/layout';
+import { Container, Section } from '@desavii/ui/components/layout';
 import {
   Skeleton,
   EmptyState,
@@ -24,6 +24,7 @@ import {
 import { useDestinationsQuery } from '../../../search/index.js';
 import SectionHeader from '../SectionHeader/SectionHeader.jsx';
 import Showcase from '../Showcase/Showcase.jsx';
+import ScrollReveal from '../ScrollReveal/ScrollReveal.jsx';
 import DestinationCard from '../DestinationCard/DestinationCard.jsx';
 import styles from './FeaturedDestinations.module.scss';
 
@@ -42,56 +43,68 @@ export default function FeaturedDestinations() {
     .slice(0, FEATURED_DESTINATIONS_LIMIT);
 
   return (
-    <Section aria-labelledby={HEADING_ID}>
-      <SectionHeader
-        id={HEADING_ID}
-        eyebrow={t('home.destinations.eyebrow')}
-        title={t('home.destinations.title')}
-        subtitle={t('home.destinations.subtitle')}
-        viewAllHref={`/${locale}/search`}
-        viewAllLabel={t('home.showcase.viewAll')}
-      />
+    <Section aria-labelledby={HEADING_ID} className={styles.section}>
+      <Container size="wide">
+        <ScrollReveal variant="depth">
+          <SectionHeader
+            id={HEADING_ID}
+            eyebrow={t('home.destinations.eyebrow')}
+            title={t('home.destinations.title')}
+            subtitle={t('home.destinations.subtitle')}
+            viewAllHref={`/${locale}/search`}
+            viewAllLabel={t('home.showcase.viewAll')}
+          />
+        </ScrollReveal>
+      </Container>
 
       {isPending && (
-        <div className={styles.skeletonRow}>
-          {Array.from({ length: 4 }, (_, index) => (
-            // eslint-disable-next-line react/no-array-index-key -- skeleton
-            // placeholders are positionally static, non-reorderable.
-            <Skeleton
-              key={index}
-              variant="rect"
-              height={280}
-              className={styles.slide}
-            />
-          ))}
-        </div>
+        <Container size="wide">
+          <div className={styles.skeletonRow}>
+            {Array.from({ length: 4 }, (_, index) => (
+              // eslint-disable-next-line react/no-array-index-key -- skeleton
+              // placeholders are positionally static, non-reorderable.
+              <Skeleton
+                key={index}
+                variant="rect"
+                height={280}
+                className={styles.slide}
+              />
+            ))}
+          </div>
+        </Container>
       )}
 
       {isError && (
-        <ErrorState
-          title={t('home.destinations.error.title')}
-          description={t('home.destinations.error.description')}
-          retryLabel={t('home.destinations.error.retry')}
-          onRetry={() => refetch()}
-        />
+        <Container size="wide">
+          <ErrorState
+            title={t('home.destinations.error.title')}
+            description={t('home.destinations.error.description')}
+            retryLabel={t('home.destinations.error.retry')}
+            onRetry={() => refetch()}
+          />
+        </Container>
       )}
 
       {!isPending && !isError && destinations.length === 0 && (
-        <EmptyState
-          title={t('home.destinations.empty.title')}
-          description={t('home.destinations.empty.description')}
-        />
+        <Container size="wide">
+          <EmptyState
+            title={t('home.destinations.empty.title')}
+            description={t('home.destinations.empty.description')}
+          />
+        </Container>
       )}
 
       {!isPending && !isError && destinations.length > 0 && (
-        <Showcase
-          ariaLabel={t('home.destinations.title')}
-          slideClassName={styles.slide}
-        >
-          {destinations.map((destination) => (
-            <DestinationCard key={destination.id} destination={destination} />
-          ))}
-        </Showcase>
+        <ScrollReveal delay={0.1} variant="depth" className={styles.bleedRow}>
+          <Showcase
+            ariaLabel={t('home.destinations.title')}
+            slideClassName={styles.slide}
+          >
+            {destinations.map((destination) => (
+              <DestinationCard key={destination.id} destination={destination} />
+            ))}
+          </Showcase>
+        </ScrollReveal>
       )}
     </Section>
   );

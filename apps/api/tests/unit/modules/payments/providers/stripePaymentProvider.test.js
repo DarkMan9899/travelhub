@@ -44,6 +44,7 @@ describe('StripePaymentProvider', () => {
     expect(result).toEqual({
       providerPaymentId: 'pi_123',
       status: 'SUCCEEDED',
+      clientSecret: null,
       raw: { id: 'pi_123', status: 'succeeded' },
     });
     const [url, options] = fetchImpl.mock.calls[0];
@@ -55,6 +56,50 @@ describe('StripePaymentProvider', () => {
     // Minor-units transform: "105.50" -> "10550", never a float multiply.
     expect(options.body).toContain('amount=10550');
     expect(options.body).toContain('currency=amd');
+  });
+
+  test('createPaymentIntent (Stripe go-live preflight, manual-capture frontend integration): requests manual capture and automatic payment methods, and surfaces the client secret for stripe.confirmPayment', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'pi_456',
+        status: 'requires_payment_method',
+        client_secret: 'pi_456_secret_abc',
+      }),
+    });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    const result = await provider.createPaymentIntent({
+      amount: '100.00',
+      currencyCode: 'AMD',
+      paymentReference: 'PAY-2',
+      bookingId: 7,
+    });
+    expect(result.clientSecret).toBe('pi_456_secret_abc');
+    expect(result.status).toBe('CREATED');
+    const [, options] = fetchImpl.mock.calls[0];
+    const sentParams = new URLSearchParams(options.body);
+    expect(sentParams.get('capture_method')).toBe('manual');
+    expect(sentParams.get('automatic_payment_methods[enabled]')).toBe('true');
+  });
+
+  test('retrievePayment (Stripe go-live preflight, manual-capture frontend integration): surfaces a fresh client secret for resuming an unconfirmed checkout', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'pi_789',
+        status: 'requires_payment_method',
+        client_secret: 'pi_789_secret_xyz',
+      }),
+    });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    const result = await provider.retrievePayment('pi_789');
+    expect(result.clientSecret).toBe('pi_789_secret_xyz');
   });
 
   test('createPaymentIntent throws ExternalServiceError on a non-OK response', async () => {
@@ -211,6 +256,7 @@ describe('StripePaymentProvider', () => {
       data: { object: { id: 'pi_123', status: 'succeeded' } },
     });
     expect(normalized).toEqual({
+      kind: 'payment',
       providerEventId: 'evt_1',
       eventType: 'payment_intent.succeeded',
       normalizedEventType: 'payment_intent.succeeded',
@@ -241,6 +287,7 @@ describe('StripePaymentProvider', () => {
       },
     });
     expect(normalized).toEqual({
+      kind: 'payment',
       providerEventId: 'evt_2',
       eventType: 'payment_intent.payment_failed',
       normalizedEventType: 'payment_intent.payment_failed',
@@ -249,6 +296,58 @@ describe('StripePaymentProvider', () => {
       failureCode: 'card_declined',
       failureMessage: 'Your card was declined.',
     });
+  });
+
+  test('normalizeWebhookEvent (Stripe go-live preflight): a refund.updated event maps to kind "refund", keyed by the refund object id, not the PaymentIntent id', () => {
+    // Regression: the pre-fix implementation resolved every event's id via
+    // `object.id ?? object.payment_intent`, which always picked `object.id`
+    // — for a refund/charge event that's the refund/charge id, not a
+    // payment id, silently misrouting these events under the payment
+    // dispatch path.
+    const provider = new StripePaymentProvider({ secretKey: 'sk_test_x' });
+    const normalized = provider.normalizeWebhookEvent({
+      id: 'evt_3',
+      type: 'refund.updated',
+      data: {
+        object: {
+          id: 're_123',
+          payment_intent: 'pi_123',
+          status: 'succeeded',
+        },
+      },
+    });
+    expect(normalized).toEqual({
+      kind: 'refund',
+      providerEventId: 'evt_3',
+      eventType: 'refund.updated',
+      normalizedEventType: 'refund.updated',
+      providerRefundId: 're_123',
+      providerPaymentId: 'pi_123',
+      status: 'SUCCEEDED',
+    });
+  });
+
+  test('normalizeWebhookEvent (Stripe go-live preflight): charge.refunded also maps to kind "refund"', () => {
+    const provider = new StripePaymentProvider({ secretKey: 'sk_test_x' });
+    const normalized = provider.normalizeWebhookEvent({
+      id: 'evt_4',
+      type: 'charge.refunded',
+      data: {
+        object: { id: 'ch_123', payment_intent: 'pi_123', status: 'succeeded' },
+      },
+    });
+    expect(normalized.kind).toBe('refund');
+    expect(normalized.providerRefundId).toBe('ch_123');
+  });
+
+  test('normalizeWebhookEvent (Stripe go-live preflight): an unrecognized event type maps to kind "unhandled" instead of being misrouted', () => {
+    const provider = new StripePaymentProvider({ secretKey: 'sk_test_x' });
+    const normalized = provider.normalizeWebhookEvent({
+      id: 'evt_5',
+      type: 'customer.updated',
+      data: { object: { id: 'cus_123' } },
+    });
+    expect(normalized.kind).toBe('unhandled');
   });
 
   test('createPaymentIntent (P0.1): sends a stable Idempotency-Key derived from paymentReference', async () => {
@@ -270,6 +369,34 @@ describe('StripePaymentProvider', () => {
     expect(options.headers['Idempotency-Key']).toBe(
       'create-intent:PAY-ABC-123',
     );
+  });
+
+  test('createPaymentIntent (Stripe go-live preflight): forwards caller-supplied metadata instead of silently dropping it', async () => {
+    // Regression: only the two hardcoded `payment_reference`/`booking_id`
+    // metadata fields were ever sent — any metadata the caller passed
+    // (e.g. `payment.metadata.simulateScenario`) was silently discarded.
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'pi_123', status: 'succeeded' }),
+    });
+    const provider = new StripePaymentProvider({
+      secretKey: 'sk_test_x',
+      fetchImpl,
+    });
+    await provider.createPaymentIntent({
+      amount: '100.00',
+      currencyCode: 'AMD',
+      paymentReference: 'PAY-ABC-123',
+      bookingId: 1,
+      metadata: { source: 'checkout', simulateScenario: undefined },
+    });
+    const [, options] = fetchImpl.mock.calls[0];
+    const sentParams = new URLSearchParams(options.body);
+    expect(sentParams.get('metadata[source]')).toBe('checkout');
+    // A hardcoded key still wins on collision with a caller-supplied one.
+    expect(sentParams.get('metadata[payment_reference]')).toBe('PAY-ABC-123');
+    // undefined/null entries are dropped rather than sent as "undefined".
+    expect(sentParams.has('metadata[simulateScenario]')).toBe(false);
   });
 
   test('refundPayment (P0.1): sends a stable Idempotency-Key derived from refundReference', async () => {

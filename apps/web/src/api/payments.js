@@ -8,6 +8,18 @@
 import apiClient from './client.js';
 
 /**
+ * `GET /payments/config` — public, unauthenticated. `{ enabled: boolean }`
+ * tells the checkout UI whether online payments are switched on at all
+ * (go-live sequencing: the marketplace can launch before real payments
+ * are enabled) — the backend enforces this independently either way
+ * (`PAYMENTS_DISABLED`, 503), so this is purely a UX gate, never the
+ * actual guard.
+ */
+export function getPaymentsConfig() {
+  return apiClient.get('/payments/config').then((response) => response.data);
+}
+
+/**
  * `POST /payments` — `{ bookingId, idempotencyKey?, simulateScenario? }`.
  * `simulateScenario` only has any effect against the `local` provider
  * (the only one enabled without external credentials) — a real provider

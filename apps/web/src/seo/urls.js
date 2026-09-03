@@ -17,33 +17,6 @@ function normalizePath(path) {
   return trimmed;
 }
 
-/** Builds an absolute, canonical URL for `path` in `locale` — no query string. */
-export function buildLocaleUrl(locale, path = '') {
-  const origin = getSiteOrigin();
-  const normalized = normalizePath(path);
-  return normalized
-    ? `${origin}/${locale}/${normalized}`
-    : `${origin}/${locale}`;
-}
-
-/**
- * Builds the hreflang alternate-link set for a locale-free `path`: one
- * entry per supported locale plus `x-default` pointing at the default
- * locale's URL. Google/Bing require self-referencing hreflang, so the
- * current locale's own URL is included, not skipped.
- */
-export function buildHreflangAlternates(path = '') {
-  const alternates = SUPPORTED_LOCALES.map((locale) => ({
-    hrefLang: locale,
-    href: buildLocaleUrl(locale, path),
-  }));
-  alternates.push({
-    hrefLang: 'x-default',
-    href: buildLocaleUrl('hy', path),
-  });
-  return alternates;
-}
-
 /**
  * Strips query parameters that never represent genuinely distinct
  * indexable content (booking dates, guest counts, tracking/utm params,
@@ -68,6 +41,57 @@ export function stripNonCanonicalParams(searchParams) {
     }
   });
   return params;
+}
+
+/**
+ * Builds an absolute, canonical URL for `path` in `locale`.
+ *
+ * `path` is normally query-free (every current caller builds it from a
+ * slug/id, never from `location.search`) — but this is the ONE place
+ * every canonical/hreflang/OG URL in the app is assembled, so it's also
+ * the centralized place to defend against a future caller that DOES
+ * carry a query string (e.g. `path: 'search?sort=price&keyword=yerevan'`):
+ * non-canonical noise (`stripNonCanonicalParams` — utm_*, ref, fbclid,
+ * gclid, checkIn/checkOut, dateFrom/dateTo, guests, currency, sort,
+ * cursor, view) is stripped, while any param that genuinely identifies
+ * distinct indexable content (e.g. `keyword`, `categoryId`) is kept and
+ * canonicalized in a stable, alphabetically-sorted order so two
+ * equivalent URLs with params in a different order collapse to the same
+ * canonical string — never accidentally strip real content, never leave
+ * an uncontrolled crawl-space open either.
+ */
+export function buildLocaleUrl(locale, path = '') {
+  const origin = getSiteOrigin();
+  const [rawPath, rawQuery] = String(path ?? '').split('?');
+  const normalized = normalizePath(rawPath);
+  const base = normalized
+    ? `${origin}/${locale}/${normalized}`
+    : `${origin}/${locale}`;
+
+  if (!rawQuery) return base;
+
+  const preserved = stripNonCanonicalParams(rawQuery);
+  preserved.sort();
+  const queryString = preserved.toString();
+  return queryString ? `${base}?${queryString}` : base;
+}
+
+/**
+ * Builds the hreflang alternate-link set for a locale-free `path`: one
+ * entry per supported locale plus `x-default` pointing at the default
+ * locale's URL. Google/Bing require self-referencing hreflang, so the
+ * current locale's own URL is included, not skipped.
+ */
+export function buildHreflangAlternates(path = '') {
+  const alternates = SUPPORTED_LOCALES.map((locale) => ({
+    hrefLang: locale,
+    href: buildLocaleUrl(locale, path),
+  }));
+  alternates.push({
+    hrefLang: 'x-default',
+    href: buildLocaleUrl('hy', path),
+  });
+  return alternates;
 }
 
 export default {

@@ -3,18 +3,24 @@
  * SEO). Real, indexable per-city landing page — mirrors
  * `CategoryPageContent`'s exact structure and data-reuse discipline for
  * the destination equivalent (`useDestinationsQuery` instead of
- * `useCategoriesQuery`, `cityId` instead of `categoryId`).
+ * `useCategoriesQuery`, `cityId` instead of `categoryId`), including the
+ * 2026 public-frontend audit's editorial hero + `ListingGrid` fix — see
+ * `CategoryPageContent`'s own file header for why the previous
+ * `Grid columns="auto"` grid was wrong for a card layout.
  */
 
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
 import {
   Skeleton,
   ErrorState,
   EmptyState,
 } from '@desavii/ui/components/feedback-overlays';
-import { Stack, Grid } from '@desavii/ui/components/layout';
-import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import { Breadcrumbs } from '@desavii/ui/components/navigation';
+import RouterLink from '../../../../components/RouterLink.jsx';
+import ListingGrid from '../../../../components/ListingGrid/ListingGrid.jsx';
+import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
 import useSeo from '../../../../seo/useSeo.js';
 import { buildBreadcrumbListSchema } from '../../../../seo/structuredData.js';
 import {
@@ -22,6 +28,7 @@ import {
   useSearchListingsQuery,
   SearchResultCard,
 } from '../../../search/index.js';
+import styles from './DestinationPageContent.module.scss';
 
 export default function DestinationPageContent() {
   const { t } = useTranslation();
@@ -38,8 +45,18 @@ export default function DestinationPageContent() {
     (candidate) => candidate.slug === citySlug,
   );
 
+  // 2026 SEO/performance audit: same confirmed waste as
+  // CategoryPageContent.jsx's identical pattern — without `enabled`, this
+  // fired once with `cityId: undefined` (an unfiltered fetch whose result
+  // is never rendered, since the page is still showing its own pending
+  // skeleton at that point) and again, correctly filtered, once
+  // `destination.id` resolved. `!destination` already early-returns below
+  // before any JSX reads `isListingsPending`.
   const { data: listingsData, isPending: isListingsPending } =
-    useSearchListingsQuery({ cityId: destination?.id }, { locale });
+    useSearchListingsQuery(
+      { cityId: destination?.id },
+      { locale, enabled: Boolean(destination?.id) },
+    );
   const listings = listingsData?.pages[0]?.results ?? [];
 
   const canonicalPath = `destinations/${citySlug}`;
@@ -68,19 +85,20 @@ export default function DestinationPageContent() {
 
   if (isPending) {
     return (
-      <Stack
-        gap="6"
+      <div
         aria-busy="true"
         aria-label={t('discovery.destination.loading')}
+        className={styles.page}
       >
-        <Skeleton variant="text" width="40%" height={32} />
-        <Grid columns="auto" gap="4">
-          {Array.from({ length: 6 }, (_, index) => (
+        <Skeleton variant="text" width="30%" height={20} />
+        <Skeleton variant="rect" height={220} className={styles.heroSkeleton} />
+        <ListingGrid>
+          {Array.from({ length: 8 }, (_, index) => (
             // eslint-disable-next-line react/no-array-index-key -- fixed-count skeleton placeholders, no stable identity to key by
             <Skeleton key={index} variant="rect" height={280} />
           ))}
-        </Grid>
-      </Stack>
+        </ListingGrid>
+      </div>
     );
   }
 
@@ -106,18 +124,41 @@ export default function DestinationPageContent() {
   }
 
   return (
-    <Stack gap="6">
-      <PageHeader title={destination.name} breadcrumbs={breadcrumbItems} />
+    <div className={styles.page}>
+      <Breadcrumbs
+        items={breadcrumbItems}
+        linkComponent={RouterLink}
+        className={styles.breadcrumbs}
+      />
 
-      <p>{t('seo.destination.description', { city: destination.name })}</p>
+      <section className={styles.hero}>
+        <DestinationArt seed={destination.id} className={styles.heroArt} />
+        <div className={styles.heroContent}>
+          <span className={styles.eyebrow}>{t('nav.explore')}</span>
+          <span className={styles.heroIcon} aria-hidden="true">
+            <MapPin size={28} />
+          </span>
+          <h1 className={styles.title}>{destination.name}</h1>
+          <p className={styles.description}>
+            {t('seo.destination.description', { city: destination.name })}
+          </p>
+          {destination.listing_count > 0 && (
+            <span className={styles.count}>
+              {t('home.categories.listingCount', {
+                count: destination.listing_count,
+              })}
+            </span>
+          )}
+        </div>
+      </section>
 
       {isListingsPending && (
-        <Grid columns="auto" gap="4">
-          {Array.from({ length: 6 }, (_, index) => (
+        <ListingGrid>
+          {Array.from({ length: 8 }, (_, index) => (
             // eslint-disable-next-line react/no-array-index-key -- fixed-count skeleton placeholders, no stable identity to key by
             <Skeleton key={index} variant="rect" height={280} />
           ))}
-        </Grid>
+        </ListingGrid>
       )}
 
       {!isListingsPending && listings.length === 0 && (
@@ -128,12 +169,19 @@ export default function DestinationPageContent() {
       )}
 
       {!isListingsPending && listings.length > 0 && (
-        <Grid columns="auto" gap="4">
-          {listings.map((listing) => (
-            <SearchResultCard key={listing.id} result={listing} />
+        <ListingGrid>
+          {listings.map((listing, index) => (
+            <SearchResultCard
+              key={listing.id}
+              result={listing}
+              // 2026 SEO/performance audit: same fix as CategoryPageContent's
+              // identical grid — the first card's image is this page's real
+              // LCP candidate too.
+              priorityImage={index === 0}
+            />
           ))}
-        </Grid>
+        </ListingGrid>
       )}
-    </Stack>
+    </div>
   );
 }

@@ -40,3 +40,27 @@
   border-radius: tokens.$radius-lg;
   overflow: hidden;
 }
+
+// `audience === 'customer'` only (2026 Customer Account redesign) — see
+// NotificationsPageContent.jsx's own header for why this is additive.
+.chip--premium {
+  border-color: transparent;
+  background-color: tokens.$color-gray-100;
+
+  &:hover {
+    border-color: transparent;
+    background-color: rgba(tokens.$color-royal-blue, 0.08);
+    color: tokens.$color-royal-blue;
+  }
+}
+
+.chip--premium.chip--active {
+  background: tokens.$gradient-navy-royal;
+  border-color: transparent;
+}
+
+.list--premium {
+  border: none;
+  border-radius: tokens.$radius-xl;
+  @include tokens.elevation-1;
+}

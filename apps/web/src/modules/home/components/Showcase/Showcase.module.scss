@@ -20,6 +20,35 @@
   &:active {
     cursor: grabbing;
   }
+
+  // Redesign phase (2026) — the row recedes into the page at its
+  // trailing edge instead of hard-clipping mid-card ("more content this
+  // way," the same asymmetric affordance a carousel's own next-arrow
+  // already signals), rather than a flush `overflow: hidden` cutoff. The
+  // LEADING edge stays unfaded on purpose — several sections (see
+  // `FeaturedDestinations.module.scss`'s `.bleedRow`) line this row's
+  // left edge up exactly with the section heading's text above it, and
+  // fading that edge would visually clip the first card right under a
+  // heading meant to sit flush with it. A mask, not an opacity gradient
+  // overlay, so it works over any card content/background without
+  // needing a matching solid-color fade.
+  @include respond.respond(laptop) {
+    mask-image: linear-gradient(
+      90deg,
+      #000 0,
+      #000 calc(100% - 64px),
+      transparent 100%
+    );
+
+    [dir='rtl'] & {
+      mask-image: linear-gradient(
+        270deg,
+        #000 0,
+        #000 calc(100% - 64px),
+        transparent 100%
+      );
+    }
+  }
 }
 
 .container {
@@ -80,8 +109,10 @@
     @include focus.focus-ring;
 
     &:hover {
-      color: tokens.$color-royal-blue;
-      @include tokens.elevation-3;
+      color: tokens.$color-navy;
+      box-shadow:
+        0 0 0 1px rgba(tokens.$color-gold, 0.5),
+        0 10px 24px rgba(11, 26, 43, 0.18);
       transform: translateY(-50%) scale(1.08);
     }
 
@@ -142,7 +173,13 @@
 .dot--active {
   width: tokens.$space-6;
   background-color: tokens.$color-royal-blue;
-  box-shadow: 0 2px 8px rgba(tokens.$color-royal-blue, 0.45);
+  // The gold ring (accent only, the dot's own fill stays the brand's
+  // functional blue — UI_UX_GUIDELINES.md reserves solid gold fills for
+  // premium/verified badges, never an interactive control) is what
+  // reads as premium here, not a color swap on the control itself.
+  box-shadow:
+    0 0 0 3px rgba(tokens.$color-gold, 0.35),
+    0 2px 8px rgba(tokens.$color-royal-blue, 0.45);
 
   &:hover {
     background-color: tokens.$color-navy;

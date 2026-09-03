@@ -3,12 +3,11 @@
 @use 'tokens' as tokens;
 @use 'mixins/respond' as respond;
 
-.lead {
-  margin: 0;
-  max-width: 70ch;
-  font-size: tokens.$font-size-body-large;
-  line-height: tokens.$line-height-body-large;
-  color: tokens.$color-gray-600;
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: tokens.$space-6;
+  padding-block: tokens.$space-6;
 }
 
 .linksGrid {
@@ -22,15 +21,54 @@
 }
 
 .linkCard {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: tokens.$space-2;
+  padding: tokens.$space-6;
+  border-radius: tokens.$radius-lg;
+  background-color: tokens.$color-white;
   text-decoration: none;
+  transition: box-shadow tokens.$motion-micro tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+  @include tokens.elevation-0;
+
+  &:hover {
+    @include tokens.elevation-2;
+  }
+}
+
+.linkIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: tokens.$radius-full;
+  background-color: rgba(tokens.$color-royal-blue, 0.1);
+  color: tokens.$color-royal-blue;
+}
+
+.linkArrow {
+  position: absolute;
+  top: tokens.$space-6;
+  right: tokens.$space-6;
+  color: tokens.$color-gray-400;
+  transition: transform tokens.$motion-micro tokens.$ease-out;
+  @include tokens.reduced-motion-safe;
+}
+
+.linkCard:hover .linkArrow {
+  color: tokens.$color-royal-blue;
+  transform: translateX(3px);
 }
 
 .linkTitle {
-  font-weight: 600;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h4;
+  line-height: tokens.$line-height-h4;
+  font-weight: 700;
   color: tokens.$color-gray-900;
 }
 

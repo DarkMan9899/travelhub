@@ -5,6 +5,7 @@
  * shape response. No business logic, no direct database access.
  */
 
+import config from '../../../config/index.js';
 import {
   toPaymentResponse,
   toPaymentSummaryResponse,
@@ -15,6 +16,45 @@ import {
 
 export function createPaymentController(paymentService) {
   return {
+    /**
+     * Public, unauthenticated (like the provider webhook route below) —
+     * the frontend's payment UI reads this before rendering any "Pay
+     * Now"/refund control, so a disabled marketplace never even offers
+     * the action (`PaymentService#createPaymentIntent`/`#createRefund`
+     * enforce the same rule server-side regardless, so this endpoint is
+     * strictly a UX convenience, never the actual guard). `provider` lets
+     * the frontend decide WHICH checkout UI to render (the local
+     * simulate-outcome control vs. Stripe Elements) without ever loading
+     * Stripe.js when it isn't the active provider. `stripe_publishable_key`
+     * is the one Stripe value ever safe to expose to the browser — see
+     * config/index.js's own header comment on `STRIPE_PUBLISHABLE_KEY` —
+     * and is only present when Stripe is actually the active provider, so
+     * the frontend never has to guess whether a present-but-irrelevant
+     * key means anything.
+     */
+    async getConfig(req, res, next) {
+      try {
+        const provider = config.payments.defaultProvider;
+        res.status(200).json({
+          success: true,
+          data: {
+            enabled: config.payments.enabled,
+            provider,
+            ...(provider === 'stripe'
+              ? {
+                  stripe_publishable_key:
+                    config.payments.stripe.publishableKey || null,
+                }
+              : {}),
+          },
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
     async create(req, res, next) {
       try {
         const { bookingId, idempotencyKey, simulateScenario } =

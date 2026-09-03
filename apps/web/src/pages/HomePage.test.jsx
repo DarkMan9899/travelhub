@@ -63,10 +63,13 @@ describe('HomePage (apps/web/src/pages)', () => {
     expect(
       screen.getAllByRole('heading', { level: 2 }).length,
     ).toBeGreaterThanOrEqual(7);
-    // The search widget's destination field mounts without crashing.
+    // The search widget mounts without crashing — its fields only mount
+    // once its compact trigger is activated (SearchWidget.jsx), covered
+    // by SearchWidget.test.jsx itself; this just confirms the collapsed
+    // dock is present as part of the real page composition.
     expect(
-      screen.getByRole('combobox', {
-        name: /Destination|Ուղղություն|Направление/,
+      screen.getByRole('button', {
+        name: /Where are you going|Ո՞ւր եք գնում|Куда вы едете/,
       }),
     ).toBeInTheDocument();
   });

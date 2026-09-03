@@ -12,7 +12,8 @@ export function useReplaceListingItineraryMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, steps }) => replaceListingItinerarySteps(id, steps),
+    mutationFn: ({ id, steps, languageCode }) =>
+      replaceListingItinerarySteps(id, steps, languageCode),
     onSuccess: (_response, { id }) => {
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(id) });
     },

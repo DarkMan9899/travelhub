@@ -120,9 +120,18 @@ describe('buildRobotsTxt', () => {
     expect(robots).toContain('Disallow: /*/booking/checkout');
   });
 
-  test('does NOT disallow /search or /auth — they must stay crawlable so their client-rendered noindex meta tag is the real signal', () => {
+  test('disallows the one /auth sub-path whose URL itself carries a real secret', () => {
+    // auth/reset-password/:token — unlike login/register, there is no
+    // "let Google see the noindex tag" upside worth a crawler fetching a
+    // single-use password-reset token.
+    expect(robots).toContain('Disallow: /*/auth/reset-password');
+  });
+
+  test('does NOT disallow /search, or /auth/login and /auth/register — they must stay crawlable so their client-rendered noindex meta tag is the real signal', () => {
     expect(robots).not.toMatch(/Disallow:\s*\/\*\/search/);
-    expect(robots).not.toMatch(/Disallow:\s*\/\*\/auth/);
+    expect(robots).not.toMatch(/Disallow:\s*\/\*\/auth\/login/);
+    expect(robots).not.toMatch(/Disallow:\s*\/\*\/auth\/register/);
+    expect(robots).not.toMatch(/Disallow:\s*\/\*\/auth\/forgot-password/);
   });
 
   test('points at the sitemap under the configured origin', () => {

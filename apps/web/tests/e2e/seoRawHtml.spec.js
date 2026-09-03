@@ -103,6 +103,31 @@ ROUTES_TO_CHECK.forEach(({ route, label }) => {
   });
 });
 
+test('2026 SEO/performance audit: non-payment pages never load js.stripe.com when PAYMENTS_ENABLED is false', async ({
+  request,
+}) => {
+  // Regression test for a real, root-caused bug: `@stripe/stripe-js`'s
+  // default entry point self-injects its <script> tag on mere import
+  // ("Execute our own script injection after a tick", its own comment) —
+  // since `getStripe.js` is bundled into the shared chunk every public
+  // page loads, Home and Listing Detail were silently fetching
+  // js.stripe.com even though neither ever renders payment UI. Fixed by
+  // importing from `@stripe/stripe-js/pure` instead (same `loadStripe()`
+  // API, no auto-injection). This checks the raw prerendered bytes, the
+  // same evidence that caught the bug in the first place.
+  const homeHtml = (await fetchRawHtml(request, 'en')).html;
+  expect(homeHtml).not.toContain('js.stripe.com');
+
+  const enListingDirs = fs
+    .readdirSync(path.join(DIST, 'en', 'listings'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory());
+  expect(enListingDirs.length).toBeGreaterThan(0);
+  const listingHtml = (
+    await fetchRawHtml(request, `en/listings/${enListingDirs[0].name}`)
+  ).html;
+  expect(listingHtml).not.toContain('js.stripe.com');
+});
+
 test('a listing page raw HTML includes a JSON-LD structured-data block', async ({
   request,
 }) => {

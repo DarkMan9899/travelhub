@@ -26,7 +26,25 @@ import { test, expect, request as playwrightRequest } from './fixtures.js';
 // positive from test timing, not the product's actual rendered state.
 test.use({ reducedMotion: 'reduce' });
 
+// `reducedMotion: 'reduce'` (above) collapses every `reduced-motion-safe`
+// animation/transition to ~0.01ms (tokens/_motion.scss) rather than
+// literally 0 — real, if rare, event-loop timing can still land axe's
+// synchronous style snapshot inside that ~10-microsecond window mid-fade
+// (see this file's own header comment: EmptyState's description text has
+// been caught this way before, at a failing ~3.7-4.4:1 contrast even
+// though its settled color is a real ~5.8:1). Forcing every animation/
+// transition to a literal, unconditional 0s here — for the scan only,
+// never for the product's own CSS — closes that residual race instead of
+// merely narrowing it, without touching what the assertion checks.
+async function settleAnimations(page) {
+  await page.addStyleTag({
+    content:
+      '*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; transition-delay: 0s !important; }',
+  });
+}
+
 async function seriousOrCriticalViolations(page, { include, exclude } = {}) {
+  await settleAnimations(page);
   let builder = new AxeBuilder({ page });
   if (include) builder = builder.include(include);
   if (exclude) builder = builder.exclude(exclude);
@@ -102,116 +120,145 @@ test('Partner dashboard has no serious/critical accessibility violations', async
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 });
 
-test('Notifications page has no serious/critical accessibility violations', async ({
-  page,
-}) => {
-  await page.goto('/en/auth/login');
-  await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
-  await page.getByLabel('Password').fill('DemoPass!2024');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/en\/account$/);
+// 2026 SEO/performance audit: these six all need the same signed-in
+// customer, and each performed its own fresh UI login — safe in
+// isolation, but Playwright's default `fullyParallel` config runs them
+// across several workers at once, and several concurrent logins for the
+// SAME account raced each other's session/refresh-token state (real,
+// reproduced evidence: a different subset failed each full-suite run,
+// always "redirected to /auth/login", while a direct API login for the
+// same credentials succeeded instantly every time).
+//
+// Two other fixes were tried and rejected before this one: a shared
+// `storageState` file across workers just moves the race to the
+// backend's refresh-token rotation (`authenticationService.js`'s "strict
+// single-use rotation with reuse detection" — a second context
+// refreshing an already-rotated token gets `AUTH_TOKEN_REUSE_DETECTED`
+// and is forced back to login); a worker-scoped login fixture only
+// reduces concurrent logins from "6 tests" to "N workers" — with more
+// than one worker (the default), the race still exists, just less often.
+// `.serial` is the fix the file's own pre-existing "Payments
+// accessibility" block already uses for this identical problem: it
+// forces every test here onto ONE worker, one at a time, so each fresh
+// login genuinely never overlaps with another. Nothing about session
+// rotation, refresh-token security, or rate limits is touched.
+test.describe.serial('Customer account pages (same shared account)', () => {
+  test('Notifications page has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
+    await page.getByLabel('Password').fill('DemoPass!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/account$/);
 
-  await page.goto('/en/account/notifications');
-  await expect(
-    page.getByRole('heading', { name: 'Notifications' }),
-  ).toBeVisible();
-  const violations = await seriousOrCriticalViolations(page);
-  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
-});
-
-test('Notification bell dropdown has no serious/critical accessibility violations', async ({
-  page,
-}) => {
-  await page.goto('/en/auth/login');
-  await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
-  await page.getByLabel('Password').fill('DemoPass!2024');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/en\/account$/);
-
-  await page.getByRole('button', { name: /Notifications/ }).click();
-  await expect(page.getByText('View all notifications')).toBeVisible();
-  const violations = await seriousOrCriticalViolations(page);
-  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
-});
-
-test('Messaging page (chat window) has no serious/critical accessibility violations', async ({
-  page,
-}) => {
-  await page.goto('/en/auth/login');
-  await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
-  await page.getByLabel('Password').fill('DemoPass!2024');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/en\/account$/);
-
-  await page.getByRole('link', { name: 'Messages' }).click();
-  await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
-  await page
-    .getByRole('listitem')
-    .filter({ has: page.locator('button') })
-    .first()
-    .click();
-  await expect(page.getByPlaceholder('Write a message…')).toBeVisible({
-    timeout: 10_000,
+    await page.goto('/en/account/notifications');
+    await expect(
+      page.getByRole('heading', { name: 'Notifications' }),
+    ).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
   });
 
-  const violations = await seriousOrCriticalViolations(page);
-  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
-});
+  test('Notification bell dropdown has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
+    await page.getByLabel('Password').fill('DemoPass!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/account$/);
 
-test('Messaging bell dropdown has no serious/critical accessibility violations', async ({
-  page,
-}) => {
-  await page.goto('/en/auth/login');
-  await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
-  await page.getByLabel('Password').fill('DemoPass!2024');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/en\/account$/);
-
-  await page.getByRole('button', { name: /Messages/ }).click();
-  await expect(page.getByText('View all messages')).toBeVisible();
-  // Scoped to `header` (trigger + popover) — the dropdown opens over the
-  // Account Overview page's unrelated content; this test only cares
-  // about the bell trigger and its popover panel.
-  const violations = await seriousOrCriticalViolations(page, {
-    include: 'header',
+    await page.getByRole('button', { name: /Notifications/ }).click();
+    await expect(page.getByText('View all notifications')).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
   });
-  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
-});
 
-test('AI Trip Planner page has no serious/critical accessibility violations', async ({
-  page,
-}) => {
-  await page.goto('/en/auth/login');
-  await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
-  await page.getByLabel('Password').fill('DemoPass!2024');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/en\/account$/);
+  test('Messaging page (chat window) has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
+    await page.getByLabel('Password').fill('DemoPass!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/account$/);
 
-  await page.goto('/en/account/trip-planner');
-  await expect(
-    page.getByRole('heading', { name: 'AI Trip Planner' }),
-  ).toBeVisible();
+    // The Customer Account dashboard genuinely has two real links named
+    // "Messages" — the sidebar nav item and a "quick links" card — both
+    // going to the same route; `.first()` picks one deterministically
+    // rather than leaving an ambiguous multi-match locator (a Playwright
+    // strict-mode violation, not a real accessibility issue).
+    await page.getByRole('link', { name: 'Messages' }).first().click();
+    await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+    await page
+      .getByRole('listitem')
+      .filter({ has: page.locator('button') })
+      .first()
+      .click();
+    await expect(page.getByPlaceholder('Write a message…')).toBeVisible({
+      timeout: 10_000,
+    });
 
-  const violations = await seriousOrCriticalViolations(page);
-  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
-});
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
 
-test('AI Assistant drawer has no serious/critical accessibility violations', async ({
-  page,
-}) => {
-  await page.goto('/en/auth/login');
-  await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
-  await page.getByLabel('Password').fill('DemoPass!2024');
-  await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/en\/account$/);
+  test('Messaging bell dropdown has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
+    await page.getByLabel('Password').fill('DemoPass!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/account$/);
 
-  await page.getByRole('button', { name: 'Ask AI assistant' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'AI Assistant' }),
-  ).toBeVisible();
+    await page.getByRole('button', { name: /Messages/ }).click();
+    await expect(page.getByText('View all messages')).toBeVisible();
+    // Scoped to `header` (trigger + popover) — the dropdown opens over the
+    // Account Overview page's unrelated content; this test only cares
+    // about the bell trigger and its popover panel.
+    const violations = await seriousOrCriticalViolations(page, {
+      include: 'header',
+    });
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
 
-  const violations = await seriousOrCriticalViolations(page);
-  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  test('AI Trip Planner page has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
+    await page.getByLabel('Password').fill('DemoPass!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/account$/);
+
+    await page.goto('/en/account/trip-planner');
+    await expect(
+      page.getByRole('heading', { name: 'AI Trip Planner' }),
+    ).toBeVisible();
+
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('AI Assistant drawer has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('anna.harutyunyan@example.com');
+    await page.getByLabel('Password').fill('DemoPass!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/account$/);
+
+    await page.getByRole('button', { name: 'Ask AI assistant' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'AI Assistant' }),
+    ).toBeVisible();
+
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
 });
 
 // Serial + one retry: each test here logs in (sharing the tight
@@ -303,6 +350,20 @@ test.describe.serial('Payments accessibility', () => {
 // which the generic "Listing detail page" scan above never reliably
 // exercises since it just clicks whichever listing search ranks first.
 test.describe('Phase 18 accessibility', () => {
+  // 2026 SEO/performance audit: "Partner Content step" logs in as its own
+  // dedicated account (`vendor@travelhub.dev`, used nowhere else in this
+  // suite — no per-account race is possible), but was observed to fail
+  // once with the same "stuck on /auth/login" symptom while several
+  // OTHER tests in OTHER describe blocks were logging in as different
+  // accounts at the same wall-clock moment across parallel workers —
+  // `RATE_LIMIT_SENSITIVE_PER_MINUTE=10` is shared by IP, not by
+  // account, so enough concurrent logins from unrelated tests can still
+  // transiently exhaust it between `fixtures.js`'s per-test flushes. One
+  // retry absorbs that, same mitigation the file's own pre-existing
+  // "Payments accessibility" block already uses for this identical class
+  // of flakiness — real rate limiter, unweakened.
+  test.describe.configure({ retries: 1 });
+
   test('Mobile listing detail page with the booking drawer open has no serious/critical accessibility violations', async ({
     page,
   }) => {

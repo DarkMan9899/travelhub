@@ -1,0 +1,67 @@
+// TimeSlotBlock — Partner Workspace Sprint 5. Tokens only.
+
+@use 'tokens' as tokens;
+@use 'mixins/focus-ring' as focus;
+@use 'mixins/truncate-lines' as truncate;
+
+.block {
+  position: absolute;
+  left: tokens.$space-1;
+  right: tokens.$space-1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: tokens.$space-1 tokens.$space-2;
+  border: 1px solid tokens.$color-gray-200;
+  border-left: 3px solid tokens.$color-gray-600;
+  border-radius: tokens.$radius-sm;
+  background-color: tokens.$color-gray-100;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  @include focus.focus-ring;
+
+  &--available {
+    border-left-color: tokens.$color-success;
+    background-color: rgba(tokens.$color-success, 0.08);
+  }
+
+  &--partial {
+    border-left-color: tokens.$color-warning;
+    background-color: rgba(tokens.$color-warning, 0.1);
+  }
+
+  &--full {
+    border-left-color: tokens.$color-danger;
+    background-color: rgba(tokens.$color-danger, 0.08);
+  }
+
+  &--blocked {
+    border-left-color: tokens.$color-gray-600;
+    background-color: tokens.$color-gray-200;
+  }
+
+  &--selected {
+    outline: 2px solid tokens.$color-royal-blue;
+    outline-offset: 1px;
+  }
+}
+
+.label {
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-micro;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+  @include truncate.truncate-lines(1);
+}
+
+.range {
+  font-size: tokens.$font-size-micro;
+  color: tokens.$color-gray-600;
+  font-variant-numeric: tabular-nums;
+}
+
+.capacity {
+  font-size: tokens.$font-size-micro;
+  color: tokens.$color-gray-600;
+}

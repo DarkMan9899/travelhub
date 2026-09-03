@@ -45,3 +45,34 @@
     outline-offset: 2px;
   }
 }
+
+// Redesign phase (2026) — the premium "floating surface" opt-in. Border
+// removed (elevation alone reads as depth; a border on top of a heavy
+// shadow looks like an outline drawn over the depth, not additional
+// depth) and the rest/hover shadow gap widened further than
+// `card--interactive`'s so the lift genuinely reads as the card coming
+// toward the viewer, not just a slightly darker edge.
+.card--elevated {
+  border: none;
+  transform-style: preserve-3d;
+  transition:
+    transform motion.$motion-transition motion.$ease-out,
+    box-shadow motion.$motion-transition motion.$ease-out;
+  @include elevation.elevation-2;
+
+  &.card--interactive {
+    cursor: pointer;
+
+    // Redesign phase (2026) — a soft perspective tilt on top of the
+    // existing lift, not instead of it: a couple of degrees of rotation
+    // is enough to read as the card physically tilting toward the
+    // viewer (real depth, not just a bigger shadow), while staying
+    // subtle enough not to feel gimmicky or distort the card's own
+    // content. `perspective` lives on the transform itself (not a
+    // parent) so it never affects sibling layout.
+    &:hover {
+      transform: perspective(1000px) rotateX(2deg) translateY(-6px) scale(1.015);
+      @include elevation.elevation-4;
+    }
+  }
+}

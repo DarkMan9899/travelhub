@@ -12,7 +12,8 @@ export function useReplaceListingFaqsMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, faqs }) => replaceListingFaqs(id, faqs),
+    mutationFn: ({ id, faqs, languageCode }) =>
+      replaceListingFaqs(id, faqs, languageCode),
     onSuccess: (_response, { id }) => {
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(id) });
     },
