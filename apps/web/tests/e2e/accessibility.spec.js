@@ -120,6 +120,21 @@ test('Partner dashboard has no serious/critical accessibility violations', async
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 });
 
+// 2026 Admin Workspace redesign — first automated a11y coverage for any
+// Admin page (previously zero, per the pre-redesign audit). Covers the
+// grouped/compact `Sidebar` nav and the "Needs your attention" panel.
+test('Admin dashboard has no serious/critical accessibility violations', async ({
+  page,
+}) => {
+  await page.goto('/en/auth/login');
+  await page.getByLabel('Email').fill('admin@travelhub.dev');
+  await page.getByLabel('Password').fill('DevAdmin!2024');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(/\/en\/admin$/);
+  const violations = await seriousOrCriticalViolations(page);
+  expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+});
+
 // 2026 SEO/performance audit: these six all need the same signed-in
 // customer, and each performed its own fresh UI login — safe in
 // isolation, but Playwright's default `fullyParallel` config runs them

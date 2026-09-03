@@ -1672,7 +1672,19 @@
       "notifications": "Notifications",
       "aiModeration": "AI Moderation",
       "aiUsage": "AI Usage",
-      "inventory": "Inventory"
+      "inventory": "Inventory",
+      "groups": {
+        "marketplace": "Marketplace",
+        "users": "Users",
+        "partners": "Partners",
+        "listings": "Listings",
+        "bookings": "Bookings",
+        "reviews": "Reviews",
+        "operations": "Operations",
+        "content": "Content",
+        "ai": "AI",
+        "system": "System"
+      }
     },
     "dashboard": {
       "heading": "Marketplace overview",
@@ -1685,10 +1697,11 @@
         "completedBookings": "Completed bookings"
       },
       "pendingActions": {
-        "heading": "Pending actions",
+        "heading": "Needs your attention",
         "partners": "Partners awaiting verification",
         "listings": "Listings awaiting moderation",
-        "bookings": "Bookings awaiting vendor response"
+        "bookings": "Bookings awaiting vendor response",
+        "allClear": "Nothing pending — you're all caught up."
       },
       "bookingValue": {
         "heading": "Booking value",

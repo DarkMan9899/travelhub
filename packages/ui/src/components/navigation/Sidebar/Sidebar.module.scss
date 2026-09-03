@@ -96,10 +96,61 @@
   color: inherit;
 }
 
+// `variant="compact"` (2026 Admin Workspace redesign) — a denser,
+// operational read: tighter item/group spacing and a smaller icon than
+// the default, no rounded/pill active state (keeps the plain left-
+// border accent — Admin should read as a control system, not a soft
+// consumer surface). Purely additive, same guarantee as `premium` above:
+// no existing consumer renders differently.
+.sidebar--compact .group {
+  @include respond.respond(tablet) {
+    padding: spacing.$space-2 spacing.$space-2;
+  }
+}
+
+.sidebar--compact .groupLabel {
+  margin-bottom: spacing.$space-1;
+}
+
+.sidebar--compact .list {
+  @include respond.respond(tablet) {
+    gap: 1px;
+  }
+}
+
+.sidebar--compact .item {
+  @include respond.respond(tablet) {
+    min-height: 36px;
+    padding: spacing.$space-1 spacing.$space-3;
+  }
+}
+
+.sidebar--compact .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.sidebar--compact .label {
+  font-size: fn.rem(13px);
+}
+
 .nav {
   display: flex;
   flex: 1;
   min-width: 0;
+
+  // 2026 Admin Workspace redesign — its grouped `Sidebar` nav is the
+  // first real consumer to pass more than one entry in `items`
+  // (every prior consumer passed exactly one, so `.nav`'s own
+  // direction never visibly mattered — a single flex child lays out
+  // the same either way). Without this, `.nav`'s implicit default
+  // `flex-direction: row` placed each group side by side as its own
+  // narrow column at tablet+, instead of every group stacking below
+  // the last — same responsive rule `.group`/`.list` below already
+  // apply, just missing one level up.
+  @include respond.respond(tablet) {
+    flex-direction: column;
+  }
 }
 
 .group {
@@ -120,7 +171,15 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: colors.$color-gray-400;
+  // 2026 Admin Workspace redesign — its grouped `Sidebar` nav is this
+  // rule's first real consumer, which is what surfaced this: at 12px,
+  // $color-gray-400 on white measures 2.47:1 (real axe finding, not a
+  // theoretical one), well under WCAG AA's 4.5:1 for normal-size text.
+  // $color-gray-600 is this codebase's own established safe secondary-
+  // text color (5.78:1 on white — see accessibility.spec.js's header
+  // comment for the same verified figure) and reads identically as a
+  // muted section label.
+  color: colors.$color-gray-600;
 }
 
 .list {

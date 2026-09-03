@@ -31,10 +31,39 @@
  * Phase 11 ships in stages (11.0 Dashboard, 11.1 Users, 11.2 Partners,
  * ...) — a nav item is added here only once its route actually exists,
  * never ahead of time as a dead link.
+ *
+ * 2026 Admin Workspace redesign: the same 17 items now render under
+ * labeled sections (`Sidebar`'s `groupId`-driven multi-group support,
+ * unused by any layout until now) instead of one flat list — Marketplace/
+ * Users/Partners/Listings/Bookings/Reviews/Operations/Content/AI/System,
+ * with Dashboard alone staying an unlabeled top entry. `variant="compact"`
+ * (new, additive `Sidebar` variant) trades the default's roomier spacing
+ * for a denser, operational read — deliberate: Admin is a control system
+ * for a small internal team, not a consumer-facing nav that needs the
+ * same breathing room as Partner/Customer.
  */
 
 import { Outlet, useParams, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  LayoutDashboard,
+  Users as UsersIcon,
+  Building2,
+  ListChecks,
+  CalendarCheck,
+  CreditCard,
+  Star,
+  Package,
+  ScrollText,
+  Activity,
+  SlidersHorizontal,
+  FileText,
+  Settings as SettingsIcon,
+  ShieldAlert,
+  Sparkles,
+  MessageCircle,
+  Bell,
+} from 'lucide-react';
 import { Sidebar } from '@desavii/ui/components/navigation';
 import { Container } from '@desavii/ui/components/layout';
 import AppLayout from './AppLayout.jsx';
@@ -56,100 +85,142 @@ export default function AdminLayout() {
   const { permissions } = useAuth();
   useNoIndex();
 
+  // 2026 Admin redesign: the same 17 real nav items as before (same ids/
+  // hrefs/permission gates — Phase 14.10's dead-end-avoidance logic is
+  // untouched), now carrying an icon and a `groupId` so they render under
+  // labeled sections (`Sidebar`'s existing multi-group support — see that
+  // component's own header, this is its first real consumer) instead of
+  // one flat 17-item list. Grouping mirrors the redesign brief's own
+  // section names; Dashboard alone stays ungrouped (no `groupId`) as the
+  // sidebar's un-labeled first entry, matching how a landing/overview
+  // item conventionally sits above sectioned nav.
   const allNavItems = [
     {
       id: 'dashboard',
       label: t('admin.nav.dashboard'),
       href: `/${locale}/admin`,
+      icon: <LayoutDashboard aria-hidden="true" focusable="false" />,
     },
     {
       id: 'users',
+      groupId: 'users',
       label: t('admin.nav.users'),
       href: `/${locale}/admin/users`,
+      icon: <UsersIcon aria-hidden="true" focusable="false" />,
       requiredPermission: 'user.list',
     },
     {
       id: 'partners',
+      groupId: 'partners',
       label: t('admin.nav.partners'),
       href: `/${locale}/admin/partners`,
+      icon: <Building2 aria-hidden="true" focusable="false" />,
     },
     {
       id: 'listings',
+      groupId: 'listings',
       label: t('admin.nav.listings'),
       href: `/${locale}/admin/listings`,
+      icon: <ListChecks aria-hidden="true" focusable="false" />,
       requiredPermission: 'listing.moderate',
     },
     {
       id: 'reviews',
+      groupId: 'reviews',
       label: t('admin.nav.reviews'),
       href: `/${locale}/admin/reviews`,
+      icon: <Star aria-hidden="true" focusable="false" />,
       requiredPermission: 'review.moderate',
     },
     {
-      id: 'inventory',
-      label: t('admin.nav.inventory'),
-      href: `/${locale}/admin/inventory`,
-      requiredPermission: 'inventory.view_all',
-    },
-    {
       id: 'bookings',
+      groupId: 'bookings',
       label: t('admin.nav.bookings'),
       href: `/${locale}/admin/bookings`,
+      icon: <CalendarCheck aria-hidden="true" focusable="false" />,
       requiredPermission: 'booking.view_all',
     },
     {
       id: 'payments',
+      groupId: 'bookings',
       label: t('admin.nav.payments'),
       href: `/${locale}/admin/payments`,
+      icon: <CreditCard aria-hidden="true" focusable="false" />,
       requiredPermission: 'payment.view',
     },
     {
       id: 'marketplace-config',
+      groupId: 'marketplace',
       label: t('admin.nav.marketplaceConfig'),
       href: `/${locale}/admin/marketplace-config`,
+      icon: <SlidersHorizontal aria-hidden="true" focusable="false" />,
     },
     {
-      id: 'cms',
-      label: t('admin.nav.cms'),
-      href: `/${locale}/admin/cms`,
+      id: 'inventory',
+      groupId: 'operations',
+      label: t('admin.nav.inventory'),
+      href: `/${locale}/admin/inventory`,
+      icon: <Package aria-hidden="true" focusable="false" />,
+      requiredPermission: 'inventory.view_all',
     },
     {
       id: 'audit-logs',
+      groupId: 'operations',
       label: t('admin.nav.auditLogs'),
       href: `/${locale}/admin/audit-logs`,
+      icon: <ScrollText aria-hidden="true" focusable="false" />,
       requiredPermission: 'audit.view',
     },
     {
       id: 'system-health',
+      groupId: 'operations',
       label: t('admin.nav.systemHealth'),
       href: `/${locale}/admin/system-health`,
+      icon: <Activity aria-hidden="true" focusable="false" />,
     },
     {
-      id: 'settings',
-      label: t('admin.nav.settings'),
-      href: `/${locale}/admin/settings`,
+      id: 'cms',
+      groupId: 'content',
+      label: t('admin.nav.cms'),
+      href: `/${locale}/admin/cms`,
+      icon: <FileText aria-hidden="true" focusable="false" />,
     },
     {
       id: 'ai-moderation',
+      groupId: 'ai',
       label: t('admin.nav.aiModeration'),
       href: `/${locale}/admin/ai/moderation`,
+      icon: <ShieldAlert aria-hidden="true" focusable="false" />,
       requiredPermission: 'ai.admin_tools',
     },
     {
       id: 'ai-usage',
+      groupId: 'ai',
       label: t('admin.nav.aiUsage'),
       href: `/${locale}/admin/ai/usage`,
+      icon: <Sparkles aria-hidden="true" focusable="false" />,
       requiredPermission: 'ai.usage_view',
     },
     {
+      id: 'settings',
+      groupId: 'system',
+      label: t('admin.nav.settings'),
+      href: `/${locale}/admin/settings`,
+      icon: <SettingsIcon aria-hidden="true" focusable="false" />,
+    },
+    {
       id: 'messages',
+      groupId: 'system',
       label: t('admin.nav.messages'),
       href: `/${locale}/admin/messages`,
+      icon: <MessageCircle aria-hidden="true" focusable="false" />,
     },
     {
       id: 'notifications',
+      groupId: 'system',
       label: t('admin.nav.notifications'),
       href: `/${locale}/admin/notifications`,
+      icon: <Bell aria-hidden="true" focusable="false" />,
     },
   ];
 
@@ -157,6 +228,31 @@ export default function AdminLayout() {
     (item) =>
       !item.requiredPermission || permissions.includes(item.requiredPermission),
   );
+
+  const GROUP_ORDER = [
+    'marketplace',
+    'users',
+    'partners',
+    'listings',
+    'bookings',
+    'reviews',
+    'operations',
+    'content',
+    'ai',
+    'system',
+  ];
+  const groupedItems = [
+    // Dashboard first, unlabeled — matches the sidebar convention every
+    // other layout in this app uses for a single top-level landing item.
+    { id: 'overview', items: navItems.filter((item) => !item.groupId) },
+    ...GROUP_ORDER.map((groupId) => ({
+      id: groupId,
+      label: t(`admin.nav.groups.${groupId}`),
+      items: navItems.filter((item) => item.groupId === groupId),
+    })),
+    // A role with none of a group's items filtered in must not render an
+    // empty labeled section.
+  ].filter((group) => group.items.length > 0);
 
   // Longest-matching-prefix, mirroring `PartnerLayout`/
   // `CustomerAccountLayout` exactly.
@@ -188,11 +284,12 @@ export default function AdminLayout() {
     >
       <Container size="wide" className={styles.body}>
         <Sidebar
-          items={[{ id: 'admin', items: navItems }]}
+          items={groupedItems}
           activeItemId={activeItemId}
           linkComponent={RouterLink}
           ariaLabel={t('nav.admin')}
           className={styles.sidebar}
+          variant="compact"
         />
         <div className={styles.content}>
           <Outlet />

@@ -1,0 +1,91 @@
+// AdminDashboardOverviewContent — 2026 Admin Workspace redesign. Tokens
+// only. Scoped to the "Needs your attention" panel — everything else on
+// this page still composes shared primitives (`StatCard`/`Card`/`Chart`)
+// with no page-local styling of its own.
+
+@use 'tokens' as tokens;
+
+.attentionGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: tokens.$space-3;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// A left accent bar (not a full colored background — "restrained navy
+// anchors", not a wash of warning color across the whole tile) marks a
+// tile as actionable. Zero-count tiles keep the same shape/position (a
+// scannable grid shouldn't reflow based on count) but the accent recedes
+// to neutral, since zero of something genuinely isn't urgent.
+.attentionTile {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-3;
+  border-inline-start: 3px solid tokens.$color-warning;
+  border-radius: tokens.$radius-md;
+}
+
+.attentionTile--zero {
+  border-inline-start-color: tokens.$color-gray-200;
+}
+
+.attentionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: tokens.$radius-md;
+  background-color: rgba(tokens.$color-warning, 0.1);
+  color: tokens.$color-warning-strong;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.attentionTile--zero .attentionIcon {
+  background-color: tokens.$color-gray-100;
+  color: tokens.$color-gray-400;
+}
+
+.attentionValue {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-h3;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.attentionLabel {
+  margin: tokens.$space-1 0 0;
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-600;
+}
+
+.allClear {
+  display: flex;
+  align-items: center;
+  gap: tokens.$space-2;
+  color: tokens.$color-success-strong;
+  font-weight: 600;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+}
+
+.sectionHeading {
+  margin: 0;
+  font-family: tokens.$font-heading;
+  font-size: tokens.$font-size-small;
+  font-weight: 700;
+  color: tokens.$color-gray-900;
+}

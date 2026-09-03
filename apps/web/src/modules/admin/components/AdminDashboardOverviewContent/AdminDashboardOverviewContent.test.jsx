@@ -98,4 +98,61 @@ describe('AdminDashboardOverviewContent (apps/web/src/modules/admin)', () => {
     expect(screen.getByText('500', { exact: false })).toBeInTheDocument();
     expect(screen.getByText('Ակտիվություն դեռ չկա։')).toBeInTheDocument();
   });
+
+  test('a pending-partners tile links straight into the filtered partner queue', () => {
+    useAdminDashboardQuery.mockReturnValue({
+      data: {
+        counts: {},
+        pending_actions: {
+          pending_partners: 3,
+          pending_listings: 0,
+          pending_bookings: 0,
+        },
+        booking_value_by_currency: [],
+        bookings_by_day: [],
+        recent_activity: [],
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    const link = screen.getByRole('link', {
+      name: /3.*Հաստատում սպասող գործընկերներ/s,
+    });
+    expect(link).toHaveAttribute(
+      'href',
+      '/hy/admin/partners?verificationStatus=PENDING',
+    );
+  });
+
+  test('zero pending anything shows the all-caught-up state, not three zero tiles', () => {
+    useAdminDashboardQuery.mockReturnValue({
+      data: {
+        counts: {},
+        pending_actions: {
+          pending_partners: 0,
+          pending_listings: 0,
+          pending_bookings: 0,
+        },
+        booking_value_by_currency: [],
+        bookings_by_day: [],
+        recent_activity: [],
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(
+      screen.getByText(
+        'Սպասող խնդիրներ չկան — ամեն ինչ վերահսկողության տակ է։',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Հաստատում սպասող գործընկերներ'),
+    ).not.toBeInTheDocument();
+  });
 });

@@ -38,7 +38,10 @@ test.describe('Admin dashboard', () => {
     await expect(
       page.getByText('Completed bookings', { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText('Pending actions')).toBeVisible();
+    // 2026 Admin redesign renamed this section's heading to lead with
+    // the dashboard's own organizing question, per its own header
+    // comment — same real "Needs your attention" panel, new copy.
+    await expect(page.getByText('Needs your attention')).toBeVisible();
   });
 });
 
@@ -120,7 +123,10 @@ test.describe('Admin Partner Management (Stage 11.2)', () => {
     page,
   }) => {
     await loginAsDevAdmin(page);
-    await page.getByRole('link', { name: 'Partners' }).click();
+    // `exact: true` — without it this also substring-matches the
+    // Dashboard's own "Partners awaiting verification" attention tile
+    // (2026 Admin redesign), a real, separate link.
+    await page.getByRole('link', { name: 'Partners', exact: true }).click();
     await expect(page).toHaveURL(/\/en\/admin\/partners$/);
 
     await page
@@ -188,7 +194,9 @@ test.describe.serial('Admin Listing Moderation (Stage 11.3)', () => {
     page,
   }) => {
     await loginAsDevAdmin(page);
-    await page.getByRole('link', { name: 'Listings' }).click();
+    // `exact: true` — without it this also substring-matches the
+    // Dashboard's own "Listings awaiting moderation" attention tile.
+    await page.getByRole('link', { name: 'Listings', exact: true }).click();
     await expect(page).toHaveURL(/\/en\/admin\/listings$/);
 
     await page.getByRole('button', { name: 'Moderation' }).click();
@@ -268,7 +276,9 @@ test.describe.serial('Admin Booking Operations (Stage 11.4)', () => {
     page,
   }) => {
     await loginAsDevAdmin(page);
-    await page.getByRole('link', { name: 'Bookings' }).click();
+    // `exact: true` — without it this also substring-matches the
+    // Dashboard's own "Bookings awaiting vendor response" attention tile.
+    await page.getByRole('link', { name: 'Bookings', exact: true }).click();
     await expect(page).toHaveURL(/\/en\/admin\/bookings$/);
     await expect(page.getByRole('row').nth(1)).toBeVisible({
       timeout: 10_000,

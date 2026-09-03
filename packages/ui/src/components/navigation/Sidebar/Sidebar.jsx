@@ -67,6 +67,7 @@ export default function Sidebar({
     styles.sidebar,
     collapsed && styles['sidebar--collapsed'],
     variant === 'premium' && styles['sidebar--premium'],
+    variant === 'compact' && styles['sidebar--compact'],
     className,
   ]
     .filter(Boolean)
@@ -159,5 +160,5 @@ Sidebar.propTypes = {
   linkComponent: PropTypes.elementType,
   ariaLabel: PropTypes.string,
   className: PropTypes.string,
-  variant: PropTypes.oneOf(['default', 'premium']),
+  variant: PropTypes.oneOf(['default', 'premium', 'compact']),
 };

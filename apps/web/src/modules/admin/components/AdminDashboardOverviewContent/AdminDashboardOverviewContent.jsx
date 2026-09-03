@@ -1,16 +1,32 @@
 /**
  * AdminDashboardOverviewContent — `/:locale/admin` (Admin Platform
- * Dashboard). Phase 11's first real Admin page. Reuses `StatCard`/`Chart`
- * (both `packages/ui` — `Chart` new this phase) rather than inventing
- * page-local widgets, same "reuse the shared dashboard primitives"
- * approach `PartnerDashboardOverviewContent` established.
+ * Dashboard). Reuses `StatCard`/`Card`/`Chart` (`packages/ui`) rather than
+ * inventing page-local widgets, same "reuse the shared dashboard
+ * primitives" approach `PartnerDashboardOverviewContent` established.
  *
  * "Booking value" (never "Revenue" — see `adminDto.js`'s doc comment for
  * why) is grouped by currency and rendered as a small list rather than a
  * single number, since summing across currencies would be meaningless.
+ *
+ * 2026 Admin Workspace redesign: the page now opens with "Needs your
+ * attention" — the brief's own organizing question for this page — ahead
+ * of the raw counts grid, not below it. Each tile is a real link into the
+ * already-filtered work queue (Partners' `verificationStatus=PENDING`,
+ * Bookings' `status=PENDING_VENDOR`, Listings' own default filter is
+ * already PENDING) rather than a static number, so "3 pending partners"
+ * is one click from becoming a worked queue, not just a stat to notice
+ * and then go hunt for manually.
  */
 
 import { useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom';
+import PropTypes from 'prop-types';
+import {
+  CircleCheck,
+  UserCheck,
+  ListChecks,
+  CalendarClock,
+} from 'lucide-react';
 import { Section, Stack, Grid, Inline } from '@desavii/ui/components/layout';
 import { StatCard, Chart } from '@desavii/ui/components/dashboard';
 import { Card } from '@desavii/ui/components/primitives';
@@ -20,14 +36,50 @@ import {
   ErrorState,
 } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import RouterLink from '../../../../components/RouterLink.jsx';
 import { useAdminDashboardQuery } from '../../queries/useAdminDashboardQuery.js';
+import styles from './AdminDashboardOverviewContent.module.scss';
 
 function formatAmount(locale, total) {
   return new Intl.NumberFormat(locale).format(total);
 }
 
+function AttentionTile({ href, icon, count = undefined, label, isLoading }) {
+  const isZero = !isLoading && (count ?? 0) === 0;
+  return (
+    <Card
+      as={RouterLink}
+      href={href}
+      padding="md"
+      interactive
+      className={[styles.attentionTile, isZero && styles['attentionTile--zero']]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <span className={styles.attentionIcon}>{icon}</span>
+      <span>
+        {isLoading ? (
+          <Skeleton variant="text" width="40%" />
+        ) : (
+          <p className={styles.attentionValue}>{count}</p>
+        )}
+        <p className={styles.attentionLabel}>{label}</p>
+      </span>
+    </Card>
+  );
+}
+
+AttentionTile.propTypes = {
+  href: PropTypes.string.isRequired,
+  icon: PropTypes.node.isRequired,
+  count: PropTypes.number,
+  label: PropTypes.string.isRequired,
+  isLoading: PropTypes.bool.isRequired,
+};
+
 export default function AdminDashboardOverviewContent() {
   const { t, i18n } = useTranslation();
+  const { locale } = useParams();
   const { data, isPending, isError, refetch } = useAdminDashboardQuery();
 
   if (isError) {
@@ -48,12 +100,52 @@ export default function AdminDashboardOverviewContent() {
   const bookingValueByCurrency = data?.booking_value_by_currency ?? [];
   const bookingsByDay = data?.bookings_by_day ?? [];
   const recentActivity = data?.recent_activity ?? [];
+  const totalPending =
+    (pendingActions?.pending_partners ?? 0) +
+    (pendingActions?.pending_listings ?? 0) +
+    (pendingActions?.pending_bookings ?? 0);
 
   return (
     <Section spacing="default">
       <PageHeader title={t('admin.dashboard.heading')} />
 
       <Stack gap="8">
+        <Stack gap="3">
+          <h2 className={styles.sectionHeading}>
+            {t('admin.dashboard.pendingActions.heading')}
+          </h2>
+          {!isPending && totalPending === 0 ? (
+            <p className={styles.allClear}>
+              <CircleCheck aria-hidden="true" focusable="false" />
+              {t('admin.dashboard.pendingActions.allClear')}
+            </p>
+          ) : (
+            <div className={styles.attentionGrid}>
+              <AttentionTile
+                href={`/${locale}/admin/partners?verificationStatus=PENDING`}
+                icon={<UserCheck aria-hidden="true" focusable="false" />}
+                count={pendingActions?.pending_partners}
+                label={t('admin.dashboard.pendingActions.partners')}
+                isLoading={isPending}
+              />
+              <AttentionTile
+                href={`/${locale}/admin/listings`}
+                icon={<ListChecks aria-hidden="true" focusable="false" />}
+                count={pendingActions?.pending_listings}
+                label={t('admin.dashboard.pendingActions.listings')}
+                isLoading={isPending}
+              />
+              <AttentionTile
+                href={`/${locale}/admin/bookings?status=PENDING_VENDOR`}
+                icon={<CalendarClock aria-hidden="true" focusable="false" />}
+                count={pendingActions?.pending_bookings}
+                label={t('admin.dashboard.pendingActions.bookings')}
+                isLoading={isPending}
+              />
+            </div>
+          )}
+        </Stack>
+
         <Grid columns={3} gap="4">
           <StatCard
             label={t('admin.dashboard.stats.users')}
@@ -93,36 +185,12 @@ export default function AdminDashboardOverviewContent() {
           />
         </Grid>
 
-        <Card as="div" padding="lg">
-          <Stack gap="3">
-            <h2>{t('admin.dashboard.pendingActions.heading')}</h2>
-            <Grid columns={3} gap="4">
-              <StatCard
-                label={t('admin.dashboard.pendingActions.partners')}
-                value={pendingActions?.pending_partners}
-                variant="warning"
-                isLoading={isPending}
-              />
-              <StatCard
-                label={t('admin.dashboard.pendingActions.listings')}
-                value={pendingActions?.pending_listings}
-                variant="warning"
-                isLoading={isPending}
-              />
-              <StatCard
-                label={t('admin.dashboard.pendingActions.bookings')}
-                value={pendingActions?.pending_bookings}
-                variant="warning"
-                isLoading={isPending}
-              />
-            </Grid>
-          </Stack>
-        </Card>
-
         <Grid columns={2} gap="4">
           <Card as="div" padding="lg">
             <Stack gap="3">
-              <h2>{t('admin.dashboard.chart.heading')}</h2>
+              <h2 className={styles.sectionHeading}>
+                {t('admin.dashboard.chart.heading')}
+              </h2>
               {isPending ? (
                 <Skeleton variant="rect" height={240} />
               ) : (
@@ -139,7 +207,9 @@ export default function AdminDashboardOverviewContent() {
 
           <Card as="div" padding="lg">
             <Stack gap="3">
-              <h2>{t('admin.dashboard.bookingValue.heading')}</h2>
+              <h2 className={styles.sectionHeading}>
+                {t('admin.dashboard.bookingValue.heading')}
+              </h2>
               {isPending ? (
                 <Skeleton variant="text" width="60%" />
               ) : (
@@ -165,7 +235,9 @@ export default function AdminDashboardOverviewContent() {
 
         <Card as="div" padding="lg">
           <Stack gap="3">
-            <h2>{t('admin.dashboard.recentActivity.heading')}</h2>
+            <h2 className={styles.sectionHeading}>
+              {t('admin.dashboard.recentActivity.heading')}
+            </h2>
             {isPending && <Skeleton variant="text" width="80%" />}
             {!isPending && recentActivity.length === 0 && (
               <EmptyState title={t('admin.dashboard.recentActivity.empty')} />
