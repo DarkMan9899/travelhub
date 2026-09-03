@@ -2,37 +2,46 @@
  * Textarea — COMPONENT_LIBRARY.md Part II §2 "Textarea".
  * "identical to Input" for States/Accessibility/Animation, built on the
  * same FieldWrapper base as Input (see that component's file header).
+ *
+ * Wrapped in `forwardRef` for the same reason as `Input` (see that
+ * component's file header): React Hook Form's `Controller` passes a
+ * `ref` callback down for its focus-on-error integration, and a bare
+ * function component silently drops it before it reaches the real
+ * `<textarea>`.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, forwardRef } from 'react';
 import PropTypes from 'prop-types';
 import FieldWrapper from '../internal/FieldWrapper.jsx';
 import styles from './Textarea.module.scss';
 
 const SIZES = ['sm', 'md', 'lg'];
 
-export default function Textarea({
-  value,
-  onChange,
-  onBlur = undefined,
-  onFocus = undefined,
-  label = undefined,
-  placeholder = undefined,
-  helperText = undefined,
-  error = undefined,
-  size = 'md',
-  disabled = false,
-  rows = 4,
-  autoResize = false,
-  id = undefined,
-  name = undefined,
-  required = false,
-}) {
-  const textareaRef = useRef(null);
+const Textarea = forwardRef(function Textarea(
+  {
+    value,
+    onChange,
+    onBlur = undefined,
+    onFocus = undefined,
+    label = undefined,
+    placeholder = undefined,
+    helperText = undefined,
+    error = undefined,
+    size = 'md',
+    disabled = false,
+    rows = 4,
+    autoResize = false,
+    id = undefined,
+    name = undefined,
+    required = false,
+  },
+  forwardedRef,
+) {
+  const localRef = useRef(null);
 
   useEffect(() => {
-    if (!autoResize || !textareaRef.current) return;
-    const el = textareaRef.current;
+    if (!autoResize || !localRef.current) return;
+    const el = localRef.current;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, [value, autoResize]);
@@ -49,7 +58,14 @@ export default function Textarea({
     >
       {({ id: fieldId, describedBy }) => (
         <textarea
-          ref={textareaRef}
+          ref={(node) => {
+            localRef.current = node;
+            if (typeof forwardedRef === 'function') {
+              forwardedRef(node);
+            } else if (forwardedRef) {
+              forwardedRef.current = node;
+            }
+          }}
           id={fieldId}
           name={name}
           rows={rows}
@@ -74,8 +90,13 @@ export default function Textarea({
       )}
     </FieldWrapper>
   );
-}
+});
 
+/* eslint-disable react/require-default-props -- every optional prop below
+   already has an ES6 default in the destructured params on the
+   forwardRef-wrapped function above; eslint-plugin-react's default-props
+   check doesn't associate propTypes on a forwardRef object with defaults
+   declared on its inner render function. */
 Textarea.propTypes = {
   value: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
@@ -93,5 +114,7 @@ Textarea.propTypes = {
   name: PropTypes.string,
   required: PropTypes.bool,
 };
+/* eslint-enable react/require-default-props */
 
+export default Textarea;
 export { SIZES as TEXTAREA_SIZES };
