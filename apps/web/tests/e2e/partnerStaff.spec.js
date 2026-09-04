@@ -7,6 +7,12 @@
  * verifying the whole multi-user RBAC path end to end, not just each
  * side in isolation (already covered by backend integration + frontend
  * unit tests).
+ *
+ * This spec creates real, permanent `users`/`partners` rows and never
+ * deletes them (no delete API exists for either, by design) — see
+ * `./README.md` for why that's fine as long as this suite runs against
+ * the disposable `travelhub_test` database, and NOT the persistent
+ * `travelhub_dev` one.
  */
 
 import { test, expect, resetRateLimits } from './fixtures.js';

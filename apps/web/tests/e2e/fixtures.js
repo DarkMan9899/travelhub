@@ -11,6 +11,14 @@
  * which the backend integration suite calls per file for the identical
  * reason) keeps the real rate limiter intact — its production-appropriate
  * threshold is never weakened — while unblocking local full-suite runs.
+ *
+ * Deliberately HTTP/Redis-only — no MySQL pool here, unlike the backend
+ * Jest integration suite. A few specs (partnerOnboarding/Profile/Staff)
+ * create real, permanent `users`/`partners` rows via the live API with
+ * no matching delete capability by design; see `./README.md` for why
+ * that's fixed by running this suite against the disposable
+ * `travelhub_test` database (`npm run db:reset:test` in apps/api), not
+ * by adding DB access or a delete endpoint here.
  */
 
 import { test as base, expect, request } from '@playwright/test';

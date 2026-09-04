@@ -10,6 +10,12 @@
  * (the Companies directory) is `ORDER BY p.id DESC` — a freshly created
  * partner always has the highest id, so it's always the FIRST card on
  * `/companies`'s first page.
+ *
+ * This spec creates real, permanent `users`/`partners` rows and never
+ * deletes them (no delete API exists for either, by design) — see
+ * `./README.md` for why that's fine as long as this suite runs against
+ * the disposable `travelhub_test` database, and NOT the persistent
+ * `travelhub_dev` one.
  */
 
 import { test, expect, resetRateLimits } from './fixtures.js';

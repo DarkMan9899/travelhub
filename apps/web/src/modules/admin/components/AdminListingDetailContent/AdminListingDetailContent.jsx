@@ -1,9 +1,9 @@
 /**
- * AdminListingDetailContent — `/:locale/admin/listings/:id` (P2.1). Lets
- * an admin actually inspect a listing before approving/rejecting it —
- * previously `useAdminListingDetailQuery` existed but had no page
- * consuming it, so moderation happened from the list table alone
- * (title/partner/status/moderation columns only).
+ * AdminListingDetailContent — `/:locale/admin/listings/:id` (P2.1,
+ * reorganized under Admin Sprint 3 into explicit operational sections:
+ * Identity, Localized content, Media, Details, Commercial/Operational,
+ * Moderation). Lets an admin actually inspect a listing before approving/
+ * rejecting it.
  *
  * Reuses the exact same metadata-driven, vertical-agnostic rendering the
  * customer-facing Listing Detail page uses (`ListingAttributesSection`/
@@ -18,12 +18,21 @@
  * the identical confirm/reject-with-notes flow
  * `AdminListingModerationPageContent.jsx` already uses (same i18n
  * strings) — no new backend behavior, no duplicated mutation logic.
+ *
+ * The Localized content section deliberately does NOT use
+ * `getLocalizedTranslation`/`getLocalizedItems` (both silently fall back
+ * to another locale — correct for a public reader, wrong for a
+ * moderator, who must see exactly what's persisted per locale). It uses
+ * `AuthoringLocaleTabs` + `LocalizedContentPanel`, the same "no fallback"
+ * review pattern the Partner authoring UI already established
+ * (`getLocalizedItemsExact`) — an admin reviewing HY must see "not
+ * translated" rather than silently-substituted EN content.
  */
 
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { Section, Stack, Grid, Inline } from '@desavii/ui/components/layout';
+import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import { Card, Badge, Button } from '@desavii/ui/components/primitives';
 import { Textarea } from '@desavii/ui/components/form-controls';
 import { PriceTag } from '@desavii/ui/components/data-display';
@@ -39,24 +48,24 @@ import RouterLink from '../../../../components/RouterLink.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
+import { SUPPORTED_LOCALES } from '../../../../translations/i18n.js';
 import {
   useListingMetadataQuery,
   useListingCategoriesQuery,
   getLocalizedTranslation,
-  getLocalizedItems,
+  AuthoringLocaleTabs,
   ListingStatusBadge,
   ListingAttributesSection,
   ListingAmenitiesSection,
   ListingPoliciesSection,
-  ListingItinerarySection,
-  ListingIncludedSection,
-  ListingFaqSection,
   ListingLocationSection,
-  ListingAboutSection,
 } from '../../../listings/index.js';
 import { useAdminListingDetailQuery } from '../../queries/useAdminListingDetailQuery.js';
 import { useAdminPartnerDetailQuery } from '../../queries/useAdminPartnerDetailQuery.js';
 import { useUpdateListingModerationStatusMutation } from '../../mutations/useUpdateListingModerationStatusMutation.js';
+import LocalizedContentPanel from './LocalizedContentPanel.jsx';
+import BookableUnitsPanel from './BookableUnitsPanel.jsx';
+import ModerationHistoryPanel from './ModerationHistoryPanel.jsx';
 
 const MODERATION_BADGE_VARIANT = {
   PENDING: 'warning',
@@ -65,13 +74,9 @@ const MODERATION_BADGE_VARIANT = {
   FLAGGED: 'danger',
 };
 
-const SECTION_ABOUT = 'about';
 const SECTION_ATTRIBUTES = 'attributes';
 const SECTION_AMENITIES = 'amenities';
 const SECTION_POLICIES = 'policies';
-const SECTION_ITINERARY = 'itinerary';
-const SECTION_INCLUDED = 'included';
-const SECTION_FAQ = 'faq';
 const SECTION_LOCATION = 'location';
 
 function toGalleryMedia(media) {
@@ -96,9 +101,11 @@ export default function AdminListingDetailContent() {
   const confirm = useConfirm();
   const { showToast } = useToast();
   const canModerate = permissions.includes('listing.moderate');
+  const canViewHistory = permissions.includes('audit.view');
 
   const listingQuery = useAdminListingDetailQuery(id);
   const listing = listingQuery.data;
+  const [reviewLocale, setReviewLocale] = useState(locale);
 
   const partnerQuery = useAdminPartnerDetailQuery(listing?.partner_id);
   const categoryId = listing?.category_ids?.[0];
@@ -127,21 +134,26 @@ export default function AdminListingDetailContent() {
     );
   }
 
+  // Page title/breadcrumb only — orientation for the admin, not a claim
+  // about what's persisted in any one locale, so the fallback-safe
+  // helper is correct here (never a blank page title). The Localized
+  // content section below reviews each locale independently and does
+  // NOT use this fallback.
   const translation = listing
     ? getLocalizedTranslation(listing.translations, locale)
     : null;
   const title = translation?.title ?? listing?.slug ?? '';
-  const description = translation?.description ?? translation?.summary ?? '';
 
-  // 2026 stabilization audit (migration 0037): `listing.itinerary_steps`/
-  // `included_items`/`faqs` now carry every language's rows in one flat
-  // array (same reason `ListingDetailPageContent.jsx` needs this) — an
-  // admin reviewing a listing sees the page in one locale like anyone
-  // else, so this preview picks that same locale's subset rather than a
-  // raw multi-language dump.
-  const itinerarySteps = getLocalizedItems(listing?.itinerary_steps, locale);
-  const includedItems = getLocalizedItems(listing?.included_items, locale);
-  const faqs = getLocalizedItems(listing?.faqs, locale);
+  const completionByLocale = Object.fromEntries(
+    SUPPORTED_LOCALES.map((code) => [
+      code,
+      Boolean(
+        listing?.translations?.some(
+          (row) => row.language_code === code && row.title,
+        ),
+      ),
+    ]),
+  );
 
   async function handleApprove() {
     const confirmed = await confirm({
@@ -276,51 +288,34 @@ export default function AdminListingDetailContent() {
                   </Button>
                 </Inline>
               )}
+
+              {canViewHistory && (
+                <ModerationHistoryPanel listingId={listing.id} />
+              )}
             </Stack>
           </Card>
 
-          <Grid columns={2} gap="4">
-            <Card as="div" padding="lg">
-              <Stack gap="2">
-                <h2>{t('admin.listingDetail.partner.heading')}</h2>
-                {partnerQuery.isPending && (
-                  <Skeleton variant="text" width="70%" />
-                )}
-                {partnerQuery.isError && (
-                  <span>{t('admin.listingDetail.partner.error')}</span>
-                )}
-                {partnerQuery.data && (
-                  <Stack gap="1">
-                    <RouterLink
-                      href={`/${locale}/admin/partners/${partnerQuery.data.id}`}
-                    >
-                      {partnerQuery.data.display_name}
-                    </RouterLink>
-                    <span>{partnerQuery.data.email ?? '—'}</span>
-                  </Stack>
-                )}
-              </Stack>
-            </Card>
-
-            <Card as="div" padding="lg">
-              <Stack gap="2">
-                <h2>{t('admin.listingDetail.pricing.heading')}</h2>
-                {listing.pricing ? (
-                  <PriceTag
-                    amount={listing.pricing.amount}
-                    currencyCode={listing.pricing.currency}
-                    locale={i18n.language}
-                    suffix={t(
-                      `partner.listingWizard.pricingModels.${listing.pricing.pricing_model}`,
-                      { defaultValue: listing.pricing.pricing_model },
-                    )}
-                  />
-                ) : (
-                  <EmptyState title={t('admin.listingDetail.pricing.empty')} />
-                )}
-              </Stack>
-            </Card>
-          </Grid>
+          <Card as="div" padding="lg">
+            <Stack gap="2">
+              <h2>{t('admin.listingDetail.partner.heading')}</h2>
+              {partnerQuery.isPending && (
+                <Skeleton variant="text" width="70%" />
+              )}
+              {partnerQuery.isError && (
+                <span>{t('admin.listingDetail.partner.error')}</span>
+              )}
+              {partnerQuery.data && (
+                <Stack gap="1">
+                  <RouterLink
+                    href={`/${locale}/admin/partners/${partnerQuery.data.id}`}
+                  >
+                    {partnerQuery.data.display_name}
+                  </RouterLink>
+                  <span>{partnerQuery.data.email ?? '—'}</span>
+                </Stack>
+              )}
+            </Stack>
+          </Card>
 
           {galleryMedia.length > 0 && (
             <Card as="div" padding="lg">
@@ -341,73 +336,84 @@ export default function AdminListingDetailContent() {
           )}
 
           <Card as="div" padding="lg">
-            <ListingAboutSection
-              description={description}
-              sectionId={SECTION_ABOUT}
-            />
+            <Stack gap="4">
+              <h2>{t('admin.listingDetail.sections.localizedContent')}</h2>
+              <AuthoringLocaleTabs
+                activeLocale={reviewLocale}
+                onChange={setReviewLocale}
+                completionByLocale={completionByLocale}
+                ariaLabel={t(
+                  'admin.listingDetail.localizedContent.tabsAriaLabel',
+                )}
+              >
+                <LocalizedContentPanel
+                  listing={listing}
+                  reviewLocale={reviewLocale}
+                />
+              </AuthoringLocaleTabs>
+            </Stack>
           </Card>
 
-          {/* Itinerary/Included depend only on the listing itself, same
-              as the customer detail page — never gated on the category
-              metadata fetch below, which only Attributes/Amenities/
-              Policies actually need. */}
-          {itinerarySteps.length > 0 && (
-            <Card as="div" padding="lg">
-              <ListingItinerarySection
-                steps={itinerarySteps}
-                sectionId={SECTION_ITINERARY}
-              />
-            </Card>
-          )}
-          {includedItems.length > 0 && (
-            <Card as="div" padding="lg">
-              <ListingIncludedSection
-                items={includedItems}
-                sectionId={SECTION_INCLUDED}
-              />
-            </Card>
-          )}
+          <Stack gap="4">
+            <h2>{t('admin.listingDetail.sections.details')}</h2>
+            {metadataQuery.isPending && <Skeleton variant="text" width="80%" />}
 
-          {metadataQuery.isPending && <Skeleton variant="text" width="80%" />}
+            {/* Each section already honestly renders nothing if it has no
+                real match against the listing's own data (e.g. amenity
+                ids that don't overlap the category's current amenity
+                groups) — these presence checks only avoid an empty padded
+                card in the common case, not a guarantee. */}
+            {metadata && listing.attribute_values?.length > 0 && (
+              <Card as="div" padding="lg">
+                <ListingAttributesSection
+                  attributes={metadata.attributes}
+                  listing={listing}
+                  sectionId={SECTION_ATTRIBUTES}
+                />
+              </Card>
+            )}
+            {metadata && listing.amenity_ids?.length > 0 && (
+              <Card as="div" padding="lg">
+                <ListingAmenitiesSection
+                  amenityGroups={metadata.amenity_groups}
+                  amenityIds={listing.amenity_ids}
+                  sectionId={SECTION_AMENITIES}
+                />
+              </Card>
+            )}
+            {metadata && listing.policy_values?.length > 0 && (
+              <Card as="div" padding="lg">
+                <ListingPoliciesSection
+                  policies={metadata.policies}
+                  listing={listing}
+                  sectionId={SECTION_POLICIES}
+                />
+              </Card>
+            )}
+          </Stack>
 
-          {/* Each section already honestly renders nothing if it has no
-              real match against the listing's own data (e.g. amenity
-              ids that don't overlap the category's current amenity
-              groups) — these presence checks only avoid an empty padded
-              card in the common case, not a guarantee. */}
-          {metadata && listing.attribute_values?.length > 0 && (
-            <Card as="div" padding="lg">
-              <ListingAttributesSection
-                attributes={metadata.attributes}
-                listing={listing}
-                sectionId={SECTION_ATTRIBUTES}
-              />
-            </Card>
-          )}
-          {metadata && listing.amenity_ids?.length > 0 && (
-            <Card as="div" padding="lg">
-              <ListingAmenitiesSection
-                amenityGroups={metadata.amenity_groups}
-                amenityIds={listing.amenity_ids}
-                sectionId={SECTION_AMENITIES}
-              />
-            </Card>
-          )}
-          {metadata && listing.policy_values?.length > 0 && (
-            <Card as="div" padding="lg">
-              <ListingPoliciesSection
-                policies={metadata.policies}
-                listing={listing}
-                sectionId={SECTION_POLICIES}
-              />
-            </Card>
-          )}
-
-          {faqs.length > 0 && (
-            <Card as="div" padding="lg">
-              <ListingFaqSection faqs={faqs} sectionId={SECTION_FAQ} />
-            </Card>
-          )}
+          <Card as="div" padding="lg">
+            <Stack gap="4">
+              <h2>{t('admin.listingDetail.sections.commercial')}</h2>
+              <Stack gap="2">
+                <h3>{t('admin.listingDetail.pricing.heading')}</h3>
+                {listing.pricing ? (
+                  <PriceTag
+                    amount={listing.pricing.amount}
+                    currencyCode={listing.pricing.currency}
+                    locale={i18n.language}
+                    suffix={t(
+                      `partner.listingWizard.pricingModels.${listing.pricing.pricing_model}`,
+                      { defaultValue: listing.pricing.pricing_model },
+                    )}
+                  />
+                ) : (
+                  <EmptyState title={t('admin.listingDetail.pricing.empty')} />
+                )}
+              </Stack>
+              <BookableUnitsPanel listingId={listing.id} />
+            </Stack>
+          </Card>
 
           {listing.location && (
             <Card as="div" padding="lg">

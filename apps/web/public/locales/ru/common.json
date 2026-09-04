@@ -1909,7 +1909,8 @@
         "title": "Название",
         "partner": "Партнёр",
         "status": "Статус",
-        "moderation": "Модерация"
+        "moderation": "Модерация",
+        "submitted": "Подано"
       },
       "moderationStatus": {
         "PENDING": "Ожидает",
@@ -1956,6 +1957,27 @@
       "pricing": {
         "heading": "Цены",
         "empty": "Цены ещё не настроены."
+      },
+      "sections": {
+        "localizedContent": "Локализованный контент",
+        "details": "Детали",
+        "commercial": "Коммерция и операции"
+      },
+      "localizedContent": {
+        "tabsAriaLabel": "Язык проверки",
+        "notTranslatedTitle": "Нет перевода",
+        "notTranslatedBody": "Для этого объявления пока не добавлен контент на языке: {{locale}}.",
+        "highlightsHeading": "Особенности"
+      },
+      "commercial": {
+        "bookableUnitsHeading": "Бронируемые единицы",
+        "bookableUnitsEmpty": "Бронируемые единицы ещё не настроены.",
+        "departureWindowLabel": "Отправление {{start}}–{{end}}"
+      },
+      "history": {
+        "heading": "История модерации",
+        "empty": "История модерации пока пуста.",
+        "notesPrefix": "Примечание:"
       }
     },
     "reviewModeration": {

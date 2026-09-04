@@ -19,6 +19,10 @@ export function useUpdateListingModerationStatusMutation() {
         queryKey: ['admin', 'listings'],
         exact: false,
       });
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'audit-logs'],
+        exact: false,
+      });
     },
   });
 }

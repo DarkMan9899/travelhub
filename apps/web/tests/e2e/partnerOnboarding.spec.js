@@ -6,6 +6,12 @@
  * `auth.spec.js`'s conventions (`uniqueEmail`, `loginAsDevAdmin`,
  * `.last()` to target a confirm dialog's own action button over the
  * page's trigger button of the same accessible name).
+ *
+ * This spec creates real, permanent `users`/`partners` rows and never
+ * deletes them (no delete API exists for either, by design) — see
+ * `./README.md` for why that's fine as long as this suite runs against
+ * the disposable `travelhub_test` database, and NOT the persistent
+ * `travelhub_dev` one.
  */
 
 import { test, expect } from './fixtures.js';

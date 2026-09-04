@@ -199,6 +199,62 @@ test.describe.serial('Admin Sprint 2 pages', () => {
   });
 });
 
+test.describe.serial('Admin Sprint 3 pages', () => {
+  async function loginAsAdmin(page) {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('admin@travelhub.dev');
+    await page.getByLabel('Password').fill('DevAdmin!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/admin$/);
+  }
+
+  test('Admin Listings moderation queue has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/listings?moderationStatus=');
+    await expect(
+      page.getByRole('heading', { name: 'Listing Moderation' }),
+    ).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Listing Detail has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    // Keyword-filtered to a real, fully-translated (HY/RU/EN) seeded
+    // demo listing — not relying on queue order, same reasoning as the
+    // Sprint 2 keyword-filtered detail tests above.
+    await page.goto(
+      '/en/admin/listings?moderationStatus=&keyword=Ararat+Valley+Fleet',
+    );
+    await page.getByRole('link', { name: 'Ararat Valley Fleet' }).click();
+    await expect(page).toHaveURL(/\/en\/admin\/listings\/\d+$/);
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Listing Detail localized-content locale tabs have no serious/critical accessibility violations after switching locale', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto(
+      '/en/admin/listings?moderationStatus=&keyword=Ararat+Valley+Fleet',
+    );
+    await page.getByRole('link', { name: 'Ararat Valley Fleet' }).click();
+    await expect(page).toHaveURL(/\/en\/admin\/listings\/\d+$/);
+    await page.getByRole('tab', { name: /Русский/ }).click();
+    await expect(page.getByRole('tab', { name: /Русский/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+});
+
 // 2026 SEO/performance audit: these six all need the same signed-in
 // customer, and each performed its own fresh UI login — safe in
 // isolation, but Playwright's default `fullyParallel` config runs them

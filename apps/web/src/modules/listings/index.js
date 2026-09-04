@@ -51,4 +51,7 @@ export { default as getLocalizedTranslation } from './utils/getLocalizedTranslat
 export {
   default as getLocalizedItems,
   DEFAULT_CONTENT_LOCALE,
+  getLocalizedItemsExact,
 } from './utils/getLocalizedItems.js';
+export { default as resolveHighlightIcon } from './utils/highlightIcons.js';
+export { default as AuthoringLocaleTabs } from './components/PartnerListingWizard/AuthoringLocaleTabs/AuthoringLocaleTabs.jsx';

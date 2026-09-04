@@ -9,12 +9,13 @@ import { getAuditLogs } from '../../../api/admin.js';
 
 export const ADMIN_AUDIT_LOGS_LIMIT = 20;
 
-export function useAdminAuditLogsQuery({ targetType, action } = {}) {
+export function useAdminAuditLogsQuery({ targetType, targetId, action } = {}) {
   return useInfiniteQuery({
-    queryKey: ['admin', 'audit-logs', { targetType, action }],
+    queryKey: ['admin', 'audit-logs', { targetType, targetId, action }],
     queryFn: async ({ pageParam }) => {
       const { data, meta } = await getAuditLogs({
         targetType: targetType || undefined,
+        targetId: targetId || undefined,
         action: action || undefined,
         limit: ADMIN_AUDIT_LOGS_LIMIT,
         cursor: pageParam ?? undefined,

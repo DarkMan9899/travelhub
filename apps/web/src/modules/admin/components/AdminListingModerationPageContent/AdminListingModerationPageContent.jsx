@@ -57,7 +57,7 @@ const DEFAULT_FILTERS = {
 };
 
 export default function AdminListingModerationPageContent() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { locale } = useParams();
   const confirm = useConfirm();
   const { showToast } = useToast();
@@ -85,6 +85,11 @@ export default function AdminListingModerationPageContent() {
   const listings = useMemo(
     () => data?.pages.flatMap((page) => page.results) ?? [],
     [data],
+  );
+
+  const dateFormatter = useMemo(
+    () => new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }),
+    [i18n.language],
   );
 
   const moderationOptions = [
@@ -199,7 +204,22 @@ export default function AdminListingModerationPageContent() {
     {
       key: 'partner',
       header: t('admin.listingModeration.table.partner'),
-      render: (listing) => listing.partner_display_name,
+      render: (listing) =>
+        listing.partner_id ? (
+          <RouterLink href={`/${locale}/admin/partners/${listing.partner_id}`}>
+            {listing.partner_display_name}
+          </RouterLink>
+        ) : (
+          listing.partner_display_name
+        ),
+    },
+    {
+      key: 'submitted',
+      header: t('admin.listingModeration.table.submitted'),
+      render: (listing) =>
+        listing.created_at
+          ? dateFormatter.format(new Date(listing.created_at))
+          : '—',
     },
     {
       key: 'status',
