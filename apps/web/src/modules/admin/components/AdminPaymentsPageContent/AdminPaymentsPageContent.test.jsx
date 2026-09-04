@@ -1,13 +1,19 @@
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import AdminPaymentsPageContent from './AdminPaymentsPageContent.jsx';
 import { useAdminPaymentsQuery } from '../../queries/useAdminPaymentsQuery.js';
+import { usePaymentsConfigQuery } from '../../../payments/index.js';
 
 vi.mock('../../queries/useAdminPaymentsQuery.js', () => ({
   useAdminPaymentsQuery: vi.fn(),
 }));
+
+vi.mock('../../../payments/index.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, usePaymentsConfigQuery: vi.fn() };
+});
 
 function paymentFixture(overrides) {
   return {
@@ -43,6 +49,10 @@ const noopQueryExtras = {
 };
 
 describe('AdminPaymentsPageContent (apps/web/src/modules/admin)', () => {
+  beforeEach(() => {
+    usePaymentsConfigQuery.mockReturnValue({ data: { enabled: true } });
+  });
+
   test('shows a retryable error state', async () => {
     const refetch = vi.fn();
     useAdminPaymentsQuery.mockReturnValue({
@@ -95,5 +105,25 @@ describe('AdminPaymentsPageContent (apps/web/src/modules/admin)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Ցույց տալ ավելին' }));
     expect(fetchNextPage).toHaveBeenCalledTimes(1);
+  });
+
+  test('shows a calm paused-payments banner when PAYMENTS_ENABLED is false, and nothing when enabled', () => {
+    useAdminPaymentsQuery.mockReturnValue({
+      data: { pages: [{ results: [paymentFixture()] }] },
+      isPending: false,
+      isError: false,
+      ...noopQueryExtras,
+    });
+    usePaymentsConfigQuery.mockReturnValue({ data: { enabled: false } });
+    const { unmount } = renderPage();
+
+    expect(screen.getByText('Վճարումները դադարեցված են')).toBeInTheDocument();
+    unmount();
+
+    usePaymentsConfigQuery.mockReturnValue({ data: { enabled: true } });
+    renderPage();
+    expect(
+      screen.queryByText('Վճարումները դադարեցված են'),
+    ).not.toBeInTheDocument();
   });
 });

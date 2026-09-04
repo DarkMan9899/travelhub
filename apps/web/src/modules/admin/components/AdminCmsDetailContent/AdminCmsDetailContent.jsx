@@ -14,12 +14,13 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import { Input, Switch, Textarea } from '@desavii/ui/components/form-controls';
-import { Button, Card } from '@desavii/ui/components/primitives';
+import { Button, Card, Badge } from '@desavii/ui/components/primitives';
 import { Tabs } from '@desavii/ui/components/navigation';
 import {
   Spinner,
   ErrorState,
   EmptyState,
+  Alert,
 } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
@@ -66,6 +67,11 @@ function TranslationEditor({
 
   return (
     <Stack gap="3">
+      {!translation && (
+        <Alert variant="info" title={t('admin.cms.localeMissing.title')}>
+          {t('admin.cms.localeMissing.description')}
+        </Alert>
+      )}
       <Input
         label={t('admin.cms.titleLabel')}
         value={title}
@@ -182,19 +188,24 @@ export default function AdminCmsDetailContent() {
     ]),
   );
 
-  const tabs = SUPPORTED_LOCALES.map((code) => ({
-    id: code,
-    label: code.toUpperCase(),
-    panel: (
-      <TranslationEditor
-        pageId={pageId}
-        languageCode={code}
-        translation={translationByLocale.get(code)}
-        onSaved={refetch}
-        canWrite={canManageCms}
-      />
-    ),
-  }));
+  const tabs = SUPPORTED_LOCALES.map((code) => {
+    const hasTranslation = translationByLocale.has(code);
+    return {
+      id: code,
+      label: hasTranslation
+        ? code.toUpperCase()
+        : t('admin.cms.localeTabMissingLabel', { code: code.toUpperCase() }),
+      panel: (
+        <TranslationEditor
+          pageId={pageId}
+          languageCode={code}
+          translation={translationByLocale.get(code)}
+          onSaved={refetch}
+          canWrite={canManageCms}
+        />
+      ),
+    };
+  });
 
   return (
     <Section spacing="default">
@@ -244,6 +255,25 @@ export default function AdminCmsDetailContent() {
         <Card as="div" padding="lg">
           <Stack gap="3">
             <h2>{t('admin.cms.translationsHeading')}</h2>
+            <Inline gap="2" wrap>
+              {SUPPORTED_LOCALES.map((code) => (
+                <Badge
+                  key={code}
+                  size="sm"
+                  variant={
+                    translationByLocale.has(code) ? 'success' : 'neutral'
+                  }
+                  label={t('admin.cms.localeStatusBadge', {
+                    code: code.toUpperCase(),
+                    status: t(
+                      translationByLocale.has(code)
+                        ? 'admin.cms.localeAuthored'
+                        : 'admin.cms.localeMissingShort',
+                    ),
+                  })}
+                />
+              ))}
+            </Inline>
             <Tabs
               tabs={tabs}
               activeTabId={activeLocale}

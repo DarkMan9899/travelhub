@@ -15,12 +15,15 @@ import { useParams } from 'react-router-dom';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import { Select } from '@desavii/ui/components/form-controls';
 import { DataTable } from '@desavii/ui/components/dashboard';
-import { ErrorState } from '@desavii/ui/components/feedback-overlays';
+import { Alert, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import RouterLink from '../../../../components/RouterLink.jsx';
 import { useAdminListFilters } from '../../hooks/useAdminListFilters.js';
 import { useAdminPaymentsQuery } from '../../queries/useAdminPaymentsQuery.js';
-import { PaymentStatusBadge } from '../../../payments/index.js';
+import {
+  PaymentStatusBadge,
+  usePaymentsConfigQuery,
+} from '../../../payments/index.js';
 
 const DEFAULT_FILTERS = { status: '' };
 
@@ -41,6 +44,7 @@ export default function AdminPaymentsPageContent() {
   const { locale } = useParams();
 
   const { filters, updateFilters } = useAdminListFilters(DEFAULT_FILTERS);
+  const { data: paymentsConfig } = usePaymentsConfigQuery();
 
   const {
     data,
@@ -132,6 +136,15 @@ export default function AdminPaymentsPageContent() {
         />
       ) : (
         <Stack gap="4">
+          {paymentsConfig && !paymentsConfig.enabled && (
+            <Alert
+              variant="info"
+              title={t('admin.payments.pausedBanner.title')}
+            >
+              {t('admin.payments.pausedBanner.description')}
+            </Alert>
+          )}
+
           <Inline gap="3" wrap>
             <Select
               ariaLabel={t('admin.payments.filters.statusLabel')}

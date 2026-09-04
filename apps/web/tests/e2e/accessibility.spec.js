@@ -577,6 +577,66 @@ test.describe.serial('Payments accessibility', () => {
   });
 });
 
+// Admin Sprint 6 (Payments disabled-state + Marketplace Config/Settings +
+// CMS) — the payments-paused Alert banners are already exercised by the
+// "Admin payments list and payment detail page" scan above (this repo
+// runs with `PAYMENTS_ENABLED=false`, so that scan's detail page always
+// renders the refund-paused notice too). This block covers the two
+// surfaces with no prior accessibility coverage at all: Settings (both
+// tabs, including the new "not yet wired" disclosure banners) and CMS
+// (list, and the per-locale editor with its locale-status badges).
+test.describe.serial('Admin Sprint 6 pages', () => {
+  async function loginAsAdmin(page) {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('admin@travelhub.dev');
+    await page.getByLabel('Password').fill('DevAdmin!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/admin$/);
+  }
+
+  test('Admin Settings (System Settings and Feature Flags tabs) has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/settings');
+    await expect(
+      page.getByRole('heading', { name: 'Settings', exact: true }),
+    ).toBeVisible();
+    const systemViolations = await seriousOrCriticalViolations(page);
+    expect(systemViolations, JSON.stringify(systemViolations, null, 2)).toEqual(
+      [],
+    );
+
+    await page.getByRole('tab', { name: 'Feature Flags' }).click();
+    await expect(page.getByText('maintenance_mode')).toBeVisible();
+    const flagsViolations = await seriousOrCriticalViolations(page);
+    expect(flagsViolations, JSON.stringify(flagsViolations, null, 2)).toEqual(
+      [],
+    );
+  });
+
+  test('Admin CMS list and the per-locale page editor have no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/cms');
+    await expect(
+      page.getByRole('heading', { name: 'Content Pages' }),
+    ).toBeVisible();
+    const listViolations = await seriousOrCriticalViolations(page);
+    expect(listViolations, JSON.stringify(listViolations, null, 2)).toEqual([]);
+
+    await page.getByRole('link', { name: 'about', exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Page: about' }),
+    ).toBeVisible();
+    const detailViolations = await seriousOrCriticalViolations(page);
+    expect(detailViolations, JSON.stringify(detailViolations, null, 2)).toEqual(
+      [],
+    );
+  });
+});
+
 // Phase 18 (Premium Listing Detail Experience) — three genuinely new
 // surfaces this phase shipped that no scan above ever touches: the
 // mobile booking drawer (Phase 18.11, brand new this session), the

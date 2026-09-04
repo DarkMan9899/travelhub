@@ -79,6 +79,23 @@ describe('AdminSettingsPageContent (apps/web/src/modules/admin)', () => {
     expect(screen.getByText('"desavii"')).toBeInTheDocument();
   });
 
+  test('both tabs honestly disclose that these values are not yet wired to product behavior', async () => {
+    renderPage();
+    await screen.findByText('site_name');
+    expect(
+      screen.getByText('Դեռ կապակցված չէ արտադրանքի վարքագծին'),
+    ).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole('tab', { name: 'Հատկանիշների անջատիչներ' }),
+    );
+    await screen.findByText('maintenance_mode');
+    expect(
+      screen.getByText('Դեռ կապակցված չէ արտադրանքի վարքագծին'),
+    ).toBeInTheDocument();
+  });
+
   test('switching to the Feature Flags tab lists flags with a toggle', async () => {
     renderPage();
     await screen.findByText('site_name');

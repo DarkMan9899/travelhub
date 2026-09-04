@@ -15,6 +15,7 @@ export { default as usePaymentQuery } from './queries/usePaymentQuery.js';
 export { default as usePaymentsForBookingQuery } from './queries/usePaymentsForBookingQuery.js';
 export { default as useMyPaymentsQuery } from './queries/useMyPaymentsQuery.js';
 export { default as usePartnerBalanceQuery } from './queries/usePartnerBalanceQuery.js';
+export { default as usePaymentsConfigQuery } from './queries/usePaymentsConfigQuery.js';
 export { default as useCreatePaymentMutation } from './mutations/useCreatePaymentMutation.js';
 export { default as useCreateRefundMutation } from './mutations/useCreateRefundMutation.js';
 export { default as paymentKeys } from './constants/queryKeys.js';

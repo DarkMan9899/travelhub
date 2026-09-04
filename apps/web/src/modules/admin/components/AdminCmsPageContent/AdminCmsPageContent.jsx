@@ -9,9 +9,12 @@
  * Stage 11.5's list-with-modal-form pattern).
  *
  * The six page rows this stage's seed data ships
- * (about/contact/faq/help/become-a-partner/blog) are not yet consumed
- * by any public page — this editor is real, but its output isn't live
- * anywhere yet, per the Phase 11 plan's own scope decision.
+ * (about/contact/faq/help/become-a-partner/blog) are read by the
+ * matching public page via `useCmsPageQuery` (P1.6, Master Roadmap):
+ * a published page's `title`/`content` override the static i18n copy,
+ * with a silent fallback to that copy while unpublished or missing —
+ * so a slug's real-world visibility genuinely depends on the `is_published`
+ * state managed here.
  */
 
 import { useCallback, useState } from 'react';
@@ -146,6 +149,8 @@ export default function AdminCmsPageContent() {
         />
       ) : (
         <Stack gap="4">
+          <p>{t('admin.cms.description')}</p>
+
           {canManageCms && (
             <Inline justify="flex-end">
               <Button variant="primary" size="sm" onClick={() => openCreate()}>

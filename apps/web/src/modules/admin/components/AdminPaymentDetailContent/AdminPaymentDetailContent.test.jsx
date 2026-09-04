@@ -8,12 +8,14 @@ import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import {
   usePaymentQuery,
   useCreateRefundMutation,
+  usePaymentsConfigQuery,
 } from '../../../payments/index.js';
 
 vi.mock('../../../../contexts/AuthContext.jsx', () => ({ useAuth: vi.fn() }));
 vi.mock('../../../payments/index.js', () => ({
   usePaymentQuery: vi.fn(),
   useCreateRefundMutation: vi.fn(),
+  usePaymentsConfigQuery: vi.fn(),
   // eslint-disable-next-line react/prop-types -- trivial test double
   PaymentSummaryCard: ({ payment: { status } }) => (
     <div>PaymentSummaryCard {status}</div>
@@ -52,6 +54,7 @@ describe('AdminPaymentDetailContent (apps/web/src/modules/admin)', () => {
       isPending: false,
     });
     useAuth.mockReturnValue({ permissions: ['payment.refund'] });
+    usePaymentsConfigQuery.mockReturnValue({ data: { enabled: true } });
   });
 
   test('renders the payment summary once loaded', () => {
@@ -210,5 +213,23 @@ describe('AdminPaymentDetailContent (apps/web/src/modules/admin)', () => {
     });
     renderPage();
     expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  test('when payments are paused, a refundable payment shows an explanatory notice instead of a live refund button', () => {
+    usePaymentsConfigQuery.mockReturnValue({ data: { enabled: false } });
+    usePaymentQuery.mockReturnValue({
+      data: BASE_PAYMENT,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(
+      screen.queryByRole('button', { name: 'Կատարել վերադարձ' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Փոխհատուցումն անհասանելի է')).toBeInTheDocument();
+    expect(screen.getByText('Վճարումները դադարեցված են')).toBeInTheDocument();
   });
 });

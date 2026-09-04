@@ -124,6 +124,24 @@ describe('AdminCmsDetailContent (apps/web/src/modules/admin)', () => {
     );
   });
 
+  test('a locale with no saved translation (RU) is clearly marked missing on its tab, its status badge, and inside its own panel', async () => {
+    renderPage();
+    await screen.findByDisplayValue('about');
+
+    expect(
+      screen.getByRole('tab', { name: 'RU (բացակայում է)' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('HY՝ Հեղինակված է')).toBeInTheDocument();
+    expect(screen.getByText('EN՝ Հեղինակված է')).toBeInTheDocument();
+    expect(screen.getByText('RU՝ Բացակայում է')).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('tab', { name: 'RU (բացակայում է)' }));
+    expect(
+      await screen.findByText('Այս լեզվի համար բովանդակություն հեղինակված չէ'),
+    ).toBeInTheDocument();
+  });
+
   test('renders a 404 empty state for a genuine not-found error', async () => {
     cmsApi.getAdminCmsPageDetail.mockRejectedValue({ status: 404 });
     renderPage();

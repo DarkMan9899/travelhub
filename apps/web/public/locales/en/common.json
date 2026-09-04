@@ -2156,7 +2156,15 @@
         "refundAmountLabel": "Refund amount",
         "refundReasonLabel": "Reason (optional)",
         "refundReasonPlaceholder": "Why is this payment being refunded?",
-        "refundConfirmAction": "Issue refund"
+        "refundConfirmAction": "Issue refund",
+        "refundPaused": {
+          "title": "Refunds are unavailable",
+          "description": "This payment is eligible for a refund, but refund issuance is disabled while payments are paused platform-wide."
+        }
+      },
+      "pausedBanner": {
+        "title": "Payments are paused",
+        "description": "Online payment processing is switched off for the whole marketplace. The records below are historical and read-only."
       }
     },
     "auditLogs": {
@@ -2306,7 +2314,11 @@
         "errorTitle": "Something went wrong loading settings.",
         "createSuccess": "Setting created.",
         "updateSuccess": "Setting updated.",
-        "deleteSuccess": "Setting deleted."
+        "deleteSuccess": "Setting deleted.",
+        "notice": {
+          "title": "Not yet wired to product behavior",
+          "description": "These key/value entries persist, but no part of the product currently reads them. Changing or deleting one has no effect outside this table."
+        }
       },
       "featureFlags": {
         "heading": "Feature Flags",
@@ -2330,7 +2342,11 @@
         "emptyDescription": "Add a flag to get started.",
         "errorTitle": "Something went wrong loading feature flags.",
         "createSuccess": "Feature flag created.",
-        "deleteSuccess": "Feature flag deleted."
+        "deleteSuccess": "Feature flag deleted.",
+        "notice": {
+          "title": "Not yet wired to product behavior",
+          "description": "These flags persist and toggle here, but no part of the product currently checks them — including \"Maintenance mode\". Flipping a flag has no effect outside this table."
+        }
       }
     },
     "marketplaceConfig": {
@@ -2464,7 +2480,16 @@
       "translationsHeading": "Content by language",
       "translationSaveSuccess": "Content saved.",
       "titleLabel": "Title",
-      "contentLabel": "Content"
+      "contentLabel": "Content",
+      "description": "Edit the pages the public site reads for About, Contact, FAQ, Help, Become a Partner, and the Blog. A published page's title and content replace the site's built-in copy for that locale; an unpublished or empty locale silently falls back to the built-in copy instead.",
+      "localeMissing": {
+        "title": "No content authored for this locale",
+        "description": "This locale has no saved title or content yet. Until you save one, the public site falls back to its built-in copy for this locale."
+      },
+      "localeTabMissingLabel": "{{code}} (missing)",
+      "localeStatusBadge": "{{code}}: {{status}}",
+      "localeAuthored": "Authored",
+      "localeMissingShort": "Missing"
     },
     "notifications": {
       "announcement": {

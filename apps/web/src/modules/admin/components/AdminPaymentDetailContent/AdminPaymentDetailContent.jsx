@@ -18,6 +18,7 @@ import {
   ErrorState,
   EmptyState,
   Modal,
+  Alert,
 } from '@desavii/ui/components/feedback-overlays';
 import { Button } from '@desavii/ui/components/primitives';
 import { Input, Textarea } from '@desavii/ui/components/form-controls';
@@ -27,6 +28,7 @@ import { useToast } from '../../../../contexts/ToastContext.jsx';
 import {
   usePaymentQuery,
   useCreateRefundMutation,
+  usePaymentsConfigQuery,
   PaymentSummaryCard,
 } from '../../../payments/index.js';
 
@@ -47,6 +49,7 @@ export default function AdminPaymentDetailContent() {
     error,
     refetch,
   } = usePaymentQuery(paymentId);
+  const { data: paymentsConfig } = usePaymentsConfigQuery();
   const createRefundMutation = useCreateRefundMutation();
 
   const [isRefundDialogOpen, setRefundDialogOpen] = useState(false);
@@ -86,8 +89,11 @@ export default function AdminPaymentDetailContent() {
     );
   }
 
-  const showRefundAction =
+  const isRefundEligible =
     canRefund && REFUNDABLE_STATUSES.includes(payment.status);
+  const paymentsPaused = Boolean(paymentsConfig && !paymentsConfig.enabled);
+  const showRefundAction = isRefundEligible && !paymentsPaused;
+  const showRefundPausedNotice = isRefundEligible && paymentsPaused;
 
   function openRefundDialog() {
     setRefundAmount(payment.refundable_amount);
@@ -136,6 +142,12 @@ export default function AdminPaymentDetailContent() {
       />
 
       <Stack gap="4">
+        {paymentsPaused && (
+          <Alert variant="info" title={t('admin.payments.pausedBanner.title')}>
+            {t('admin.payments.pausedBanner.description')}
+          </Alert>
+        )}
+
         <PaymentSummaryCard payment={payment} />
 
         {showRefundAction && (
@@ -144,6 +156,15 @@ export default function AdminPaymentDetailContent() {
               {t('admin.payments.detail.refundAction')}
             </Button>
           </Inline>
+        )}
+
+        {showRefundPausedNotice && (
+          <Alert
+            variant="info"
+            title={t('admin.payments.detail.refundPaused.title')}
+          >
+            {t('admin.payments.detail.refundPaused.description')}
+          </Alert>
         )}
       </Stack>
 
