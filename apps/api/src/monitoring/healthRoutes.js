@@ -12,18 +12,26 @@
  * request-handling code Sprint 1 produces, and only because it is the
  * simplest possible proof that the Docker/CI/deployment pipeline and the
  * MySQL/Redis connections configured this sprint actually work end-to-end.
+ *
+ * `/health/live`'s `environment` field (same `config.env` value the
+ * authenticated admin health endpoint already exposes, see
+ * `modules/admin/services/systemHealthService.js`) exists so the
+ * Playwright E2E suite's `globalSetup.js` can refuse to run against an
+ * API server that isn't in `test` mode — see that file and `tests/e2e/
+ * README.md` for the incident this guards against.
  */
 
 import { Router } from 'express';
 import { pingMysql } from '../infrastructure/database/mysqlPool.js';
 import { pingRedis } from '../infrastructure/cache/redisClient.js';
+import config from '../config/index.js';
 
 const router = Router();
 
 router.get('/health/live', (req, res) => {
   res.status(200).json({
     success: true,
-    data: { status: 'live' },
+    data: { status: 'live', environment: config.env },
     meta: null,
     error: null,
   });

@@ -30,6 +30,20 @@
  * Mirrors `apps/api/tests/integration/helpers/resetRateLimits.js`'s
  * identical fix for the backend integration suite (same two prefixes).
  *
+ * 0. API test-mode guard. This suite's `webServer` block (playwright.
+ *    config.js) only starts the frontend (`npm run dev`, Vite) — the API
+ *    server is a separate process a developer starts manually, and
+ *    nothing here controls which database it's pointed at. `npm run
+ *    test:e2e` (package.json) resets `travelhub_test` before this file
+ *    even runs, but that's a no-op safety measure if the already-running
+ *    API server is still in `development` mode talking to `travelhub_
+ *    dev` — exactly what caused the real incident documented in
+ *    `./README.md` (38 stale users / 19 stale partners accumulated in
+ *    `travelhub_dev`). Failing fast here, before any spec runs, catches
+ *    that regardless of how this file was invoked (bare `npx playwright
+ *    test`, an IDE test runner, etc. — anything that bypasses the
+ *    package.json script).
+ *
  * 3. Vite dev-server route warm-up. The actual root cause behind the
  *    flake this was originally written to chase turned out to be local
  *    machine CPU contention under Playwright's default worker count —
@@ -47,7 +61,34 @@
 import { chromium } from '@playwright/test';
 import Redis from 'ioredis';
 
+const API_HEALTH_URL = 'http://localhost:4000/health/live';
+
+async function assertApiIsInTestMode() {
+  let body;
+  try {
+    const res = await fetch(API_HEALTH_URL);
+    body = await res.json();
+  } catch (err) {
+    throw new Error(
+      `E2E setup: could not reach the API's health check at ${API_HEALTH_URL} ` +
+        `(${err.message}). Start the API server with NODE_ENV=test before ` +
+        `running this suite — see tests/e2e/README.md.`,
+    );
+  }
+  if (body?.data?.environment !== 'test') {
+    throw new Error(
+      `E2E setup: refusing to run — the API server at ${API_HEALTH_URL} is ` +
+        `reporting environment "${body?.data?.environment}", not "test". ` +
+        `Running this suite against a non-test API permanently writes ` +
+        `throwaway users/partners into its database (see tests/e2e/README.md). ` +
+        `Restart the API with NODE_ENV=test and run "npm run db:reset:test" first.`,
+    );
+  }
+}
+
 export default async function globalSetup(config) {
+  await assertApiIsInTestMode();
+
   const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
     lazyConnect: true,
     maxRetriesPerRequest: 1,

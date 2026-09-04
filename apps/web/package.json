@@ -12,7 +12,7 @@
     "lint:fix": "eslint . --ext .js,.jsx --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run db:seed:demo --prefix ../.. && cross-env NODE_ENV=test playwright test",
     "prerender": "node scripts/prerender.mjs",
     "generate:seo-files": "node scripts/generateSeoFiles.mjs",
     "lighthouse:cwv": "node scripts/lighthouseCwv.mjs"
@@ -51,6 +51,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@vitejs/plugin-react": "^4.3.3",
     "chrome-launcher": "^1.2.1",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "eslint": "^8.57.1",
     "eslint-config-airbnb": "^19.0.4",
