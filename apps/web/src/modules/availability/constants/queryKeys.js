@@ -49,6 +49,14 @@ const availabilityKeys = {
     'connectionConflicts',
     { id },
   ],
+  // Admin Sprint 5 — plain arrays (no `partnerId`/`connectionId` to
+  // parameterize on, these are the genuinely admin-wide reads), built
+  // from the literal `all` value rather than a self-reference to
+  // `availabilityKeys.all` — the object literal isn't finished
+  // constructing yet at this point, unlike the functions above (only
+  // invoked later, once `availabilityKeys` fully exists).
+  adminConnectionsOverview: ['availability', 'adminConnectionsOverview'],
+  adminConflictsOverview: ['availability', 'adminConflictsOverview'],
 };
 
 export default availabilityKeys;

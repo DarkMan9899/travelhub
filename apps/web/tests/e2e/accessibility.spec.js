@@ -309,6 +309,52 @@ test.describe.serial('Admin Sprint 4 pages', () => {
   });
 });
 
+// Admin Sprint 5 (Inventory + Sync Operations) — the new admin-wide
+// Overview section (real cross-partner connections + conflicts tables,
+// status badges) and the per-listing unit-context banner
+// (`inventoryAccessibility.spec.js`'s existing "Admin Inventory
+// Oversight" block already covers the bare empty state plus the
+// Breakdown/Ledger tabs, unchanged by this sprint — this block is
+// additive, targeting only the two genuinely new surfaces). Same
+// concurrent-login race as the other `Admin Sprint N pages` blocks.
+test.describe.serial('Admin Sprint 5 pages', () => {
+  async function loginAsAdmin(page) {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('admin@travelhub.dev');
+    await page.getByLabel('Password').fill('DevAdmin!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/admin$/);
+  }
+
+  test('Admin Inventory overview (connections + conflicts tables, all partners) has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/inventory');
+    await expect(
+      page.getByRole('heading', { name: 'Active connections' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Unresolved conflicts' }),
+    ).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Inventory per-listing lookup with a time-slot unit context banner has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    const tourListingId = await resolveListingId(PHASE_18_FLAGSHIP_SLUGS.tour);
+    await loginAsAdmin(page);
+    await page.goto(`/en/admin/inventory?listingId=${tourListingId}`);
+    await expect(page.getByText(/Time-slot unit — departs/)).toBeVisible({
+      timeout: 10_000,
+    });
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+});
+
 // 2026 SEO/performance audit: these six all need the same signed-in
 // customer, and each performed its own fresh UI login — safe in
 // isolation, but Playwright's default `fullyParallel` config runs them

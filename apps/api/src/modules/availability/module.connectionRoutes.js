@@ -20,6 +20,7 @@ import {
   connectionIdParamsSchema,
   updateConnectionSchema,
   listConnectionsQuerySchema,
+  adminOverviewSchema,
   setMappingSchema,
   resolveConflictSchema,
   exportTokenParamsSchema,
@@ -43,6 +44,23 @@ export default function createInventoryConnectionRoutes({
     requireAuth,
     validate(listConnectionsQuerySchema),
     inventoryConnectionController.list,
+  );
+  // Admin Sprint 5 — registered ahead of `/:id` and `/:id/conflicts`
+  // deliberately: `/admin/conflicts` is structurally a two-segment path
+  // that `/:id/conflicts` would otherwise capture first (id="admin"),
+  // the same route-order hazard `module.routes.js`'s own header comment
+  // documents for `/units`/`/blackouts` vs `/:listingId`.
+  router.get(
+    '/admin/overview',
+    requireAuth,
+    validate(adminOverviewSchema),
+    inventoryConnectionController.adminOverview,
+  );
+  router.get(
+    '/admin/conflicts',
+    requireAuth,
+    validate(adminOverviewSchema),
+    inventoryConnectionController.adminConflicts,
   );
   router.get(
     '/:id',

@@ -45,6 +45,48 @@ function toConflictResponse(conflict) {
     external_event_uid: conflict.externalEventUid,
     conflict_type: conflict.conflictType,
     details: conflict.details,
+    // Additive: the domain object (mysqlInventoryConnectionRepository.js
+    // #conflictToDomain) always carried these, this response just hadn't
+    // exposed them yet — a real "who/when/why was this resolved" gap for
+    // a conflict a moderator had already handled.
+    resolved_at: conflict.resolvedAt ?? undefined,
+    resolved_by: conflict.resolvedBy ?? undefined,
+    resolution_note: conflict.resolutionNote ?? undefined,
+    created_at: conflict.createdAt,
+  };
+}
+
+/** Admin Sprint 5: `listAllActiveWithPartnerNames()`'s shape — same fields as `toConnectionResponse` minus `export_token` (never useful cross-partner), plus `partner_display_name`. */
+function toAdminConnectionOverviewResponse(connection) {
+  return {
+    id: connection.id,
+    partner_id: connection.partnerId,
+    partner_display_name: connection.partnerDisplayName,
+    listing_id: connection.listingId,
+    connector_type: connection.connectorType,
+    direction: connection.direction,
+    name: connection.name,
+    status: connection.status,
+    last_attempted_sync_at: connection.lastAttemptedSyncAt,
+    last_successful_sync_at: connection.lastSuccessfulSyncAt,
+    last_error: connection.lastError,
+    created_at: connection.createdAt,
+  };
+}
+
+/** Admin Sprint 5: `listAllUnresolvedConflicts()`'s shape — same as `toConflictResponse` plus connection/partner context, since this list spans every connection. */
+function toAdminConflictOverviewResponse(conflict) {
+  return {
+    id: conflict.id,
+    sync_run_id: conflict.syncRunId,
+    connection_id: conflict.connectionId,
+    connector_type: conflict.connectorType,
+    partner_id: conflict.partnerId,
+    partner_display_name: conflict.partnerDisplayName,
+    listing_id: conflict.listingId,
+    external_event_uid: conflict.externalEventUid,
+    conflict_type: conflict.conflictType,
+    details: conflict.details,
     created_at: conflict.createdAt,
   };
 }
@@ -127,6 +169,40 @@ export function createInventoryConnectionController(
         res.status(200).json({
           success: true,
           data: connections.map(toConnectionResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async adminOverview(req, res, next) {
+      try {
+        const connections =
+          await inventoryConnectionService.listAdminConnectionsOverview(
+            req.principal,
+          );
+        res.status(200).json({
+          success: true,
+          data: connections.map(toAdminConnectionOverviewResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async adminConflicts(req, res, next) {
+      try {
+        const conflicts =
+          await inventoryConnectionService.listAdminUnresolvedConflicts(
+            req.principal,
+          );
+        res.status(200).json({
+          success: true,
+          data: conflicts.map(toAdminConflictOverviewResponse),
           meta: null,
           error: null,
         });

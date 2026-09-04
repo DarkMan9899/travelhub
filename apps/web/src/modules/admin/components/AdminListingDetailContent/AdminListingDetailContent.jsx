@@ -394,7 +394,16 @@ export default function AdminListingDetailContent() {
 
           <Card as="div" padding="lg">
             <Stack gap="4">
-              <h2>{t('admin.listingDetail.sections.commercial')}</h2>
+              <Inline justify="space-between" align="center" wrap>
+                <h2>{t('admin.listingDetail.sections.commercial')}</h2>
+                {permissions.includes('inventory.view_all') && (
+                  <RouterLink
+                    href={`/${locale}/admin/inventory?listingId=${listing.id}`}
+                  >
+                    {t('admin.listingDetail.viewInventoryAction')}
+                  </RouterLink>
+                )}
+              </Inline>
               <Stack gap="2">
                 <h3>{t('admin.listingDetail.pricing.heading')}</h3>
                 {listing.pricing ? (

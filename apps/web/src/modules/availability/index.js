@@ -40,6 +40,9 @@ export { default as useSetInventoryConnectionMappingMutation } from './mutations
 export { default as useTestInventoryConnectionMutation } from './mutations/useTestInventoryConnectionMutation.js';
 export { default as useSyncInventoryConnectionMutation } from './mutations/useSyncInventoryConnectionMutation.js';
 export { default as useResolveConnectionConflictMutation } from './mutations/useResolveConnectionConflictMutation.js';
+// Admin Sprint 5
+export { default as useAdminInventoryOverviewQuery } from './queries/useAdminInventoryOverviewQuery.js';
+export { default as useAdminInventoryConflictsOverviewQuery } from './queries/useAdminInventoryConflictsOverviewQuery.js';
 export {
   BLOCK_REASON_CODES,
   EXTERNAL_RESERVATION_SOURCE_CODES,

@@ -1958,7 +1958,8 @@
         "heading": "Moderation history",
         "empty": "No moderation history yet.",
         "notesPrefix": "Note:"
-      }
+      },
+      "viewInventoryAction": "View inventory"
     },
     "reviewModeration": {
       "heading": "Review Moderation",
@@ -2495,7 +2496,7 @@
     },
     "inventory": {
       "heading": "Inventory Oversight",
-      "description": "Look up any partner's listing to see why a date is unavailable — the same breakdown, ledger, and lists a partner sees on their own Calendar page, read-only.",
+      "description": "Look up any partner's listing to see why a date is unavailable — the same breakdown, ledger, and lists a partner sees on their own Calendar page — and intervene when a sync connection or booking needs it.",
       "lookup": {
         "label": "Listing ID",
         "placeholder": "e.g. 42",
@@ -2503,7 +2504,7 @@
       },
       "noLookup": {
         "title": "Enter a listing ID to begin",
-        "description": "Look up any published listing by its numeric id."
+        "description": "Look up any listing by its numeric id, published or not."
       },
       "notFound": {
         "title": "Listing not found",
@@ -2554,7 +2555,11 @@
           "range": "Dates",
           "quantity": "Quantity",
           "reason": "Reason"
-        }
+        },
+        "releaseAction": "Release",
+        "releaseConfirmTitle": "Release this block?",
+        "releaseConfirmDescription": "The blocked dates become available again immediately.",
+        "releaseSuccess": "Block released."
       },
       "external": {
         "tabLabel": "External ({{count}})",
@@ -2563,7 +2568,11 @@
           "range": "Dates",
           "source": "Source",
           "guest": "Guest"
-        }
+        },
+        "cancelAction": "Cancel",
+        "cancelConfirmTitle": "Cancel this external reservation?",
+        "cancelConfirmDescription": "The reserved dates become available again immediately.",
+        "cancelSuccess": "External reservation cancelled."
       },
       "connections": {
         "tabLabel": "Connections",
@@ -2581,7 +2590,8 @@
           "ERROR": "Error",
           "PAUSED": "Paused",
           "DISCONNECTED": "Disconnected"
-        }
+        },
+        "notImplemented": "Not yet supported"
       },
       "holds": {
         "tabLabel": "Holds ({{count}})",
@@ -2616,6 +2626,28 @@
           "type": "Type",
           "createdAt": "Detected"
         }
+      },
+      "viewListingAction": "View listing",
+      "actionError": "Something went wrong. Please try again.",
+      "overview": {
+        "connectionsHeading": "Active connections (all partners)",
+        "conflictsHeading": "Unresolved conflicts (all partners)",
+        "statusFilterLabel": "Filter by status",
+        "statusAll": "All statuses",
+        "columns": {
+          "partner": "Partner",
+          "lastError": "Last error"
+        },
+        "inspectAction": "Inspect",
+        "connectionsEmptyTitle": "No active connections.",
+        "conflictsEmptyTitle": "No unresolved conflicts.",
+        "conflictsEmptyDescription": "Every sync conflict across every partner has been resolved.",
+        "errorTitle": "Something went wrong loading the overview.",
+        "errorRetry": "Try again"
+      },
+      "unitContext": {
+        "timeSlot": "Time-slot unit — departs {{start}}–{{end}}",
+        "dateOnly": "Date-only unit — no fixed time"
       }
     },
     "reviewDetail": {

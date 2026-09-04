@@ -11,6 +11,9 @@ export function useDisconnectInventoryConnectionMutation(partnerId) {
       queryClient.invalidateQueries({
         queryKey: availabilityKeys.connections(partnerId),
       });
+      queryClient.invalidateQueries({
+        queryKey: availabilityKeys.adminConnectionsOverview,
+      });
     },
   });
 }

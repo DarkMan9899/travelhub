@@ -300,3 +300,21 @@ export function resolveInventoryConnectionConflict(id, conflictId, payload) {
     )
     .then((response) => response.data);
 }
+
+// --- Admin Sprint 5: the two genuinely admin-wide, no-scoping-id-
+// required reads — every function above this point requires a
+// `partnerId`/`connectionId` the caller must already know. ---
+
+/** `GET /inventory-connections/admin/overview` — `inventory.view_all`-gated, every active connection across every partner. */
+export function getAdminInventoryConnectionsOverview() {
+  return apiClient
+    .get('/inventory-connections/admin/overview')
+    .then((response) => response.data);
+}
+
+/** `GET /inventory-connections/admin/conflicts` — `inventory.view_all`-gated, every unresolved sync conflict across every connection. */
+export function getAdminInventoryConflictsOverview() {
+  return apiClient
+    .get('/inventory-connections/admin/conflicts')
+    .then((response) => response.data);
+}

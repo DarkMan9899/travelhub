@@ -186,6 +186,41 @@ export class MySqlInventoryConnectionRepository {
     return rows.map(connectionToDomain);
   }
 
+  /**
+   * Admin Sprint 5: the same rows `listAllActive()` already returns for
+   * the reconciliation sweep, plus `partner_display_name` — a real,
+   * additive JOIN (never re-encrypts/re-decrypts `config`, that field
+   * isn't selected here at all) so an admin-wide overview can identify
+   * which partner a failing connection belongs to without an N+1
+   * partner lookup per row, mirroring `mysqlBookingRepository.js#list()`'s
+   * `includeNames` precedent (Admin Sprint 4).
+   */
+  async listAllActiveWithPartnerNames(connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT ic.id, ic.partner_id, ic.listing_id, ic.connector_type, ic.direction,
+              ic.name, ic.status, ic.last_attempted_sync_at, ic.last_successful_sync_at,
+              ic.last_error, ic.created_at, p.display_name AS partner_display_name
+       FROM inventory_connections ic
+       JOIN partners p ON p.id = ic.partner_id
+       WHERE ic.status != 'DISCONNECTED' AND ic.deleted_at IS NULL
+       ORDER BY (ic.status = 'ERROR') DESC, ic.id ASC`,
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      partnerId: row.partner_id,
+      listingId: row.listing_id,
+      connectorType: row.connector_type,
+      direction: row.direction,
+      name: row.name,
+      status: row.status,
+      lastAttemptedSyncAt: row.last_attempted_sync_at,
+      lastSuccessfulSyncAt: row.last_successful_sync_at,
+      lastError: row.last_error,
+      createdAt: row.created_at,
+      partnerDisplayName: row.partner_display_name,
+    }));
+  }
+
   async update(id, fields, connection = this.#pool) {
     const sets = [];
     const values = [];
@@ -347,6 +382,43 @@ export class MySqlInventoryConnectionRepository {
       [connectionId],
     );
     return rows.map(conflictToDomain);
+  }
+
+  /**
+   * Admin Sprint 5: every unresolved conflict across every partner's
+   * connections, with enough connection/partner context to act on it
+   * without a follow-up lookup per row — the admin-wide counterpart to
+   * `listUnresolvedForConnection()` above, which requires an already-
+   * known `connectionId` (real, confirmed backend gap this closes for
+   * the admin overview only; the partner-scoped method is untouched).
+   */
+  async listAllUnresolvedConflicts(connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT isc.id, isc.sync_run_id, isc.connection_id, isc.external_event_uid,
+              isc.conflict_type, isc.details, isc.created_at,
+              ic.partner_id, ic.listing_id, ic.connector_type, p.display_name AS partner_display_name
+       FROM inventory_sync_conflicts isc
+       JOIN inventory_connections ic ON ic.id = isc.connection_id
+       JOIN partners p ON p.id = ic.partner_id
+       WHERE isc.resolved_at IS NULL
+       ORDER BY isc.created_at ASC`,
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      syncRunId: row.sync_run_id,
+      connectionId: row.connection_id,
+      externalEventUid: row.external_event_uid,
+      conflictType: row.conflict_type,
+      details:
+        typeof row.details === 'string'
+          ? JSON.parse(row.details)
+          : (row.details ?? null),
+      createdAt: row.created_at,
+      partnerId: row.partner_id,
+      listingId: row.listing_id,
+      connectorType: row.connector_type,
+      partnerDisplayName: row.partner_display_name,
+    }));
   }
 
   async resolveConflict(

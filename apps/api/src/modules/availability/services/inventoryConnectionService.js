@@ -241,6 +241,36 @@ export class InventoryConnectionService {
     );
   }
 
+  /**
+   * Admin Sprint 5: the one genuinely admin-wide, no-partner-scope read
+   * this module offers — every other list here (`listConnections`,
+   * `listSyncConflicts`, ...) requires a `partnerId`/`connectionId` the
+   * caller must already know (a real, confirmed gap; see this module's
+   * own `listAllActive()` doc comment). Requires the platform-wide
+   * `inventory.view_all` permission outright — there is no owner
+   * fallback, since "every partner's connections" is never "my own."
+   */
+  async listAdminConnectionsOverview(principal) {
+    if (!principal) throw new AuthenticationError();
+    const isAdmin = await this.#permissionResolver.hasPermission(
+      principal.roles,
+      'inventory.view_all',
+    );
+    if (!isAdmin) throw new AuthorizationError();
+    return this.#inventoryConnectionRepository.listAllActiveWithPartnerNames();
+  }
+
+  /** Admin Sprint 5: same admin-wide reasoning as `listAdminConnectionsOverview`, for unresolved conflicts across every connection. */
+  async listAdminUnresolvedConflicts(principal) {
+    if (!principal) throw new AuthenticationError();
+    const isAdmin = await this.#permissionResolver.hasPermission(
+      principal.roles,
+      'inventory.view_all',
+    );
+    if (!isAdmin) throw new AuthorizationError();
+    return this.#inventoryConnectionRepository.listAllUnresolvedConflicts();
+  }
+
   async setMapping(
     principal,
     connectionId,

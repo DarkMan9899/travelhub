@@ -12,6 +12,9 @@ export function useResolveConnectionConflictMutation() {
       queryClient.invalidateQueries({
         queryKey: availabilityKeys.connectionConflicts(variables.id),
       });
+      queryClient.invalidateQueries({
+        queryKey: availabilityKeys.adminConflictsOverview,
+      });
     },
   });
 }

@@ -49,6 +49,13 @@ export const listConnectionsQuerySchema = z.object({
   body: z.any(),
 });
 
+/** Admin Sprint 5 — no scoping params; `inventory.view_all` itself is the only gate (asserted in the service). */
+export const adminOverviewSchema = z.object({
+  params: passthroughParams,
+  query: passthroughQuery,
+  body: z.any(),
+});
+
 export const setMappingSchema = z.object({
   params: idParams,
   query: passthroughQuery,

@@ -23,6 +23,12 @@ export function useSyncInventoryConnectionMutation(partnerId) {
       queryClient.invalidateQueries({
         queryKey: [...availabilityKeys.all, 'breakdown'],
       });
+      queryClient.invalidateQueries({
+        queryKey: availabilityKeys.adminConnectionsOverview,
+      });
+      queryClient.invalidateQueries({
+        queryKey: availabilityKeys.adminConflictsOverview,
+      });
     },
   });
 }
