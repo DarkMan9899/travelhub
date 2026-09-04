@@ -2003,8 +2003,15 @@
       "notesPlaceholder": "e.g. Violates our content guidelines.",
       "rejectSuccess": "Review rejected.",
       "statusError": "Something went wrong. Please try again.",
-      "viewReports": "Reports ({{count}})",
-      "reportsDialogTitle": "Reports on this review"
+      "reportCount": "{{count}} reports",
+      "noContent": "No written text",
+      "reportReason": {
+        "SPAM": "Spam",
+        "ABUSIVE": "Abusive",
+        "OFF_TOPIC": "Off-topic",
+        "FAKE": "Fake",
+        "OTHER": "Other"
+      }
     },
     "bookings": {
       "heading": "Bookings",
@@ -2029,7 +2036,8 @@
         "partner": "Partner",
         "partnerLink": "Partner #{{id}}",
         "status": "Status",
-        "total": "Total"
+        "total": "Total",
+        "submitted": "Submitted"
       },
       "empty": {
         "title": "No bookings found",
@@ -2050,8 +2058,10 @@
       "refundStatus": "Refund status",
       "refundStatusValue": {
         "REQUIRES_MANUAL_REVIEW": "Awaiting manual review",
-        "REFUNDED_ONLINE": "Refunded",
-        "PARTIALLY_REFUNDED_ONLINE": "Partially refunded"
+        "AUTO_REFUNDED": "Auto-refunded",
+        "MANUALLY_REFUNDED": "Manually refunded",
+        "RESOLVED_NO_REFUND": "Resolved — no refund",
+        "REFUND_FAILED": "Refund failed"
       },
       "notes": "Customer notes",
       "error": {
@@ -2067,12 +2077,8 @@
       "confirmAction": "Confirm",
       "confirmSuccess": "Booking confirmed.",
       "rejectAction": "Reject",
-      "rejectConfirmTitle": "Reject this booking?",
-      "rejectConfirmDescription": "The customer will be notified and any held capacity will be released.",
       "rejectSuccess": "Booking rejected.",
       "cancelAction": "Cancel",
-      "cancelConfirmTitle": "Cancel this booking?",
-      "cancelConfirmDescription": "This cancels the booking on the vendor's behalf. This cannot be undone.",
       "cancelSuccess": "Booking cancelled.",
       "completeAction": "Mark completed",
       "completeConfirmTitle": "Mark this booking as completed?",
@@ -2082,7 +2088,35 @@
       "noShowConfirmTitle": "Mark this booking as a no-show?",
       "noShowConfirmDescription": "This confirms the customer did not show up for the booking.",
       "noShowSuccess": "Booking marked as no-show.",
-      "actionError": "Something went wrong. Please try again."
+      "actionError": "Something went wrong. Please try again.",
+      "reasonDialog": {
+        "reject": {
+          "title": "Reject this booking?",
+          "description": "The customer will be notified and any held capacity will be released.",
+          "confirmAction": "Reject"
+        },
+        "cancel": {
+          "title": "Cancel this booking?",
+          "description": "This cancels the booking on the vendor's behalf. This cannot be undone.",
+          "confirmAction": "Cancel"
+        },
+        "resolveRefundReview": {
+          "title": "Resolve this refund review?",
+          "description": "Marks this booking as resolved with no refund issued. This does not process any payment.",
+          "confirmAction": "Resolve — no refund"
+        },
+        "reasonLabelOptional": "Reason (optional)",
+        "reasonLabelRequired": "Reason"
+      },
+      "resolveRefundReviewAction": "Resolve — no refund",
+      "resolveRefundReviewSuccess": "Marked as resolved — no refund.",
+      "dateRangeLabel": {
+        "checkInOut": "Check-in / check-out",
+        "rentalDates": "Rental dates",
+        "departureDate": "Departure date",
+        "reservationDate": "Reservation date",
+        "dates": "Dates"
+      }
     },
     "payments": {
       "heading": "Payments",
@@ -2582,6 +2616,20 @@
           "type": "Type",
           "createdAt": "Detected"
         }
+      }
+    },
+    "reviewDetail": {
+      "loading": "Loading…",
+      "headingFallback": "Review",
+      "author": "Author",
+      "listing": "Listing",
+      "moderation": "Moderation",
+      "moderationNotes": "Notes",
+      "moderatedBy": "Moderated by",
+      "userLink": "User #{{id}}",
+      "reports": {
+        "heading": "Reports",
+        "empty": "No reports on this review."
       }
     }
   },

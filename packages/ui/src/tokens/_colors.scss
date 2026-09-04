@@ -39,7 +39,17 @@ $color-danger: #c13a3a;
 // both the plain and hovered composite (5.07:1 measured), same
 // remediation shape as $color-danger-strong below.
 $color-success-strong: #166a43;
-$color-warning-strong: #9b5b18;
+// Darkened from #9b5b18 (Admin Sprint 4, first real axe scan of an
+// unfilled `warning` Badge — the Bookings queue's "Awaiting confirmation"
+// status — the moment that surface got real accessibility coverage):
+// measured only 4.21:1 against its actual composite (rgba($color-warning-
+// strong, 0.12) over $color-gray-100 = #e8e3dc), not a hover-only
+// regression like $color-success-strong above — this failed on a plain
+// page load, every time the badge rendered. #834d14 clears 4.5:1 with
+// real margin in both roles (5.32:1 unfilled measured against the same
+// composite, 6.92:1 filled), same remediation shape as the other
+// "-strong" tokens in this file.
+$color-warning-strong: #834d14;
 // Darkened from #bf3939 (Phase 17 accessibility audit): a real axe scan
 // of an unfilled danger Badge in context measured only 4.17:1, below the
 // 4.5:1 this token exists to guarantee — the original manual calculation

@@ -1,8 +1,8 @@
 /**
  * AdminReviewModerationPageContent — `/:locale/admin/reviews` (P1.5,
- * Master Roadmap: Review Trust & Safety). Same orchestrator shape as
- * `AdminListingModerationPageContent`: URL-synced moderationStatus/
- * hasReports filters (`useAdminListFilters`) over the
+ * Master Roadmap: Review Trust & Safety; Admin Sprint 4). Same
+ * orchestrator shape as `AdminListingModerationPageContent`: URL-synced
+ * moderationStatus/hasReports filters (`useAdminListFilters`) over the
  * `useAdminReviewsQuery` infinite query, rendered via the shared
  * `DataTable` primitive. Defaults to `moderationStatus=` (all) +
  * `hasReports=true` so landing on the page shows the actual queue that
@@ -13,70 +13,39 @@
  * optional free-text reason via a small local controlled `Modal`, same
  * "`useConfirm()` can't host a controlled textarea" reasoning
  * `AdminListingModerationPageContent.jsx`'s own header comment explains.
- * A third, read-only "View reports" dialog (fetched on demand via
- * `useAdminReviewDetailQuery`) shows who reported a review and why.
+ *
+ * The Content column links to the new `AdminReviewDetailContent` page
+ * (`/admin/reviews/:id`, Admin Sprint 4) — replaces the previous
+ * reports-only modal, which duplicated a subset of what the real detail
+ * page now shows properly (full text, reporter identity, localized
+ * report reasons).
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import { Select, Textarea } from '@desavii/ui/components/form-controls';
-import { Button, Badge } from '@desavii/ui/components/primitives';
+import { Button } from '@desavii/ui/components/primitives';
 import { DataTable } from '@desavii/ui/components/dashboard';
-import {
-  Modal,
-  ErrorState,
-  Skeleton,
-} from '@desavii/ui/components/feedback-overlays';
+import { Modal, ErrorState } from '@desavii/ui/components/feedback-overlays';
+import { RatingStars } from '@desavii/ui/components/data-display';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import RouterLink from '../../../../components/RouterLink.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useAdminListFilters } from '../../hooks/useAdminListFilters.js';
 import { useAdminReviewsQuery } from '../../queries/useAdminReviewsQuery.js';
-import { useAdminReviewDetailQuery } from '../../queries/useAdminReviewDetailQuery.js';
 import { useUpdateReviewModerationStatusMutation } from '../../mutations/useUpdateReviewModerationStatusMutation.js';
-
-const MODERATION_BADGE_VARIANT = {
-  PENDING: 'warning',
-  APPROVED: 'success',
-  REJECTED: 'danger',
-  FLAGGED: 'danger',
-};
+import { ReviewModerationStatusBadge } from '../../../reviews/index.js';
 
 const DEFAULT_FILTERS = { moderationStatus: '', hasReports: 'true' };
+const CONTENT_PREVIEW_LENGTH = 120;
 
-function ReviewReportsModal({ reviewId, onClose, t }) {
-  const { data: review, isPending } = useAdminReviewDetailQuery(reviewId);
-
-  return (
-    <Modal
-      isOpen
-      onClose={onClose}
-      title={t('admin.reviewModeration.reportsDialogTitle')}
-    >
-      {isPending ? (
-        <Skeleton variant="text" width="60%" />
-      ) : (
-        <Stack gap="3">
-          {(review?.reports ?? []).map((report) => (
-            <Stack key={report.id} gap="1">
-              <strong>{report.reason_name}</strong>
-              {report.details && <p>{report.details}</p>}
-            </Stack>
-          ))}
-        </Stack>
-      )}
-    </Modal>
-  );
+function truncate(text, maxLength) {
+  if (!text || text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trimEnd()}…`;
 }
-
-ReviewReportsModal.propTypes = {
-  reviewId: PropTypes.number.isRequired,
-  onClose: PropTypes.func.isRequired,
-  t: PropTypes.func.isRequired,
-};
 
 export default function AdminReviewModerationPageContent() {
   const { t } = useTranslation();
@@ -87,7 +56,6 @@ export default function AdminReviewModerationPageContent() {
   const { filters, updateFilters } = useAdminListFilters(DEFAULT_FILTERS);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectNotes, setRejectNotes] = useState('');
-  const [reportsTargetId, setReportsTargetId] = useState(null);
 
   const {
     data,
@@ -197,43 +165,38 @@ export default function AdminReviewModerationPageContent() {
     {
       key: 'rating',
       header: t('admin.reviewModeration.table.rating'),
-      render: (review) => review.rating,
+      render: (review) => <RatingStars value={review.rating} size="sm" />,
     },
     {
       key: 'content',
       header: t('admin.reviewModeration.table.content'),
-      render: (review) => review.content ?? '—',
+      render: (review) =>
+        review.content ? (
+          <RouterLink href={`/${locale}/admin/reviews/${review.id}`}>
+            {truncate(review.content, CONTENT_PREVIEW_LENGTH)}
+          </RouterLink>
+        ) : (
+          <RouterLink href={`/${locale}/admin/reviews/${review.id}`}>
+            {t('admin.reviewModeration.noContent')}
+          </RouterLink>
+        ),
     },
     {
       key: 'status',
       header: t('admin.reviewModeration.table.status'),
       render: (review) => (
-        <Badge
-          variant={MODERATION_BADGE_VARIANT[review.status] ?? 'neutral'}
-          size="sm"
-          label={t(`admin.reviewModeration.moderationStatus.${review.status}`, {
-            defaultValue: review.status,
-          })}
-        />
+        <ReviewModerationStatusBadge status={review.status} size="sm" />
       ),
     },
     {
       key: 'reports',
       header: t('admin.reviewModeration.table.reports'),
       render: (review) =>
-        review.report_count > 0 ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setReportsTargetId(review.id)}
-          >
-            {t('admin.reviewModeration.viewReports', {
+        review.report_count > 0
+          ? t('admin.reviewModeration.reportCount', {
               count: review.report_count,
-            })}
-          </Button>
-        ) : (
-          '—'
-        ),
+            })
+          : '—',
     },
     {
       key: 'actions',
@@ -347,14 +310,6 @@ export default function AdminReviewModerationPageContent() {
             />
           </Stack>
         </Modal>
-      )}
-
-      {reportsTargetId && (
-        <ReviewReportsModal
-          reviewId={reportsTargetId}
-          onClose={() => setReportsTargetId(null)}
-          t={t}
-        />
       )}
     </Section>
   );

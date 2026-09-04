@@ -104,3 +104,16 @@ export function getBookingHistory(id) {
     .get(`/bookings/${id}/history`)
     .then((response) => response.data);
 }
+
+/**
+ * `POST /bookings/:id/resolve-refund-review` — `{ reason }` (required,
+ * 1-1000 chars). Admin-only (`payment.refund`, no owner fallback) —
+ * moves `refund_status` from `REQUIRES_MANUAL_REVIEW` to
+ * `RESOLVED_NO_REFUND`. Writes no money; a genuine refund still has to
+ * go through the Payments module.
+ */
+export function resolveRefundReview(id, reason) {
+  return apiClient
+    .post(`/bookings/${id}/resolve-refund-review`, { reason })
+    .then((response) => response.data);
+}

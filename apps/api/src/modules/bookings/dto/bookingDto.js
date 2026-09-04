@@ -83,6 +83,17 @@ export function toBookingSummaryResponse(booking) {
     currency: booking.currencyCode,
     total_amount: booking.totalAmount,
     requested_at: booking.requestedAt,
+    // Admin Sprint 4: only present when the repository was asked for
+    // `includeNames` (the admin-only browsing paths) — `undefined` on a
+    // customer's/partner's own self-service list, same additive
+    // reasoning as the rest of this function's Stage 11.4 fields.
+    customer_display_name:
+      booking.customerFirstName || booking.customerLastName
+        ? [booking.customerFirstName, booking.customerLastName]
+            .filter(Boolean)
+            .join(' ')
+        : undefined,
+    partner_display_name: booking.partnerDisplayName ?? undefined,
     // Phase 8 (Auth / User Dashboard): earliest date_from / latest date_to
     // across the booking's items — added additively so the dashboard can
     // tell an upcoming trip apart from history without fetching each

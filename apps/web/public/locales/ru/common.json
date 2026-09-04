@@ -2023,8 +2023,15 @@
       "notesPlaceholder": "напр., Нарушает наши правила контента.",
       "rejectSuccess": "Отзыв отклонён.",
       "statusError": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
-      "viewReports": "Жалобы ({{count}})",
-      "reportsDialogTitle": "Жалобы на этот отзыв"
+      "reportCount": "Жалоб: {{count}}",
+      "noContent": "Без текста",
+      "reportReason": {
+        "SPAM": "Спам",
+        "ABUSIVE": "Оскорбления",
+        "OFF_TOPIC": "Не по теме",
+        "FAKE": "Фейк",
+        "OTHER": "Другое"
+      }
     },
     "bookings": {
       "heading": "Бронирования",
@@ -2049,7 +2056,8 @@
         "partner": "Партнёр",
         "partnerLink": "Партнёр №{{id}}",
         "status": "Статус",
-        "total": "Итого"
+        "total": "Итого",
+        "submitted": "Подано"
       },
       "empty": {
         "title": "Бронирования не найдены",
@@ -2069,9 +2077,11 @@
       "listingId": "Объявление №{{id}}",
       "refundStatus": "Статус возврата",
       "refundStatusValue": {
-        "REQUIRES_MANUAL_REVIEW": "Ожидает ручной проверки",
-        "REFUNDED_ONLINE": "Возвращено",
-        "PARTIALLY_REFUNDED_ONLINE": "Частично возвращено"
+        "REQUIRES_MANUAL_REVIEW": "Ожидает проверки",
+        "AUTO_REFUNDED": "Возвращено автоматически",
+        "MANUALLY_REFUNDED": "Возвращено вручную",
+        "RESOLVED_NO_REFUND": "Решено — без возврата",
+        "REFUND_FAILED": "Возврат не удался"
       },
       "notes": "Примечания клиента",
       "error": {
@@ -2087,12 +2097,8 @@
       "confirmAction": "Подтвердить",
       "confirmSuccess": "Бронирование подтверждено.",
       "rejectAction": "Отклонить",
-      "rejectConfirmTitle": "Отклонить это бронирование?",
-      "rejectConfirmDescription": "Клиент будет уведомлён, а зарезервированная вместимость будет освобождена.",
       "rejectSuccess": "Бронирование отклонено.",
       "cancelAction": "Отменить",
-      "cancelConfirmTitle": "Отменить это бронирование?",
-      "cancelConfirmDescription": "Это отменит бронирование от имени партнёра. Действие необратимо.",
       "cancelSuccess": "Бронирование отменено.",
       "completeAction": "Отметить завершённым",
       "completeConfirmTitle": "Отметить это бронирование как завершённое?",
@@ -2102,7 +2108,35 @@
       "noShowConfirmTitle": "Отметить это бронирование как неявку?",
       "noShowConfirmDescription": "Это подтверждает, что клиент не явился на бронирование.",
       "noShowSuccess": "Бронирование отмечено как неявка.",
-      "actionError": "Что-то пошло не так. Пожалуйста, попробуйте снова."
+      "actionError": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+      "reasonDialog": {
+        "reject": {
+          "title": "Отклонить это бронирование?",
+          "description": "Клиент будет уведомлён, и удержанная вместимость будет освобождена.",
+          "confirmAction": "Отклонить"
+        },
+        "cancel": {
+          "title": "Отменить это бронирование?",
+          "description": "Это отменяет бронирование от имени поставщика услуг. Это действие нельзя отменить.",
+          "confirmAction": "Отменить"
+        },
+        "resolveRefundReview": {
+          "title": "Закрыть проверку возврата?",
+          "description": "Отмечает это бронирование как решённое без возврата средств. Платёж при этом не обрабатывается.",
+          "confirmAction": "Решить — без возврата"
+        },
+        "reasonLabelOptional": "Причина (необязательно)",
+        "reasonLabelRequired": "Причина"
+      },
+      "resolveRefundReviewAction": "Решить — без возврата",
+      "resolveRefundReviewSuccess": "Отмечено как решённое — без возврата.",
+      "dateRangeLabel": {
+        "checkInOut": "Заезд / выезд",
+        "rentalDates": "Даты аренды",
+        "departureDate": "Дата отправления",
+        "reservationDate": "Дата бронирования",
+        "dates": "Даты"
+      }
     },
     "payments": {
       "heading": "Платежи",
@@ -2602,6 +2636,20 @@
           "type": "Тип",
           "createdAt": "Обнаружено"
         }
+      }
+    },
+    "reviewDetail": {
+      "loading": "Загрузка…",
+      "headingFallback": "Отзыв",
+      "author": "Автор",
+      "listing": "Объявление",
+      "moderation": "Модерация",
+      "moderationNotes": "Примечания",
+      "moderatedBy": "Проверил(а)",
+      "userLink": "Пользователь №{{id}}",
+      "reports": {
+        "heading": "Жалобы",
+        "empty": "На этот отзыв жалоб нет."
       }
     }
   },

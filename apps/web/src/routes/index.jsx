@@ -157,6 +157,9 @@ const AdminListingDetailPage = lazy(
 const AdminReviewModerationPage = lazy(
   () => import('../pages/admin/AdminReviewModerationPage.jsx'),
 );
+const AdminReviewDetailPage = lazy(
+  () => import('../pages/admin/AdminReviewDetailPage.jsx'),
+);
 const AdminInventoryPage = lazy(
   () => import('../pages/admin/AdminInventoryPage.jsx'),
 );
@@ -482,6 +485,10 @@ export default function AppRoutes() {
               <Route
                 path="admin/reviews"
                 element={<AdminReviewModerationPage />}
+              />
+              <Route
+                path="admin/reviews/:id"
+                element={<AdminReviewDetailPage />}
               />
               <Route path="admin/inventory" element={<AdminInventoryPage />} />
               <Route path="admin/bookings" element={<AdminBookingsPage />} />

@@ -6,14 +6,10 @@ import ToastProvider from '../../../../providers/ToastProvider.jsx';
 import ConfirmProvider from '../../../../providers/ConfirmProvider.jsx';
 import AdminReviewModerationPageContent from './AdminReviewModerationPageContent.jsx';
 import { useAdminReviewsQuery } from '../../queries/useAdminReviewsQuery.js';
-import { useAdminReviewDetailQuery } from '../../queries/useAdminReviewDetailQuery.js';
 import { useUpdateReviewModerationStatusMutation } from '../../mutations/useUpdateReviewModerationStatusMutation.js';
 
 vi.mock('../../queries/useAdminReviewsQuery.js', () => ({
   useAdminReviewsQuery: vi.fn(),
-}));
-vi.mock('../../queries/useAdminReviewDetailQuery.js', () => ({
-  useAdminReviewDetailQuery: vi.fn(),
 }));
 vi.mock('../../mutations/useUpdateReviewModerationStatusMutation.js', () => ({
   useUpdateReviewModerationStatusMutation: vi.fn(),
@@ -66,10 +62,6 @@ describe('AdminReviewModerationPageContent (apps/web/src/modules/admin)', () => 
       isPending: false,
       variables: undefined,
     });
-    useAdminReviewDetailQuery.mockReturnValue({
-      data: undefined,
-      isPending: true,
-    });
   });
 
   test('shows a retryable error state', async () => {
@@ -103,7 +95,7 @@ describe('AdminReviewModerationPageContent (apps/web/src/modules/admin)', () => 
     expect(screen.getByText('Հաստատված')).toBeInTheDocument();
   });
 
-  test('a review with no reports shows no "View reports" action', () => {
+  test('a review with no reports shows a dash, not a report count', () => {
     useAdminReviewsQuery.mockReturnValue({
       data: { pages: [{ results: [reviewFixture({ report_count: 0 })] }] },
       isPending: false,
@@ -112,13 +104,25 @@ describe('AdminReviewModerationPageContent (apps/web/src/modules/admin)', () => 
     });
     renderPage();
 
-    // A plain regex on "Հայտնումներ" would also match the Reports filter
-    // Select's own trigger (its `ariaLabel` is that same word) — the
-    // row's "View reports" button always has a "(<count>)" suffix, the
-    // filter never does.
-    expect(
-      screen.queryByRole('button', { name: /Հայտնումներ \(/ }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Բողոքներ՝/)).not.toBeInTheDocument();
+  });
+
+  test('a reported review shows the real report count and links to its detail page', () => {
+    useAdminReviewsQuery.mockReturnValue({
+      data: {
+        pages: [{ results: [reviewFixture({ id: 5, report_count: 2 })] }],
+      },
+      isPending: false,
+      isError: false,
+      ...noopQueryExtras,
+    });
+    renderPage();
+
+    expect(screen.getByText('Բողոքներ՝ 2')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'It was okay.' })).toHaveAttribute(
+      'href',
+      '/hy/admin/reviews/5',
+    );
   });
 
   test('approving a review asks for confirmation, then calls the mutation on confirm', async () => {
@@ -164,25 +168,5 @@ describe('AdminReviewModerationPageContent (apps/web/src/modules/admin)', () => 
       status: 'REJECTED',
       notes: 'Guideline violation',
     });
-  });
-
-  test('viewing reports on a reported review shows the reason', async () => {
-    useAdminReviewsQuery.mockReturnValue({
-      data: { pages: [{ results: [reviewFixture({ report_count: 2 })] }] },
-      isPending: false,
-      isError: false,
-      ...noopQueryExtras,
-    });
-    useAdminReviewDetailQuery.mockReturnValue({
-      data: {
-        reports: [{ id: 1, reason_name: 'Spam or advertising', details: null }],
-      },
-      isPending: false,
-    });
-    const user = userEvent.setup();
-    renderPage();
-
-    await user.click(screen.getByRole('button', { name: /Հայտնումներ \(2\)/ }));
-    expect(screen.getByText('Spam or advertising')).toBeInTheDocument();
   });
 });

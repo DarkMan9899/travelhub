@@ -61,6 +61,16 @@ function toBookingDomain(row) {
     updatedAt: row.updated_at,
     tripDateFrom: row.trip_date_from ? toDateString(row.trip_date_from) : null,
     tripDateTo: row.trip_date_to ? toDateString(row.trip_date_to) : null,
+    // Only present when `list()` was called with `includeNames: true`
+    // (the admin-only browsing paths in `BookingService#listBookings`) —
+    // `undefined` on every customer/partner self-service list, matching
+    // this file's own established "additive, never a per-row N+1" rule
+    // (see `toBookingItemResponse`'s identical reasoning in
+    // `bookingDto.js`): one JOIN on the admin path instead of an extra
+    // lookup per row.
+    customerFirstName: row.customer_first_name,
+    customerLastName: row.customer_last_name,
+    partnerDisplayName: row.partner_display_name,
   };
 }
 
@@ -305,6 +315,7 @@ export class MySqlBookingRepository {
   ) {
     const conditions = ['b.deleted_at IS NULL'];
     const params = [];
+    const { includeNames = false } = filters;
 
     if (filters.customerUserId !== undefined) {
       conditions.push('b.customer_user_id = ?');
@@ -335,12 +346,14 @@ export class MySqlBookingRepository {
 
     const [rows] = await connection.query(
       `SELECT ${BOOKING_SELECT}, trip.date_from AS trip_date_from, trip.date_to AS trip_date_to
+       ${includeNames ? ', cu.first_name AS customer_first_name, cu.last_name AS customer_last_name, p.display_name AS partner_display_name' : ''}
        ${BOOKING_FROM}
        LEFT JOIN (
          SELECT booking_id, MIN(date_from) AS date_from, MAX(date_to) AS date_to
          FROM booking_items
          GROUP BY booking_id
        ) trip ON trip.booking_id = b.id
+       ${includeNames ? 'LEFT JOIN users cu ON cu.id = b.customer_user_id LEFT JOIN partners p ON p.id = b.partner_id' : ''}
        WHERE ${conditions.join(' AND ')}
        ORDER BY b.id DESC
        LIMIT ?`,

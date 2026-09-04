@@ -255,6 +255,60 @@ test.describe.serial('Admin Sprint 3 pages', () => {
   });
 });
 
+test.describe.serial('Admin Sprint 4 pages', () => {
+  async function loginAsAdmin(page) {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('admin@travelhub.dev');
+    await page.getByLabel('Password').fill('DevAdmin!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/admin$/);
+  }
+
+  test('Admin Bookings list has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/bookings');
+    await expect(page.getByRole('heading', { name: 'Bookings' })).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Booking Detail has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/bookings');
+    await page.getByRole('link', { name: /^BK-/ }).first().click();
+    await expect(page).toHaveURL(/\/en\/admin\/bookings\/\d+$/);
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Reviews moderation queue has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/reviews?hasReports=false');
+    await expect(
+      page.getByRole('heading', { name: 'Review Moderation' }),
+    ).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Review Detail has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/reviews?hasReports=false');
+    await page.locator('a[href*="/admin/reviews/"]').first().click();
+    await expect(page).toHaveURL(/\/en\/admin\/reviews\/\d+$/);
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+});
+
 // 2026 SEO/performance audit: these six all need the same signed-in
 // customer, and each performed its own fresh UI login — safe in
 // isolation, but Playwright's default `fullyParallel` config runs them

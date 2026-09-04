@@ -99,6 +99,10 @@ export default function AdminBookingsPageContent() {
     () => new Intl.NumberFormat(i18n.language),
     [i18n.language],
   );
+  const dateFormatter = useMemo(
+    () => new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }),
+    [i18n.language],
+  );
 
   const columns = [
     {
@@ -115,9 +119,10 @@ export default function AdminBookingsPageContent() {
       header: t('admin.bookings.table.customer'),
       render: (booking) => (
         <RouterLink href={`/${locale}/admin/users/${booking.customer_user_id}`}>
-          {t('admin.bookings.table.customerLink', {
-            id: booking.customer_user_id,
-          })}
+          {booking.customer_display_name ??
+            t('admin.bookings.table.customerLink', {
+              id: booking.customer_user_id,
+            })}
         </RouterLink>
       ),
     },
@@ -126,9 +131,10 @@ export default function AdminBookingsPageContent() {
       header: t('admin.bookings.table.partner'),
       render: (booking) => (
         <RouterLink href={`/${locale}/admin/partners/${booking.partner_id}`}>
-          {t('admin.bookings.table.partnerLink', {
-            id: booking.partner_id,
-          })}
+          {booking.partner_display_name ??
+            t('admin.bookings.table.partnerLink', {
+              id: booking.partner_id,
+            })}
         </RouterLink>
       ),
     },
@@ -149,6 +155,14 @@ export default function AdminBookingsPageContent() {
       header: t('admin.bookings.table.total'),
       render: (booking) =>
         `${amountFormatter.format(booking.total_amount)} ${booking.currency}`,
+    },
+    {
+      key: 'submitted',
+      header: t('admin.bookings.table.submitted'),
+      render: (booking) =>
+        booking.requested_at
+          ? dateFormatter.format(new Date(booking.requested_at))
+          : '—',
     },
   ];
 

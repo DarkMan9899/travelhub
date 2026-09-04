@@ -2003,8 +2003,15 @@
       "notesPlaceholder": "օր.՝ Խախտում է մեր բովանդակության կանոնները։",
       "rejectSuccess": "Կարծիքը մերժվել է։",
       "statusError": "Ինչ-որ բան սխալ գնաց։ Խնդրում ենք կրկին փորձել։",
-      "viewReports": "Հայտնումներ ({{count}})",
-      "reportsDialogTitle": "Այս կարծիքի հայտնումները"
+      "reportCount": "Բողոքներ՝ {{count}}",
+      "noContent": "Տեքստ չկա",
+      "reportReason": {
+        "SPAM": "Սպամ",
+        "ABUSIVE": "Վիրավորական",
+        "OFF_TOPIC": "Ոչ ըստ թեմայի",
+        "FAKE": "Կեղծ",
+        "OTHER": "Այլ"
+      }
     },
     "bookings": {
       "heading": "Ամրագրումներ",
@@ -2029,7 +2036,8 @@
         "partner": "Գործընկեր",
         "partnerLink": "Գործընկեր #{{id}}",
         "status": "Կարգավիճակ",
-        "total": "Ընդամենը"
+        "total": "Ընդամենը",
+        "submitted": "Ուղարկվել է"
       },
       "empty": {
         "title": "Ամրագրումներ չեն գտնվել",
@@ -2049,9 +2057,11 @@
       "listingId": "Հայտարարություն #{{id}}",
       "refundStatus": "Փոխհատուցման կարգավիճակ",
       "refundStatusValue": {
-        "REQUIRES_MANUAL_REVIEW": "Սպասում է ձեռքով վերանայման",
-        "REFUNDED_ONLINE": "Փոխհատուցված է",
-        "PARTIALLY_REFUNDED_ONLINE": "Մասնակիորեն փոխհատուցված է"
+        "REQUIRES_MANUAL_REVIEW": "Սպասում է վերանայման",
+        "AUTO_REFUNDED": "Ավտոմատ փոխհատուցված",
+        "MANUALLY_REFUNDED": "Ձեռքով փոխհատուցված",
+        "RESOLVED_NO_REFUND": "Լուծված՝ առանց փոխհատուցման",
+        "REFUND_FAILED": "Փոխհատուցումը ձախողվեց"
       },
       "notes": "Հաճախորդի նշումներ",
       "error": {
@@ -2067,12 +2077,8 @@
       "confirmAction": "Հաստատել",
       "confirmSuccess": "Ամրագրումը հաստատվել է։",
       "rejectAction": "Մերժել",
-      "rejectConfirmTitle": "Մերժե՞լ այս ամրագրումը։",
-      "rejectConfirmDescription": "Հաճախորդը կտեղեկացվի, և պահված հզորությունը կազատվի։",
       "rejectSuccess": "Ամրագրումը մերժվել է։",
       "cancelAction": "Չեղարկել",
-      "cancelConfirmTitle": "Չեղարկե՞լ այս ամրագրումը։",
-      "cancelConfirmDescription": "Սա չեղարկում է ամրագրումը գործընկերոջ անունից։ Այն հնարավոր չէ հետարկել։",
       "cancelSuccess": "Ամրագրումը չեղարկվել է։",
       "completeAction": "Նշել ավարտված",
       "completeConfirmTitle": "Նշե՞լ այս ամրագրումն ավարտված։",
@@ -2082,7 +2088,35 @@
       "noShowConfirmTitle": "Նշե՞լ այս ամրագրումը որպես չներկայացած։",
       "noShowConfirmDescription": "Սա հաստատում է, որ հաճախորդը չի ներկայացել ամրագրման համար։",
       "noShowSuccess": "Ամրագրումը նշվել է որպես չներկայացած։",
-      "actionError": "Ինչ-որ բան սխալ գնաց։ Խնդրում ենք կրկին փորձել։"
+      "actionError": "Ինչ-որ բան սխալ գնաց։ Խնդրում ենք կրկին փորձել։",
+      "reasonDialog": {
+        "reject": {
+          "title": "Մերժե՞լ այս ամրագրումը։",
+          "description": "Հաճախորդը կտեղեկացվի, և պահված հզորությունը կազատվի։",
+          "confirmAction": "Մերժել"
+        },
+        "cancel": {
+          "title": "Չեղարկե՞լ այս ամրագրումը։",
+          "description": "Սա չեղարկում է ամրագրումը մատակարարի կողմից։ Այս գործողությունը հնարավոր չէ հետարկել։",
+          "confirmAction": "Չեղարկել"
+        },
+        "resolveRefundReview": {
+          "title": "Փակե՞լ վերադարձի վերանայումը։",
+          "description": "Այս ամրագրումը կնշվի որպես լուծված՝ առանց վերադարձի։ Վճարում չի իրականացվում։",
+          "confirmAction": "Լուծել՝ առանց վերադարձի"
+        },
+        "reasonLabelOptional": "Պատճառ (ըստ ցանկության)",
+        "reasonLabelRequired": "Պատճառ"
+      },
+      "resolveRefundReviewAction": "Լուծել՝ առանց վերադարձի",
+      "resolveRefundReviewSuccess": "Նշվել է որպես լուծված՝ առանց վերադարձի։",
+      "dateRangeLabel": {
+        "checkInOut": "Ժամանում / մեկնում",
+        "rentalDates": "Վարձակալման ամսաթվեր",
+        "departureDate": "Մեկնման ամսաթիվ",
+        "reservationDate": "Ամրագրման ամսաթիվ",
+        "dates": "Ամսաթվեր"
+      }
     },
     "payments": {
       "heading": "Վճարումներ",
@@ -2582,6 +2616,20 @@
           "type": "Տեսակ",
           "createdAt": "Հայտնաբերվել է"
         }
+      }
+    },
+    "reviewDetail": {
+      "loading": "Բեռնվում է…",
+      "headingFallback": "Կարծիք",
+      "author": "Հեղինակ",
+      "listing": "Հայտարարություն",
+      "moderation": "Մոդերացիա",
+      "moderationNotes": "Նշումներ",
+      "moderatedBy": "Ստուգել է՝",
+      "userLink": "Օգտատեր #{{id}}",
+      "reports": {
+        "heading": "Բողոքներ",
+        "empty": "Այս կարծիքի վերաբերյալ բողոքներ չկան։"
       }
     }
   },

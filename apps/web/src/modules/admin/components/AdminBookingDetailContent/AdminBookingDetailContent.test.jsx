@@ -7,11 +7,15 @@ import ConfirmProvider from '../../../../providers/ConfirmProvider.jsx';
 import AdminBookingDetailContent from './AdminBookingDetailContent.jsx';
 import { useAdminBookingDetailQuery } from '../../queries/useAdminBookingDetailQuery.js';
 import { useAdminBookingHistoryQuery } from '../../queries/useAdminBookingHistoryQuery.js';
+import { useAdminUserDetailQuery } from '../../queries/useAdminUserDetailQuery.js';
+import { useAdminPartnerDetailQuery } from '../../queries/useAdminPartnerDetailQuery.js';
+import { useAdminListingDetailQuery } from '../../queries/useAdminListingDetailQuery.js';
 import { useAdminConfirmBookingMutation } from '../../mutations/useAdminConfirmBookingMutation.js';
 import { useAdminRejectBookingMutation } from '../../mutations/useAdminRejectBookingMutation.js';
 import { useAdminCancelBookingMutation } from '../../mutations/useAdminCancelBookingMutation.js';
 import { useAdminCompleteBookingMutation } from '../../mutations/useAdminCompleteBookingMutation.js';
 import { useAdminMarkNoShowMutation } from '../../mutations/useAdminMarkNoShowMutation.js';
+import { useAdminResolveRefundReviewMutation } from '../../mutations/useAdminResolveRefundReviewMutation.js';
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 
 vi.mock('../../../../contexts/AuthContext.jsx', () => ({ useAuth: vi.fn() }));
@@ -20,6 +24,15 @@ vi.mock('../../queries/useAdminBookingDetailQuery.js', () => ({
 }));
 vi.mock('../../queries/useAdminBookingHistoryQuery.js', () => ({
   useAdminBookingHistoryQuery: vi.fn(),
+}));
+vi.mock('../../queries/useAdminUserDetailQuery.js', () => ({
+  useAdminUserDetailQuery: vi.fn(),
+}));
+vi.mock('../../queries/useAdminPartnerDetailQuery.js', () => ({
+  useAdminPartnerDetailQuery: vi.fn(),
+}));
+vi.mock('../../queries/useAdminListingDetailQuery.js', () => ({
+  useAdminListingDetailQuery: vi.fn(),
 }));
 vi.mock('../../mutations/useAdminConfirmBookingMutation.js', () => ({
   useAdminConfirmBookingMutation: vi.fn(),
@@ -35,6 +48,9 @@ vi.mock('../../mutations/useAdminCompleteBookingMutation.js', () => ({
 }));
 vi.mock('../../mutations/useAdminMarkNoShowMutation.js', () => ({
   useAdminMarkNoShowMutation: vi.fn(),
+}));
+vi.mock('../../mutations/useAdminResolveRefundReviewMutation.js', () => ({
+  useAdminResolveRefundReviewMutation: vi.fn(),
 }));
 /* eslint-disable react/prop-types -- test-only mock stub, not a real component */
 vi.mock('../../../payments/index.js', () => ({
@@ -108,6 +124,7 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
   let cancelMutateAsync;
   let completeMutateAsync;
   let noShowMutateAsync;
+  let resolveRefundReviewMutateAsync;
 
   beforeEach(() => {
     confirmMutateAsync = vi.fn().mockResolvedValue({});
@@ -115,6 +132,7 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
     cancelMutateAsync = vi.fn().mockResolvedValue({});
     completeMutateAsync = vi.fn().mockResolvedValue({});
     noShowMutateAsync = vi.fn().mockResolvedValue({});
+    resolveRefundReviewMutateAsync = vi.fn().mockResolvedValue({});
     useAdminConfirmBookingMutation.mockReturnValue({
       mutateAsync: confirmMutateAsync,
       isPending: false,
@@ -135,8 +153,24 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
       mutateAsync: noShowMutateAsync,
       isPending: false,
     });
+    useAdminResolveRefundReviewMutation.mockReturnValue({
+      mutateAsync: resolveRefundReviewMutateAsync,
+      isPending: false,
+    });
     useAdminBookingHistoryQuery.mockReturnValue({
       data: BASE_HISTORY,
+      isPending: false,
+    });
+    useAdminUserDetailQuery.mockReturnValue({
+      data: undefined,
+      isPending: false,
+    });
+    useAdminPartnerDetailQuery.mockReturnValue({
+      data: undefined,
+      isPending: false,
+    });
+    useAdminListingDetailQuery.mockReturnValue({
+      data: undefined,
       isPending: false,
     });
     useAuth.mockReturnValue({
@@ -298,7 +332,7 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
     ).toBeInTheDocument();
   });
 
-  test('cancelling requires confirmation, then calls the mutation', async () => {
+  test('cancelling opens a reason dialog, then calls the mutation with the typed reason', async () => {
     useAdminBookingDetailQuery.mockReturnValue({
       data: { ...BASE_BOOKING, status: 'CONFIRMED' },
       isPending: false,
@@ -312,12 +346,110 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
     await user.click(screen.getByRole('button', { name: 'Չեղարկել' }));
     expect(cancelMutateAsync).not.toHaveBeenCalled();
 
+    await user.type(
+      screen.getByRole('textbox'),
+      'Vendor requested cancellation',
+    );
     const confirmButtons = screen.getAllByRole('button', {
       name: 'Չեղարկել',
     });
     await user.click(confirmButtons[confirmButtons.length - 1]);
     await waitFor(() =>
-      expect(cancelMutateAsync).toHaveBeenCalledWith({ id: 7 }),
+      expect(cancelMutateAsync).toHaveBeenCalledWith({
+        id: 7,
+        reason: 'Vendor requested cancellation',
+      }),
+    );
+  });
+
+  test('resolve-refund-review is hidden without payment.refund', () => {
+    useAdminBookingDetailQuery.mockReturnValue({
+      data: { ...BASE_BOOKING, refund_status: 'REQUIRES_MANUAL_REVIEW' },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(
+      screen.queryByRole('button', { name: 'Լուծել՝ առանց վերադարձի' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('resolving a refund review with payment.refund requires a reason before it can be submitted', async () => {
+    useAdminBookingDetailQuery.mockReturnValue({
+      data: { ...BASE_BOOKING, refund_status: 'REQUIRES_MANUAL_REVIEW' },
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useAuth.mockReturnValue({
+      permissions: [
+        'booking.confirm',
+        'booking.reject',
+        'booking.cancel_any',
+        'payment.refund',
+      ],
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Լուծել՝ առանց վերադարձի' }),
+    );
+    const confirmButtons = screen.getAllByRole('button', {
+      name: 'Լուծել՝ առանց վերադարձի',
+    });
+    const submitButton = confirmButtons[confirmButtons.length - 1];
+    expect(submitButton).toBeDisabled();
+
+    await user.type(
+      screen.getByRole('textbox'),
+      'Customer no-showed, no refund owed',
+    );
+    expect(submitButton).toBeEnabled();
+    await user.click(submitButton);
+    await waitFor(() =>
+      expect(resolveRefundReviewMutateAsync).toHaveBeenCalledWith({
+        id: 7,
+        reason: 'Customer no-showed, no refund owed',
+      }),
+    );
+  });
+
+  test('resolves and links to the real customer/partner/listing names once their detail queries load', () => {
+    useAdminBookingDetailQuery.mockReturnValue({
+      data: BASE_BOOKING,
+      isPending: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    useAdminUserDetailQuery.mockReturnValue({
+      data: { first_name: 'Ana', last_name: 'Smith' },
+      isPending: false,
+    });
+    useAdminPartnerDetailQuery.mockReturnValue({
+      data: { display_name: 'Yerevan Boutique Hospitality' },
+      isPending: false,
+    });
+    useAdminListingDetailQuery.mockReturnValue({
+      data: { translations: [{ language_code: 'hy', title: 'Boutique Room' }] },
+      isPending: false,
+    });
+    renderPage();
+
+    expect(screen.getByRole('link', { name: 'Ana Smith' })).toHaveAttribute(
+      'href',
+      '/hy/admin/users/9',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Yerevan Boutique Hospitality' }),
+    ).toHaveAttribute('href', '/hy/admin/partners/3');
+    expect(screen.getByRole('link', { name: 'Boutique Room' })).toHaveAttribute(
+      'href',
+      '/hy/admin/listings/5',
     );
   });
 
@@ -374,7 +506,7 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
     expect(screen.getByText(/Գիշերներ: 3/)).toBeInTheDocument();
     expect(screen.getByText(/Հյուրեր: 1/)).toBeInTheDocument();
     expect(screen.getByText(/Customer changed plans/)).toBeInTheDocument();
-    expect(screen.getByText(/Սպասում է ձեռքով վերանայման/)).toBeInTheDocument();
+    expect(screen.getByText(/Սպասում է վերանայման/)).toBeInTheDocument();
   });
 
   test('P2.2E: omits refund status when the booking has none', () => {

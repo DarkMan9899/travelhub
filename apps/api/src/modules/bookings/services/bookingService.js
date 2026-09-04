@@ -582,7 +582,7 @@ export class BookingService {
         VIEW_ALL_PERMISSION,
       );
       return this.#bookingRepository.list(
-        { partnerId, statusCode: status, refundStatus },
+        { partnerId, statusCode: status, refundStatus, includeNames: true },
         paginationOpts,
       );
     }
@@ -597,7 +597,12 @@ export class BookingService {
       );
       if (!isAdmin) throw new AuthorizationError();
       return this.#bookingRepository.list(
-        { customerUserId, statusCode: status, refundStatus },
+        {
+          customerUserId,
+          statusCode: status,
+          refundStatus,
+          includeNames: true,
+        },
         paginationOpts,
       );
     }
@@ -608,7 +613,7 @@ export class BookingService {
       );
       if (!isAdmin) throw new AuthorizationError();
       return this.#bookingRepository.list(
-        { statusCode: status, refundStatus },
+        { statusCode: status, refundStatus, includeNames: true },
         paginationOpts,
       );
     }

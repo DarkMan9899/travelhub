@@ -12,15 +12,21 @@
  * Action set follows `bookingStatusTransitions.js`'s state machine
  * exactly, never a raw status overwrite: `PENDING_VENDOR` offers
  * Confirm/Reject, `CONFIRMED` offers Cancel/Complete/Mark no-show, every
- * other status (including every terminal one) offers nothing. Reject
- * doesn't collect a reason through a new form — same `ConfirmContext`
- * plain yes/no limitation `PartnerBookingDetailContent`'s own Reject
- * flow already accepts.
+ * other status (including every terminal one) offers nothing. Reject/
+ * Cancel now collect the optional `reason` the backend already accepts,
+ * via the same local-`Modal`-with-`Textarea` pattern established for
+ * Listings/Partners/Reviews moderation — previously this screen only
+ * offered a plain yes/no confirm and silently sent no reason at all.
  *
- * There is no admin listing detail page yet, so the listing this booking
- * is for is shown as plain text, not a dead link.
+ * The listing/customer/partner this booking is for are resolved via
+ * their own existing admin detail queries (real names/titles, real
+ * links) rather than the raw ids the booking summary/detail DTO itself
+ * carries — the same "detail page fetches related entities via their
+ * own admin query" pattern `AdminListingDetailContent` established for
+ * its Partner card.
  */
 
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
@@ -28,8 +34,10 @@ import {
   Spinner,
   ErrorState,
   EmptyState,
+  Modal,
 } from '@desavii/ui/components/feedback-overlays';
 import { Button, Card } from '@desavii/ui/components/primitives';
+import { Textarea } from '@desavii/ui/components/form-controls';
 import { PriceTag } from '@desavii/ui/components/data-display';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import RouterLink from '../../../../components/RouterLink.jsx';
@@ -38,14 +46,26 @@ import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
 import { useAdminBookingDetailQuery } from '../../queries/useAdminBookingDetailQuery.js';
 import { useAdminBookingHistoryQuery } from '../../queries/useAdminBookingHistoryQuery.js';
+import { useAdminUserDetailQuery } from '../../queries/useAdminUserDetailQuery.js';
+import { useAdminPartnerDetailQuery } from '../../queries/useAdminPartnerDetailQuery.js';
+import { useAdminListingDetailQuery } from '../../queries/useAdminListingDetailQuery.js';
 import { useAdminConfirmBookingMutation } from '../../mutations/useAdminConfirmBookingMutation.js';
 import { useAdminRejectBookingMutation } from '../../mutations/useAdminRejectBookingMutation.js';
 import { useAdminCancelBookingMutation } from '../../mutations/useAdminCancelBookingMutation.js';
 import { useAdminCompleteBookingMutation } from '../../mutations/useAdminCompleteBookingMutation.js';
 import { useAdminMarkNoShowMutation } from '../../mutations/useAdminMarkNoShowMutation.js';
+import { useAdminResolveRefundReviewMutation } from '../../mutations/useAdminResolveRefundReviewMutation.js';
 import { BookingStatusBadge } from '../../../bookings/index.js';
 import { BookingPaymentSection } from '../../../payments/index.js';
 import { computeNights } from '../../../bookings/utils/computeNights.js';
+
+const DATE_RANGE_LABEL_BY_BOOKING_TYPE = {
+  HOTEL_ROOM_BOOKING: 'checkInOut',
+  PROPERTY_BOOKING: 'checkInOut',
+  CAR_RENTAL_BOOKING: 'rentalDates',
+  TOUR_BOOKING: 'departureDate',
+  RESTAURANT_RESERVATION: 'reservationDate',
+};
 
 export default function AdminBookingDetailContent() {
   const { t, i18n } = useTranslation();
@@ -58,6 +78,7 @@ export default function AdminBookingDetailContent() {
   const canConfirm = permissions.includes('booking.confirm');
   const canReject = permissions.includes('booking.reject');
   const canCancelAny = permissions.includes('booking.cancel_any');
+  const canResolveRefundReview = permissions.includes('payment.refund');
 
   const {
     data: booking,
@@ -67,12 +88,20 @@ export default function AdminBookingDetailContent() {
     refetch,
   } = useAdminBookingDetailQuery(bookingId);
   const historyQuery = useAdminBookingHistoryQuery(bookingId);
+  const customerQuery = useAdminUserDetailQuery(booking?.customer_user_id);
+  const partnerQuery = useAdminPartnerDetailQuery(booking?.partner_id);
+  const listingQuery = useAdminListingDetailQuery(booking?.listing_id);
 
   const confirmMutation = useAdminConfirmBookingMutation();
   const rejectMutation = useAdminRejectBookingMutation();
   const cancelMutation = useAdminCancelBookingMutation();
   const completeMutation = useAdminCompleteBookingMutation();
   const noShowMutation = useAdminMarkNoShowMutation();
+  const resolveRefundReviewMutation = useAdminResolveRefundReviewMutation();
+
+  const [reasonDialog, setReasonDialog] = useState(null);
+  const [reasonText, setReasonText] = useState('');
+  const closeReasonDialog = useCallback(() => setReasonDialog(null), []);
 
   if (isPending) {
     return (
@@ -130,6 +159,9 @@ export default function AdminBookingDetailContent() {
   const showComplete = canActOnConfirmed && canConfirm;
   const showNoShow = canActOnConfirmed && canConfirm;
   const showCancel = canActOnConfirmed && canCancelAny;
+  const showResolveRefundReview =
+    booking.refund_status === 'REQUIRES_MANUAL_REVIEW' &&
+    canResolveRefundReview;
   const history = historyQuery.data ?? [];
 
   async function handleConfirm() {
@@ -143,41 +175,43 @@ export default function AdminBookingDetailContent() {
     }
   }
 
-  async function handleReject() {
-    const confirmed = await confirm({
-      title: t('admin.bookingDetail.rejectConfirmTitle'),
-      description: t('admin.bookingDetail.rejectConfirmDescription'),
-      confirmLabel: t('admin.bookingDetail.rejectAction'),
-      cancelLabel: t('common.cancel'),
-      variant: 'danger',
-    });
-    if (!confirmed) return;
-    try {
-      await rejectMutation.mutateAsync({ id: bookingId });
-      showToast(t('admin.bookingDetail.rejectSuccess'), {
-        variant: 'success',
-      });
-    } catch {
-      showToast(t('admin.bookingDetail.actionError'), { variant: 'danger' });
-    }
+  function openReasonDialog(type) {
+    setReasonText('');
+    setReasonDialog({ type });
   }
 
-  async function handleCancel() {
-    const confirmed = await confirm({
-      title: t('admin.bookingDetail.cancelConfirmTitle'),
-      description: t('admin.bookingDetail.cancelConfirmDescription'),
-      confirmLabel: t('admin.bookingDetail.cancelAction'),
-      cancelLabel: t('common.cancel'),
-      variant: 'danger',
-    });
-    if (!confirmed) return;
+  async function handleConfirmReasonDialog() {
+    const trimmed = reasonText.trim();
     try {
-      await cancelMutation.mutateAsync({ id: bookingId });
-      showToast(t('admin.bookingDetail.cancelSuccess'), {
-        variant: 'success',
-      });
+      if (reasonDialog.type === 'reject') {
+        await rejectMutation.mutateAsync({
+          id: bookingId,
+          reason: trimmed || undefined,
+        });
+        showToast(t('admin.bookingDetail.rejectSuccess'), {
+          variant: 'success',
+        });
+      } else if (reasonDialog.type === 'cancel') {
+        await cancelMutation.mutateAsync({
+          id: bookingId,
+          reason: trimmed || undefined,
+        });
+        showToast(t('admin.bookingDetail.cancelSuccess'), {
+          variant: 'success',
+        });
+      } else if (reasonDialog.type === 'resolveRefundReview') {
+        await resolveRefundReviewMutation.mutateAsync({
+          id: bookingId,
+          reason: trimmed,
+        });
+        showToast(t('admin.bookingDetail.resolveRefundReviewSuccess'), {
+          variant: 'success',
+        });
+      }
     } catch {
       showToast(t('admin.bookingDetail.actionError'), { variant: 'danger' });
+    } finally {
+      setReasonDialog(null);
     }
   }
 
@@ -258,9 +292,16 @@ export default function AdminBookingDetailContent() {
                 <RouterLink
                   href={`/${locale}/admin/users/${booking.customer_user_id}`}
                 >
-                  {t('admin.bookings.table.customerLink', {
-                    id: booking.customer_user_id,
-                  })}
+                  {customerQuery.data
+                    ? [
+                        customerQuery.data.first_name,
+                        customerQuery.data.last_name,
+                      ]
+                        .filter(Boolean)
+                        .join(' ') || customerQuery.data.email
+                    : t('admin.bookings.table.customerLink', {
+                        id: booking.customer_user_id,
+                      })}
                 </RouterLink>
               </p>
               <p>
@@ -268,33 +309,61 @@ export default function AdminBookingDetailContent() {
                 <RouterLink
                   href={`/${locale}/admin/partners/${booking.partner_id}`}
                 >
-                  {t('admin.bookings.table.partnerLink', {
-                    id: booking.partner_id,
-                  })}
+                  {partnerQuery.data?.display_name ??
+                    t('admin.bookings.table.partnerLink', {
+                      id: booking.partner_id,
+                    })}
                 </RouterLink>
               </p>
               <p>
                 {t('admin.bookingDetail.listing')}:{' '}
-                {t('admin.bookingDetail.listingId', {
-                  id: booking.listing_id,
-                })}
+                {listingQuery.data ? (
+                  <RouterLink
+                    href={`/${locale}/admin/listings/${booking.listing_id}`}
+                  >
+                    {listingQuery.data.translations?.find(
+                      (row) => row.language_code === locale,
+                    )?.title ??
+                      listingQuery.data.translations?.[0]?.title ??
+                      t('admin.bookingDetail.listingId', {
+                        id: booking.listing_id,
+                      })}
+                  </RouterLink>
+                ) : (
+                  t('admin.bookingDetail.listingId', {
+                    id: booking.listing_id,
+                  })
+                )}
               </p>
-              {booking.refund_status && (
-                <p>
-                  {t('admin.bookingDetail.refundStatus')}:{' '}
-                  {t(
-                    `admin.bookingDetail.refundStatusValue.${booking.refund_status}`,
-                    {
-                      defaultValue: booking.refund_status,
-                    },
-                  )}
-                </p>
+              {booking.refund_status &&
+                booking.refund_status !== 'NOT_APPLICABLE' && (
+                  <p>
+                    {t('admin.bookingDetail.refundStatus')}:{' '}
+                    {t(
+                      `admin.bookingDetail.refundStatusValue.${booking.refund_status}`,
+                      {
+                        defaultValue: booking.refund_status,
+                      },
+                    )}
+                  </p>
+                )}
+              {showResolveRefundReview && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => openReasonDialog('resolveRefundReview')}
+                >
+                  {t('admin.bookingDetail.resolveRefundReviewAction')}
+                </Button>
               )}
             </Stack>
 
             <Stack gap="3">
               {booking.items.map((item) => {
                 const nights = computeNights(item);
+                const dateRangeLabelKey =
+                  DATE_RANGE_LABEL_BY_BOOKING_TYPE[booking.booking_type] ??
+                  'dates';
                 return (
                   <div key={item.id}>
                     {item.unit_label && (
@@ -303,8 +372,10 @@ export default function AdminBookingDetailContent() {
                       </p>
                     )}
                     <p>
-                      {t('bookings.detail.dates')}:{' '}
-                      {dateFormatter.format(new Date(item.date_from))} –{' '}
+                      {t(
+                        `admin.bookingDetail.dateRangeLabel.${dateRangeLabelKey}`,
+                      )}
+                      : {dateFormatter.format(new Date(item.date_from))} –{' '}
                       {dateFormatter.format(new Date(item.date_to))}
                     </p>
                     {nights !== null && (
@@ -405,8 +476,7 @@ export default function AdminBookingDetailContent() {
             {showReject && (
               <Button
                 variant="destructive"
-                onClick={() => handleReject()}
-                loading={rejectMutation.isPending}
+                onClick={() => openReasonDialog('reject')}
               >
                 {t('admin.bookingDetail.rejectAction')}
               </Button>
@@ -432,8 +502,7 @@ export default function AdminBookingDetailContent() {
             {showCancel && (
               <Button
                 variant="destructive"
-                onClick={() => handleCancel()}
-                loading={cancelMutation.isPending}
+                onClick={() => openReasonDialog('cancel')}
               >
                 {t('admin.bookingDetail.cancelAction')}
               </Button>
@@ -441,6 +510,59 @@ export default function AdminBookingDetailContent() {
           </Inline>
         )}
       </Stack>
+
+      {reasonDialog && (
+        <Modal
+          isOpen
+          onClose={closeReasonDialog}
+          title={t(
+            `admin.bookingDetail.reasonDialog.${reasonDialog.type}.title`,
+          )}
+          size="sm"
+          footer={
+            <Inline gap="3" justify="flex-end">
+              <Button variant="ghost" onClick={closeReasonDialog}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleConfirmReasonDialog()}
+                loading={
+                  rejectMutation.isPending ||
+                  cancelMutation.isPending ||
+                  resolveRefundReviewMutation.isPending
+                }
+                disabled={
+                  reasonDialog.type === 'resolveRefundReview' &&
+                  reasonText.trim().length === 0
+                }
+              >
+                {t(
+                  `admin.bookingDetail.reasonDialog.${reasonDialog.type}.confirmAction`,
+                )}
+              </Button>
+            </Inline>
+          }
+        >
+          <Stack gap="3">
+            <span>
+              {t(
+                `admin.bookingDetail.reasonDialog.${reasonDialog.type}.description`,
+              )}
+            </span>
+            <Textarea
+              label={t(
+                reasonDialog.type === 'resolveRefundReview'
+                  ? 'admin.bookingDetail.reasonDialog.reasonLabelRequired'
+                  : 'admin.bookingDetail.reasonDialog.reasonLabelOptional',
+              )}
+              value={reasonText}
+              onChange={(event) => setReasonText(event.target.value)}
+              rows={4}
+            />
+          </Stack>
+        </Modal>
+      )}
     </Section>
   );
 }
