@@ -1733,7 +1733,8 @@
       "recentActivity": {
         "heading": "Последние действия",
         "empty": "Пока нет активности.",
-        "systemActor": "Система"
+        "systemActor": "Система",
+        "entry": "{{actor}} — {{action}} ({{target}} #{{id}})"
       },
       "error": {
         "title": "Не удалось загрузить панель управления.",

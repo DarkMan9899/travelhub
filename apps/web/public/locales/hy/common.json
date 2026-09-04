@@ -1713,7 +1713,8 @@
       "recentActivity": {
         "heading": "Վերջին ակտիվությունը",
         "empty": "Ակտիվություն դեռ չկա։",
-        "systemActor": "Համակարգ"
+        "systemActor": "Համակարգ",
+        "entry": "{{actor}} — {{action}} ({{target}} #{{id}})"
       },
       "error": {
         "title": "Վահանակը բեռնելիս ինչ-որ բան սխալ գնաց։",

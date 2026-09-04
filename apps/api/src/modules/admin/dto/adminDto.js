@@ -2,12 +2,12 @@
  * Admin module DTOs — response shaping only (BACKEND_ARCHITECTURE.md Ch.9).
  *
  * `bookingValueByCurrency` is deliberately never collapsed into a single
- * "revenue" number: there is no payment gateway anywhere in this codebase
- * (the `payments`/`payouts`/`refunds` modules are empty scaffolds, and
- * `bookings.payment_method` is a fixed `'offline'` value) — this is the
- * listed value of Confirmed/Completed bookings, not money that has
- * actually changed hands, and the frontend labels it "Booking Value"
- * accordingly.
+ * "revenue" number: the real `payments` module exists (Stripe-capable,
+ * with refunds/ledger) but is paused platform-wide via `PAYMENTS_ENABLED`
+ * (a boot-time env constant, no admin-editable path — see
+ * `paymentService.js#assertPaymentsEnabled`) — this is the listed value
+ * of Confirmed/Completed bookings, not money that has actually changed
+ * hands, and the frontend labels it "Booking Value" accordingly.
  */
 
 export function toDashboardResponse(stats) {

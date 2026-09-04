@@ -501,7 +501,12 @@ test.describe('Admin Audit Logs (Stage 11.7)', () => {
   test('lists real entries and filters by action', async ({ page }) => {
     await loginAsDevAdmin(page);
     // Logging in itself just wrote a real `user.logged_in` audit row —
-    // no manual data setup needed.
+    // no manual data setup needed. Admin Sprint 7 replaced the raw
+    // `action`/`target_type` codes this test used to assert on with a
+    // real, translated label catalog (89 real action strings) — the
+    // filter's own text input still takes/sends the raw action code
+    // (the backend match is still exact-equality on that string), but
+    // the rendered cell must never show the raw code itself.
     await page.getByRole('link', { name: 'Audit Logs' }).click();
     await expect(page).toHaveURL(/\/en\/admin\/audit-logs$/);
 
@@ -509,18 +514,21 @@ test.describe('Admin Audit Logs (Stage 11.7)', () => {
       page.getByRole('columnheader', { name: 'Time' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('cell', { name: 'user.logged_in' }).first(),
+      page.getByRole('cell', { name: 'User logged in' }).first(),
     ).toBeVisible();
+    await expect(
+      page.getByRole('cell', { name: 'user.logged_in' }),
+    ).toHaveCount(0);
 
     await page.getByLabel('Search actions').fill('user.logged_in');
     await page.getByLabel('Search actions').press('Enter');
 
     await expect(page).toHaveURL(/action=user\.logged_in/);
-    const actionCells = page.getByRole('cell', { name: 'user.logged_in' });
+    const actionCells = page.getByRole('cell', { name: 'User logged in' });
     await expect(actionCells.first()).toBeVisible();
     const otherRows = page
       .getByRole('row')
-      .filter({ hasNotText: 'user.logged_in' })
+      .filter({ hasNotText: 'User logged in' })
       .filter({ hasNotText: 'Time' });
     await expect(otherRows).toHaveCount(0);
   });

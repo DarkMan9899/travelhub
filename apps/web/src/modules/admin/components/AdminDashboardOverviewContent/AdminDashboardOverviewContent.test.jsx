@@ -127,6 +127,55 @@ describe('AdminDashboardOverviewContent (apps/web/src/modules/admin)', () => {
     );
   });
 
+  test('recent activity renders a localized action/target label, never the raw audit-log codes', () => {
+    useAdminDashboardQuery.mockReturnValue({
+      data: {
+        counts: {},
+        pending_actions: {
+          pending_partners: 0,
+          pending_listings: 0,
+          pending_bookings: 0,
+        },
+        booking_value_by_currency: [],
+        bookings_by_day: [],
+        recent_activity: [
+          {
+            actor_name: 'Dev Admin',
+            action: 'user.status_changed',
+            target_type: 'user',
+            target_id: 7,
+            created_at: '2026-09-04T10:00:00.000Z',
+          },
+          {
+            actor_name: null,
+            action: 'wallet.balance_adjusted',
+            target_type: 'user',
+            target_id: 3,
+            created_at: '2026-09-04T09:00:00.000Z',
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(
+      screen.getByText(
+        'Dev Admin — Փոխվել է օգտատիրոջ կարգավիճակը (Օգտատեր #7)',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/user\.status_changed/)).not.toBeInTheDocument();
+
+    // An action added after this page's own translated catalog still
+    // gets a humanized (never raw) fallback, and a null actor falls
+    // back to "System" rather than rendering blank.
+    expect(
+      screen.getByText('Համակարգ — wallet: balance adjusted (Օգտատեր #3)'),
+    ).toBeInTheDocument();
+  });
+
   test('zero pending anything shows the all-caught-up state, not three zero tiles', () => {
     useAdminDashboardQuery.mockReturnValue({
       data: {

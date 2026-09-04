@@ -1713,7 +1713,8 @@
       "recentActivity": {
         "heading": "Recent activity",
         "empty": "No activity yet.",
-        "systemActor": "System"
+        "systemActor": "System",
+        "entry": "{{actor}} — {{action}} ({{target}} #{{id}})"
       },
       "error": {
         "title": "Something went wrong loading the dashboard.",

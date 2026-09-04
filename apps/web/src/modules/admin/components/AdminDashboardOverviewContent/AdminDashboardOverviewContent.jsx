@@ -44,6 +44,16 @@ function formatAmount(locale, total) {
   return new Intl.NumberFormat(locale).format(total);
 }
 
+// Same real 89-action catalog and humanized fallback `AdminAuditLogsPageContent`
+// uses — this widget is a miniature audit-log view of the same real
+// `audit_logs` rows, not a separate vocabulary, so it must never show the
+// raw `action`/`target_type` codes this DTO returns.
+function humanizeAction(action) {
+  const [scope, ...rest] = action.split('.');
+  const verb = rest.join('.').replace(/_/g, ' ');
+  return `${scope.replace(/_/g, ' ')}: ${verb}`;
+}
+
 function AttentionTile({ href, icon, count = undefined, label, isLoading }) {
   const isZero = !isLoading && (count ?? 0) === 0;
   return (
@@ -252,9 +262,19 @@ export default function AdminDashboardOverviewContent() {
                     align="center"
                   >
                     <span>
-                      {entry.actor_name ??
-                        t('admin.dashboard.recentActivity.systemActor')}{' '}
-                      — {entry.action} ({entry.target_type} #{entry.target_id})
+                      {t('admin.dashboard.recentActivity.entry', {
+                        actor:
+                          entry.actor_name ??
+                          t('admin.dashboard.recentActivity.systemActor'),
+                        action: t(`admin.auditLogs.action.${entry.action}`, {
+                          defaultValue: humanizeAction(entry.action),
+                        }),
+                        target: t(
+                          `admin.auditLogs.targetType.${entry.target_type}`,
+                          { defaultValue: entry.target_type },
+                        ),
+                        id: entry.target_id,
+                      })}
                     </span>
                     <span>
                       {new Intl.DateTimeFormat(i18n.language, {
