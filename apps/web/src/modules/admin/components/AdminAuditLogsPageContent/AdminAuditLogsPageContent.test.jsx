@@ -14,7 +14,7 @@ function entryFixture(overrides) {
     id: 7,
     actor_id: 1,
     actor_name: 'Dev Admin',
-    action: 'user.suspended',
+    action: 'user.status_changed',
     target_type: 'user',
     target_id: 42,
     before_snapshot: null,
@@ -62,7 +62,7 @@ describe('AdminAuditLogsPageContent (apps/web/src/modules/admin)', () => {
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  test('renders an entry row with actor, action, and target', () => {
+  test('renders an entry row with actor, a localized action label (never the raw code), and a localized target', () => {
     useAdminAuditLogsQuery.mockReturnValue({
       data: { pages: [{ results: [entryFixture()] }] },
       isPending: false,
@@ -72,8 +72,30 @@ describe('AdminAuditLogsPageContent (apps/web/src/modules/admin)', () => {
     renderPage();
 
     expect(screen.getByText('Dev Admin')).toBeInTheDocument();
-    expect(screen.getByText('user.suspended')).toBeInTheDocument();
-    expect(screen.getByText('user #42')).toBeInTheDocument();
+    expect(
+      screen.getByText('Փոխվել է օգտատիրոջ կարգավիճակը'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('user.status_changed')).not.toBeInTheDocument();
+    expect(screen.getByText('Օգտատեր #42')).toBeInTheDocument();
+  });
+
+  test('an unmapped action falls back to a humanized label, never the raw dotted code', () => {
+    useAdminAuditLogsQuery.mockReturnValue({
+      data: {
+        pages: [
+          { results: [entryFixture({ action: 'wallet.balance_adjusted' })] },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      ...noopQueryExtras,
+    });
+    renderPage();
+
+    expect(screen.getByText('wallet: balance adjusted')).toBeInTheDocument();
+    expect(
+      screen.queryByText('wallet.balance_adjusted'),
+    ).not.toBeInTheDocument();
   });
 
   test('falls back to the system-actor label when actor_name is null', () => {
@@ -107,5 +129,60 @@ describe('AdminAuditLogsPageContent (apps/web/src/modules/admin)', () => {
 
     await user.click(screen.getByRole('button', { name: 'Բեռնել ավելին' }));
     expect(fetchNextPage).toHaveBeenCalledTimes(1);
+  });
+
+  test('opening Details shows the before/after snapshot, with any sensitive-looking key redacted', async () => {
+    useAdminAuditLogsQuery.mockReturnValue({
+      data: {
+        pages: [
+          {
+            results: [
+              entryFixture({
+                ip_address: '203.0.113.7',
+                before_snapshot: { statusCode: 'ACTIVE' },
+                after_snapshot: {
+                  statusCode: 'SUSPENDED',
+                  apiSecret: 'sk_live_should_never_show',
+                },
+              }),
+            ],
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+      ...noopQueryExtras,
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: 'Մանրամասներ' }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('203.0.113.7');
+    expect(dialog).toHaveTextContent('user.status_changed');
+    expect(dialog).toHaveTextContent('"statusCode": "ACTIVE"');
+    expect(dialog).toHaveTextContent('"statusCode": "SUSPENDED"');
+    expect(dialog).toHaveTextContent('[redacted]');
+    expect(dialog).not.toHaveTextContent('sk_live_should_never_show');
+  });
+
+  test('the actor/target ID and date-range filters are wired to the query', () => {
+    useAdminAuditLogsQuery.mockReturnValue({
+      data: { pages: [{ results: [] }] },
+      isPending: false,
+      isError: false,
+      ...noopQueryExtras,
+    });
+    renderPage();
+
+    expect(useAdminAuditLogsQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: '',
+        targetId: '',
+        dateFrom: '',
+        dateTo: '',
+      }),
+    );
   });
 });

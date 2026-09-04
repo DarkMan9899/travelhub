@@ -55,11 +55,21 @@ export default function AiUsageDashboardContent({
     [i18n.language],
   );
 
+  const featureLabel = (code) =>
+    t(`ai.usageDashboard.feature.${code}`, { defaultValue: code });
+  const providerLabel = (code) =>
+    t(`ai.usageDashboard.provider.${code}`, { defaultValue: code });
+
   const statsColumns = [
-    { key: 'feature_code', header: t('ai.usageDashboard.statsTable.feature') },
+    {
+      key: 'feature_code',
+      header: t('ai.usageDashboard.statsTable.feature'),
+      render: (row) => featureLabel(row.feature_code),
+    },
     {
       key: 'provider_code',
       header: t('ai.usageDashboard.statsTable.provider'),
+      render: (row) => providerLabel(row.provider_code),
     },
     {
       key: 'call_count',
@@ -94,10 +104,15 @@ export default function AiUsageDashboardContent({
       header: t('ai.usageDashboard.recentTable.timestamp'),
       render: (row) => dateFormatter.format(new Date(row.created_at)),
     },
-    { key: 'feature_code', header: t('ai.usageDashboard.recentTable.feature') },
+    {
+      key: 'feature_code',
+      header: t('ai.usageDashboard.recentTable.feature'),
+      render: (row) => featureLabel(row.feature_code),
+    },
     {
       key: 'provider_code',
       header: t('ai.usageDashboard.recentTable.provider'),
+      render: (row) => providerLabel(row.provider_code),
     },
     {
       key: 'total_tokens',

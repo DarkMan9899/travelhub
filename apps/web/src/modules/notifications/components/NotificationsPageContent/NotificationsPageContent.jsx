@@ -16,8 +16,14 @@
  * renders. `pages/account/NotificationsPage.jsx` doesn't pass `audience`
  * at all, so it already gets the default `'customer'` value below;
  * Partner's `<NotificationsPageContent audience="partner" />` is
- * unaffected. Admin uses a completely separate `AdminNotificationsPageContent`
- * and never touches this file.
+ * unaffected. `AdminNotificationsPageContent` renders this same component
+ * with `audience="admin"`, composed above the admin-only
+ * `AdminAnnouncementComposer` — it is not a separate implementation.
+ *
+ * `breadcrumbs` (Admin Sprint 7): optional, defaults to none — Customer/
+ * Partner call sites are unaffected. Only `AdminNotificationsPageContent`
+ * passes the real Home/Dashboard/Notifications trail, matching every
+ * other Admin page's `PageHeader` convention.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -64,7 +70,10 @@ function NotificationsSkeletonList() {
   );
 }
 
-export default function NotificationsPageContent({ audience = 'customer' }) {
+export default function NotificationsPageContent({
+  audience = 'customer',
+  breadcrumbs = [],
+}) {
   const { t } = useTranslation();
   const isPremium = audience === 'customer';
   const [status, setStatus] = useState('all');
@@ -114,6 +123,7 @@ export default function NotificationsPageContent({ audience = 'customer' }) {
     <Section spacing="default">
       <PageHeader
         title={t('notifications.page.heading')}
+        breadcrumbs={breadcrumbs}
         actions={
           <Button variant="ghost" onClick={() => markAllReadMutation.mutate()}>
             {t('notifications.actions.markAllAsRead')}
@@ -221,4 +231,10 @@ export default function NotificationsPageContent({ audience = 'customer' }) {
 
 NotificationsPageContent.propTypes = {
   audience: PropTypes.oneOf(['customer', 'partner', 'admin']),
+  breadcrumbs: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      href: PropTypes.string.isRequired,
+    }),
+  ),
 };

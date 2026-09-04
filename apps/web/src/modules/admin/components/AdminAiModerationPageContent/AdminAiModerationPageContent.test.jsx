@@ -95,6 +95,9 @@ describe('AdminAiModerationPageContent (apps/web/src/modules/admin)', () => {
     expect(
       screen.getByText('Վերնագիրը մեծատառերով, Հնարավոր կրկնվող վերնագիր'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Դիտել հայտարարությունը' }),
+    ).toHaveAttribute('href', '/hy/admin/listings/42');
   });
 
   test('clicking Score calls the mutation with the real listing id', async () => {
@@ -130,6 +133,7 @@ describe('AdminAiModerationPageContent (apps/web/src/modules/admin)', () => {
     });
     useScoreListingMutation.mockReturnValue(
       idleMutation({
+        variables: 42,
         data: {
           data: {
             listing_id: 42,
@@ -146,5 +150,34 @@ describe('AdminAiModerationPageContent (apps/web/src/modules/admin)', () => {
     expect(screen.getByText('55')).toBeInTheDocument();
     expect(screen.getByText('Նկարագրությունը շատ կարճ է')).toBeInTheDocument();
     expect(screen.getByText('Likely needs manual review.')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Դիտել հայտարարությունը' }),
+    ).toHaveAttribute('href', '/hy/admin/listings/42');
+  });
+
+  test('AI Moderation never writes a moderation decision itself — no approve/reject control exists on this page', () => {
+    useAdminAiModerationQueueQuery.mockReturnValue({
+      data: [
+        {
+          listing_id: 42,
+          title: 'Cozy Downtown Apartment',
+          partner_display_name: 'Test Partner',
+          score: 75,
+          signals: ['TITLE_ALL_CAPS'],
+        },
+      ],
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    useScoreListingMutation.mockReturnValue(idleMutation());
+    renderPage();
+
+    expect(
+      screen.queryByRole('button', { name: /approve/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /reject/i }),
+    ).not.toBeInTheDocument();
   });
 });

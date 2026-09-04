@@ -61,4 +61,23 @@ describe('MessagingPageContent (apps/web/src/modules/messaging)', () => {
     expect(layout.className).toMatch(/layout--operational/);
     expect(layout.className).not.toMatch(/layout--premium/);
   });
+
+  test('breadcrumbs (Admin Sprint 7): renders the passed trail, and renders none when omitted (Customer/Partner unaffected)', () => {
+    renderPage('/hy/account/messages', {
+      breadcrumbs: [
+        { label: 'Home', href: '/hy' },
+        { label: 'Admin', href: '/hy/admin' },
+      ],
+    });
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute(
+      'href',
+      '/hy',
+    );
+    expect(screen.getByText('Admin')).toHaveAttribute('aria-current', 'page');
+  });
+
+  test('breadcrumbs default to none when omitted', () => {
+    renderPage('/hy/account/messages');
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  });
 });

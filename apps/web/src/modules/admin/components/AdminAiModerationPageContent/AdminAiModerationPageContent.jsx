@@ -16,6 +16,7 @@ import { DataTable } from '@desavii/ui/components/dashboard';
 import { Button, Card } from '@desavii/ui/components/primitives';
 import { ErrorState } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
+import RouterLink from '../../../../components/RouterLink.jsx';
 import { useAdminAiModerationQueueQuery } from '../../queries/useAdminAiModerationQueueQuery.js';
 import { useScoreListingMutation } from '../../mutations/useScoreListingMutation.js';
 
@@ -45,17 +46,22 @@ export default function AdminAiModerationPageContent() {
       key: 'actions',
       header: '',
       render: (entry) => (
-        <Button
-          type="button"
-          size="sm"
-          disabled={scoreMutation.isPending}
-          onClick={() => scoreMutation.mutate(entry.listing_id)}
-        >
-          {scoreMutation.isPending &&
-          scoreMutation.variables === entry.listing_id
-            ? t('admin.aiModeration.scoring')
-            : t('admin.aiModeration.scoreAction')}
-        </Button>
+        <Inline gap="2">
+          <Button
+            type="button"
+            size="sm"
+            disabled={scoreMutation.isPending}
+            onClick={() => scoreMutation.mutate(entry.listing_id)}
+          >
+            {scoreMutation.isPending &&
+            scoreMutation.variables === entry.listing_id
+              ? t('admin.aiModeration.scoring')
+              : t('admin.aiModeration.scoreAction')}
+          </Button>
+          <RouterLink href={`/${locale}/admin/listings/${entry.listing_id}`}>
+            {t('admin.aiModeration.reviewListingAction')}
+          </RouterLink>
+        </Inline>
       ),
     },
   ];
@@ -84,6 +90,8 @@ export default function AdminAiModerationPageContent() {
         />
       ) : (
         <Stack gap="4">
+          <p>{t('admin.aiModeration.description')}</p>
+
           <DataTable
             columns={columns}
             rows={data ?? []}
@@ -117,6 +125,13 @@ export default function AdminAiModerationPageContent() {
                 <Inline gap="2">
                   <strong>{t('admin.aiModeration.result.aiNoteLabel')}</strong>
                   <span>{result.ai_note}</span>
+                </Inline>
+                <Inline justify="flex-end">
+                  <RouterLink
+                    href={`/${locale}/admin/listings/${scoreMutation.variables}`}
+                  >
+                    {t('admin.aiModeration.reviewListingAction')}
+                  </RouterLink>
                 </Inline>
               </Stack>
             </Card>

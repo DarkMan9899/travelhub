@@ -7,15 +7,30 @@
  * page's convention.
  */
 
+import { useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom';
 import { Stack } from '@desavii/ui/components/layout';
 import { NotificationsPageContent } from '../../../notifications/index.js';
 import AdminAnnouncementComposer from '../AdminAnnouncementComposer/AdminAnnouncementComposer.jsx';
 
 export default function AdminNotificationsPageContent() {
+  const { t } = useTranslation();
+  const { locale } = useParams();
+
   return (
     <Stack gap="4">
       <AdminAnnouncementComposer />
-      <NotificationsPageContent audience="admin" />
+      <NotificationsPageContent
+        audience="admin"
+        breadcrumbs={[
+          { label: t('nav.home'), href: `/${locale}` },
+          { label: t('admin.nav.dashboard'), href: `/${locale}/admin` },
+          {
+            label: t('notifications.page.heading'),
+            href: `/${locale}/admin/notifications`,
+          },
+        ]}
+      />
     </Stack>
   );
 }

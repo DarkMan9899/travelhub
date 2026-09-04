@@ -90,12 +90,43 @@ describe('AdminAiUsagePageContent (apps/web/src/modules/admin)', () => {
     });
     renderPage();
 
-    expect(screen.getAllByText('trip_planner').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('local').length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText('Ճամփորդության պլանավորիչ').length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText('Տեղային (սիմուլյացված)').length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText('trip_planner')).not.toBeInTheDocument();
     expect(screen.getAllByText('3').length).toBeGreaterThan(0);
     expect(screen.getAllByText('900').length).toBeGreaterThan(0);
     expect(screen.getByText('300')).toBeInTheDocument();
     expect(screen.getByText('110')).toBeInTheDocument();
     expect(screen.getByText('Հաջողվեց')).toBeInTheDocument();
+  });
+
+  test('an unmapped feature/provider code falls back to the raw code, never a blank cell', () => {
+    useAdminAiUsageQuery.mockReturnValue({
+      data: {
+        stats: [
+          {
+            feature_code: 'future_feature',
+            provider_code: 'future_provider',
+            call_count: 1,
+            total_tokens: 10,
+            cache_hits: 0,
+            failure_count: 0,
+            avg_latency_ms: 50,
+          },
+        ],
+        recent: [],
+      },
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(screen.getByText('future_feature')).toBeInTheDocument();
+    expect(screen.getByText('future_provider')).toBeInTheDocument();
   });
 });

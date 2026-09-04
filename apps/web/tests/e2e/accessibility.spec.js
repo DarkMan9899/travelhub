@@ -744,3 +744,112 @@ test.describe('Phase 18 accessibility', () => {
     expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
   });
 });
+
+// Admin Sprint 7 (Audit Logs + AI Moderation/Usage + Messages/
+// Notifications) — the first accessibility coverage for any of these
+// five surfaces. Same concurrent-login race every other `Admin Sprint N
+// pages` block in this file documents, so this stays `.serial` too.
+test.describe.serial('Admin Sprint 7 pages', () => {
+  async function loginAsAdmin(page) {
+    await page.goto('/en/auth/login');
+    await page.getByLabel('Email').fill('admin@travelhub.dev');
+    await page.getByLabel('Password').fill('DevAdmin!2024');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page).toHaveURL(/\/en\/admin$/);
+  }
+
+  test('Admin Audit Logs (list, filters, and an open Details dialog with a real snapshot) has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/audit-logs');
+    await expect(
+      page.getByRole('heading', { name: 'Audit Logs' }),
+    ).toBeVisible();
+    const listViolations = await seriousOrCriticalViolations(page);
+    expect(listViolations, JSON.stringify(listViolations, null, 2)).toEqual([]);
+
+    await page.getByRole('button', { name: 'Details' }).first().click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    const detailViolations = await seriousOrCriticalViolations(page);
+    expect(detailViolations, JSON.stringify(detailViolations, null, 2)).toEqual(
+      [],
+    );
+  });
+
+  test('Admin AI Moderation (queue and a real scored result) has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/ai/moderation');
+    await expect(
+      page.getByRole('heading', { name: 'AI Moderation' }),
+    ).toBeVisible();
+    const listViolations = await seriousOrCriticalViolations(page);
+    expect(listViolations, JSON.stringify(listViolations, null, 2)).toEqual([]);
+
+    const scoreButtons = page.getByRole('button', { name: 'Score' });
+    if ((await scoreButtons.count()) > 0) {
+      await scoreButtons.first().click();
+      await expect(
+        page.getByRole('heading', { name: 'Listing score' }),
+      ).toBeVisible({ timeout: 10_000 });
+      const resultViolations = await seriousOrCriticalViolations(page);
+      expect(
+        resultViolations,
+        JSON.stringify(resultViolations, null, 2),
+      ).toEqual([]);
+    }
+  });
+
+  test('Admin AI Usage dashboard has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/ai/usage');
+    await expect(page.getByRole('heading', { name: 'AI Usage' })).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+
+  test('Admin Messages (conversation list and an open thread) has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/messages');
+    await expect(page.getByRole('heading', { name: 'Messages' })).toBeVisible();
+    const listViolations = await seriousOrCriticalViolations(page);
+    expect(listViolations, JSON.stringify(listViolations, null, 2)).toEqual([]);
+
+    // Scoped to the conversation `<ul>` specifically — an unscoped `li
+    // button`/`li a` locator also matches the Admin sidebar nav's own
+    // `<li><a>` items (real bug caught here: it silently clicked
+    // "Dashboard" instead, surfacing that page's real recharts SVG
+    // a11y violation as a false positive against this test).
+    const firstConversation = page
+      .getByRole('list')
+      .getByRole('button')
+      .first();
+    if (await firstConversation.isVisible().catch(() => false)) {
+      await firstConversation.click();
+      await page.waitForTimeout(350);
+      const threadViolations = await seriousOrCriticalViolations(page);
+      expect(
+        threadViolations,
+        JSON.stringify(threadViolations, null, 2),
+      ).toEqual([]);
+    }
+  });
+
+  test('Admin Notifications (announcement composer and list) has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
+    await page.goto('/en/admin/notifications');
+    await expect(
+      page.getByRole('heading', { name: 'Notifications', exact: true }),
+    ).toBeVisible();
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
+});

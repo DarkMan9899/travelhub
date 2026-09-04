@@ -1,27 +1,53 @@
 /**
  * AdminAuditLogsPageContent — `/:locale/admin/audit-logs` (Stage 11.7:
- * Audit Logs). Same orchestrator shape as `AdminBookingsPageContent`
+ * Audit Logs, redesigned Admin Sprint 7 as a dense forensic/operational
+ * surface). Same orchestrator shape as `AdminBookingsPageContent`
  * (URL-synced filters via `useAdminListFilters` over
  * `useAdminAuditLogsQuery`, rendered via the shared `DataTable`
- * primitive) — but view-only: no row actions, no mutations, no detail
- * page. `action` is a free-text filter (the action-string catalog spans
- * every module and is too large to enumerate as a `Select`, unlike
- * `targetType`, which is a short, stable list).
+ * primitive) — still view-only: no mutations, but now with a per-row
+ * "Details" action surfacing the before/after snapshot the backend DTO
+ * already returns (previously fetched but never rendered).
+ *
+ * `action` is a free-text filter (the real action-string catalog spans
+ * 89 distinct strings across 20+ modules — too large to enumerate as a
+ * `Select`, unlike `targetType`, which is a short, stable list). The
+ * table itself still renders the real localized label
+ * (`admin.auditLogs.action.<key>`, falling back to a humanized version of
+ * the raw string for anything not yet mapped) — the filter's raw-string
+ * matching is exact-equality server-side (`al.action = ?`), so its own
+ * placeholder shows a real action string, not an invented example.
+ *
+ * `actorId`/`targetId` are plain numeric-ID filters, matching the
+ * established Admin Inventory numeric-lookup convention (Admin Sprint
+ * 5) — there is no name-search endpoint for "find the audit actor
+ * named X," so a raw ID is the real, honest capability here.
  */
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
-import { Input, Select } from '@desavii/ui/components/form-controls';
+import {
+  Input,
+  Select,
+  DatePicker,
+} from '@desavii/ui/components/form-controls';
 import { DataTable } from '@desavii/ui/components/dashboard';
-import { ErrorState } from '@desavii/ui/components/feedback-overlays';
+import { Button } from '@desavii/ui/components/primitives';
+import { ErrorState, Modal } from '@desavii/ui/components/feedback-overlays';
 import { Search } from 'lucide-react';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useAdminListFilters } from '../../hooks/useAdminListFilters.js';
 import { useAdminAuditLogsQuery } from '../../queries/useAdminAuditLogsQuery.js';
 
-const DEFAULT_FILTERS = { targetType: '', action: '' };
+const DEFAULT_FILTERS = {
+  targetType: '',
+  action: '',
+  actorId: '',
+  targetId: '',
+  dateFrom: '',
+  dateTo: '',
+};
 
 const TARGET_TYPES = [
   'user',
@@ -40,12 +66,45 @@ const TARGET_TYPES = [
   'city',
 ];
 
+// Defense in depth: `AuditLogger`'s own doc comment (apps/api/src/core/
+// domain/auditLogger.js) says callers are trusted never to place a
+// secret in a snapshot, and a full audit of every real call site found
+// none — but this page renders arbitrary admin-entered JSON (settings/
+// marketplace-config values), so it still redacts by key pattern rather
+// than trusting that discipline never lapses.
+const SENSITIVE_KEY_PATTERN =
+  /token|secret|password|credential|authorization|cookie|api[_-]?key/i;
+
+function redactSnapshot(snapshot) {
+  if (snapshot === null || typeof snapshot !== 'object') return snapshot;
+  if (Array.isArray(snapshot)) return snapshot.map(redactSnapshot);
+  return Object.fromEntries(
+    Object.entries(snapshot).map(([key, value]) => [
+      key,
+      SENSITIVE_KEY_PATTERN.test(key) ? '[redacted]' : redactSnapshot(value),
+    ]),
+  );
+}
+
+// Humanizes an unmapped action string (e.g. `some_module.new_thing_done`
+// → "Some module: new thing done") rather than ever showing the raw
+// dotted/underscored code — a real fallback for actions added after this
+// page's own translated catalog, never the catalog itself.
+function humanizeAction(action) {
+  const [scope, ...rest] = action.split('.');
+  const verb = rest.join('.').replace(/_/g, ' ');
+  return `${scope.replace(/_/g, ' ')}: ${verb}`;
+}
+
 export default function AdminAuditLogsPageContent() {
   const { t, i18n } = useTranslation();
   const { locale } = useParams();
 
   const { filters, updateFilters } = useAdminListFilters(DEFAULT_FILTERS);
   const [actionText, setActionText] = useState(filters.action);
+  const [actorIdText, setActorIdText] = useState(filters.actorId);
+  const [targetIdText, setTargetIdText] = useState(filters.targetId);
+  const [detailEntry, setDetailEntry] = useState(null);
 
   const {
     data,
@@ -58,6 +117,10 @@ export default function AdminAuditLogsPageContent() {
   } = useAdminAuditLogsQuery({
     targetType: filters.targetType,
     action: filters.action,
+    actorId: filters.actorId,
+    targetId: filters.targetId,
+    dateFrom: filters.dateFrom,
+    dateTo: filters.dateTo,
   });
 
   const entries = useMemo(
@@ -82,6 +145,16 @@ export default function AdminAuditLogsPageContent() {
     [i18n.language],
   );
 
+  const actionLabel = (action) =>
+    t(`admin.auditLogs.action.${action}`, {
+      defaultValue: humanizeAction(action),
+    });
+
+  const targetTypeLabel = (targetType) =>
+    t(`admin.auditLogs.targetType.${targetType}`, {
+      defaultValue: targetType,
+    });
+
   const columns = [
     {
       key: 'createdAt',
@@ -93,13 +166,45 @@ export default function AdminAuditLogsPageContent() {
       header: t('admin.auditLogs.table.actor'),
       render: (entry) => entry.actor_name || t('admin.auditLogs.systemActor'),
     },
-    { key: 'action', header: t('admin.auditLogs.table.action') },
+    {
+      key: 'action',
+      header: t('admin.auditLogs.table.action'),
+      render: (entry) => actionLabel(entry.action),
+    },
     {
       key: 'target',
       header: t('admin.auditLogs.table.target'),
-      render: (entry) => `${entry.target_type} #${entry.target_id}`,
+      render: (entry) =>
+        t('admin.auditLogs.detail.targetValue', {
+          type: targetTypeLabel(entry.target_type),
+          id: entry.target_id,
+        }),
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (entry) => (
+        <Button variant="ghost" size="sm" onClick={() => setDetailEntry(entry)}>
+          {t('admin.auditLogs.detailsAction')}
+        </Button>
+      ),
     },
   ];
+
+  const dateRangeValue = useMemo(
+    () => ({
+      start: filters.dateFrom || undefined,
+      end: filters.dateTo || undefined,
+    }),
+    [filters.dateFrom, filters.dateTo],
+  );
+
+  const detailBefore = detailEntry
+    ? redactSnapshot(detailEntry.before_snapshot)
+    : null;
+  const detailAfter = detailEntry
+    ? redactSnapshot(detailEntry.after_snapshot)
+    : null;
 
   return (
     <Section spacing="default">
@@ -123,6 +228,8 @@ export default function AdminAuditLogsPageContent() {
         />
       ) : (
         <Stack gap="4">
+          <p>{t('admin.auditLogs.description')}</p>
+
           <Inline gap="3" wrap>
             <Input
               aria-label={t('admin.auditLogs.filters.actionLabel')}
@@ -143,6 +250,46 @@ export default function AdminAuditLogsPageContent() {
               value={filters.targetType}
               onChange={(value) => updateFilters({ targetType: value })}
             />
+            <Input
+              type="number"
+              aria-label={t('admin.auditLogs.filters.actorIdLabel')}
+              placeholder={t('admin.auditLogs.filters.actorIdPlaceholder')}
+              value={actorIdText}
+              onChange={(event) => setActorIdText(event.target.value)}
+              onBlur={() => updateFilters({ actorId: actorIdText })}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  updateFilters({ actorId: actorIdText });
+                }
+              }}
+            />
+            <Input
+              type="number"
+              aria-label={t('admin.auditLogs.filters.targetIdLabel')}
+              placeholder={t('admin.auditLogs.filters.targetIdPlaceholder')}
+              value={targetIdText}
+              onChange={(event) => setTargetIdText(event.target.value)}
+              onBlur={() => updateFilters({ targetId: targetIdText })}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  updateFilters({ targetId: targetIdText });
+                }
+              }}
+            />
+            <DatePicker
+              mode="range"
+              ariaLabel={t('admin.auditLogs.filters.dateRangeLabel')}
+              placeholder={t('admin.auditLogs.filters.dateRangePlaceholder')}
+              value={dateRangeValue}
+              onChange={(value) =>
+                updateFilters({ dateFrom: value.start, dateTo: value.end })
+              }
+              locale={i18n.language}
+              previousMonthLabel={t(
+                'partner.listingWizard.datePicker.previousMonth',
+              )}
+              nextMonthLabel={t('partner.listingWizard.datePicker.nextMonth')}
+            />
           </Inline>
 
           <DataTable
@@ -157,6 +304,82 @@ export default function AdminAuditLogsPageContent() {
             loadMoreLabel={t('admin.auditLogs.loadMore')}
           />
         </Stack>
+      )}
+
+      {detailEntry && (
+        <Modal
+          isOpen
+          onClose={() => setDetailEntry(null)}
+          title={t('admin.auditLogs.detail.title', {
+            action: actionLabel(detailEntry.action),
+          })}
+          size="lg"
+          footer={
+            <Inline justify="flex-end">
+              <Button variant="ghost" onClick={() => setDetailEntry(null)}>
+                {t('common.close')}
+              </Button>
+            </Inline>
+          }
+        >
+          <Stack gap="3">
+            <Inline gap="2">
+              <strong>{t('admin.auditLogs.detail.actorLabel')}</strong>
+              <span>
+                {detailEntry.actor_id
+                  ? t('admin.auditLogs.detail.actorWithId', {
+                      name:
+                        detailEntry.actor_name ||
+                        t('admin.auditLogs.systemActor'),
+                      id: detailEntry.actor_id,
+                    })
+                  : detailEntry.actor_name || t('admin.auditLogs.systemActor')}
+              </span>
+            </Inline>
+            <Inline gap="2">
+              <strong>{t('admin.auditLogs.detail.targetLabel')}</strong>
+              <span>
+                {t('admin.auditLogs.detail.targetValue', {
+                  type: targetTypeLabel(detailEntry.target_type),
+                  id: detailEntry.target_id,
+                })}
+              </span>
+            </Inline>
+            <Inline gap="2">
+              <strong>{t('admin.auditLogs.detail.timestampLabel')}</strong>
+              <span>
+                {dateFormatter.format(new Date(detailEntry.created_at))}
+              </span>
+            </Inline>
+            {detailEntry.ip_address && (
+              <Inline gap="2">
+                <strong>{t('admin.auditLogs.detail.ipLabel')}</strong>
+                <span>{detailEntry.ip_address}</span>
+              </Inline>
+            )}
+            <Inline gap="2">
+              <strong>{t('admin.auditLogs.detail.actionCodeLabel')}</strong>
+              <code>{detailEntry.action}</code>
+            </Inline>
+
+            <div>
+              <strong>{t('admin.auditLogs.detail.beforeLabel')}</strong>
+              <pre>
+                {detailBefore
+                  ? JSON.stringify(detailBefore, null, 2)
+                  : t('admin.auditLogs.detail.noSnapshot')}
+              </pre>
+            </div>
+            <div>
+              <strong>{t('admin.auditLogs.detail.afterLabel')}</strong>
+              <pre>
+                {detailAfter
+                  ? JSON.stringify(detailAfter, null, 2)
+                  : t('admin.auditLogs.detail.noSnapshot')}
+              </pre>
+            </div>
+          </Stack>
+        </Modal>
       )}
     </Section>
   );

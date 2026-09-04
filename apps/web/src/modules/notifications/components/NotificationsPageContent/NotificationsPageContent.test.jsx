@@ -14,7 +14,7 @@ vi.mock('../../../../api/notifications.js', () => ({
   deleteNotification: vi.fn(),
 }));
 
-function renderPage() {
+function renderPage(props = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -22,7 +22,11 @@ function renderPage() {
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/hy']}>
         <Routes>
-          <Route path="/:locale" element={<NotificationsPageContent />} />
+          <Route
+            path="/:locale"
+            // eslint-disable-next-line react/jsx-props-no-spreading -- test-only prop passthrough
+            element={<NotificationsPageContent {...props} />}
+          />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -108,6 +112,29 @@ describe('NotificationsPageContent (apps/web/src/modules/notifications)', () => 
           expect.objectContaining({ search: 'BK-1' }),
         ),
       { timeout: 2000 },
+    );
+  });
+
+  test('breadcrumbs (Admin Sprint 7): renders the passed trail, and renders none when omitted (Customer/Partner unaffected)', async () => {
+    listNotifications.mockResolvedValue({
+      data: [],
+      meta: { has_more: false },
+    });
+    renderPage({
+      breadcrumbs: [
+        { label: 'Home', href: '/hy' },
+        { label: 'Notifications', href: '/hy/admin/notifications' },
+      ],
+    });
+    await screen.findByText('Ծանուցումներ չկան');
+
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute(
+      'href',
+      '/hy',
+    );
+    expect(screen.getByText('Notifications')).toHaveAttribute(
+      'aria-current',
+      'page',
     );
   });
 });

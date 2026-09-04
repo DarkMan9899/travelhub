@@ -81,8 +81,12 @@ describe('PartnerAiUsagePageContent (apps/web/src/modules/ai)', () => {
     });
     renderPage();
 
-    expect(screen.getByText('listing_description')).toBeInTheDocument();
-    expect(screen.getAllByText('local').length).toBeGreaterThan(0);
+    expect(
+      screen.getByText('Հայտարարության նկարագրություն'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Տեղային (սիմուլյացված)').length,
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText('5').length).toBeGreaterThan(0);
   });
 });

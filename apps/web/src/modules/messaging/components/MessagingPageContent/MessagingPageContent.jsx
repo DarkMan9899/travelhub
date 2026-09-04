@@ -25,6 +25,11 @@
  * cinematic one — a thin navy top border on the two-pane container, no
  * elevation/gradient. Only `pages/partner/PartnerMessagesPage.jsx` passes
  * it.
+ *
+ * `breadcrumbs` (Admin Sprint 7): optional, defaults to none — Customer/
+ * Partner call sites are unaffected. Only `AdminMessagesPage.jsx` passes
+ * the real Home/Dashboard/Messages trail, matching every other Admin
+ * page's `PageHeader` convention (this page previously had none).
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -42,7 +47,10 @@ import styles from './MessagingPageContent.module.scss';
 
 const DEBOUNCE_MS = 300;
 
-export default function MessagingPageContent({ variant = 'default' }) {
+export default function MessagingPageContent({
+  variant = 'default',
+  breadcrumbs = [],
+}) {
   const { t } = useTranslation();
   const isPremium = variant === 'premium';
   const isOperational = variant === 'operational';
@@ -80,7 +88,10 @@ export default function MessagingPageContent({ variant = 'default' }) {
 
   return (
     <Section spacing="none">
-      <PageHeader title={t('messaging.page.heading')} />
+      <PageHeader
+        title={t('messaging.page.heading')}
+        breadcrumbs={breadcrumbs}
+      />
       <div
         className={[
           styles.layout,
@@ -148,4 +159,10 @@ export default function MessagingPageContent({ variant = 'default' }) {
 
 MessagingPageContent.propTypes = {
   variant: PropTypes.oneOf(['default', 'premium', 'operational']),
+  breadcrumbs: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      href: PropTypes.string.isRequired,
+    }),
+  ),
 };
