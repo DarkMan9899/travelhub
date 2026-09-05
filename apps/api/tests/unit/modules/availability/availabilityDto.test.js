@@ -54,6 +54,74 @@ describe('toPublicBookableUnitResponse', () => {
       unit_label: 'Morning departure',
     });
   });
+
+  // Sprint A (Time-Aware Booking Foundation): the `?date=`-augmented shape
+  // `availabilityService.js#getPublicUnits` returns is additive-only —
+  // absent entirely (not present-but-null) when no date was requested,
+  // matching every other additive field convention in this codebase
+  // (e.g. `bookingRepository.js`'s `customerFirstName`).
+  test('omits the per-date availability/price fields entirely when no date was requested', () => {
+    const response = toPublicBookableUnitResponse({
+      id: 9,
+      bookableUnitTypeCode: 'TOUR_DEPARTURE',
+      capacity: 8,
+      timeSlotStart: '09:00',
+      timeSlotEnd: '11:00',
+      unitLabel: 'Morning departure',
+    });
+
+    expect(response).not.toHaveProperty('availability_status_for_date');
+    expect(response).not.toHaveProperty('remaining_count_for_date');
+    expect(response).not.toHaveProperty('price_amount_for_date');
+    expect(response).not.toHaveProperty('price_currency_for_date');
+  });
+
+  test('includes a bucketed per-date availability status and price when the service resolved one for a specific date', () => {
+    const response = toPublicBookableUnitResponse({
+      id: 9,
+      bookableUnitTypeCode: 'TOUR_DEPARTURE',
+      capacity: 8,
+      timeSlotStart: '09:00',
+      timeSlotEnd: '11:00',
+      unitLabel: 'Morning departure',
+      remainingForDate: 3,
+      priceForDateAmount: '9500.00',
+      priceForDateCurrencyCode: 'AMD',
+    });
+
+    expect(response.availability_status_for_date).toBe('LOW');
+    expect(response.remaining_count_for_date).toBe(3);
+    expect(response.price_amount_for_date).toBe('9500.00');
+    expect(response.price_currency_for_date).toBe('AMD');
+  });
+
+  test('never leaks the raw remaining count once comfortably above the low-stock threshold, same as the range-level summary', () => {
+    const response = toPublicBookableUnitResponse({
+      id: 9,
+      bookableUnitTypeCode: 'TOUR_DEPARTURE',
+      capacity: 8,
+      remainingForDate: 8,
+      priceForDateAmount: '9500.00',
+      priceForDateCurrencyCode: 'AMD',
+    });
+
+    expect(response.availability_status_for_date).toBe('AVAILABLE');
+    expect(response.remaining_count_for_date).toBeNull();
+  });
+
+  test('a sold-out date (zero remaining) is reported honestly, not hidden', () => {
+    const response = toPublicBookableUnitResponse({
+      id: 9,
+      bookableUnitTypeCode: 'TOUR_DEPARTURE',
+      capacity: 8,
+      remainingForDate: 0,
+      priceForDateAmount: null,
+      priceForDateCurrencyCode: null,
+    });
+
+    expect(response.availability_status_for_date).toBe('SOLD_OUT');
+    expect(response.remaining_count_for_date).toBe(0);
+  });
 });
 
 describe('toCalendarDayResponse', () => {

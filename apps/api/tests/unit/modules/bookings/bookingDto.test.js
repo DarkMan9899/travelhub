@@ -106,6 +106,71 @@ describe('toBookingResponse', () => {
     expect(response.items[0].unit_label).toBeNull();
     expect(response.items[0].bookable_unit_type).toBeNull();
   });
+
+  // Sprint A (Time-Aware Booking Foundation): `start_time`/`end_time` are
+  // additive, snapshotted-at-booking-time fields (mirrors `unit_label`'s
+  // own pure-mapping coverage immediately above) — present for a
+  // time-slot unit, null for every date-only booking (Hotel/Property/
+  // Restaurant/Car Rental, and any date-only Tour/Attraction unit).
+  test('items carry start_time/end_time when the repository resolved a time-slot booking', () => {
+    const response = toBookingResponse({
+      id: 3,
+      bookingReference: 'BK-20260101-TOURDEP01',
+      customerUserId: 2,
+      partnerId: 5,
+      listingId: 6,
+      bookingTypeCode: 'TOUR_BOOKING',
+      statusCode: 'CONFIRMED',
+      currencyCode: 'AMD',
+      totalAmount: '9500.00',
+      items: [
+        {
+          id: 12,
+          bookableUnitId: 4,
+          unitLabel: '09:00 Departure',
+          bookableUnitTypeCode: 'TOUR_DEPARTURE',
+          dateFrom: '2026-09-12',
+          dateTo: '2026-09-12',
+          startTime: '09:00',
+          endTime: '11:30',
+          quantity: 1,
+          unitPriceAmount: '9500.00',
+        },
+      ],
+    });
+
+    expect(response.items[0].start_time).toBe('09:00');
+    expect(response.items[0].end_time).toBe('11:30');
+  });
+
+  test('items expose null start_time/end_time for a date-only booking', () => {
+    const response = toBookingResponse({
+      id: 4,
+      bookingReference: 'BK-20260101-HOTELROOM',
+      customerUserId: 2,
+      partnerId: 5,
+      listingId: 5,
+      bookingTypeCode: 'HOTEL_ROOM_BOOKING',
+      statusCode: 'CONFIRMED',
+      currencyCode: 'AMD',
+      totalAmount: '85000.00',
+      items: [
+        {
+          id: 13,
+          bookableUnitId: 3,
+          unitLabel: 'Deluxe Suite',
+          bookableUnitTypeCode: 'HOTEL_ROOM',
+          dateFrom: '2026-08-01',
+          dateTo: '2026-08-03',
+          quantity: 1,
+          unitPriceAmount: '85000.00',
+        },
+      ],
+    });
+
+    expect(response.items[0].start_time).toBeNull();
+    expect(response.items[0].end_time).toBeNull();
+  });
 });
 
 describe('toBookingSummaryResponse', () => {

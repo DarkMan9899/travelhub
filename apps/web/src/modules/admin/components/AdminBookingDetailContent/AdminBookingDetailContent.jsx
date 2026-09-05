@@ -56,6 +56,7 @@ import { useAdminCompleteBookingMutation } from '../../mutations/useAdminComplet
 import { useAdminMarkNoShowMutation } from '../../mutations/useAdminMarkNoShowMutation.js';
 import { useAdminResolveRefundReviewMutation } from '../../mutations/useAdminResolveRefundReviewMutation.js';
 import { BookingStatusBadge } from '../../../bookings/index.js';
+import { formatTimeRange } from '../../../../utils/formatTimeRange.js';
 import { BookingPaymentSection } from '../../../payments/index.js';
 import { computeNights } from '../../../bookings/utils/computeNights.js';
 
@@ -378,6 +379,12 @@ export default function AdminBookingDetailContent() {
                       : {dateFormatter.format(new Date(item.date_from))} –{' '}
                       {dateFormatter.format(new Date(item.date_to))}
                     </p>
+                    {formatTimeRange(item.start_time, item.end_time) && (
+                      <p>
+                        {t('bookings.detail.time')}:{' '}
+                        {formatTimeRange(item.start_time, item.end_time)}
+                      </p>
+                    )}
                     {nights !== null && (
                       <p>
                         {t('bookings.detail.nights')}: {nights}

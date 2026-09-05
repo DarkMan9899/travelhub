@@ -20,7 +20,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, Moon, Hash, Users2 } from 'lucide-react';
+import { Calendar, Clock, Moon, Hash, Users2 } from 'lucide-react';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import {
   Skeleton,
@@ -34,6 +34,7 @@ import RouterLink from '../../../../components/RouterLink.jsx';
 import DestinationArt from '../../../../components/DestinationArt/DestinationArt.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import { useConfirm } from '../../../../contexts/ConfirmContext.jsx';
+import { formatTimeRange } from '../../../../utils/formatTimeRange.js';
 import { useBookingQuery } from '../../queries/useBookingQuery.js';
 import { useCancelBookingMutation } from '../../mutations/useCancelBookingMutation.js';
 import BookingStatusBadge from '../BookingStatusBadge/BookingStatusBadge.jsx';
@@ -259,6 +260,14 @@ export default function BookingDetailPageContent() {
                         {dateFormatter.format(new Date(item.date_to))}
                       </span>
                     </p>
+                    {formatTimeRange(item.start_time, item.end_time) && (
+                      <p className={styles.metaLine}>
+                        <Clock aria-hidden="true" focusable="false" />
+                        <span>
+                          {formatTimeRange(item.start_time, item.end_time)}
+                        </span>
+                      </p>
+                    )}
                     {nights !== null && (
                       <p className={styles.metaLine}>
                         <Moon aria-hidden="true" focusable="false" />

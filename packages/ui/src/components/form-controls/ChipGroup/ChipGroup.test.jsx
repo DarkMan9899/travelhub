@@ -8,7 +8,7 @@ const OPTIONS = [
   { value: '17', label: 'Moderate' },
 ];
 
-describe('ChipGroup (apps/web/src/modules/search/components/DynamicFilterPanel/controls)', () => {
+describe('ChipGroup (packages/ui/src/components/form-controls)', () => {
   test('renders every option as a chip, none pressed when nothing is selected', () => {
     render(
       <ChipGroup label="Difficulty" options={OPTIONS} onChange={vi.fn()} />,
@@ -46,5 +46,24 @@ describe('ChipGroup (apps/web/src/modules/search/components/DynamicFilterPanel/c
     );
     await user.click(screen.getByRole('button', { name: 'Easy' }));
     expect(onChange).toHaveBeenCalledWith(undefined);
+  });
+
+  test('a disabled option renders as a disabled button and never fires onChange', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <ChipGroup
+        label="Difficulty"
+        options={[
+          ...OPTIONS,
+          { value: '18', label: 'Sold out', disabled: true },
+        ]}
+        onChange={onChange}
+      />,
+    );
+    const soldOutChip = screen.getByRole('button', { name: 'Sold out' });
+    expect(soldOutChip).toBeDisabled();
+    await user.click(soldOutChip);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

@@ -26,11 +26,16 @@ const listingKeys = {
     listingId,
     'availability',
   ],
-  // Phase 7 (Booking Flow): the public bookable-units read.
-  bookableUnits: (listingId) => [
+  // Phase 7 (Booking Flow): the public bookable-units read. `date` (Sprint
+  // A, Time-Aware Booking Foundation) is optional and only ever supplied
+  // by the customer-facing time-slot picker — every other caller (Admin
+  // Inventory, the Partner Bookable Units panel) omits it and keeps the
+  // exact same cache key it always had.
+  bookableUnits: (listingId, date) => [
     ...listingKeys.details(),
     listingId,
     'bookableUnits',
+    { date },
   ],
   // Phase 7 (Booking Flow): the explicit-unit, price-aware calendar read
   // `ListingReservationWidget` uses to disable blocked days and estimate

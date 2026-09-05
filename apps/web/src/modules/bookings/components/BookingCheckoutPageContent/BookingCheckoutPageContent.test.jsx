@@ -262,4 +262,49 @@ describe('BookingCheckoutPageContent (apps/web/src/modules/bookings)', () => {
       screen.getByRole('button', { name: 'Հաստատել ամրագրման հայտը' }),
     ).toBeDisabled();
   });
+
+  describe('Sprint A (Time-Aware Booking Foundation)', () => {
+    const TIME_SLOT_HOLD_STATE = {
+      listingId: 10,
+      holdBatch: {
+        items: [
+          {
+            bookable_unit_id: 2,
+            date_from: '2026-09-12',
+            date_to: '2026-09-12',
+            quantity: 1,
+            hold_ids: [77],
+          },
+        ],
+        expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+      },
+      unitLabel: '14:00 Departure',
+      timeSlotStart: '14:00',
+      timeSlotEnd: '16:30',
+    };
+
+    test('shows the selected time and a single date (not a meaningless same-day range) for a time-slot booking', () => {
+      renderPage(TIME_SLOT_HOLD_STATE);
+      expect(screen.getByText('14:00–16:30')).toBeInTheDocument();
+      expect(screen.getByText('2026-09-12')).toBeInTheDocument();
+      expect(
+        screen.queryByText(/2026-09-12 – 2026-09-12/),
+      ).not.toBeInTheDocument();
+    });
+
+    test('omits the Time row entirely for a date-only booking (Hotel/Property/Car Rental) — no meaningless empty time UI', () => {
+      renderPage(HOLD_STATE);
+      expect(screen.queryByText('Ժամ')).not.toBeInTheDocument();
+    });
+
+    test('still shows a real two-day range when dates genuinely differ, unaffected by the single-date collapse', () => {
+      renderPage(HOLD_STATE);
+      expect(screen.getByText('2026-08-01 – 2026-08-02')).toBeInTheDocument();
+    });
+
+    test('omits the Nights row for a time-slot booking — a same-day departure is never a nightly stay', () => {
+      renderPage(TIME_SLOT_HOLD_STATE);
+      expect(screen.queryByText('Գիշերներ')).not.toBeInTheDocument();
+    });
+  });
 });

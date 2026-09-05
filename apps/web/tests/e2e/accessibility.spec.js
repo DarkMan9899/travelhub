@@ -743,6 +743,65 @@ test.describe('Phase 18 accessibility', () => {
     const violations = await seriousOrCriticalViolations(page);
     expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
   });
+
+  // Marketplace Product Completeness Sprint A (Time-Aware Booking
+  // Foundation) — the new date-then-time flow's own real states: the
+  // single-date picker, and the real `ChipGroup` time options it reveals
+  // once a date with genuine availability is chosen (this flagship tour
+  // has two seeded departures — see `seedDemoInventoryScenarios.js`).
+  test('Tour reservation widget with the time-slot chip group open has no serious/critical accessibility violations', async ({
+    page,
+  }) => {
+    // The always-enabled "open the booking drawer" trigger lives on
+    // `MobileBookingBar`, which is CSS-hidden at `laptop` and up
+    // (MobileBookingBar.jsx's own header comment) — at a real viewport
+    // width, the desktop sidebar's own inline copy of the SAME CTA label
+    // is the only visible match instead, and it's disabled until a date
+    // AND time are chosen, which is exactly the state this test needs to
+    // get past. Explicit narrow viewport, same as this file's existing
+    // "Mobile listing detail page with the booking drawer open" test.
+    await page.setViewportSize({ width: 390, height: 844 });
+    const tourId = await resolveListingId(PHASE_18_FLAGSHIP_SLUGS.tour);
+    await page.goto(`/en/listings/${tourId}`);
+
+    const reserveCta = page
+      .getByRole('button', { name: 'Reserve your spot' })
+      .and(page.locator(':visible'));
+    await expect(reserveCta).toBeVisible({ timeout: 10_000 });
+    await reserveCta.click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    // Single-date picker, not the generic Unit selector or a date-range
+    // field — the core UX change this sprint makes.
+    await expect(page.getByRole('button', { name: 'Date' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Unit' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Date' }).click();
+    await expect(page.getByRole('grid')).toBeVisible();
+    // Day cells' accessible names are full dates ("Sep 10, 2026" —
+    // DatePicker.test.jsx's own convention), not bare numbers. The last
+    // enabled one in the visible month avoids both the disabled past-day
+    // cells (minDate=today) and any ambiguity around "today" itself.
+    await page
+      .getByRole('gridcell', { name: /^[A-Z][a-z]+ \d{1,2}, \d{4}$/ })
+      .and(page.locator(':not([disabled])'))
+      .last()
+      .click();
+
+    // A real time chip, sourced from the per-date query — not a fixed
+    // placeholder list.
+    await expect(
+      page.getByRole('button', { name: /^\d{2}:\d{2}–\d{2}:\d{2}$/ }).first(),
+    ).toBeVisible({ timeout: 10_000 });
+    await page
+      .getByRole('button', { name: /^\d{2}:\d{2}–\d{2}:\d{2}$/ })
+      .first()
+      .click();
+
+    await page.waitForTimeout(350);
+
+    const violations = await seriousOrCriticalViolations(page);
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
+  });
 });
 
 // Admin Sprint 7 (Audit Logs + AI Moderation/Usage + Messages/

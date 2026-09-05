@@ -103,10 +103,18 @@ export function getListingCalendar(listingId, { from, to, unitId } = {}) {
  * customer-facing reservation widget resolve which unit(s) can be
  * selected before requesting a hold, without needing `requireAuth`'s
  * owner-scoped `GET /availability/units?listingId=` above.
+ *
+ * Sprint A (Time-Aware Booking Foundation): an optional `date` augments
+ * each unit with a real per-date availability/price snapshot
+ * (`available_status_for_date`/`remaining_count_for_date`/
+ * `price_amount_for_date`/`price_currency_for_date`) — the customer-facing
+ * time-slot picker's own read, once a date is chosen, of which sibling
+ * departure/session units actually have capacity that day. Omitting it
+ * (every other caller) returns the exact same shape this always has.
  */
-export function getListingBookableUnits(listingId) {
+export function getListingBookableUnits(listingId, { date } = {}) {
   return apiClient
-    .get(`/availability/${listingId}/units`)
+    .get(`/availability/${listingId}/units`, { params: { date } })
     .then((response) => response.data);
 }
 

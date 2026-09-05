@@ -299,6 +299,15 @@ export class BookingService {
       // this unit can never retroactively change what this booking
       // displays.
       unitLabel: unit.unitLabel,
+      // Sprint A (Time-Aware Booking Foundation): the unit's own
+      // authoritative `time_slot_start`/`time_slot_end` (display-only
+      // `TIME` columns — see `bookableUnitTypes.js`), snapshotted the same
+      // way `unitLabel` already is, right below. Never derived from
+      // anything the client sent — the client only ever supplies
+      // `bookableUnitId`, so a time-slot booking's exact time is exactly
+      // as tamper-proof as its price already was.
+      timeSlotStart: unit.timeSlotStart,
+      timeSlotEnd: unit.timeSlotEnd,
       dateFrom: firstHold.dateFrom,
       dateTo: firstHold.dateTo,
       quantity,
@@ -426,6 +435,8 @@ export class BookingService {
             unitLabelSnapshot: resolved.unitLabel,
             dateFrom: resolved.dateFrom,
             dateTo: resolved.dateTo,
+            startTime: resolved.timeSlotStart,
+            endTime: resolved.timeSlotEnd,
             quantity: resolved.quantity,
             unitPriceAmount: resolved.unitPrice.toDecimalString(),
           },

@@ -46,6 +46,7 @@ import DestinationArt from '../../../../components/DestinationArt/DestinationArt
 import { useAuth } from '../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../contexts/ToastContext.jsx';
 import useNoIndex from '../../../../seo/useNoIndex.js';
+import { formatTimeRange } from '../../../../utils/formatTimeRange.js';
 import { useListingQuery } from '../../../listings/queries/useListingQuery.js';
 import getLocalizedTranslation from '../../../listings/utils/getLocalizedTranslation.js';
 import { useCreateBookingMutation } from '../../mutations/useCreateBookingMutation.js';
@@ -95,6 +96,14 @@ export default function BookingCheckoutPageContent() {
   // from the real booking response, not this hand-off).
   const unitLabel = holdState?.unitLabel;
   const guestCount = holdState?.guestCount;
+  // Sprint A (Time-Aware Booking Foundation): rides along the same way
+  // `unitLabel` already does — display-only here; the customer/partner/
+  // admin's own later view of this booking always reads the real,
+  // persisted `start_time`/`end_time` snapshot instead (never this).
+  const timeRange = formatTimeRange(
+    holdState?.timeSlotStart,
+    holdState?.timeSlotEnd,
+  );
   const nights =
     holdItem?.date_from && holdItem?.date_to
       ? Math.round(
@@ -381,10 +390,23 @@ export default function BookingCheckoutPageContent() {
                 <div className={styles.summaryRow}>
                   <dt>{t('bookings.checkout.summary.dates')}</dt>
                   <dd>
-                    {holdItem.date_from} – {holdItem.date_to}
+                    {holdItem.date_from === holdItem.date_to
+                      ? holdItem.date_from
+                      : `${holdItem.date_from} – ${holdItem.date_to}`}
                   </dd>
                 </div>
-                {nights !== null && (
+                {timeRange && (
+                  <div className={styles.summaryRow}>
+                    <dt>{t('bookings.checkout.summary.time')}</dt>
+                    <dd>{timeRange}</dd>
+                  </div>
+                )}
+                {/* Sprint A: a time-slot booking is never a nightly stay
+                    by construction (no bookable unit is ever both
+                    time-slot AND accommodation) — showing "Nights: 0" for
+                    a same-day departure would be exactly the meaningless
+                    empty-time-UI this phase is meant to eliminate. */}
+                {nights !== null && !timeRange && (
                   <div className={styles.summaryRow}>
                     <dt>{t('bookings.checkout.summary.nights')}</dt>
                     <dd>{nights}</dd>

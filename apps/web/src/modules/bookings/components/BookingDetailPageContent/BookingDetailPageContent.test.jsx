@@ -470,4 +470,45 @@ describe('BookingDetailPageContent (apps/web/src/modules/bookings)', () => {
     renderPage();
     expect(screen.getByText(/Change of plans/)).toBeInTheDocument();
   });
+
+  describe('Sprint A (Time-Aware Booking Foundation)', () => {
+    test('shows the real selected time when the item carries one', () => {
+      useBookingQuery.mockReturnValue({
+        data: {
+          ...BASE_BOOKING,
+          items: [
+            {
+              ...BASE_BOOKING.items[0],
+              unit_label: '09:00 Departure',
+              start_time: '09:00',
+              end_time: '11:30',
+            },
+          ],
+        },
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+      renderPage();
+      expect(screen.getByText('09:00–11:30')).toBeInTheDocument();
+    });
+
+    test('shows no meaningless empty Time UI for a date-only booking (Hotel/Property/Car Rental)', () => {
+      useBookingQuery.mockReturnValue({
+        data: BASE_BOOKING,
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+      renderPage();
+      // The date line itself also uses an en dash ("Aug 1 – Aug 3"), so
+      // assert against the specific HH:MM–HH:MM time shape rather than
+      // the dash alone.
+      expect(
+        screen.queryByText(/\d{2}:\d{2}–\d{2}:\d{2}/),
+      ).not.toBeInTheDocument();
+    });
+  });
 });

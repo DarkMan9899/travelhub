@@ -664,10 +664,69 @@ export class AvailabilityService {
    * Booking Flow uses this to resolve which unit(s) a customer can select
    * before requesting a hold; `toPublicBookableUnitResponse` (the DTO,
    * not this method) is what strips owner-facing fields.
+   *
+   * Sprint A (Time-Aware Booking Foundation) addition: an optional `date`
+   * augments each unit with a per-date availability/price snapshot —
+   * exactly what the customer-facing time-slot picker needs to know which
+   * of a listing's several `TOUR_DEPARTURE`-style units (each one real
+   * departure/session, see `accommodationDateSemantics.js`) actually has
+   * capacity on the one date the customer already picked, before they
+   * commit to a specific time. Deliberately reuses
+   * `getPublicDailyAvailabilityStatus`'s own remaining-quantity/blackout
+   * logic (one call per unit — the same small-N reuse this file's other
+   * per-unit fan-outs already use, e.g. `getPublicAvailabilitySummary`)
+   * and `resolvePriceForDate`'s own date-override -> unit-base ->
+   * listing-fallback precedence (the exact same one `getCalendar`/
+   * `bookingService.js#resolveItem` use) rather than duplicating either
+   * calculation. Omitting `date` returns the exact same shape this method
+   * always has — fully backward compatible with every existing caller
+   * (Admin Inventory, the Partner listing-detail Bookable Units panel,
+   * and this widget's own initial, date-less unit list).
    */
-  async getPublicUnits(principal, listingId) {
-    await this.#listingService.getListing(principal, listingId);
-    return this.#bookableUnitService.listUnitsForListing(listingId);
+  async getPublicUnits(principal, listingId, { date } = {}) {
+    const listing = await this.#listingService.getListing(principal, listingId);
+    const units =
+      await this.#bookableUnitService.listUnitsForListing(listingId);
+    if (date === undefined) return units;
+
+    const [dayStatusesByUnit, priceRowsByUnit] = await Promise.all([
+      Promise.all(
+        units.map((unit) =>
+          this.getPublicDailyAvailabilityStatus(principal, listingId, {
+            from: date,
+            to: date,
+            unitId: unit.id,
+          }),
+        ),
+      ),
+      Promise.all(
+        units.map((unit) =>
+          this.#availabilityCalendarRepository.listPricesForUnit(unit.id, {
+            from: date,
+            to: date,
+          }),
+        ),
+      ),
+    ]);
+
+    return units.map((unit, index) => {
+      const [dayStatus] = dayStatusesByUnit[index];
+      const [override] = priceRowsByUnit[index];
+      const resolvedPrice = resolvePriceForDate({
+        overrideAmount: override?.amount,
+        overrideCurrencyCode: override?.currencyCode,
+        unitBaseAmount: unit.basePriceAmount,
+        unitBaseCurrencyCode: unit.basePriceCurrencyCode,
+        listingBaseAmount: listing.pricing?.amount,
+        listingBaseCurrencyCode: listing.pricing?.currencyCode,
+      });
+      return {
+        ...unit,
+        remainingForDate: dayStatus?.remaining ?? 0,
+        priceForDateAmount: resolvedPrice?.amount ?? null,
+        priceForDateCurrencyCode: resolvedPrice?.currencyCode ?? null,
+      };
+    });
   }
 
   /**

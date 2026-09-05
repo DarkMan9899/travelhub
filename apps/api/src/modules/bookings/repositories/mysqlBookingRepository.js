@@ -26,6 +26,11 @@ import {
 } from '../../../infrastructure/database/pagination.js';
 import { toDateString } from '../../../infrastructure/database/dateFormat.js';
 
+/** `TIME` columns round-trip through mysql2 as `HH:MM:SS` strings already — trimmed to `HH:MM` for display, same convention as `mysqlBookableUnitRepository.js`'s identical helper. */
+function toTimeString(value) {
+  return value ? String(value).slice(0, 5) : null;
+}
+
 function toBookingDomain(row) {
   if (!row) return null;
   return {
@@ -92,6 +97,15 @@ function toItemDomain(row) {
     bookableUnitTypeCode: row.bookable_unit_type_code ?? null,
     dateFrom: toDateString(row.date_from),
     dateTo: toDateString(row.date_to),
+    // Sprint A (Time-Aware Booking Foundation): snapshotted at
+    // booking-creation time from the selected unit's own
+    // `time_slot_start`/`time_slot_end` (see `bookingService.js#resolveItem`)
+    // — never client-supplied, so there is nothing here for a client to
+    // tamper with. `NULL` for every non-time-slot unit type and every
+    // booking created before this migration, same additive/nullable shape
+    // as `unit_label_snapshot` above.
+    startTime: toTimeString(row.start_time),
+    endTime: toTimeString(row.end_time),
     quantity: row.quantity,
     unitPriceAmount: row.unit_price_amount,
     createdAt: row.created_at,
@@ -375,6 +389,8 @@ export class MySqlBookingRepository {
       unitLabelSnapshot,
       dateFrom,
       dateTo,
+      startTime,
+      endTime,
       quantity,
       unitPriceAmount,
     },
@@ -382,14 +398,16 @@ export class MySqlBookingRepository {
   ) {
     const [result] = await connection.query(
       `INSERT INTO booking_items
-        (booking_id, bookable_unit_id, unit_label_snapshot, date_from, date_to, quantity, unit_price_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        (booking_id, bookable_unit_id, unit_label_snapshot, date_from, date_to, start_time, end_time, quantity, unit_price_amount)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         bookingId,
         bookableUnitId,
         unitLabelSnapshot ?? null,
         dateFrom,
         dateTo,
+        startTime ?? null,
+        endTime ?? null,
         quantity,
         unitPriceAmount,
       ],

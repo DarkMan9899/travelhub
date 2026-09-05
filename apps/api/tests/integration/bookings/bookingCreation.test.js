@@ -1111,3 +1111,113 @@ describe('P2.2B final review — guestCount schema validation edge cases', () =>
     ).toBe(true);
   });
 });
+
+describe('Sprint A (Time-Aware Booking Foundation) — booking_items.start_time/end_time', () => {
+  async function registerTimeSlotUnit(
+    listingId,
+    { timeSlotStart, timeSlotEnd, label } = {},
+  ) {
+    const res = await request(app)
+      .post('/api/v1/availability/units')
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({
+        listingId,
+        bookableUnitType: 'TOUR_DEPARTURE',
+        unitLabel: label ?? `Sprint A departure ${Date.now()}`,
+        capacity: 8,
+        timeSlotStart,
+        timeSlotEnd,
+      });
+    return res.body.data.id;
+  }
+
+  test('a booking against a time-slot unit snapshots its start_time/end_time onto the booking item, visible to customer/partner/admin alike', async () => {
+    const listingId = await createListing(
+      `Sprint A Time Slot Test ${Date.now()}`,
+    );
+    const unitId = await registerTimeSlotUnit(listingId, {
+      timeSlotStart: '09:00',
+      timeSlotEnd: '11:30',
+      label: '09:00 Departure',
+    });
+    await setPrice(unitId, '2027-06-01', '2027-06-01', 5_000);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-06-01',
+      '2027-06-01',
+      1,
+    );
+
+    const bookingRes = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(bookingRes.status).toBe(201);
+    expect(bookingRes.body.data.items[0].start_time).toBe('09:00');
+    expect(bookingRes.body.data.items[0].end_time).toBe('11:30');
+    const bookingId = bookingRes.body.data.id;
+
+    const customerDetailRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(customerDetailRes.body.data.items[0].start_time).toBe('09:00');
+    expect(customerDetailRes.body.data.items[0].end_time).toBe('11:30');
+
+    const partnerRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(partnerRes.body.data.items[0].start_time).toBe('09:00');
+    expect(partnerRes.body.data.items[0].end_time).toBe('11:30');
+
+    const adminRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(adminRes.body.data.items[0].start_time).toBe('09:00');
+    expect(adminRes.body.data.items[0].end_time).toBe('11:30');
+
+    // A later rename of the unit's own time slot must never retroactively
+    // change what an already-placed booking displays — same snapshot
+    // guarantee migration 0035 already established for unit_label.
+    await request(app)
+      .patch(`/api/v1/availability/units/${unitId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ unitLabel: '14:00 Departure' });
+    const afterRenameRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(afterRenameRes.body.data.items[0].start_time).toBe('09:00');
+    expect(afterRenameRes.body.data.items[0].end_time).toBe('11:30');
+  });
+
+  test('a booking against a date-only (non-time-slot) unit leaves start_time/end_time null — no regression for Hotel/Property/Car Rental', async () => {
+    const listingId = await createListing(
+      `Sprint A Date Only Regression Test ${Date.now()}`,
+    );
+    const unitId = await registerUnit(listingId, 'HOTEL_ROOM');
+    await setPrice(unitId, '2027-06-10', '2027-06-11', 8_000);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-06-10',
+      '2027-06-11',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.items[0].start_time).toBeNull();
+    expect(res.body.data.items[0].end_time).toBeNull();
+  });
+});

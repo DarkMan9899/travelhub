@@ -522,4 +522,40 @@ describe('AdminBookingDetailContent (apps/web/src/modules/admin)', () => {
       screen.queryByText('Փոխհատուցման կարգավիճակ'),
     ).not.toBeInTheDocument();
   });
+
+  describe('Sprint A (Time-Aware Booking Foundation)', () => {
+    test('shows the real selected time when the item carries one', () => {
+      useAdminBookingDetailQuery.mockReturnValue({
+        data: {
+          ...BASE_BOOKING,
+          items: [
+            {
+              ...BASE_BOOKING.items[0],
+              unit_label: '09:00 Departure',
+              start_time: '09:00',
+              end_time: '11:30',
+            },
+          ],
+        },
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+      renderPage();
+      expect(screen.getByText(/09:00–11:30/)).toBeInTheDocument();
+    });
+
+    test('shows no meaningless empty Time UI for a date-only booking (Hotel/Property/Car Rental)', () => {
+      useAdminBookingDetailQuery.mockReturnValue({
+        data: BASE_BOOKING,
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+      renderPage();
+      expect(screen.queryByText(/^Ժամ:/)).not.toBeInTheDocument();
+    });
+  });
 });

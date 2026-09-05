@@ -17,9 +17,9 @@
 
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
+import { ChipGroup } from '@desavii/ui/components/form-controls';
 import Stepper from './controls/Stepper.jsx';
 import RangeSlider from './controls/RangeSlider.jsx';
-import ChipGroup from './controls/ChipGroup.jsx';
 import CheckboxGroup from './controls/CheckboxGroup.jsx';
 import { getFilterParamKey } from './filterParamKey.js';
 

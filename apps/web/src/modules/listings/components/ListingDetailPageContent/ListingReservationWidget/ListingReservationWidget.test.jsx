@@ -45,12 +45,21 @@ vi.mock('react-router-dom', async () => {
 // exercise the widget's OWN logic (gating, estimate, submit, redirect).
 vi.mock('@desavii/ui/components/form-controls', async () => {
   const actual = await vi.importActual('@desavii/ui/components/form-controls');
-  function MockDatePicker({ onChange, disabledDates = [] }) {
+  // Sprint A: single mode's real `onChange` emits a plain date string, not
+  // a `{start, end}` object (see `DatePicker.test.jsx`'s own "onChange
+  // emits plain YYYY-MM-DD strings" case) — this mock now branches on
+  // `mode` to match, but keeps the exact same button label/click shape
+  // every existing (range-mode) test in this file already relies on.
+  function MockDatePicker({ mode = 'range', onChange, disabledDates = [] }) {
     return (
       <>
         <button
           type="button"
-          onClick={() => onChange({ start: '2026-08-01', end: '2026-08-02' })}
+          onClick={() =>
+            mode === 'single'
+              ? onChange('2026-08-01')
+              : onChange({ start: '2026-08-01', end: '2026-08-02' })
+          }
         >
           pick dates
         </button>
@@ -59,6 +68,7 @@ vi.mock('@desavii/ui/components/form-controls', async () => {
     );
   }
   MockDatePicker.propTypes = {
+    mode: PropTypes.string,
     onChange: PropTypes.func.isRequired,
     disabledDates: PropTypes.arrayOf(PropTypes.string),
   };
@@ -113,6 +123,38 @@ const CALENDAR_DAYS = [
     price_currency: 'AMD',
   },
 ];
+// Sprint A (Time-Aware Booking Foundation) fixtures — two real departures
+// of the same Tour, the exact shape `GET /availability/:listingId/units`
+// returns (`time_slot_start`/`time_slot_end` present).
+const TIME_SLOT_UNITS = [
+  {
+    id: 1,
+    bookable_unit_type: 'TOUR_DEPARTURE',
+    capacity: 12,
+    time_slot_start: '09:00',
+    time_slot_end: '11:30',
+    unit_label: '09:00 Departure',
+  },
+  {
+    id: 2,
+    bookable_unit_type: 'TOUR_DEPARTURE',
+    capacity: 12,
+    time_slot_start: '14:00',
+    time_slot_end: '16:30',
+    unit_label: '14:00 Departure',
+  },
+];
+const SINGLE_TIME_SLOT_UNIT = [
+  {
+    id: 1,
+    bookable_unit_type: 'TOUR_DEPARTURE',
+    capacity: 12,
+    time_slot_start: '09:00',
+    time_slot_end: '11:30',
+    unit_label: '09:00 Departure',
+  },
+];
+
 const DAY_STATUSES = [
   {
     date: '2026-08-01',
@@ -828,5 +870,236 @@ describe('ListingReservationWidget (Listing Details, Phase 7)', () => {
       ).toBeDisabled();
       expect(screen.getByLabelText('Հյուրեր')).toHaveValue(1);
     });
+  });
+});
+
+describe('ListingReservationWidget — Sprint A (Time-Aware Booking Foundation)', () => {
+  beforeEach(() => {
+    mockNavigate.mockReset();
+    useAuth.mockReturnValue({ isAuthenticated: true });
+    useListingCalendarQuery.mockReturnValue({
+      data: CALENDAR_DAYS,
+      refetch: vi.fn(),
+    });
+    useListingDayStatusQuery.mockReturnValue({
+      data: DAY_STATUSES,
+      refetch: vi.fn(),
+    });
+    useCreateBookingHoldMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+  });
+
+  test('a time-slot listing never shows the generic Unit selector, and shows no time chips before a date is picked', () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: TIME_SLOT_UNITS,
+      isPending: false,
+      isError: false,
+    });
+    renderWidget();
+
+    // The DatePicker itself is mocked (see this file's own header comment)
+    // — its real `mode`/`label` rendering is covered by DatePicker.test.jsx.
+    // What belongs to THIS widget's own logic is asserted here: no generic
+    // unit dropdown, and no time options rendered before a date exists.
+    expect(screen.queryByText('Միավոր')).not.toBeInTheDocument();
+    expect(screen.queryByRole('group')).not.toBeInTheDocument();
+    expect(screen.queryByText(/09:00–11:30/)).not.toBeInTheDocument();
+  });
+
+  test('a single time-slot unit shows its time as plain text — no chip group needed', () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: SINGLE_TIME_SLOT_UNIT,
+      isPending: false,
+      isError: false,
+    });
+    renderWidget();
+
+    expect(screen.getByText(/09:00–11:30/)).toBeInTheDocument();
+    expect(screen.queryByRole('group')).not.toBeInTheDocument();
+  });
+
+  test('after picking a date, real available times render as selectable chips sourced from the per-date query', async () => {
+    useListingBookableUnitsQuery.mockImplementation((_listingId, opts = {}) =>
+      opts.date
+        ? {
+            data: [
+              {
+                ...TIME_SLOT_UNITS[0],
+                availability_status_for_date: 'AVAILABLE',
+              },
+              {
+                ...TIME_SLOT_UNITS[1],
+                availability_status_for_date: 'AVAILABLE',
+              },
+            ],
+            isPending: false,
+            isError: false,
+          }
+        : { data: TIME_SLOT_UNITS, isPending: false, isError: false },
+    );
+    const user = userEvent.setup();
+    renderWidget();
+
+    // No times are shown before a date is picked.
+    expect(screen.queryByText(/09:00–11:30/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+
+    expect(
+      screen.getByRole('button', { name: '09:00–11:30' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: '14:00–16:30' }),
+    ).toBeInTheDocument();
+  });
+
+  test('a sold-out departure on the selected date renders as a disabled chip, not hidden and not fake-urgent', async () => {
+    useListingBookableUnitsQuery.mockImplementation((_listingId, opts = {}) =>
+      opts.date
+        ? {
+            data: [
+              {
+                ...TIME_SLOT_UNITS[0],
+                availability_status_for_date: 'SOLD_OUT',
+                remaining_count_for_date: 0,
+              },
+              {
+                ...TIME_SLOT_UNITS[1],
+                availability_status_for_date: 'AVAILABLE',
+              },
+            ],
+            isPending: false,
+            isError: false,
+          }
+        : { data: TIME_SLOT_UNITS, isPending: false, isError: false },
+    );
+    const user = userEvent.setup();
+    renderWidget();
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+
+    expect(screen.getByRole('button', { name: '09:00–11:30' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '14:00–16:30' })).toBeEnabled();
+  });
+
+  test('a date with zero real availability shows an honest "no times" message rather than a dead chip row', async () => {
+    useListingBookableUnitsQuery.mockImplementation((_listingId, opts = {}) =>
+      opts.date
+        ? {
+            data: TIME_SLOT_UNITS.map((unit) => ({
+              ...unit,
+              availability_status_for_date: 'SOLD_OUT',
+              remaining_count_for_date: 0,
+            })),
+            isPending: false,
+            isError: false,
+          }
+        : { data: TIME_SLOT_UNITS, isPending: false, isError: false },
+    );
+    const user = userEvent.setup();
+    renderWidget();
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+
+    expect(
+      screen.getByText(
+        'Այս ամսաթվի համար հասանելի ժամեր չկան։ Խնդրում ենք ընտրել այլ ամսաթիվ։',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('group')).not.toBeInTheDocument();
+  });
+
+  test('selecting a real time enables submit and sends that exact unit id in the hold request', async () => {
+    useListingBookableUnitsQuery.mockImplementation((_listingId, opts = {}) =>
+      opts.date
+        ? {
+            data: TIME_SLOT_UNITS.map((unit) => ({
+              ...unit,
+              availability_status_for_date: 'AVAILABLE',
+            })),
+            isPending: false,
+            isError: false,
+          }
+        : { data: TIME_SLOT_UNITS, isPending: false, isError: false },
+    );
+    const mutateAsync = vi.fn().mockResolvedValue({
+      data: { items: [{ hold_ids: [1] }], expires_at: '2026-08-01T00:15:00Z' },
+    });
+    useCreateBookingHoldMutation.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
+    const user = userEvent.setup();
+    renderWidget();
+
+    expect(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    ).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+    await user.click(screen.getByRole('button', { name: '14:00–16:30' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    ).toBeEnabled();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    );
+
+    expect(mutateAsync).toHaveBeenCalledWith([
+      {
+        bookableUnitId: 2,
+        dateFrom: '2026-08-01',
+        dateTo: '2026-08-01',
+        quantity: 1,
+      },
+    ]);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/en/booking/checkout',
+      expect.objectContaining({
+        state: expect.objectContaining({
+          timeSlotStart: '14:00',
+          timeSlotEnd: '16:30',
+        }),
+      }),
+    );
+  });
+
+  test('changing the date clears a previously selected time — no stale time carries forward', async () => {
+    useListingBookableUnitsQuery.mockImplementation((_listingId, opts = {}) =>
+      opts.date
+        ? {
+            data: TIME_SLOT_UNITS.map((unit) => ({
+              ...unit,
+              availability_status_for_date: 'AVAILABLE',
+            })),
+            isPending: false,
+            isError: false,
+          }
+        : { data: TIME_SLOT_UNITS, isPending: false, isError: false },
+    );
+    const user = userEvent.setup();
+    renderWidget();
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+    await user.click(screen.getByRole('button', { name: '09:00–11:30' }));
+    expect(screen.getByRole('button', { name: '09:00–11:30' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    // Picking a (new) date again must not leave the old time selected.
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+
+    expect(screen.getByRole('button', { name: '09:00–11:30' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    ).toBeDisabled();
   });
 });

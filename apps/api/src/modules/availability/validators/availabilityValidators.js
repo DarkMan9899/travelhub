@@ -273,6 +273,16 @@ export const listingIdParamsSchema = z.object({
   body: z.any(),
 });
 
+// Sprint A (Time-Aware Booking Foundation) — `date` is optional so every
+// existing caller (Admin Inventory, the Partner Bookable Units panel, the
+// widget's own initial unit list) is unaffected; only the customer-facing
+// time-slot picker ever supplies it.
+export const listPublicUnitsQuerySchema = z.object({
+  params: listingIdParams,
+  query: z.object({ date: isoDateSchema.optional() }),
+  body: z.any(),
+});
+
 export const calendarQuerySchema = z.object({
   params: listingIdParams,
   query: z

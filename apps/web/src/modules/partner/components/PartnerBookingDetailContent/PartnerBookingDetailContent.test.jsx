@@ -514,4 +514,40 @@ describe('PartnerBookingDetailContent (apps/web/src/modules/partner)', () => {
     expect(screen.getByText(/Հյուրեր: 1/)).toBeInTheDocument();
     expect(screen.getByText(/Unit under maintenance/)).toBeInTheDocument();
   });
+
+  describe('Sprint A (Time-Aware Booking Foundation)', () => {
+    test('shows the real selected time when the item carries one — operationally critical for the partner', () => {
+      useBookingQuery.mockReturnValue({
+        data: {
+          ...BASE_BOOKING,
+          items: [
+            {
+              ...BASE_BOOKING.items[0],
+              unit_label: '14:00 Departure',
+              start_time: '14:00',
+              end_time: '16:30',
+            },
+          ],
+        },
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+      renderPage();
+      expect(screen.getByText(/14:00–16:30/)).toBeInTheDocument();
+    });
+
+    test('shows no meaningless empty Time UI for a date-only booking (Hotel/Property/Car Rental)', () => {
+      useBookingQuery.mockReturnValue({
+        data: BASE_BOOKING,
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+      renderPage();
+      expect(screen.queryByText(/^Ժամ:/)).not.toBeInTheDocument();
+    });
+  });
 });

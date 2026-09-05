@@ -1,0 +1,59 @@
+@use '../../../tokens/colors' as colors;
+@use '../../../tokens/spacing' as spacing;
+@use '../../../tokens/radius' as radius;
+@use '../../../tokens/motion' as motion;
+@use '../../../functions' as fn;
+@use '../../../mixins/focus-ring' as focus;
+
+.chipGroup {
+  display: flex;
+  flex-direction: column;
+  gap: spacing.$space-2;
+  padding-block: spacing.$space-2;
+}
+
+.label {
+  font-size: fn.rem(16px);
+  color: colors.$color-gray-900;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: spacing.$space-2;
+}
+
+.chip {
+  padding: spacing.$space-1 spacing.$space-3;
+  border: 1px solid colors.$color-gray-200;
+  border-radius: radius.$radius-full;
+  background: colors.$color-white;
+  color: colors.$color-gray-900;
+  font-size: fn.rem(14px);
+  cursor: pointer;
+  transition:
+    border-color motion.$motion-micro motion.$ease-out,
+    background-color motion.$motion-micro motion.$ease-out,
+    color motion.$motion-micro motion.$ease-out;
+  @include motion.reduced-motion-safe;
+  @include focus.focus-ring;
+
+  &:hover:not(:disabled) {
+    border-color: colors.$color-royal-blue;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &--selected {
+    background: colors.$color-royal-blue;
+    border-color: colors.$color-royal-blue;
+    color: colors.$color-white;
+
+    &:hover {
+      border-color: colors.$color-royal-blue;
+    }
+  }
+}

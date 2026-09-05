@@ -21,6 +21,17 @@
  * `ListingPricingSection` rendered right below this widget, showing the
  * exact same amount a second time; merged here to remove that
  * duplicate price display.
+ *
+ * Marketplace Product Completeness Sprint A (Time-Aware Booking
+ * Foundation): a listing whose units carry a real `time_slot_start` (a
+ * Tour/Attraction departure/session — see `accommodationDateSemantics.js`)
+ * now gets a genuine DATE-then-TIME flow instead of the generic unit
+ * `Select` — the "unit" IS the time slot in this data model (one
+ * `bookable_unit` per departure), so picking a time chip is exactly the
+ * same `setSelectedUnitId` this widget already does for every other
+ * category; nothing downstream (hold creation, checkout hand-off, price
+ * estimate) needed to change. Every other category's flow (unit-then-
+ * date-range) is byte-for-byte unchanged.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -33,11 +44,13 @@ import {
   Select,
   Input,
   DatePicker,
+  ChipGroup,
 } from '@desavii/ui/components/form-controls';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import { Spinner, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import { useAuth } from '../../../../../contexts/AuthContext.jsx';
 import { useToast } from '../../../../../contexts/ToastContext.jsx';
+import { formatTimeRange } from '../../../../../utils/formatTimeRange.js';
 import { useListingBookableUnitsQuery } from '../../../queries/useListingBookableUnitsQuery.js';
 import { useListingCalendarQuery } from '../../../queries/useListingCalendarQuery.js';
 import { useListingDayStatusQuery } from '../../../queries/useListingDayStatusQuery.js';
@@ -98,6 +111,58 @@ export default function ListingReservationWidget({
     selectedUnitId ?? (units?.length === 1 ? units[0].id : null);
   const selectedUnit =
     units?.find((unit) => unit.id === effectiveUnitId) ?? null;
+
+  // Sprint A: real per-unit `time_slot_start` (never inferred from
+  // category/listing type — a Tour can genuinely have a date-only unit,
+  // per the audit's own "intraday scheduling is per bookable unit, not
+  // per category" finding) is what actually gates the time-slot flow.
+  const timeSlotUnits = useMemo(
+    () => (units ?? []).filter((unit) => Boolean(unit.time_slot_start)),
+    [units],
+  );
+  const isTimeSlotListing = timeSlotUnits.length > 0;
+
+  // Once a date is chosen, re-fetch the unit list augmented with a real
+  // per-unit availability/price snapshot for THAT date (`?date=`,
+  // `availabilityService.js#getPublicUnits`) — this is what lets the chip
+  // row honestly exclude/disable a departure that's sold out on this
+  // specific day, not just show every registered time unconditionally.
+  const { data: unitsForDate, isPending: isUnitsForDatePending } =
+    useListingBookableUnitsQuery(listingId, {
+      date: isTimeSlotListing ? dateRange.start : undefined,
+    });
+  const unitsForDateById = useMemo(() => {
+    const map = new Map();
+    if (isTimeSlotListing) {
+      (unitsForDate ?? []).forEach((unit) => map.set(unit.id, unit));
+    }
+    return map;
+  }, [unitsForDate, isTimeSlotListing]);
+
+  const timeSlotOptions = useMemo(
+    () =>
+      timeSlotUnits
+        .slice()
+        .sort((a, b) =>
+          (a.time_slot_start ?? '').localeCompare(b.time_slot_start ?? ''),
+        )
+        .map((unit) => {
+          const dateInfo = unitsForDateById.get(unit.id);
+          const isSoldOut =
+            dateInfo?.availability_status_for_date === 'SOLD_OUT';
+          return {
+            value: String(unit.id),
+            label:
+              formatTimeRange(unit.time_slot_start, unit.time_slot_end) ??
+              unit.unit_label,
+            disabled: Boolean(dateRange.start) && isSoldOut,
+          };
+        }),
+    [timeSlotUnits, unitsForDateById, dateRange.start],
+  );
+  const hasAnySelectableTime = timeSlotOptions.some(
+    (option) => !option.disabled,
+  );
 
   // P2.2B: the unit's own real `unit_label` (e.g. "Deluxe King") when a
   // partner set one, falling back to the generic type label only for a
@@ -228,6 +293,23 @@ export default function ListingReservationWidget({
     }
   }
 
+  // Sprint A — time-slot flow: date is chosen FIRST, so unlike
+  // `handleSelectUnit` above (built for the opposite order), picking a
+  // time never needs to reset the date/quantity/guests that already led
+  // to it.
+  function handleSelectTimeSlot(value) {
+    setSelectedUnitId(value === undefined ? null : Number(value));
+  }
+
+  // Section 9: a new date invalidates whatever time was previously
+  // selected — its real availability hasn't been checked yet for this
+  // date, so the customer must pick again rather than carry a stale
+  // selection forward.
+  function handleSelectDate(date) {
+    setDateRange({ start: date, end: date });
+    setSelectedUnitId(null);
+  }
+
   function handleChangeQuantity(nextQuantity) {
     const clampedQuantity = Math.max(
       1,
@@ -289,6 +371,12 @@ export default function ListingReservationWidget({
           estimatedTotal,
           unitLabel: resolveUnitDisplayLabel(selectedUnit),
           guestCount,
+          // Sprint A: rides along the same way `unitLabel` already does —
+          // display-only on checkout; the persisted, authoritative time a
+          // customer sees afterward always comes from the real booking
+          // response's own `start_time`/`end_time` snapshot, never this.
+          timeSlotStart: selectedUnit?.time_slot_start ?? null,
+          timeSlotEnd: selectedUnit?.time_slot_end ?? null,
         },
       });
     } catch (err) {
@@ -392,6 +480,42 @@ export default function ListingReservationWidget({
     };
   });
 
+  // Sprint A: the "date chosen, now show real times" step — pulled out of
+  // the JSX below purely to avoid nesting ternaries (a single real
+  // departure needs no choice at all; otherwise it's load / real chips /
+  // honest "nothing available", one state at a time, never combined into
+  // one expression).
+  function renderTimeSlotStep() {
+    if (timeSlotUnits.length === 1) {
+      return (
+        <p>
+          {t('pages.listingDetail.reservation.timeLabel')}:{' '}
+          {formatTimeRange(
+            timeSlotUnits[0].time_slot_start,
+            timeSlotUnits[0].time_slot_end,
+          )}
+        </p>
+      );
+    }
+    if (!dateRange.start) return null;
+    if (isUnitsForDatePending) {
+      return (
+        <Spinner label={t('pages.listingDetail.reservation.loadingTimes')} />
+      );
+    }
+    if (!hasAnySelectableTime) {
+      return <p>{t('pages.listingDetail.reservation.noTimesForDate')}</p>;
+    }
+    return (
+      <ChipGroup
+        label={t('pages.listingDetail.reservation.timeLabel')}
+        options={timeSlotOptions}
+        selectedValue={selectedUnitId ? String(selectedUnitId) : undefined}
+        onChange={(value) => handleSelectTimeSlot(value)}
+      />
+    );
+  }
+
   return (
     <Section spacing="none" className={styles.widget}>
       <Stack gap="4">
@@ -405,32 +529,56 @@ export default function ListingReservationWidget({
           />
         )}
 
-        {units.length > 1 && (
-          <Select
-            label={t('pages.listingDetail.reservation.unitLabel')}
-            options={unitOptions}
-            value={selectedUnitId ?? ''}
-            onChange={(value) => handleSelectUnit(value)}
-            placeholder={t('pages.listingDetail.reservation.unitPlaceholder')}
-          />
+        {isTimeSlotListing ? (
+          <>
+            <DatePicker
+              mode="single"
+              label={t('pages.listingDetail.reservation.dateLabel')}
+              value={dateRange.start}
+              onChange={(date) => handleSelectDate(date)}
+              minDate={today}
+              locale={i18n.language}
+              previousMonthLabel={t(
+                'partner.listingWizard.datePicker.previousMonth',
+              )}
+              nextMonthLabel={t('partner.listingWizard.datePicker.nextMonth')}
+              placeholder={t('partner.listingWizard.datePicker.selectDate')}
+            />
+
+            {renderTimeSlotStep()}
+          </>
+        ) : (
+          <>
+            {units.length > 1 && (
+              <Select
+                label={t('pages.listingDetail.reservation.unitLabel')}
+                options={unitOptions}
+                value={selectedUnitId ?? ''}
+                onChange={(value) => handleSelectUnit(value)}
+                placeholder={t(
+                  'pages.listingDetail.reservation.unitPlaceholder',
+                )}
+              />
+            )}
+
+            {bedConfigurationSummary && <p>{bedConfigurationSummary}</p>}
+
+            <DatePicker
+              mode="range"
+              label={t('pages.listingDetail.reservation.datesLabel')}
+              value={dateRange}
+              onChange={setDateRange}
+              minDate={today}
+              disabledDates={disabledDates}
+              locale={i18n.language}
+              previousMonthLabel={t(
+                'partner.listingWizard.datePicker.previousMonth',
+              )}
+              nextMonthLabel={t('partner.listingWizard.datePicker.nextMonth')}
+              placeholder={t('partner.listingWizard.datePicker.selectDate')}
+            />
+          </>
         )}
-
-        {bedConfigurationSummary && <p>{bedConfigurationSummary}</p>}
-
-        <DatePicker
-          mode="range"
-          label={t('pages.listingDetail.reservation.datesLabel')}
-          value={dateRange}
-          onChange={setDateRange}
-          minDate={today}
-          disabledDates={disabledDates}
-          locale={i18n.language}
-          previousMonthLabel={t(
-            'partner.listingWizard.datePicker.previousMonth',
-          )}
-          nextMonthLabel={t('partner.listingWizard.datePicker.nextMonth')}
-          placeholder={t('partner.listingWizard.datePicker.selectDate')}
-        />
 
         {selectedUnit && selectedUnit.capacity > 1 && (
           <Input

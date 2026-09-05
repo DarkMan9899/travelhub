@@ -29,6 +29,26 @@ export function toBookableUnitResponse(unit) {
   };
 }
 
+// Phase 17 §Listing Detail — below this count, the exact number is shown
+// ("Only 2 rooms left"); at or above it, only a generic "Available" status
+// is returned. Keeps the public summary honest about scarcity without
+// exposing a partner's real total capacity for high-stock inventory.
+const LOW_STOCK_THRESHOLD = 5;
+
+/**
+ * Public, customer-safe availability summary — one bucketed status per
+ * unit, never the raw `remaining` count above `LOW_STOCK_THRESHOLD`. The
+ * frontend composes the exact copy ("Only N left", "N seats available",
+ * "Sold out", "Available") from `status` + `remaining_count` + the unit's
+ * own `bookable_unit_type` (already public via `/units`), so no wording
+ * decision is baked into the backend response.
+ */
+function resolveAvailabilityStatus(remaining) {
+  if (remaining <= 0) return 'SOLD_OUT';
+  if (remaining <= LOW_STOCK_THRESHOLD) return 'LOW';
+  return 'AVAILABLE';
+}
+
 /** Public: no `listing_id`/`created_at`/`updated_at` — a customer picking a unit to book needs its identity, type, capacity, occupancy/bed structure, base price, and (for a time-slot unit) its label/time window. */
 export function toPublicBookableUnitResponse(unit) {
   return {
@@ -42,6 +62,25 @@ export function toPublicBookableUnitResponse(unit) {
     bed_configuration: unit.bedConfiguration,
     base_price_amount: unit.basePriceAmount,
     base_price_currency: unit.basePriceCurrencyCode,
+    // Sprint A (Time-Aware Booking Foundation) — only present when
+    // `GET /:listingId/units` was called with `?date=`
+    // (`availabilityService.js#getPublicUnits`). Same customer-safe
+    // bucketing/never-leak-raw-count-above-threshold convention as
+    // `toPublicDailyAvailabilityResponse` below — reused via
+    // `resolveAvailabilityStatus`, not reimplemented.
+    ...(unit.remainingForDate !== undefined
+      ? {
+          availability_status_for_date: resolveAvailabilityStatus(
+            unit.remainingForDate,
+          ),
+          remaining_count_for_date:
+            resolveAvailabilityStatus(unit.remainingForDate) === 'AVAILABLE'
+              ? null
+              : unit.remainingForDate,
+          price_amount_for_date: unit.priceForDateAmount ?? null,
+          price_currency_for_date: unit.priceForDateCurrencyCode ?? null,
+        }
+      : {}),
   };
 }
 
@@ -85,26 +124,6 @@ export function toCalendarDayResponse(day) {
     price_amount: day.priceAmount ?? null,
     price_currency: day.priceCurrencyCode ?? null,
   };
-}
-
-// Phase 17 §Listing Detail — below this count, the exact number is shown
-// ("Only 2 rooms left"); at or above it, only a generic "Available" status
-// is returned. Keeps the public summary honest about scarcity without
-// exposing a partner's real total capacity for high-stock inventory.
-const LOW_STOCK_THRESHOLD = 5;
-
-/**
- * Public, customer-safe availability summary — one bucketed status per
- * unit, never the raw `remaining` count above `LOW_STOCK_THRESHOLD`. The
- * frontend composes the exact copy ("Only N left", "N seats available",
- * "Sold out", "Available") from `status` + `remaining_count` + the unit's
- * own `bookable_unit_type` (already public via `/units`), so no wording
- * decision is baked into the backend response.
- */
-function resolveAvailabilityStatus(remaining) {
-  if (remaining <= 0) return 'SOLD_OUT';
-  if (remaining <= LOW_STOCK_THRESHOLD) return 'LOW';
-  return 'AVAILABLE';
 }
 
 /**

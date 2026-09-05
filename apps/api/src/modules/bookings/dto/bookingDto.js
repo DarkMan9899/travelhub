@@ -18,6 +18,14 @@ function toBookingItemResponse(item) {
     bookable_unit_type: item.bookableUnitTypeCode ?? null,
     date_from: item.dateFrom,
     date_to: item.dateTo,
+    // Sprint A (Time-Aware Booking Foundation): snapshotted at
+    // booking-creation time from the selected unit's `time_slot_start`/
+    // `time_slot_end` (`bookingService.js#resolveItem`) — `null` for every
+    // non-time-slot unit type and every booking created before this
+    // capability existed. Same one shape read by customer, partner, and
+    // admin (this DTO is shared across all three, see file header).
+    start_time: item.startTime ?? null,
+    end_time: item.endTime ?? null,
     quantity: item.quantity,
     unit_price_amount: item.unitPriceAmount,
     guests: (item.guests ?? []).map((guest) => ({

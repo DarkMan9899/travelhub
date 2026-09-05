@@ -9,3 +9,4 @@ export {
   default as DatePicker,
   DATE_PICKER_SIZES,
 } from './DatePicker/DatePicker.jsx';
+export { default as ChipGroup } from './ChipGroup/ChipGroup.jsx';

@@ -46,6 +46,7 @@ import {
 import { useCreateConversationMutation } from '../../../messaging/index.js';
 import { BookingPaymentSection } from '../../../payments/index.js';
 import { computeNights } from '../../../bookings/utils/computeNights.js';
+import { formatTimeRange } from '../../../../utils/formatTimeRange.js';
 
 const CANCELLABLE_STATUSES = ['CONFIRMED'];
 const TIMELINE_FIELDS = [
@@ -284,6 +285,12 @@ export default function PartnerBookingDetailContent() {
                       {dateFormatter.format(new Date(item.date_from))} –{' '}
                       {dateFormatter.format(new Date(item.date_to))}
                     </p>
+                    {formatTimeRange(item.start_time, item.end_time) && (
+                      <p>
+                        {t('bookings.detail.time')}:{' '}
+                        {formatTimeRange(item.start_time, item.end_time)}
+                      </p>
+                    )}
                     {nights !== null && (
                       <p>
                         {t('bookings.detail.nights')}: {nights}

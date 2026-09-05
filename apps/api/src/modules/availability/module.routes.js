@@ -46,6 +46,7 @@ import {
   blackoutIdParamsSchema,
   listBlackoutsQuerySchema,
   listingIdParamsSchema,
+  listPublicUnitsQuerySchema,
   calendarQuerySchema,
   publicAvailabilitySummaryQuerySchema,
   createManualBlockSchema,
@@ -224,7 +225,7 @@ export default function createAvailabilityRoutes({
   // --- public views ---
   router.get(
     '/:listingId/units',
-    validate(listingIdParamsSchema),
+    validate(listPublicUnitsQuerySchema),
     availabilityController.listPublicUnits,
   );
   router.get(
