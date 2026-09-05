@@ -5,8 +5,10 @@
  * shape response. No business logic, no direct database access.
  */
 
+import { ValidationError } from '../../../errors/AppError.js';
 import {
   toBookableUnitResponse,
+  toUnitMediaResponse,
   toPublicBookableUnitResponse,
   toCalendarEntryResponse,
   toBlackoutManagementResponse,
@@ -86,6 +88,108 @@ export function createAvailabilityController(availabilityService) {
         res.status(200).json({
           success: true,
           data: units.map(toBookableUnitResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    // --- Sprint C-1: room description, amenities, media ---
+
+    async setUnitDescription(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const unit = await availabilityService.setUnitDescription(
+          req.principal,
+          id,
+          req.validated.body,
+        );
+        res.status(200).json({
+          success: true,
+          data: toBookableUnitResponse(unit),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async replaceUnitAmenities(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const unit = await availabilityService.replaceUnitAmenities(
+          req.principal,
+          id,
+          req.validated.body.amenityIds,
+        );
+        res.status(200).json({
+          success: true,
+          data: toBookableUnitResponse(unit),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async listUnitMedia(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const media = await availabilityService.listUnitMedia(
+          req.principal,
+          id,
+        );
+        res.status(200).json({
+          success: true,
+          data: media.map(toUnitMediaResponse),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async attachUnitMedia(req, res, next) {
+      try {
+        const { id } = req.validated.params;
+        const buffer = req.body;
+        const mimeType = req.headers['content-type'];
+
+        // Gross size/DoS protection lives in module.routes.js's
+        // express.raw({ limit }); this only guards an empty/missing body.
+        if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+          throw new ValidationError('Request body must be a non-empty file.');
+        }
+
+        const media = await availabilityService.attachUnitMedia(
+          req.principal,
+          id,
+          buffer,
+          mimeType,
+        );
+        res.status(201).json({
+          success: true,
+          data: toUnitMediaResponse(media),
+          meta: null,
+          error: null,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    async removeUnitMedia(req, res, next) {
+      try {
+        const { id, mediaId } = req.validated.params;
+        await availabilityService.removeUnitMedia(req.principal, id, mediaId);
+        res.status(200).json({
+          success: true,
+          data: { deleted: true },
           meta: null,
           error: null,
         });

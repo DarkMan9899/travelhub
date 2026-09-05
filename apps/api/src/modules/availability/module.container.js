@@ -28,6 +28,7 @@ import { AvailabilityService } from './services/availabilityService.js';
 import { InventoryConnectionService } from './services/inventoryConnectionService.js';
 import { createAvailabilityController } from './controllers/availabilityController.js';
 import { createInventoryConnectionController } from './controllers/inventoryConnectionController.js';
+import { createStorageProvider } from '../../infrastructure/storage/createStorageProvider.js';
 
 export default function createAvailabilityContainer({
   listingService,
@@ -49,6 +50,11 @@ export default function createAvailabilityContainer({
     new MySqlExternalReservationRepository();
   const inventoryConnectionRepository =
     new MySqlInventoryConnectionRepository();
+  // Sprint C-1: room photo uploads — same StorageProvider abstraction the
+  // Listings module's own `attachMedia` already uses, its own instance
+  // here (cheap to construct, matching that module's own precedent of not
+  // sharing one across module containers).
+  const storageProvider = createStorageProvider();
 
   const bookableUnitService = new BookableUnitService({
     bookableUnitRepository,
@@ -66,6 +72,7 @@ export default function createAvailabilityContainer({
     inventoryBlockRepository,
     externalReservationRepository,
     eventBus,
+    storageProvider,
   });
   const inventoryConnectionService = new InventoryConnectionService({
     inventoryConnectionRepository,

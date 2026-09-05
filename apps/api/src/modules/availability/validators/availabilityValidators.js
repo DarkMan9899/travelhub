@@ -12,6 +12,11 @@ import { z } from 'zod';
 import { CALENDAR_DAY_STATUSES } from '../../../core/domain/calendarExpansion.js';
 import { BOOKABLE_UNIT_TYPES } from '../../../core/domain/bookableUnitTypes.js';
 import { BED_TYPES } from '../../../core/domain/bedTypes.js';
+import {
+  BATHROOM_TYPES,
+  VIEW_TYPES,
+  SMOKING_POLICIES,
+} from '../../../core/domain/roomAttributes.js';
 import { isoDateSchema } from '../../../validation/isoDate.js';
 import {
   BLOCK_REASON_CODES,
@@ -93,6 +98,14 @@ export const registerUnitSchema = z.object({
       bedConfiguration: bedConfigurationSchema,
       basePriceAmount: z.coerce.number().positive().optional(),
       basePriceCurrency: z.string().trim().length(3).toUpperCase().optional(),
+      // Sprint C-1 (Accommodation room-level product data) — structured,
+      // nullable room fields. Generic on `bookable_units` (any unit type
+      // could in principle carry them, same as maxGuests/bedConfiguration
+      // above) but only ever sent by the Partner UI for a HOTEL_ROOM unit.
+      roomSizeSqm: z.coerce.number().positive().max(1000).optional(),
+      bathroomType: z.enum(BATHROOM_TYPES).optional(),
+      viewType: z.enum(VIEW_TYPES).optional(),
+      smokingPolicy: z.enum(SMOKING_POLICIES).optional(),
     })
     .superRefine(refineBasePricePair),
 });
@@ -117,6 +130,10 @@ export const updateUnitSchema = z.object({
       bedConfiguration: bedConfigurationSchema,
       basePriceAmount: z.coerce.number().positive().optional(),
       basePriceCurrency: z.string().trim().length(3).toUpperCase().optional(),
+      roomSizeSqm: z.coerce.number().positive().max(1000).optional(),
+      bathroomType: z.enum(BATHROOM_TYPES).optional(),
+      viewType: z.enum(VIEW_TYPES).optional(),
+      smokingPolicy: z.enum(SMOKING_POLICIES).optional(),
     })
     .refine((data) => Object.keys(data).length > 0, {
       message: 'At least one field must be provided.',
@@ -129,6 +146,34 @@ export const listUnitsQuerySchema = z.object({
   query: z.object({
     listingId: z.coerce.number().int().positive(),
   }),
+  body: z.any(),
+});
+
+// --- Sprint C-1: room description, amenities, media ---
+
+export const updateUnitDescriptionSchema = z.object({
+  params: idParams,
+  query: passthroughQuery,
+  body: z.object({
+    languageCode: z.enum(['en', 'hy', 'ru']).optional(),
+    description: z.string().trim().max(4000).nullable(),
+  }),
+});
+
+export const replaceUnitAmenitiesSchema = z.object({
+  params: idParams,
+  query: passthroughQuery,
+  body: z.object({
+    amenityIds: z.array(z.coerce.number().int().positive()).max(50),
+  }),
+});
+
+export const unitMediaIdParamsSchema = z.object({
+  params: z.object({
+    id: z.coerce.number().int().positive(),
+    mediaId: z.coerce.number().int().positive(),
+  }),
+  query: passthroughQuery,
   body: z.any(),
 });
 

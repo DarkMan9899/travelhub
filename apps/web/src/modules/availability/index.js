@@ -12,10 +12,20 @@
 export { default as availabilityKeys } from './constants/queryKeys.js';
 export { default as BOOKABLE_UNIT_TYPES } from './constants/bookableUnitTypes.js';
 export { default as BED_TYPES } from './constants/bedTypes.js';
+export {
+  BATHROOM_TYPES,
+  VIEW_TYPES,
+  SMOKING_POLICIES,
+} from './constants/roomAttributes.js';
 export { default as useBookableUnitsQuery } from './queries/useBookableUnitsQuery.js';
 export { default as useBlackoutsQuery } from './queries/useBlackoutsQuery.js';
 export { default as useRegisterBookableUnitMutation } from './mutations/useRegisterBookableUnitMutation.js';
 export { default as useUpdateBookableUnitMutation } from './mutations/useUpdateBookableUnitMutation.js';
+// Sprint C-1 (Accommodation room-level product data)
+export { default as useUpdateBookableUnitDescriptionMutation } from './mutations/useUpdateBookableUnitDescriptionMutation.js';
+export { default as useReplaceBookableUnitAmenitiesMutation } from './mutations/useReplaceBookableUnitAmenitiesMutation.js';
+export { default as useAttachBookableUnitMediaMutation } from './mutations/useAttachBookableUnitMediaMutation.js';
+export { default as useRemoveBookableUnitMediaMutation } from './mutations/useRemoveBookableUnitMediaMutation.js';
 export { default as useCreateBlackoutMutation } from './mutations/useCreateBlackoutMutation.js';
 export { default as useRemoveBlackoutMutation } from './mutations/useRemoveBlackoutMutation.js';
 

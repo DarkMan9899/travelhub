@@ -106,7 +106,7 @@ UnitSummaryRow.propTypes = {
   onEdit: PropTypes.func.isRequired,
 };
 
-export default function BookableUnitsManager({ listingId }) {
+export default function BookableUnitsManager({ listingId, categoryId = null }) {
   const { t } = useTranslation();
   const unitsQuery = useBookableUnitsQuery(listingId);
   const registerMutation = useRegisterBookableUnitMutation();
@@ -171,18 +171,29 @@ export default function BookableUnitsManager({ listingId }) {
               <Card key={unit.id} padding="md">
                 <BookableUnitForm
                   initialValues={{
+                    bookableUnitType: unit.bookable_unit_type,
                     unitLabel: unit.unit_label ?? undefined,
                     capacity: unit.capacity,
                     maxGuests: unit.max_guests,
                     bedConfiguration: unit.bed_configuration ?? undefined,
                     basePriceAmount: unit.base_price_amount ?? undefined,
                     basePriceCurrency: unit.base_price_currency ?? undefined,
+                    roomSizeSqm: unit.room_size_sqm ?? undefined,
+                    bathroomType: unit.bathroom_type ?? undefined,
+                    viewType: unit.view_type ?? undefined,
+                    smokingPolicy: unit.smoking_policy ?? undefined,
                   }}
                   showTypeSelector={false}
                   isSubmitting={updateMutation.isPending}
                   submitLabel={t('partner.listingWizard.availability.saveUnit')}
                   onSubmit={(values) => handleUpdate(values)}
                   onCancel={() => cancelEditing()}
+                  unitId={unit.id}
+                  listingId={listingId}
+                  categoryId={categoryId}
+                  translations={unit.translations}
+                  amenityIds={unit.amenity_ids}
+                  media={unit.media}
                 />
                 {updateMutation.error && (
                   <Alert variant="danger">{updateMutation.error.message}</Alert>
@@ -225,4 +236,9 @@ export default function BookableUnitsManager({ listingId }) {
 
 BookableUnitsManager.propTypes = {
   listingId: PropTypes.number.isRequired,
+  // Sprint C-1: needed to fetch the room-amenities metadata (`GET
+  // /listings/metadata?categoryId=X`) — optional because not every caller
+  // (e.g. a listing type with no room-amenity picker to show) has one
+  // resolved.
+  categoryId: PropTypes.number,
 };

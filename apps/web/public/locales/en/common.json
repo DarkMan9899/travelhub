@@ -1465,7 +1465,8 @@
         "ACCESSIBILITY_SAFETY": "Accessibility & Safety",
         "FAMILY_PETS": "Family & Pets",
         "FOOD_SERVICE": "Food & Service",
-        "DINING": "Dining"
+        "DINING": "Dining",
+        "IN_ROOM": "In-Room"
       },
       "media": {
         "atLeastOneRequired": "Add at least one photo before continuing.",
@@ -1536,7 +1537,22 @@
         "bedSummaryItem": "{{count}} × {{type}}",
         "basePriceSummary": "{{amount}} {{currency}} / night",
         "saveUnit": "Save changes",
-        "addAnotherUnit": "Add another room type"
+        "addAnotherUnit": "Add another room type",
+        "roomBasicsHeading": "Room basics",
+        "roomSizeSqm": "Room size (m²)",
+        "roomSizeSqmHint": "Enter the room's floor area in square meters",
+        "roomSleepingHeading": "Sleeping",
+        "roomFeaturesHeading": "Room features",
+        "bathroomType": "Bathroom",
+        "viewType": "View",
+        "smokingPolicy": "Smoking policy",
+        "roomPricingHeading": "Pricing",
+        "roomDescriptionHeading": "Room description",
+        "roomDescriptionLabel": "Description",
+        "roomAmenitiesHeading": "Room amenities",
+        "saveRoomAmenities": "Save amenities",
+        "roomGalleryHeading": "Room photos",
+        "roomGalleryDropzone": "Room photos"
       },
       "bookableUnitTypes": {
         "HOTEL_ROOM": "Hotel room",
@@ -1651,6 +1667,24 @@
         "TWIN": "Twin",
         "SOFA_BED": "Sofa bed",
         "BUNK": "Bunk bed"
+      },
+      "bathroomTypes": {
+        "PRIVATE": "Private bathroom",
+        "SHARED": "Shared bathroom",
+        "ENSUITE": "En-suite bathroom"
+      },
+      "viewTypes": {
+        "CITY": "City view",
+        "MOUNTAIN": "Mountain view",
+        "GARDEN": "Garden view",
+        "COURTYARD": "Courtyard view",
+        "POOL": "Pool view",
+        "LANDMARK": "Landmark view",
+        "NONE": "No specific view"
+      },
+      "smokingPolicies": {
+        "NON_SMOKING": "Non-smoking",
+        "SMOKING_ALLOWED": "Smoking allowed"
       },
       "cancel": "Cancel"
     },

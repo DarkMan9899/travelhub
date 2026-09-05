@@ -39,6 +39,7 @@ function toOptionalInt(value) {
 
 export default function AvailabilityStep({
   listingId,
+  categoryId = null,
   initialValues = {},
   onBack = undefined,
   onNext,
@@ -104,7 +105,7 @@ export default function AvailabilityStep({
 
       <section>
         <h3>{t('partner.listingWizard.availability.units')}</h3>
-        <BookableUnitsManager listingId={listingId} />
+        <BookableUnitsManager listingId={listingId} categoryId={categoryId} />
       </section>
 
       <section>
@@ -205,6 +206,7 @@ export default function AvailabilityStep({
 
 AvailabilityStep.propTypes = {
   listingId: PropTypes.number.isRequired,
+  categoryId: PropTypes.number,
   initialValues: PropTypes.shape({
     minimumStayNights: PropTypes.number,
     maximumStayNights: PropTypes.number,

@@ -29,8 +29,26 @@ import { useTranslation } from 'react-i18next';
 import { Input, Select } from '@desavii/ui/components/form-controls';
 import { Button } from '@desavii/ui/components/primitives';
 import { Stack, Inline } from '@desavii/ui/components/layout';
-import { BOOKABLE_UNIT_TYPES, BED_TYPES } from '../../../availability/index.js';
+import {
+  BOOKABLE_UNIT_TYPES,
+  BED_TYPES,
+  BATHROOM_TYPES,
+  VIEW_TYPES,
+  SMOKING_POLICIES,
+} from '../../../availability/index.js';
 import { CURRENCY_CODES } from '../../constants/currencies.js';
+import RoomDescriptionEditor from './RoomDescriptionEditor.jsx';
+import RoomAmenitiesEditor from './RoomAmenitiesEditor.jsx';
+import RoomMediaGallery from './RoomMediaGallery.jsx';
+
+// Sprint C-1 §17 — room-specific fields (size/bathroom/view/smoking,
+// description/amenities/photos) are gated to this one unit type. Generic
+// on the schema (any unit type could in principle carry room_size_sqm/
+// bathroom_type/etc., same as maxGuests/bedConfiguration already are) but
+// only ever shown here for a HOTEL_ROOM — a Tour departure or a Car
+// Rental vehicle never sees a bathroom/view/smoking field or a photo
+// gallery upload.
+const HOTEL_ROOM_TYPE = 'HOTEL_ROOM';
 
 function toOptionalInt(value) {
   return value === '' ? undefined : Number(value);
@@ -51,6 +69,15 @@ export default function BookableUnitForm({
   submitLabel,
   onSubmit,
   onCancel = undefined,
+  // Sprint C-1: only present when editing an already-created unit — the
+  // description/amenities/photo sub-editors need a real unit id, so they
+  // never render while `showTypeSelector` (creating) is true.
+  unitId = null,
+  listingId = null,
+  categoryId = null,
+  translations = [],
+  amenityIds = [],
+  media = [],
 }) {
   const { t } = useTranslation();
   const [bookableUnitType, setBookableUnitType] = useState(
@@ -85,6 +112,19 @@ export default function BookableUnitForm({
   const [basePriceCurrency, setBasePriceCurrency] = useState(
     initialValues.basePriceCurrency ?? null,
   );
+  // Sprint C-1 (Accommodation room-level product data).
+  const [roomSizeSqm, setRoomSizeSqm] = useState(
+    initialValues.roomSizeSqm != null ? String(initialValues.roomSizeSqm) : '',
+  );
+  const [bathroomType, setBathroomType] = useState(
+    initialValues.bathroomType ?? null,
+  );
+  const [viewType, setViewType] = useState(initialValues.viewType ?? null);
+  const [smokingPolicy, setSmokingPolicy] = useState(
+    initialValues.smokingPolicy ?? null,
+  );
+
+  const isHotelRoom = bookableUnitType === HOTEL_ROOM_TYPE;
 
   function addBedRow() {
     setBedRows((rows) => [...rows, emptyBedRow()]);
@@ -118,6 +158,14 @@ export default function BookableUnitForm({
           : undefined,
       basePriceAmount: toOptionalNumber(basePriceAmount),
       basePriceCurrency: basePriceAmount === '' ? undefined : basePriceCurrency,
+      ...(isHotelRoom
+        ? {
+            roomSizeSqm: toOptionalNumber(roomSizeSqm),
+            bathroomType: bathroomType ?? undefined,
+            viewType: viewType ?? undefined,
+            smokingPolicy: smokingPolicy ?? undefined,
+          }
+        : {}),
     });
   }
 
@@ -143,6 +191,9 @@ export default function BookableUnitForm({
           value={bookableUnitType}
           onChange={setBookableUnitType}
         />
+      )}
+      {isHotelRoom && (
+        <p>{t('partner.listingWizard.availability.roomBasicsHeading')}</p>
       )}
       <Input
         label={t('partner.listingWizard.availability.unitLabel')}
@@ -192,8 +243,22 @@ export default function BookableUnitForm({
           value={maxGuests}
           onChange={(event) => setMaxGuests(event.target.value)}
         />
+        {isHotelRoom && (
+          <Input
+            type="number"
+            label={t('partner.listingWizard.availability.roomSizeSqm')}
+            helperText={t('partner.listingWizard.availability.roomSizeSqmHint')}
+            min="1"
+            max="1000"
+            value={roomSizeSqm}
+            onChange={(event) => setRoomSizeSqm(event.target.value)}
+          />
+        )}
       </Inline>
 
+      {isHotelRoom && (
+        <p>{t('partner.listingWizard.availability.roomSleepingHeading')}</p>
+      )}
       <Stack gap="2">
         <p>{t('partner.listingWizard.availability.bedConfiguration')}</p>
         {bedRows.map((row, index) => (
@@ -230,6 +295,47 @@ export default function BookableUnitForm({
         </Button>
       </Stack>
 
+      {isHotelRoom && (
+        <Stack gap="3">
+          <p>{t('partner.listingWizard.availability.roomFeaturesHeading')}</p>
+          <Inline gap="4" wrap>
+            <Select
+              label={t('partner.listingWizard.availability.bathroomType')}
+              placeholder={t('partner.listingWizard.selectPlaceholder')}
+              options={BATHROOM_TYPES.map((code) => ({
+                value: code,
+                label: t(`partner.listingWizard.bathroomTypes.${code}`, code),
+              }))}
+              value={bathroomType}
+              onChange={setBathroomType}
+            />
+            <Select
+              label={t('partner.listingWizard.availability.viewType')}
+              placeholder={t('partner.listingWizard.selectPlaceholder')}
+              options={VIEW_TYPES.map((code) => ({
+                value: code,
+                label: t(`partner.listingWizard.viewTypes.${code}`, code),
+              }))}
+              value={viewType}
+              onChange={setViewType}
+            />
+            <Select
+              label={t('partner.listingWizard.availability.smokingPolicy')}
+              placeholder={t('partner.listingWizard.selectPlaceholder')}
+              options={SMOKING_POLICIES.map((code) => ({
+                value: code,
+                label: t(`partner.listingWizard.smokingPolicies.${code}`, code),
+              }))}
+              value={smokingPolicy}
+              onChange={setSmokingPolicy}
+            />
+          </Inline>
+        </Stack>
+      )}
+
+      {isHotelRoom && (
+        <p>{t('partner.listingWizard.availability.roomPricingHeading')}</p>
+      )}
       <Inline gap="4" wrap>
         <Input
           type="number"
@@ -247,6 +353,28 @@ export default function BookableUnitForm({
       </Inline>
       {priceIncomplete && (
         <p>{t('partner.listingWizard.availability.basePriceIncomplete')}</p>
+      )}
+
+      {/* Sprint C-1: description/amenities/photos need a real, already-
+          created unit — never shown while registering a brand-new room
+          (`unitId` is only ever passed when editing). */}
+      {isHotelRoom && unitId && (
+        <RoomDescriptionEditor
+          unitId={unitId}
+          listingId={listingId}
+          translations={translations}
+        />
+      )}
+      {isHotelRoom && unitId && (
+        <RoomAmenitiesEditor
+          unitId={unitId}
+          listingId={listingId}
+          categoryId={categoryId}
+          amenityIds={amenityIds}
+        />
+      )}
+      {isHotelRoom && unitId && (
+        <RoomMediaGallery unitId={unitId} listingId={listingId} media={media} />
       )}
 
       <Inline gap="2">
@@ -284,10 +412,33 @@ BookableUnitForm.propTypes = {
     ),
     basePriceAmount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
     basePriceCurrency: PropTypes.string,
+    roomSizeSqm: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    bathroomType: PropTypes.string,
+    viewType: PropTypes.string,
+    smokingPolicy: PropTypes.string,
   }),
   showTypeSelector: PropTypes.bool,
   isSubmitting: PropTypes.bool,
   submitLabel: PropTypes.string.isRequired,
   onSubmit: PropTypes.func.isRequired,
   onCancel: PropTypes.func,
+  unitId: PropTypes.number,
+  listingId: PropTypes.number,
+  categoryId: PropTypes.number,
+  translations: PropTypes.arrayOf(
+    PropTypes.shape({
+      language_code: PropTypes.string.isRequired,
+      description: PropTypes.string,
+    }),
+  ),
+  amenityIds: PropTypes.arrayOf(PropTypes.number),
+  media: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      url: PropTypes.string.isRequired,
+      thumbnail_url: PropTypes.string,
+      position: PropTypes.number.isRequired,
+      is_cover: PropTypes.bool.isRequired,
+    }),
+  ),
 };

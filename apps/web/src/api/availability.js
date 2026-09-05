@@ -43,6 +43,57 @@ export function listBookableUnits(listingId) {
     .then((response) => response.data);
 }
 
+/**
+ * Sprint C-1 (Accommodation room-level product data) — room description,
+ * genuinely multilingual, full-replace-per-locale, same shape as the
+ * Listings module's own `replaceListingHighlights` family.
+ *
+ * `PATCH /availability/units/:id/description` — `{ languageCode?, description }`.
+ */
+export function updateBookableUnitDescription(id, description, languageCode) {
+  return apiClient
+    .patch(`/availability/units/${id}/description`, {
+      languageCode,
+      description,
+    })
+    .then((response) => response.data);
+}
+
+/** `PATCH /availability/units/:id/amenities` — `{ amenityIds: [...] }`, full replace. */
+export function replaceBookableUnitAmenities(id, amenityIds) {
+  return apiClient
+    .patch(`/availability/units/${id}/amenities`, { amenityIds })
+    .then((response) => response.data);
+}
+
+/** `GET /availability/units/:id/media`. */
+export function listBookableUnitMedia(id) {
+  return apiClient
+    .get(`/availability/units/${id}/media`)
+    .then((response) => response.data);
+}
+
+/**
+ * `POST /availability/units/:id/media` — raw file body, `Content-Type`
+ * resolved from the file itself. Mirrors `attachListingMedia` exactly.
+ * @param {number} id
+ * @param {File} file
+ */
+export function attachBookableUnitMedia(id, file) {
+  return apiClient
+    .post(`/availability/units/${id}/media`, file, {
+      headers: { 'Content-Type': file.type },
+    })
+    .then((response) => response.data);
+}
+
+/** `DELETE /availability/units/:id/media/:mediaId`. */
+export function removeBookableUnitMedia(id, mediaId) {
+  return apiClient
+    .delete(`/availability/units/${id}/media/${mediaId}`)
+    .then((response) => response.data);
+}
+
 /** `POST /availability/blackouts` — `{ listingId, dateFrom, dateTo, reason? }`. */
 export function createBlackout(payload) {
   return apiClient

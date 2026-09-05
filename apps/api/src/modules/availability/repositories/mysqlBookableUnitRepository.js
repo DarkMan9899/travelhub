@@ -23,6 +23,7 @@ const SELECT_COLUMNS = `
   bu.time_slot_start, bu.time_slot_end, bu.unit_label,
   bu.max_guests, bu.bed_configuration,
   bu.base_price_amount, bu.base_price_currency_id, cur.code AS base_price_currency_code,
+  bu.room_size_sqm, bu.bathroom_type, bu.view_type, bu.smoking_policy,
   bu.created_at, bu.updated_at
 `;
 const FROM_JOINED = `
@@ -65,8 +66,37 @@ function toDomain(row) {
     basePriceAmount: row.base_price_amount,
     basePriceCurrencyId: row.base_price_currency_id,
     basePriceCurrencyCode: row.base_price_currency_code,
+    roomSizeSqm: row.room_size_sqm,
+    bathroomType: row.bathroom_type,
+    viewType: row.view_type,
+    smokingPolicy: row.smoking_policy,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function toTranslationDomain(row) {
+  return {
+    languageCode: row.language_code,
+    description: row.description,
+  };
+}
+
+/** Mirrors `mysqlListingRepository.js`'s own `toMediaDomain` shape (minus alt-text/caption — not an authored field for room media in this sprint). */
+function toMediaDomain(row) {
+  return {
+    id: row.id,
+    mediableId: row.mediable_id,
+    mediaTypeCode: row.media_type_code,
+    url: row.url,
+    thumbnailUrl: row.thumbnail_url,
+    position: row.position,
+    isCover: Boolean(row.is_cover),
+    moderationStatusCode: row.moderation_status_code,
+    mimeType: row.mime_type,
+    fileSizeBytes: row.file_size_bytes,
+    ownerUserId: row.owner_user_id,
+    createdAt: row.created_at,
   };
 }
 
@@ -139,6 +169,10 @@ export class MySqlBookableUnitRepository {
       bedConfiguration,
       basePriceAmount,
       basePriceCurrencyId,
+      roomSizeSqm,
+      bathroomType,
+      viewType,
+      smokingPolicy,
       createdBy,
     },
     connection = this.#pool,
@@ -148,8 +182,10 @@ export class MySqlBookableUnitRepository {
         `INSERT INTO bookable_units
           (listing_id, bookable_unit_type_id, source_table, source_id, capacity,
            time_slot_start, time_slot_end, unit_label, max_guests, bed_configuration,
-           base_price_amount, base_price_currency_id, created_by, updated_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           base_price_amount, base_price_currency_id,
+           room_size_sqm, bathroom_type, view_type, smoking_policy,
+           created_by, updated_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           listingId,
           bookableUnitTypeId,
@@ -163,6 +199,10 @@ export class MySqlBookableUnitRepository {
           bedConfiguration ? JSON.stringify(bedConfiguration) : null,
           basePriceAmount ?? null,
           basePriceCurrencyId ?? null,
+          roomSizeSqm ?? null,
+          bathroomType ?? null,
+          viewType ?? null,
+          smokingPolicy ?? null,
           createdBy,
           createdBy,
         ],
@@ -211,6 +251,22 @@ export class MySqlBookableUnitRepository {
       assignments.push('base_price_currency_id = ?');
       params.push(fields.basePriceCurrencyId);
     }
+    if (fields.roomSizeSqm !== undefined) {
+      assignments.push('room_size_sqm = ?');
+      params.push(fields.roomSizeSqm);
+    }
+    if (fields.bathroomType !== undefined) {
+      assignments.push('bathroom_type = ?');
+      params.push(fields.bathroomType);
+    }
+    if (fields.viewType !== undefined) {
+      assignments.push('view_type = ?');
+      params.push(fields.viewType);
+    }
+    if (fields.smokingPolicy !== undefined) {
+      assignments.push('smoking_policy = ?');
+      params.push(fields.smokingPolicy);
+    }
 
     if (assignments.length === 0) return this.findById(id, connection);
 
@@ -233,6 +289,158 @@ export class MySqlBookableUnitRepository {
     await connection.query(
       `UPDATE bookable_units SET ${softDeleteAssignment()}, deleted_by = ?, updated_by = ? WHERE id = ?`,
       [deletedBy, deletedBy, id],
+    );
+  }
+
+  // --- bookable_unit_translations (Sprint C-1: room description, genuinely
+  // multilingual — mirrors `mysqlListingRepository.insertTranslation`'s
+  // exact upsert shape) ---
+
+  /** Full multi-locale set for Partner authoring reload — never resolves to a single display locale here (that's a customer-facing concern, out of scope for this owner-facing read). */
+  async listTranslations(bookableUnitId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT l.code AS language_code, t.description
+       FROM bookable_unit_translations t
+       JOIN languages l ON l.id = t.language_id
+       WHERE t.bookable_unit_id = ?`,
+      [bookableUnitId],
+    );
+    return rows.map(toTranslationDomain);
+  }
+
+  async upsertTranslation(
+    bookableUnitId,
+    languageId,
+    description,
+    connection = this.#pool,
+  ) {
+    try {
+      await connection.query(
+        `INSERT INTO bookable_unit_translations (bookable_unit_id, language_id, description)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE description = VALUES(description)`,
+        [bookableUnitId, languageId, description],
+      );
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+  }
+
+  // --- bookable_unit_amenity_listing (Sprint C-1: room-specific amenities
+  // — reuses the shared `listing_amenities` catalog verbatim, mirrors
+  // `mysqlListingRepository`'s own listing-amenity join handling) ---
+
+  async listAmenityIds(bookableUnitId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      'SELECT amenity_id FROM bookable_unit_amenity_listing WHERE bookable_unit_id = ? ORDER BY amenity_id ASC',
+      [bookableUnitId],
+    );
+    return rows.map((row) => row.amenity_id);
+  }
+
+  /** Full replace — same delete-then-insert shape `mysqlListingRepository.replaceHighlights` already established for this codebase's other "partner submits the entire desired set" collections. */
+  async replaceAmenities(bookableUnitId, amenityIds, connection = this.#pool) {
+    try {
+      await connection.query(
+        'DELETE FROM bookable_unit_amenity_listing WHERE bookable_unit_id = ?',
+        [bookableUnitId],
+      );
+      if (amenityIds.length === 0) return;
+      const values = amenityIds.map((amenityId) => [bookableUnitId, amenityId]);
+      await connection.query(
+        'INSERT INTO bookable_unit_amenity_listing (bookable_unit_id, amenity_id) VALUES ?',
+        [values],
+      );
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+  }
+
+  // --- room media (Sprint C-1: `media.mediable_type = 'bookable_unit'` —
+  // the exact same generic polymorphic slice `mysqlListingRepository`
+  // already uses for `mediable_type = 'listing'`, just a different value
+  // in that same column; no new table) ---
+
+  async listMedia(bookableUnitId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT m.*, mt.code AS media_type_code, mst.code AS moderation_status_code
+       FROM media m
+       JOIN media_types mt ON mt.id = m.media_type_id
+       JOIN moderation_statuses mst ON mst.id = m.moderation_status_id
+       WHERE m.mediable_type = 'bookable_unit' AND m.mediable_id = ? AND ${scopeActive('m')}
+       ORDER BY m.position ASC, m.id ASC`,
+      [bookableUnitId],
+    );
+    return rows.map(toMediaDomain);
+  }
+
+  async findMediaById(mediaId, connection = this.#pool) {
+    const [rows] = await connection.query(
+      `SELECT m.*, mt.code AS media_type_code, mst.code AS moderation_status_code
+       FROM media m
+       JOIN media_types mt ON mt.id = m.media_type_id
+       JOIN moderation_statuses mst ON mst.id = m.moderation_status_id
+       WHERE m.id = ? AND m.mediable_type = 'bookable_unit' AND ${scopeActive('m')}
+       LIMIT 1`,
+      [mediaId],
+    );
+    return rows[0] ? toMediaDomain(rows[0]) : null;
+  }
+
+  async attachMedia(
+    {
+      bookableUnitId,
+      mediaTypeCode,
+      url,
+      mimeType,
+      fileSizeBytes,
+      ownerUserId,
+      position,
+      isCover,
+    },
+    connection = this.#pool,
+  ) {
+    const [[mediaType]] = await connection.query(
+      'SELECT id FROM media_types WHERE code = ?',
+      [mediaTypeCode],
+    );
+    const [[completedStatus]] = await connection.query(
+      "SELECT id FROM media_upload_statuses WHERE code = 'COMPLETED'",
+    );
+    const [[pendingStatus]] = await connection.query(
+      "SELECT id FROM moderation_statuses WHERE code = 'PENDING'",
+    );
+
+    try {
+      const [result] = await connection.query(
+        `INSERT INTO media
+          (mediable_type, mediable_id, media_type_id, url, position, is_cover, upload_status_id, moderation_status_id, mime_type, file_size_bytes, owner_user_id, created_by, updated_by)
+         VALUES ('bookable_unit', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          bookableUnitId,
+          mediaType.id,
+          url,
+          position,
+          isCover ? 1 : 0,
+          completedStatus.id,
+          pendingStatus.id,
+          mimeType,
+          fileSizeBytes,
+          ownerUserId,
+          ownerUserId,
+          ownerUserId,
+        ],
+      );
+      return this.findMediaById(result.insertId, connection);
+    } catch (err) {
+      throw mapMysqlError(err);
+    }
+  }
+
+  async removeMedia(mediaId, deletedByUserId, connection = this.#pool) {
+    await connection.query(
+      `UPDATE media SET ${softDeleteAssignment()}, deleted_by = ?, updated_by = ? WHERE id = ?`,
+      [deletedByUserId, deletedByUserId, mediaId],
     );
   }
 }

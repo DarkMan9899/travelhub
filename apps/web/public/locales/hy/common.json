@@ -1465,7 +1465,8 @@
         "ACCESSIBILITY_SAFETY": "Հասանելիություն և անվտանգություն",
         "FAMILY_PETS": "Ընտանիք և ընտանի կենդանիներ",
         "FOOD_SERVICE": "Սնունդ և սպասարկում",
-        "DINING": "Ճաշարան"
+        "DINING": "Ճաշարան",
+        "IN_ROOM": "Սենյակում"
       },
       "media": {
         "atLeastOneRequired": "Շարունակելուց առաջ ավելացրեք առնվազն մեկ լուսանկար։",
@@ -1536,7 +1537,22 @@
         "bedSummaryItem": "{{count}} × {{type}}",
         "basePriceSummary": "{{amount}} {{currency}} / գիշեր",
         "saveUnit": "Պահպանել փոփոխությունները",
-        "addAnotherUnit": "Ավելացնել սենյակի նոր տեսակ"
+        "addAnotherUnit": "Ավելացնել սենյակի նոր տեսակ",
+        "roomBasicsHeading": "Սենյակի հիմնական տվյալներ",
+        "roomSizeSqm": "Սենյակի մակերես (մ²)",
+        "roomSizeSqmHint": "Նշեք սենյակի մակերեսը քառակուսի մետրերով",
+        "roomSleepingHeading": "Քնելու համար",
+        "roomFeaturesHeading": "Սենյակի առանձնահատկություններ",
+        "bathroomType": "Լոգարան",
+        "viewType": "Տեսարան",
+        "smokingPolicy": "Ծխելու կանոն",
+        "roomPricingHeading": "Գնագոյացում",
+        "roomDescriptionHeading": "Սենյակի նկարագրություն",
+        "roomDescriptionLabel": "Նկարագրություն",
+        "roomAmenitiesHeading": "Սենյակի հարմարություններ",
+        "saveRoomAmenities": "Պահպանել հարմարությունները",
+        "roomGalleryHeading": "Սենյակի լուսանկարներ",
+        "roomGalleryDropzone": "Սենյակի լուսանկարներ"
       },
       "bookableUnitTypes": {
         "HOTEL_ROOM": "Հյուրանոցի սենյակ",
@@ -1651,6 +1667,24 @@
         "TWIN": "Երկու առանձին մահճակալ",
         "SOFA_BED": "Բազմոց-մահճակալ",
         "BUNK": "Երկհարկանի մահճակալ"
+      },
+      "bathroomTypes": {
+        "PRIVATE": "Սեփական լոգարան",
+        "SHARED": "Ընդհանուր լոգարան",
+        "ENSUITE": "Ինքնուրույն մուտքով լոգարան"
+      },
+      "viewTypes": {
+        "CITY": "Քաղաքի տեսարան",
+        "MOUNTAIN": "Լեռների տեսարան",
+        "GARDEN": "Այգու տեսարան",
+        "COURTYARD": "Բակի տեսարան",
+        "POOL": "Լողավազանի տեսարան",
+        "LANDMARK": "Տեսարժան վայրի տեսարան",
+        "NONE": "Առանձնահատուկ տեսարան չկա"
+      },
+      "smokingPolicies": {
+        "NON_SMOKING": "Ծխելն արգելված է",
+        "SMOKING_ALLOWED": "Ծխելը թույլատրվում է"
       },
       "cancel": "Չեղարկել"
     },

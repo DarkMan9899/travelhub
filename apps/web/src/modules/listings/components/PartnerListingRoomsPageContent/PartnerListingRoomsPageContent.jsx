@@ -56,7 +56,10 @@ export default function PartnerListingRoomsPageContent({ listingId }) {
           },
         ]}
       />
-      <BookableUnitsManager listingId={listingId} />
+      <BookableUnitsManager
+        listingId={listingId}
+        categoryId={listing.category_ids?.[0] ?? null}
+      />
     </Section>
   );
 }

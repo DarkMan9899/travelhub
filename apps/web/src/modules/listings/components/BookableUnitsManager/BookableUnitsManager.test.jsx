@@ -11,9 +11,24 @@ import {
 vi.mock('../../../availability/index.js', () => ({
   BOOKABLE_UNIT_TYPES: ['HOTEL_ROOM', 'PROPERTY_UNIT'],
   BED_TYPES: ['SINGLE', 'DOUBLE', 'QUEEN', 'KING', 'TWIN', 'SOFA_BED', 'BUNK'],
+  BATHROOM_TYPES: ['PRIVATE', 'SHARED', 'ENSUITE'],
+  VIEW_TYPES: [
+    'CITY',
+    'MOUNTAIN',
+    'GARDEN',
+    'COURTYARD',
+    'POOL',
+    'LANDMARK',
+    'NONE',
+  ],
+  SMOKING_POLICIES: ['NON_SMOKING', 'SMOKING_ALLOWED'],
   useBookableUnitsQuery: vi.fn(),
   useRegisterBookableUnitMutation: vi.fn(),
   useUpdateBookableUnitMutation: vi.fn(),
+  useUpdateBookableUnitDescriptionMutation: vi.fn(),
+  useReplaceBookableUnitAmenitiesMutation: vi.fn(),
+  useAttachBookableUnitMediaMutation: vi.fn(),
+  useRemoveBookableUnitMediaMutation: vi.fn(),
 }));
 
 const APARTMENT_UNIT = {

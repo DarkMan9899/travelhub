@@ -194,6 +194,7 @@ export default function PartnerListingWizard({ partnerships }) {
         {wizard.currentStepId === 'availability' && listing && (
           <AvailabilityStep
             listingId={wizard.listingId}
+            categoryId={categoryId}
             initialValues={
               listing.booking_rules
                 ? {

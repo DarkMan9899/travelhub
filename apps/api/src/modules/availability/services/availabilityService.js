@@ -80,6 +80,12 @@ import {
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
 import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
+import { resolveLocaleIds } from '../../../infrastructure/database/repositories/languageRepository.js';
+import {
+  isAllowedMimeType,
+  isWithinSizeLimit,
+  classifyMimeType,
+} from '../../media/validators/mediaConstraints.js';
 
 const MANAGE_PERMISSION = 'listing.update';
 const ADMIN_PERMISSION = 'listing.moderate';
@@ -174,6 +180,8 @@ export class AvailabilityService {
 
   #eventBus;
 
+  #storageProvider;
+
   constructor({
     availabilityCalendarRepository,
     reservationHoldRepository,
@@ -186,6 +194,7 @@ export class AvailabilityService {
     inventoryBlockRepository,
     externalReservationRepository,
     eventBus = createNoOpEventBus(),
+    storageProvider,
   }) {
     this.#availabilityCalendarRepository = availabilityCalendarRepository;
     this.#reservationHoldRepository = reservationHoldRepository;
@@ -198,6 +207,7 @@ export class AvailabilityService {
     this.#inventoryBlockRepository = inventoryBlockRepository;
     this.#externalReservationRepository = externalReservationRepository;
     this.#eventBus = eventBus;
+    this.#storageProvider = storageProvider;
   }
 
   async #isOwnerOrHasPermission(principal, partnerId, permissionKey) {
@@ -368,6 +378,10 @@ export class AvailabilityService {
       bedConfiguration: input.bedConfiguration,
       basePriceAmount: input.basePriceAmount,
       basePriceCurrencyId,
+      roomSizeSqm: input.roomSizeSqm,
+      bathroomType: input.bathroomType,
+      viewType: input.viewType,
+      smokingPolicy: input.smokingPolicy,
       createdBy: principal.userId,
     });
     await this.#auditLogger.record({
@@ -377,7 +391,7 @@ export class AvailabilityService {
       targetId: unit.id,
       afterSnapshot: { listingId: listing.id, capacity: input.capacity },
     });
-    return unit;
+    return this.#enrichUnit(unit);
   }
 
   /**
@@ -403,6 +417,10 @@ export class AvailabilityService {
       bedConfiguration: fields.bedConfiguration,
       basePriceAmount: fields.basePriceAmount,
       basePriceCurrencyId,
+      roomSizeSqm: fields.roomSizeSqm,
+      bathroomType: fields.bathroomType,
+      viewType: fields.viewType,
+      smokingPolicy: fields.smokingPolicy,
       updatedBy: principal.userId,
     });
     await this.#auditLogger.record({
@@ -412,7 +430,7 @@ export class AvailabilityService {
       targetId: id,
       afterSnapshot: fields,
     });
-    return updated;
+    return this.#enrichUnit(updated);
   }
 
   async retireUnit(principal, id) {
@@ -446,7 +464,26 @@ export class AvailabilityService {
 
   async listUnits(principal, listingId) {
     await this.#loadListingForManagement(principal, listingId);
-    return this.#bookableUnitService.listUnitsForListing(listingId);
+    const units =
+      await this.#bookableUnitService.listUnitsForListing(listingId);
+    return Promise.all(units.map((unit) => this.#enrichUnit(unit)));
+  }
+
+  /**
+   * Sprint C-1: attaches the three new owner-facing room sub-resources
+   * (multi-locale description, selected amenity ids, photo gallery) onto
+   * an already-resolved unit — a small N extra reads (N = one hotel's
+   * room-type count, never large) rather than a join fan-out, matching
+   * this file's existing "compose smaller reads" style over `#writeLedger`
+   * and the Phase 17 breakdown methods below.
+   */
+  async #enrichUnit(unit) {
+    const [translations, amenityIds, media] = await Promise.all([
+      this.#bookableUnitService.listTranslations(unit.id),
+      this.#bookableUnitService.listAmenityIds(unit.id),
+      this.#bookableUnitService.listMedia(unit.id),
+    ]);
+    return { ...unit, translations, amenityIds, media };
   }
 
   /**
@@ -462,6 +499,132 @@ export class AvailabilityService {
     const units =
       await this.#bookableUnitService.listUnitsForListing(listingId);
     return units.length > 0;
+  }
+
+  // --- Sprint C-1: room description, amenities, media — same
+  // owner-or-`listing.update` ownership check every other unit mutation
+  // above already uses, resolved via the unit's own listing. ---
+
+  async setUnitDescription(principal, id, { languageCode, description }) {
+    if (!principal) throw new AuthenticationError();
+    const unit = await this.#bookableUnitService.findById(id);
+    if (!unit) throw new NotFoundError('Bookable unit not found.');
+    await this.#loadListingForManagement(principal, unit.listingId);
+
+    const { localeId } = await resolveLocaleIds(languageCode);
+    const translations = await this.#bookableUnitService.setDescription(
+      id,
+      localeId,
+      description,
+    );
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'bookable_unit.description_updated',
+      targetType: 'bookable_unit',
+      targetId: id,
+    });
+    return this.#enrichUnit({ ...unit, translations });
+  }
+
+  async replaceUnitAmenities(principal, id, amenityIds) {
+    if (!principal) throw new AuthenticationError();
+    const unit = await this.#bookableUnitService.findById(id);
+    if (!unit) throw new NotFoundError('Bookable unit not found.');
+    await this.#loadListingForManagement(principal, unit.listingId);
+
+    const resolvedAmenityIds = await this.#bookableUnitService.replaceAmenities(
+      id,
+      amenityIds,
+    );
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'bookable_unit.amenities_replaced',
+      targetType: 'bookable_unit',
+      targetId: id,
+      afterSnapshot: { amenityIds: resolvedAmenityIds },
+    });
+    return this.#enrichUnit({ ...unit, amenityIds: resolvedAmenityIds });
+  }
+
+  async listUnitMedia(principal, id) {
+    if (!principal) throw new AuthenticationError();
+    const unit = await this.#bookableUnitService.findById(id);
+    if (!unit) throw new NotFoundError('Bookable unit not found.');
+    await this.#loadListingForManagement(principal, unit.listingId);
+    return this.#bookableUnitService.listMedia(id);
+  }
+
+  /**
+   * Room photo upload — mirrors `ListingService.attachMedia` exactly
+   * (same MIME/size validation, same StorageProvider abstraction, same
+   * "first photo becomes the cover" rule), scoped to
+   * `mediable_type = 'bookable_unit'` instead of `'listing'`. Never trusts
+   * a client-supplied unit id without resolving its listing and checking
+   * ownership first — the same rule every other unit mutation here
+   * already follows, load-bearing here specifically because a media
+   * attach/remove is exactly the "attach to a resource I don't own" attack
+   * this sprint's own security requirement calls out.
+   */
+  async attachUnitMedia(principal, id, buffer, mimeType) {
+    if (!principal) throw new AuthenticationError();
+    const unit = await this.#bookableUnitService.findById(id);
+    if (!unit) throw new NotFoundError('Bookable unit not found.');
+    await this.#loadListingForManagement(principal, unit.listingId);
+
+    if (!isAllowedMimeType(mimeType)) {
+      throw new ValidationError('Unsupported media type.');
+    }
+    if (!isWithinSizeLimit(mimeType, buffer.length)) {
+      throw new ValidationError('Media file exceeds the maximum allowed size.');
+    }
+
+    const category = classifyMimeType(mimeType);
+    const extension = mimeType.split('/')[1];
+    const key = `bookable-units/${id}/${Date.now()}.${extension}`;
+    const { url } = await this.#storageProvider.put(key, buffer, {
+      contentType: mimeType,
+    });
+
+    const existingMedia = await this.#bookableUnitService.listMedia(id);
+    const media = await this.#bookableUnitService.attachMedia({
+      bookableUnitId: id,
+      mediaTypeCode: category.toUpperCase(),
+      url,
+      mimeType,
+      fileSizeBytes: buffer.length,
+      ownerUserId: principal.userId,
+      position: existingMedia.length,
+      isCover: existingMedia.length === 0,
+    });
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'bookable_unit.media_attached',
+      targetType: 'bookable_unit',
+      targetId: id,
+      afterSnapshot: { mediaId: media.id },
+    });
+    return media;
+  }
+
+  async removeUnitMedia(principal, id, mediaId) {
+    if (!principal) throw new AuthenticationError();
+    const unit = await this.#bookableUnitService.findById(id);
+    if (!unit) throw new NotFoundError('Bookable unit not found.');
+    await this.#loadListingForManagement(principal, unit.listingId);
+
+    const media = await this.#bookableUnitService.findMediaById(mediaId);
+    if (!media || media.mediableId !== id) {
+      throw new NotFoundError('Media not found for this room.');
+    }
+
+    await this.#bookableUnitService.removeMedia(mediaId, principal.userId);
+    await this.#auditLogger.record({
+      actorId: principal.userId,
+      action: 'bookable_unit.media_removed',
+      targetType: 'bookable_unit',
+      targetId: id,
+      afterSnapshot: { mediaId },
+    });
   }
 
   // --- availability_calendar (the primary engine) ---

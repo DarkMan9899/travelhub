@@ -11,6 +11,22 @@
  * `toCalendarDayResponse` is the public, merged day-by-day view.
  */
 
+/** Owner/Partner-authoring media shape — mirrors `listingDto.js`'s own `toMediaResponse` minus alt-text/caption (not an authored field for room media in this sprint). */
+export function toUnitMediaResponse(media) {
+  return {
+    id: media.id,
+    media_type: media.mediaTypeCode,
+    url: media.url,
+    thumbnail_url: media.thumbnailUrl,
+    position: media.position,
+    is_cover: media.isCover,
+    moderation_status: media.moderationStatusCode,
+    mime_type: media.mimeType,
+    file_size_bytes: media.fileSizeBytes,
+    created_at: media.createdAt,
+  };
+}
+
 export function toBookableUnitResponse(unit) {
   return {
     id: unit.id,
@@ -24,6 +40,29 @@ export function toBookableUnitResponse(unit) {
     bed_configuration: unit.bedConfiguration,
     base_price_amount: unit.basePriceAmount,
     base_price_currency: unit.basePriceCurrencyCode,
+    // Sprint C-1 (Accommodation room-level product data) — structured,
+    // owner-facing room fields; generic on `bookable_units` (see
+    // migration 0040) but only ever populated by the Partner UI for a
+    // HOTEL_ROOM unit.
+    room_size_sqm: unit.roomSizeSqm ?? null,
+    bathroom_type: unit.bathroomType ?? null,
+    view_type: unit.viewType ?? null,
+    smoking_policy: unit.smokingPolicy ?? null,
+    // Present only when the caller went through `AvailabilityService`'s
+    // `#enrichUnit` (every owner-facing register/update/list path) — a
+    // bare `BookableUnitService` read (e.g. Sprint 10's internal
+    // `getUnitById`) never attaches these, so they're omitted rather than
+    // defaulted to an empty array in that case.
+    ...(unit.translations !== undefined && {
+      translations: unit.translations.map((t) => ({
+        language_code: t.languageCode,
+        description: t.description,
+      })),
+    }),
+    ...(unit.amenityIds !== undefined && { amenity_ids: unit.amenityIds }),
+    ...(unit.media !== undefined && {
+      media: unit.media.map(toUnitMediaResponse),
+    }),
     created_at: unit.createdAt,
     updated_at: unit.updatedAt,
   };

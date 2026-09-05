@@ -1485,7 +1485,8 @@
         "ACCESSIBILITY_SAFETY": "Доступность и безопасность",
         "FAMILY_PETS": "Семья и питомцы",
         "FOOD_SERVICE": "Питание и обслуживание",
-        "DINING": "Кухня"
+        "DINING": "Кухня",
+        "IN_ROOM": "В номере"
       },
       "media": {
         "atLeastOneRequired": "Добавьте хотя бы одну фотографию, чтобы продолжить.",
@@ -1556,7 +1557,22 @@
         "bedSummaryItem": "{{count}} × {{type}}",
         "basePriceSummary": "{{amount}} {{currency}} / ночь",
         "saveUnit": "Сохранить изменения",
-        "addAnotherUnit": "Добавить ещё один тип номера"
+        "addAnotherUnit": "Добавить ещё один тип номера",
+        "roomBasicsHeading": "Основные данные номера",
+        "roomSizeSqm": "Площадь номера (м²)",
+        "roomSizeSqmHint": "Укажите площадь номера в квадратных метрах",
+        "roomSleepingHeading": "Спальные места",
+        "roomFeaturesHeading": "Особенности номера",
+        "bathroomType": "Ванная комната",
+        "viewType": "Вид",
+        "smokingPolicy": "Курение",
+        "roomPricingHeading": "Цена",
+        "roomDescriptionHeading": "Описание номера",
+        "roomDescriptionLabel": "Описание",
+        "roomAmenitiesHeading": "Удобства номера",
+        "saveRoomAmenities": "Сохранить удобства",
+        "roomGalleryHeading": "Фотографии номера",
+        "roomGalleryDropzone": "Фотографии номера"
       },
       "bookableUnitTypes": {
         "HOTEL_ROOM": "Номер отеля",
@@ -1671,6 +1687,24 @@
         "TWIN": "Две отдельные кровати",
         "SOFA_BED": "Диван-кровать",
         "BUNK": "Двухъярусная кровать"
+      },
+      "bathroomTypes": {
+        "PRIVATE": "Собственная ванная комната",
+        "SHARED": "Общая ванная комната",
+        "ENSUITE": "Ванная комната с отдельным входом"
+      },
+      "viewTypes": {
+        "CITY": "Вид на город",
+        "MOUNTAIN": "Вид на горы",
+        "GARDEN": "Вид на сад",
+        "COURTYARD": "Вид на двор",
+        "POOL": "Вид на бассейн",
+        "LANDMARK": "Вид на достопримечательность",
+        "NONE": "Без особого вида"
+      },
+      "smokingPolicies": {
+        "NON_SMOKING": "Некурящий номер",
+        "SMOKING_ALLOWED": "Курение разрешено"
       },
       "cancel": "Отмена"
     },

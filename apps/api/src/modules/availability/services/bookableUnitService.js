@@ -45,6 +45,10 @@ export class BookableUnitService {
     bedConfiguration,
     basePriceAmount,
     basePriceCurrencyId,
+    roomSizeSqm,
+    bathroomType,
+    viewType,
+    smokingPolicy,
     createdBy,
   }) {
     const resolvedSourceId = sourceId ?? listingId;
@@ -79,6 +83,10 @@ export class BookableUnitService {
       bedConfiguration,
       basePriceAmount,
       basePriceCurrencyId,
+      roomSizeSqm,
+      bathroomType,
+      viewType,
+      smokingPolicy,
       createdBy,
     });
   }
@@ -105,6 +113,49 @@ export class BookableUnitService {
    */
   async updateUnit(id, fields) {
     return this.#bookableUnitRepository.update(id, fields);
+  }
+
+  // --- Sprint C-1: room description, amenities, media — no ownership
+  // checks here either, same "thin persistence seam" rule this whole
+  // Service already follows; the caller (AvailabilityService) authorizes
+  // the unit's listing first. ---
+
+  async listTranslations(id) {
+    return this.#bookableUnitRepository.listTranslations(id);
+  }
+
+  async setDescription(id, languageId, description) {
+    await this.#bookableUnitRepository.upsertTranslation(
+      id,
+      languageId,
+      description,
+    );
+    return this.#bookableUnitRepository.listTranslations(id);
+  }
+
+  async listAmenityIds(id) {
+    return this.#bookableUnitRepository.listAmenityIds(id);
+  }
+
+  async replaceAmenities(id, amenityIds) {
+    await this.#bookableUnitRepository.replaceAmenities(id, amenityIds);
+    return this.#bookableUnitRepository.listAmenityIds(id);
+  }
+
+  async listMedia(id) {
+    return this.#bookableUnitRepository.listMedia(id);
+  }
+
+  async findMediaById(mediaId) {
+    return this.#bookableUnitRepository.findMediaById(mediaId);
+  }
+
+  async attachMedia(fields) {
+    return this.#bookableUnitRepository.attachMedia(fields);
+  }
+
+  async removeMedia(mediaId, deletedBy) {
+    await this.#bookableUnitRepository.removeMedia(mediaId, deletedBy);
   }
 }
 

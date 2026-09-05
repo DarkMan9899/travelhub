@@ -59,13 +59,27 @@ async function insertBookableUnit(
     timeSlotEnd = null,
     unitLabel = null,
     ownerUserId,
+    // Sprint C-1 (Accommodation room-level product data) — optional,
+    // additive room fields; every existing call site below (VEHICLE units
+    // etc.) is unaffected since they simply never pass these.
+    maxGuests = null,
+    bedConfiguration = null,
+    basePriceAmount = null,
+    basePriceCurrencyId = null,
+    roomSizeSqm = null,
+    bathroomType = null,
+    viewType = null,
+    smokingPolicy = null,
   },
 ) {
   const [result] = await connection.query(
     `INSERT INTO bookable_units
       (listing_id, bookable_unit_type_id, source_table, source_id, capacity,
-       time_slot_start, time_slot_end, unit_label, created_by, updated_by)
-     VALUES (?, ?, 'listings', ?, ?, ?, ?, ?, ?, ?)`,
+       time_slot_start, time_slot_end, unit_label,
+       max_guests, bed_configuration, base_price_amount, base_price_currency_id,
+       room_size_sqm, bathroom_type, view_type, smoking_policy,
+       created_by, updated_by)
+     VALUES (?, ?, 'listings', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       listingId,
       bookableUnitTypeId,
@@ -74,11 +88,93 @@ async function insertBookableUnit(
       timeSlotStart,
       timeSlotEnd,
       unitLabel,
+      maxGuests,
+      bedConfiguration ? JSON.stringify(bedConfiguration) : null,
+      basePriceAmount,
+      basePriceCurrencyId,
+      roomSizeSqm,
+      bathroomType,
+      viewType,
+      smokingPolicy,
       ownerUserId,
       ownerUserId,
     ],
   );
   return result.insertId;
+}
+
+/** Sprint C-1 — room description (`bookable_unit_translations`) for one unit across every seeded language. Mirrors this file's own listing-media raw-INSERT style rather than going through the Availability module's Service layer (seed scripts write directly, same as every other helper in this file). */
+async function insertRoomTranslations(
+  connection,
+  { unitId, languageIds, descriptions },
+) {
+  // eslint-disable-next-line no-restricted-syntax -- seeding must run in a stable, readable order
+  for (const [code, description] of Object.entries(descriptions)) {
+    const languageId = languageIds.get(code);
+    if (languageId) {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design
+      await connection.query(
+        `INSERT INTO bookable_unit_translations (bookable_unit_id, language_id, description)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE description = VALUES(description)`,
+        [unitId, languageId, description],
+      );
+    }
+  }
+}
+
+/** Sprint C-1 — room-specific amenities (`bookable_unit_amenity_listing`), resolved from the shared `listing_amenities` catalog by name. */
+async function insertRoomAmenities(connection, { unitId, amenityNames }) {
+  // eslint-disable-next-line no-restricted-syntax -- seeding must run in a stable, readable order
+  for (const name of amenityNames) {
+    // eslint-disable-next-line no-await-in-loop -- sequential by design
+    const [[amenity]] = await connection.query(
+      'SELECT id FROM listing_amenities WHERE name = ?',
+      [name],
+    );
+    if (amenity) {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design
+      await connection.query(
+        'INSERT IGNORE INTO bookable_unit_amenity_listing (bookable_unit_id, amenity_id) VALUES (?, ?)',
+        [unitId, amenity.id],
+      );
+    }
+  }
+}
+
+/** Sprint C-1 — room-specific photo gallery (`media` with `mediable_type = 'bookable_unit'`), deliberately its own image set per room, never copied from the listing's own gallery. */
+async function insertRoomMedia(
+  connection,
+  {
+    unitId,
+    imagePaths,
+    imageTypeId,
+    completedUploadStatusId,
+    approvedStatusId,
+    ownerUserId,
+  },
+) {
+  // eslint-disable-next-line no-restricted-syntax -- seeding must run in a stable, readable order
+  for (const [index, path] of imagePaths.entries()) {
+    // eslint-disable-next-line no-await-in-loop -- sequential by design
+    await connection.query(
+      `INSERT INTO media
+        (mediable_type, mediable_id, media_type_id, url, position, is_cover, upload_status_id, moderation_status_id, owner_user_id, created_by, updated_by)
+       VALUES ('bookable_unit', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        unitId,
+        imageTypeId,
+        path,
+        index,
+        index === 0 ? 1 : 0,
+        completedUploadStatusId,
+        approvedStatusId,
+        ownerUserId,
+        ownerUserId,
+        ownerUserId,
+      ],
+    );
+  }
 }
 
 /** Seeds one AVAILABLE calendar row per day (capacity == quantity_available) across the given window. */
@@ -320,6 +416,14 @@ export default async function seedDemoInventoryScenarios(connection) {
   const bookingTypeIds = await getIdsByCode(connection, 'booking_types', [
     'HOTEL_ROOM_BOOKING',
   ]);
+  // Sprint C-1 — room descriptions are genuinely multilingual (unlike this
+  // file's own English-only listing content, see migration 0037's header);
+  // needs all three locales' language ids.
+  const roomDescriptionLanguageIds = await getIdsByCode(
+    connection,
+    'languages',
+    ['en', 'hy', 'ru'],
+  );
 
   const categoryIdBySlug = new Map();
   // eslint-disable-next-line no-restricted-syntax -- seeding must run in a stable, readable order
@@ -350,7 +454,7 @@ export default async function seedDemoInventoryScenarios(connection) {
     now,
   };
 
-  // === 1. Hotel — "Boutique Yerevan Hotel" (2 room types) =================
+  // === 1. Hotel — "Boutique Yerevan Hotel" (3 room types) =================
   const hotelListingId = await insertListing(connection, {
     ...commonListingFields,
     listingTypeId: listingTypeIds.get('HOTEL'),
@@ -359,9 +463,9 @@ export default async function seedDemoInventoryScenarios(connection) {
     slug: 'demo-vendor-boutique-yerevan-hotel',
     title: 'Boutique Yerevan Hotel',
     summary:
-      'A modern boutique hotel in central Yerevan with two distinct room types.',
+      'A modern boutique hotel in central Yerevan with three distinct room types.',
     description:
-      "Boutique Yerevan Hotel offers a calm, design-forward stay minutes from Republic Square, with Standard Rooms for solo travelers and Deluxe Suites for couples or business stays. Run by desavii's own demo vendor account, so every inventory source (bookings, holds, manual blocks, and phone reservations) is represented across its two room types.",
+      "Boutique Yerevan Hotel offers a calm, design-forward stay minutes from Republic Square, with Standard Rooms for solo travelers, Deluxe Suites for couples or business stays, and a top-floor Suite for longer stays. Run by desavii's own demo vendor account, so every inventory source (bookings, holds, manual blocks, and phone reservations) is represented across its three room types.",
     pricingModelId: pricingModelIds.get('PER_NIGHT'),
     amount: 18500,
     imagePaths: [
@@ -370,12 +474,24 @@ export default async function seedDemoInventoryScenarios(connection) {
     ],
   });
 
+  // Sprint C-1: each room type below is deliberately given DIFFERENT
+  // structured data (size/bathroom/view/smoking/beds/price/amenities/
+  // photos) — the "no cross-room data leakage" QA requirement needs real
+  // fixture variety to prove against, not three copies of the same values.
   const standardRoomId = await insertBookableUnit(connection, {
     listingId: hotelListingId,
     bookableUnitTypeId: unitTypeIds.get('HOTEL_ROOM'),
     capacity: 5,
     unitLabel: 'Standard Room',
     ownerUserId,
+    maxGuests: 2,
+    bedConfiguration: [{ type: 'DOUBLE', count: 1 }],
+    basePriceAmount: 18000,
+    basePriceCurrencyId: amdCurrencyId,
+    roomSizeSqm: 18,
+    bathroomType: 'SHARED',
+    viewType: 'CITY',
+    smokingPolicy: 'NON_SMOKING',
   });
   const deluxeSuiteId = await insertBookableUnit(connection, {
     listingId: hotelListingId,
@@ -383,6 +499,118 @@ export default async function seedDemoInventoryScenarios(connection) {
     capacity: 2,
     unitLabel: 'Deluxe Suite',
     ownerUserId,
+    maxGuests: 3,
+    bedConfiguration: [
+      { type: 'QUEEN', count: 1 },
+      { type: 'SOFA_BED', count: 1 },
+    ],
+    basePriceAmount: 32000,
+    basePriceCurrencyId: amdCurrencyId,
+    roomSizeSqm: 28,
+    bathroomType: 'PRIVATE',
+    viewType: 'MOUNTAIN',
+    smokingPolicy: 'NON_SMOKING',
+  });
+  const suiteId = await insertBookableUnit(connection, {
+    listingId: hotelListingId,
+    bookableUnitTypeId: unitTypeIds.get('HOTEL_ROOM'),
+    capacity: 1,
+    unitLabel: 'Suite',
+    ownerUserId,
+    maxGuests: 4,
+    bedConfiguration: [
+      { type: 'KING', count: 1 },
+      { type: 'TWIN', count: 2 },
+    ],
+    basePriceAmount: 45000,
+    basePriceCurrencyId: amdCurrencyId,
+    roomSizeSqm: 42,
+    bathroomType: 'ENSUITE',
+    viewType: 'LANDMARK',
+    smokingPolicy: 'NON_SMOKING',
+  });
+
+  await insertRoomTranslations(connection, {
+    unitId: standardRoomId,
+    languageIds: roomDescriptionLanguageIds,
+    descriptions: {
+      en: 'A bright, compact room with a shared bathroom down the hall — a practical choice for a solo traveler exploring central Yerevan on foot.',
+      hy: 'Պայծառ, կոմպակտ սենյակ՝ միջանցքի ընդհանուր լոգարանով․ գործնական ընտրություն Երևանի կենտրոնը ոտքով ուսումնասիրող միայնակ ճամփորդի համար։',
+      ru: 'Светлый компактный номер с общей ванной комнатой в коридоре — практичный выбор для одиночного путешественника, изучающего центр Еревана пешком.',
+    },
+  });
+  await insertRoomTranslations(connection, {
+    unitId: deluxeSuiteId,
+    languageIds: roomDescriptionLanguageIds,
+    descriptions: {
+      en: 'A spacious suite with a private bathroom and a mountain-facing balcony, furnished with a queen bed and a sofa bed — comfortable for a couple or a small family.',
+      hy: 'Ընդարձակ լյուքս սենյակ՝ սեփական լոգարանով և լեռնային տեսարանով պատշգամբով, կահավորված քուին մահճակալով և բազմոց-մահճակալով․ հարմարավետ է զույգի կամ փոքր ընտանիքի համար։',
+      ru: 'Просторный люкс с собственной ванной комнатой и балконом с видом на горы, с кроватью размера queen и диваном-кроватью — удобно для пары или небольшой семьи.',
+    },
+  });
+  await insertRoomTranslations(connection, {
+    unitId: suiteId,
+    languageIds: roomDescriptionLanguageIds,
+    descriptions: {
+      en: "The hotel's top-floor Suite: an en-suite bathroom, a landmark view over Republic Square, a king bed plus two twin beds, and a kitchenette — built for a longer stay or a family of four.",
+      hy: 'Հյուրանոցի վերին հարկի Suite-ը՝ սեփական լոգարանով, Հանրապետության հրապարակի տեսարանով, քինգ մահճակալով և երկու առանձին մահճակալով, ինչպես նաև փոքր խոհանոցով․ նախատեսված է երկարատև կեցության կամ քառհոգանոց ընտանիքի համար։',
+      ru: 'Suite на верхнем этаже отеля: собственная ванная комната, вид на площадь Республики, кровать king-size и две односпальные кровати, а также мини-кухня — рассчитан на длительное проживание или семью из четырёх человек.',
+    },
+  });
+
+  await insertRoomAmenities(connection, {
+    unitId: standardRoomId,
+    amenityNames: ['Air Conditioning', 'TV', 'Desk'],
+  });
+  await insertRoomAmenities(connection, {
+    unitId: deluxeSuiteId,
+    amenityNames: ['Air Conditioning', 'Minibar', 'TV', 'Safe', 'Balcony'],
+  });
+  await insertRoomAmenities(connection, {
+    unitId: suiteId,
+    amenityNames: [
+      'Air Conditioning',
+      'Minibar',
+      'TV',
+      'Kettle',
+      'Safe',
+      'Kitchenette',
+      'Washing Machine',
+      'Balcony',
+      'Desk',
+    ],
+  });
+
+  const roomMediaFields = {
+    imageTypeId,
+    completedUploadStatusId,
+    approvedStatusId,
+    ownerUserId,
+  };
+  await insertRoomMedia(connection, {
+    unitId: standardRoomId,
+    imagePaths: [
+      '/assets/images/demo/hotels/hotels-3.svg',
+      '/assets/images/demo/hotels/hotels-4.svg',
+      '/assets/images/demo/hotels/hotels-5.svg',
+    ],
+    ...roomMediaFields,
+  });
+  await insertRoomMedia(connection, {
+    unitId: deluxeSuiteId,
+    imagePaths: [
+      '/assets/images/demo/hotels/hotels-6.svg',
+      '/assets/images/demo/hotels/hotels-7.svg',
+    ],
+    ...roomMediaFields,
+  });
+  await insertRoomMedia(connection, {
+    unitId: suiteId,
+    imagePaths: [
+      '/assets/images/demo/hotels/hotels-8.svg',
+      '/assets/images/demo/hotels/hotels-3.svg',
+    ],
+    ...roomMediaFields,
   });
 
   await seedCalendarWindow(connection, {
@@ -395,6 +623,13 @@ export default async function seedDemoInventoryScenarios(connection) {
   await seedCalendarWindow(connection, {
     unitId: deluxeSuiteId,
     capacity: 2,
+    from: addDays(now, -2),
+    days: 40,
+    availableStatusId,
+  });
+  await seedCalendarWindow(connection, {
+    unitId: suiteId,
+    capacity: 1,
     from: addDays(now, -2),
     days: 40,
     availableStatusId,
@@ -1115,6 +1350,7 @@ export default async function seedDemoInventoryScenarios(connection) {
     units: {
       standardRoomId,
       deluxeSuiteId,
+      suiteId,
       loftUnitId,
       morningDepartureId,
       afternoonDepartureId,

@@ -30,13 +30,17 @@
  * pattern as `listingController.get`.
  */
 
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { validate } from '../../validation/validate.js';
+import { ALLOWED_IMAGE_MIME_TYPES } from '../media/validators/mediaConstraints.js';
 import {
   registerUnitSchema,
   unitIdParamsSchema,
   updateUnitSchema,
   listUnitsQuerySchema,
+  updateUnitDescriptionSchema,
+  replaceUnitAmenitiesSchema,
+  unitMediaIdParamsSchema,
   setAvailabilitySchema,
   updateCalendarEntrySchema,
   calendarEntryIdParamsSchema,
@@ -92,6 +96,42 @@ export default function createAvailabilityRoutes({
     requireAuth,
     validate(unitIdParamsSchema),
     availabilityController.retireUnit,
+  );
+
+  // --- Sprint C-1: room description, amenities, media ---
+  router.patch(
+    '/units/:id/description',
+    requireAuth,
+    validate(updateUnitDescriptionSchema),
+    availabilityController.setUnitDescription,
+  );
+  router.patch(
+    '/units/:id/amenities',
+    requireAuth,
+    validate(replaceUnitAmenitiesSchema),
+    availabilityController.replaceUnitAmenities,
+  );
+  router.get(
+    '/units/:id/media',
+    requireAuth,
+    validate(unitIdParamsSchema),
+    availabilityController.listUnitMedia,
+  );
+  router.post(
+    '/units/:id/media',
+    requireAuth,
+    // Scoped to this one route only, same pattern as the Listings
+    // module's own `/media` route — the global body parser skips
+    // non-JSON content-types.
+    express.raw({ type: ALLOWED_IMAGE_MIME_TYPES, limit: '20mb' }),
+    validate(unitIdParamsSchema),
+    availabilityController.attachUnitMedia,
+  );
+  router.delete(
+    '/units/:id/media/:mediaId',
+    requireAuth,
+    validate(unitMediaIdParamsSchema),
+    availabilityController.removeUnitMedia,
   );
 
   // --- availability_calendar (primary engine) ---

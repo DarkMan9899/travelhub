@@ -218,6 +218,15 @@ const AMENITY_GROUPS = [
   { code: 'FAMILY_PETS', name: 'Family & Pets', sortOrder: 6 },
   { code: 'FOOD_SERVICE', name: 'Food & Service', sortOrder: 7 },
   { code: 'DINING', name: 'Dining', sortOrder: 8 },
+  // Sprint C-1 (Accommodation room-level product data) — room-specific
+  // amenities (`bookable_unit_amenity_listing`), grouped separately from
+  // the listing/hotel-level groups above purely for the Partner room
+  // authoring UI's own grouping; the amenities themselves still live in
+  // the one shared `listing_amenities` catalog (some, like Air
+  // Conditioning/Balcony/Washing Machine below, are reused verbatim from
+  // their existing listing-level group — a room genuinely having its own
+  // AC unit is not a modeling conflict with a building having central AC).
+  { code: 'IN_ROOM', name: 'In-Room', sortOrder: 9 },
 ];
 
 // name -> amenity group code. The 8 names already seeded by
@@ -250,6 +259,15 @@ const AMENITIES = [
   ['Business Center', 'FOOD_SERVICE'],
   ['Outdoor Seating', 'DINING'],
   ['Live Music', 'DINING'],
+  // Sprint C-1 — new room-specific amenities (see AMENITY_GROUPS' own
+  // IN_ROOM comment above for why this is a separate group, not a
+  // separate catalog).
+  ['Minibar', 'IN_ROOM'],
+  ['TV', 'IN_ROOM'],
+  ['Kettle', 'IN_ROOM'],
+  ['Desk', 'IN_ROOM'],
+  ['Safe', 'IN_ROOM'],
+  ['Kitchenette', 'IN_ROOM'],
 ];
 
 // Feeds listing_amenity_translations, which mysqlListingMetadataRepository's
@@ -332,6 +350,12 @@ const AMENITY_TRANSLATIONS = {
     hy: 'Կենդանի երաժշտություն',
     ru: 'Живая музыка',
   },
+  Minibar: { en: 'Minibar', hy: 'Մինի-բար', ru: 'Мини-бар' },
+  TV: { en: 'TV', hy: 'Հեռուստացույց', ru: 'Телевизор' },
+  Kettle: { en: 'Kettle', hy: 'Թեյնիկ', ru: 'Чайник' },
+  Desk: { en: 'Desk', hy: 'Գրասեղան', ru: 'Письменный стол' },
+  Safe: { en: 'Safe', hy: 'Սեյֆ', ru: 'Сейф' },
+  Kitchenette: { en: 'Kitchenette', hy: 'Փոքր խոհանոց', ru: 'Мини-кухня' },
 };
 
 const ATTRIBUTE_DEFINITIONS = [
@@ -475,6 +499,21 @@ const CATEGORY_AMENITIES = {
     'Security',
     'Family Friendly',
     'Wheelchair Accessible',
+    // Sprint C-1 (Accommodation room-level product data) — the Partner's
+    // room-amenity picker reuses this exact same `GET /listings/metadata
+    // ?categoryId=X` call the listing-level Amenities step already makes
+    // (same component, same hook), rather than a second amenities
+    // endpoint with its own category-scoping rules. A hotel legitimately
+    // advertising "TV in every room" as a listing-level amenity too is a
+    // reasonable, non-conflicting overlap, not a modeling bug.
+    'Minibar',
+    'TV',
+    'Kettle',
+    'Desk',
+    'Safe',
+    'Kitchenette',
+    'Balcony',
+    'Washing Machine',
   ],
   apartments: [
     'WiFi',
