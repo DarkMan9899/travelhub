@@ -385,6 +385,21 @@ export default function AdminBookingDetailContent() {
                         {formatTimeRange(item.start_time, item.end_time)}
                       </p>
                     )}
+                    {/* Sprint B (Car Rental Pickup/Return Interval): only
+                        ever populated for a VEHICLE item — every
+                        Hotel/Tour booking view here is unaffected. */}
+                    {item.pickup_location && (
+                      <p>
+                        {t('bookings.detail.pickupLocation')}:{' '}
+                        {item.pickup_location}
+                      </p>
+                    )}
+                    {item.return_location && (
+                      <p>
+                        {t('bookings.detail.returnLocation')}:{' '}
+                        {item.return_location}
+                      </p>
+                    )}
                     {nights !== null && (
                       <p>
                         {t('bookings.detail.nights')}: {nights}

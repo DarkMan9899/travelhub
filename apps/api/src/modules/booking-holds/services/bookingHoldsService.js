@@ -51,6 +51,11 @@ export class BookingHoldsService {
             unitId: item.bookableUnitId,
             dateFrom: item.dateFrom,
             dateTo: item.dateTo,
+            // Sprint B (Car Rental Pickup/Return Interval) — silently
+            // ignored by `reserveCapacity` for every non-VEHICLE unit
+            // type, so this is never a way to set a Tour's departure time.
+            startTime: item.startTime,
+            endTime: item.endTime,
             quantity: item.quantity,
             expiresAt,
             userId: principal.userId,

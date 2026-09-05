@@ -36,6 +36,7 @@ export default function MobileBookingBar({
   listingId,
   pricing = null,
   bookingCtaKey,
+  location = null,
 }) {
   const { t } = useTranslation();
   const { locale } = useParams();
@@ -77,6 +78,7 @@ export default function MobileBookingBar({
           listingId={listingId}
           pricing={pricing}
           bookingCtaKey={bookingCtaKey}
+          location={location}
         />
       </Drawer>
     </>
@@ -91,4 +93,8 @@ MobileBookingBar.propTypes = {
     pricing_model: PropTypes.string,
   }),
   bookingCtaKey: PropTypes.string.isRequired,
+  location: PropTypes.shape({
+    cityName: PropTypes.string,
+    countryName: PropTypes.string,
+  }),
 };

@@ -1103,3 +1103,154 @@ describe('ListingReservationWidget — Sprint A (Time-Aware Booking Foundation)'
     ).toBeDisabled();
   });
 });
+
+describe('ListingReservationWidget — Sprint B (Car Rental Pickup/Return Interval)', () => {
+  const VEHICLE_UNIT = [{ id: 1, bookable_unit_type: 'VEHICLE', capacity: 1 }];
+  const RENTAL_LOCATION = { city_name: 'Yerevan', country_name: 'Armenia' };
+
+  beforeEach(() => {
+    mockNavigate.mockReset();
+    useAuth.mockReturnValue({ isAuthenticated: true });
+    useListingCalendarQuery.mockReturnValue({
+      data: CALENDAR_DAYS,
+      refetch: vi.fn(),
+    });
+    useListingDayStatusQuery.mockReturnValue({
+      data: DAY_STATUSES,
+      refetch: vi.fn(),
+    });
+    useCreateBookingHoldMutation.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: VEHICLE_UNIT,
+      isPending: false,
+      isError: false,
+    });
+  });
+
+  test('shows a distinct Pickup and Return group, each displaying the single listing location (same-location-return-only)', () => {
+    renderWidget({ location: RENTAL_LOCATION });
+
+    expect(screen.getByText('Ստացում')).toBeInTheDocument();
+    expect(screen.getByText('Վերադարձ')).toBeInTheDocument();
+    expect(screen.getAllByText('Yerevan, Armenia')).toHaveLength(2);
+  });
+
+  test('pickup/return time inputs are disabled until dates are picked, then enabled', async () => {
+    const user = userEvent.setup();
+    renderWidget({ location: RENTAL_LOCATION });
+
+    expect(screen.getByLabelText('Ստացման ժամը')).toBeDisabled();
+    expect(screen.getByLabelText('Վերադարձի ժամը')).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+
+    expect(screen.getByLabelText('Ստացման ժամը')).toBeEnabled();
+    expect(screen.getByLabelText('Վերադարձի ժամը')).toBeEnabled();
+  });
+
+  test('Request to Book stays disabled while the pickup/return time is incomplete', async () => {
+    const user = userEvent.setup();
+    renderWidget({ location: RENTAL_LOCATION });
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+    expect(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    ).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Ստացման ժամը'), {
+      target: { value: '10:00' },
+    });
+    // Only pickup time entered so far — still incomplete.
+    expect(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    ).toBeDisabled();
+  });
+
+  test('a same-day rental with return before pickup shows the invalid-interval error and keeps submit disabled', () => {
+    renderWidget(
+      { location: RENTAL_LOCATION },
+      '/en/listings/10?dateFrom=2027-01-01&dateTo=2027-01-01',
+    );
+
+    fireEvent.change(screen.getByLabelText('Ստացման ժամը'), {
+      target: { value: '18:00' },
+    });
+    fireEvent.change(screen.getByLabelText('Վերադարձի ժամը'), {
+      target: { value: '09:00' },
+    });
+
+    expect(
+      screen.getByText(
+        'Վերադարձը պետք է լինի ստացումից հետո։ Խնդրում ենք ստուգել ընտրված ամսաթվերն ու ժամերը։',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    ).toBeDisabled();
+  });
+
+  test('a valid interval enables submit and sends startTime/endTime through in the hold request and checkout hand-off', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({
+      data: { items: [{ hold_ids: [1] }], expires_at: '2026-08-01T00:15:00Z' },
+    });
+    useCreateBookingHoldMutation.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
+    const user = userEvent.setup();
+    renderWidget({ location: RENTAL_LOCATION });
+
+    await user.click(screen.getByRole('button', { name: 'pick dates' }));
+    fireEvent.change(screen.getByLabelText('Ստացման ժամը'), {
+      target: { value: '10:00' },
+    });
+    fireEvent.change(screen.getByLabelText('Վերադարձի ժամը'), {
+      target: { value: '18:00' },
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    ).toBeEnabled();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Ուղարկել ամրագրման հայտ' }),
+    );
+
+    expect(mutateAsync).toHaveBeenCalledWith([
+      {
+        bookableUnitId: 1,
+        dateFrom: '2026-08-01',
+        dateTo: '2026-08-02',
+        quantity: 1,
+        startTime: '10:00',
+        endTime: '18:00',
+      },
+    ]);
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/en/booking/checkout',
+      expect.objectContaining({
+        state: expect.objectContaining({
+          pickupTime: '10:00',
+          returnTime: '18:00',
+          rentalLocationLabel: 'Yerevan, Armenia',
+        }),
+      }),
+    );
+  });
+
+  test('a non-vehicle listing never shows the Pickup/Return groups or sends startTime/endTime', () => {
+    useListingBookableUnitsQuery.mockReturnValue({
+      data: [{ id: 1, bookable_unit_type: 'HOTEL_ROOM', capacity: 1 }],
+      isPending: false,
+      isError: false,
+    });
+    renderWidget({ location: RENTAL_LOCATION });
+
+    expect(screen.queryByText('Ստացում')).not.toBeInTheDocument();
+    expect(screen.queryByText('Վերադարձ')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Ստացման ժամը')).not.toBeInTheDocument();
+  });
+});

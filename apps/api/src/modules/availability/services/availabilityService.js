@@ -73,6 +73,10 @@ import {
 } from '../../../core/domain/partnerCapabilities.js';
 import { resolveConsumedRange } from '../../../core/domain/accommodationDateSemantics.js';
 import { resolvePriceForDate } from '../../../core/domain/accommodationPriceResolution.js';
+import {
+  isVehicleUnitType,
+  validateRentalInterval,
+} from '../../../core/domain/rentalIntervalValidation.js';
 import { createDomainEvent } from '../../../core/events/createDomainEvent.js';
 import { EVENT_TYPES } from '../../../core/events/eventTypes.js';
 import { createNoOpEventBus } from '../../../core/events/domainEventBus.js';
@@ -1060,14 +1064,59 @@ export class AvailabilityService {
    * consistent order and don't deadlock each other), all-or-nothing.
    * Must run inside the caller's transaction (`connection` is required).
    *
-   * @returns {Promise<{holdIds: number[], unitId: number, dateFrom: string, dateTo: string, quantity: number, expiresAt: Date}>}
+   * Sprint B (Car Rental Pickup/Return Interval): `startTime`/`endTime`
+   * are the ONE case in this whole engine where a time value is ever
+   * accepted from a client at all — a rental's pickup/return time has no
+   * unit-level default to derive it from (unlike a Tour departure's fixed
+   * `bookable_units.time_slot_start/end`), so the customer's choice must
+   * be captured somewhere, and this is the single point it is validated
+   * before being trusted. Every other bookable unit type either has no
+   * time concept or derives it from the unit itself — passing a time for
+   * a non-VEHICLE unit is silently ignored (never persisted), so this
+   * can never become a second, parallel way to set a Tour's departure
+   * time. The capacity/blackout check below is deliberately unchanged:
+   * it still locks whole calendar DAYS (`resolveConsumedRange` already
+   * treats VEHICLE as inclusive-of-the-return-day) — this sprint adds a
+   * real, validated pickup/return time for persistence, display, and
+   * chronology correctness, but does not change the day-granularity
+   * capacity engine itself (see the approved Sprint B scope boundary:
+   * that is the larger multi-source-calendar work, explicitly deferred).
+   *
+   * @returns {Promise<{holdIds: number[], unitId: number, dateFrom: string, dateTo: string, startTime: string|null, endTime: string|null, quantity: number, expiresAt: Date}>}
    */
   async reserveCapacity(
-    { unitId, dateFrom, dateTo, quantity, expiresAt, userId },
+    {
+      unitId,
+      dateFrom,
+      dateTo,
+      startTime,
+      endTime,
+      quantity,
+      expiresAt,
+      userId,
+    },
     connection,
   ) {
     const unit = await this.#bookableUnitService.findById(unitId);
     if (!unit) throw new NotFoundError('Bookable unit not found.');
+
+    const isVehicle = isVehicleUnitType(unit.bookableUnitTypeCode);
+    const resolvedStartTime = isVehicle ? (startTime ?? null) : null;
+    const resolvedEndTime = isVehicle ? (endTime ?? null) : null;
+    if (isVehicle) {
+      const interval = validateRentalInterval({
+        dateFrom,
+        dateTo,
+        startTime: resolvedStartTime,
+        endTime: resolvedEndTime,
+      });
+      if (!interval.valid) {
+        throw new ValidationError(
+          'The requested return time must be after the pickup time.',
+          [{ field: 'items', issue: interval.reason }],
+        );
+      }
+    }
 
     const consumedRange = resolveConsumedRange(
       unit.bookableUnitTypeCode,
@@ -1146,12 +1195,23 @@ export class AvailabilityService {
         userId,
         dateFrom,
         dateTo,
+        startTime: resolvedStartTime,
+        endTime: resolvedEndTime,
         expiresAt,
         count: quantity,
       },
       connection,
     );
-    return { holdIds, unitId: unit.id, dateFrom, dateTo, quantity, expiresAt };
+    return {
+      holdIds,
+      unitId: unit.id,
+      dateFrom,
+      dateTo,
+      startTime: resolvedStartTime,
+      endTime: resolvedEndTime,
+      quantity,
+      expiresAt,
+    };
   }
 
   /**

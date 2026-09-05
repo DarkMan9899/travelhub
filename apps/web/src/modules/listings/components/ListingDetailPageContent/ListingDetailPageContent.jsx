@@ -467,6 +467,7 @@ export default function ListingDetailPageContent() {
             listingId={listing.id}
             pricing={listing.pricing}
             bookingCtaKey={bookingCtaKey}
+            location={listing.location}
           />
         </aside>
       </div>
@@ -476,6 +477,7 @@ export default function ListingDetailPageContent() {
         listingId={listing.id}
         pricing={listing.pricing}
         bookingCtaKey={bookingCtaKey}
+        location={listing.location}
       />
     </Stack>
   );

@@ -74,6 +74,7 @@ export default function ListingReservationWidget({
   listingId,
   pricing = null,
   bookingCtaKey = 'pages.listingDetail.reservation.requestToBook',
+  location = null,
 }) {
   const { t, i18n } = useTranslation();
   const { locale } = useParams();
@@ -99,6 +100,14 @@ export default function ListingReservationWidget({
   const [guestCount, setGuestCount] = useState(
     initialReservationState.guestCount,
   );
+  // Sprint B (Car Rental Pickup/Return Interval): pickup/return time has
+  // no unit-level default the way a Tour departure's `time_slot_start`
+  // does (a vehicle unit is a physical asset, not a scheduled session) —
+  // it's genuine customer choice, captured here and validated both
+  // client-side (below, UX only) and authoritatively server-side inside
+  // `AvailabilityService#reserveCapacity` via `rentalIntervalValidation.js`.
+  const [pickupTime, setPickupTime] = useState('');
+  const [returnTime, setReturnTime] = useState('');
 
   const {
     data: units,
@@ -121,6 +130,48 @@ export default function ListingReservationWidget({
     [units],
   );
   const isTimeSlotListing = timeSlotUnits.length > 0;
+
+  // Sprint B: a real per-unit `bookable_unit_type === 'VEHICLE'` (never
+  // inferred from listing category) gates the pickup/return location+time
+  // UI, mirroring Sprint A's own `time_slot_start`-gates-the-time-slot-UI
+  // rule directly above.
+  const isVehicleListing = useMemo(
+    () => (units ?? []).some((unit) => unit.bookable_unit_type === 'VEHICLE'),
+    [units],
+  );
+
+  // `listing_locations` is UNIQUE(listing_id) — there is no multi-location
+  // model, so pickup and return are always the SAME listing-registered
+  // location (same-location-return-only; see `bookingService.js`'s
+  // `formatListingLocationLabel`, which this mirrors exactly so the
+  // customer sees identical text pre- and post-booking). Informational
+  // text only, never a selectable field — there is nothing to select.
+  const rentalLocationLabel = location
+    ? [location.city_name, location.country_name].filter(Boolean).join(', ')
+    : null;
+
+  const rentalInterval = useMemo(() => {
+    if (!isVehicleListing) return { valid: true };
+    if (!dateRange.start || !dateRange.end || !pickupTime || !returnTime) {
+      return { valid: false, reason: 'INCOMPLETE_RENTAL_INTERVAL' };
+    }
+    // Plain string comparison of `${date}T${time}` — never a `Date`
+    // object — same wall-clock-string convention as the backend's own
+    // `rentalIntervalValidation.js`, avoiding any timezone reinterpretation
+    // risk for what is always local wall-clock time at the rental location.
+    const pickupDatetime = `${dateRange.start}T${pickupTime}`;
+    const returnDatetime = `${dateRange.end}T${returnTime}`;
+    if (returnDatetime <= pickupDatetime) {
+      return { valid: false, reason: 'RETURN_NOT_AFTER_PICKUP' };
+    }
+    return { valid: true };
+  }, [
+    isVehicleListing,
+    dateRange.start,
+    dateRange.end,
+    pickupTime,
+    returnTime,
+  ]);
 
   // Once a date is chosen, re-fetch the unit list augmented with a real
   // per-unit availability/price snapshot for THAT date (`?date=`,
@@ -270,7 +321,8 @@ export default function ListingReservationWidget({
   const canSubmit =
     Boolean(effectiveUnitId) &&
     Boolean(dateRange.start) &&
-    Boolean(dateRange.end);
+    Boolean(dateRange.end) &&
+    rentalInterval.valid;
 
   function handleSelectUnit(value) {
     // P2.2D: a multi-unit listing never auto-selects (see
@@ -290,6 +342,8 @@ export default function ListingReservationWidget({
       setDateRange({ start: null, end: null });
       setQuantity(1);
       setGuestCount(1);
+      setPickupTime('');
+      setReturnTime('');
     }
   }
 
@@ -353,6 +407,14 @@ export default function ListingReservationWidget({
           dateFrom: dateRange.start,
           dateTo: dateRange.end,
           quantity,
+          // Sprint B: only a real VEHICLE unit ever sends a customer-chosen
+          // time — `AvailabilityService#reserveCapacity` silently ignores
+          // time on every other unit type, so this is UX-only precision,
+          // never a tampering vector for a Tour's own fixed departure time.
+          ...(isVehicleListing && {
+            startTime: pickupTime,
+            endTime: returnTime,
+          }),
         },
       ]);
       navigate(`/${locale}/booking/checkout`, {
@@ -377,6 +439,16 @@ export default function ListingReservationWidget({
           // response's own `start_time`/`end_time` snapshot, never this.
           timeSlotStart: selectedUnit?.time_slot_start ?? null,
           timeSlotEnd: selectedUnit?.time_slot_end ?? null,
+          // Sprint B: same display-only, ephemeral hand-off category as
+          // `timeSlotStart`/`timeSlotEnd` above — the persisted,
+          // authoritative pickup/return identity checkout/history read
+          // afterward always comes from the real booking response's own
+          // `start_time`/`end_time`/`pickup_location`/`return_location`.
+          ...(isVehicleListing && {
+            pickupTime,
+            returnTime,
+            rentalLocationLabel,
+          }),
         },
       });
     } catch (err) {
@@ -565,7 +637,11 @@ export default function ListingReservationWidget({
 
             <DatePicker
               mode="range"
-              label={t('pages.listingDetail.reservation.datesLabel')}
+              label={t(
+                isVehicleListing
+                  ? 'pages.listingDetail.reservation.pickupReturnDatesLabel'
+                  : 'pages.listingDetail.reservation.datesLabel',
+              )}
               value={dateRange}
               onChange={setDateRange}
               minDate={today}
@@ -577,6 +653,53 @@ export default function ListingReservationWidget({
               nextMonthLabel={t('partner.listingWizard.datePicker.nextMonth')}
               placeholder={t('partner.listingWizard.datePicker.selectDate')}
             />
+
+            {isVehicleListing && (
+              <Stack gap="3">
+                <Stack gap="1" className={styles.rentalLeg}>
+                  <p className={styles.rentalLegLabel}>
+                    {t('pages.listingDetail.reservation.pickupLabel')}
+                  </p>
+                  <p className={styles.rentalLocation}>
+                    {rentalLocationLabel ??
+                      t('pages.listingDetail.reservation.locationUnavailable')}
+                  </p>
+                  <Input
+                    type="time"
+                    label={t('pages.listingDetail.reservation.pickupTimeLabel')}
+                    value={pickupTime}
+                    disabled={!dateRange.start}
+                    onChange={(event) => setPickupTime(event.target.value)}
+                  />
+                </Stack>
+
+                <Stack gap="1" className={styles.rentalLeg}>
+                  <p className={styles.rentalLegLabel}>
+                    {t('pages.listingDetail.reservation.returnLabel')}
+                  </p>
+                  <p className={styles.rentalLocation}>
+                    {rentalLocationLabel ??
+                      t('pages.listingDetail.reservation.locationUnavailable')}
+                  </p>
+                  <Input
+                    type="time"
+                    label={t('pages.listingDetail.reservation.returnTimeLabel')}
+                    value={returnTime}
+                    disabled={!dateRange.end}
+                    onChange={(event) => setReturnTime(event.target.value)}
+                  />
+                </Stack>
+
+                {!rentalInterval.valid &&
+                  rentalInterval.reason === 'RETURN_NOT_AFTER_PICKUP' && (
+                    <p role="alert" className={styles.rentalIntervalError}>
+                      {t(
+                        'pages.listingDetail.reservation.invalidRentalInterval',
+                      )}
+                    </p>
+                  )}
+              </Stack>
+            )}
           </>
         )}
 
@@ -644,4 +767,8 @@ ListingReservationWidget.propTypes = {
     pricing_model: PropTypes.string,
   }),
   bookingCtaKey: PropTypes.string,
+  location: PropTypes.shape({
+    city_name: PropTypes.string,
+    country_name: PropTypes.string,
+  }),
 };

@@ -26,6 +26,10 @@ function toBookingItemResponse(item) {
     // admin (this DTO is shared across all three, see file header).
     start_time: item.startTime ?? null,
     end_time: item.endTime ?? null,
+    // Sprint B (Car Rental Pickup/Return Interval): same shared shape,
+    // present only for a VEHICLE booking. `null` everywhere else.
+    pickup_location: item.pickupLocation ?? null,
+    return_location: item.returnLocation ?? null,
     quantity: item.quantity,
     unit_price_amount: item.unitPriceAmount,
     guests: (item.guests ?? []).map((guest) => ({

@@ -26,3 +26,31 @@
     background: tokens.$gradient-gold-sheen;
   }
 }
+
+// Sprint B (Car Rental Pickup/Return Interval) — Pickup and Return are two
+// visually distinct legs (never one dense row), each grouping its own
+// location display and time field, matching the "PICKUP: location / date /
+// time" hierarchy the product brief calls for.
+.rentalLeg {
+  padding: tokens.$space-3;
+  border-radius: tokens.$radius-md;
+  background-color: tokens.$color-gray-100;
+}
+
+.rentalLegLabel {
+  font-size: tokens.$font-size-small;
+  font-weight: 600;
+  color: tokens.$color-gray-600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rentalLocation {
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-gray-900;
+}
+
+.rentalIntervalError {
+  font-size: tokens.$font-size-small;
+  color: tokens.$color-danger;
+}

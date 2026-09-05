@@ -12,11 +12,24 @@ import { isoDateSchema } from '../../../validation/isoDate.js';
 const passthroughQuery = z.object({}).passthrough();
 const passthroughParams = z.object({}).passthrough();
 
+// Sprint B (Car Rental Pickup/Return Interval) — same `HH:MM(:SS)?` shape
+// `registerUnitSchema`'s `timeSlotStart`/`timeSlotEnd` already use.
+// Structural validation only: whether a time is even meaningful for the
+// requested unit (and the pickup-before-return chronology check) is
+// Layer 3, business logic — `AvailabilityService#reserveCapacity` (this
+// file's own header comment).
+const holdTimeSchema = z
+  .string()
+  .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Invalid time.')
+  .optional();
+
 const holdItemSchema = z
   .object({
     bookableUnitId: z.coerce.number().int().positive(),
     dateFrom: isoDateSchema,
     dateTo: isoDateSchema,
+    startTime: holdTimeSchema,
+    endTime: holdTimeSchema,
     quantity: z.coerce.number().int().positive().default(1),
   })
   .refine((data) => data.dateTo >= data.dateFrom, {

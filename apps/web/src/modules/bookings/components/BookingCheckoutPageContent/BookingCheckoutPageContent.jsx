@@ -104,6 +104,14 @@ export default function BookingCheckoutPageContent() {
     holdState?.timeSlotStart,
     holdState?.timeSlotEnd,
   );
+  // Sprint B (Car Rental Pickup/Return Interval): same ephemeral,
+  // display-only hand-off category as `unitLabel`/`timeRange` above — the
+  // authoritative pickup/return identity a customer sees afterward always
+  // comes from the real booking response's own persisted fields.
+  const isVehicleRental = Boolean(
+    holdState?.pickupTime && holdState?.returnTime,
+  );
+  const rentalLocationLabel = holdState?.rentalLocationLabel;
   const nights =
     holdItem?.date_from && holdItem?.date_to
       ? Math.round(
@@ -387,30 +395,62 @@ export default function BookingCheckoutPageContent() {
                     <dd>{unitLabel}</dd>
                   </div>
                 )}
-                <div className={styles.summaryRow}>
-                  <dt>{t('bookings.checkout.summary.dates')}</dt>
-                  <dd>
-                    {holdItem.date_from === holdItem.date_to
-                      ? holdItem.date_from
-                      : `${holdItem.date_from} – ${holdItem.date_to}`}
-                  </dd>
-                </div>
-                {timeRange && (
-                  <div className={styles.summaryRow}>
-                    <dt>{t('bookings.checkout.summary.time')}</dt>
-                    <dd>{timeRange}</dd>
-                  </div>
-                )}
-                {/* Sprint A: a time-slot booking is never a nightly stay
-                    by construction (no bookable unit is ever both
-                    time-slot AND accommodation) — showing "Nights: 0" for
-                    a same-day departure would be exactly the meaningless
-                    empty-time-UI this phase is meant to eliminate. */}
-                {nights !== null && !timeRange && (
-                  <div className={styles.summaryRow}>
-                    <dt>{t('bookings.checkout.summary.nights')}</dt>
-                    <dd>{nights}</dd>
-                  </div>
+                {isVehicleRental ? (
+                  <>
+                    <div className={styles.summaryRow}>
+                      <dt>{t('bookings.checkout.summary.pickup')}</dt>
+                      <dd>
+                        {[
+                          rentalLocationLabel,
+                          holdItem.date_from,
+                          holdState.pickupTime,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </dd>
+                    </div>
+                    <div className={styles.summaryRow}>
+                      <dt>{t('bookings.checkout.summary.return')}</dt>
+                      <dd>
+                        {[
+                          rentalLocationLabel,
+                          holdItem.date_to,
+                          holdState.returnTime,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </dd>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={styles.summaryRow}>
+                      <dt>{t('bookings.checkout.summary.dates')}</dt>
+                      <dd>
+                        {holdItem.date_from === holdItem.date_to
+                          ? holdItem.date_from
+                          : `${holdItem.date_from} – ${holdItem.date_to}`}
+                      </dd>
+                    </div>
+                    {timeRange && (
+                      <div className={styles.summaryRow}>
+                        <dt>{t('bookings.checkout.summary.time')}</dt>
+                        <dd>{timeRange}</dd>
+                      </div>
+                    )}
+                    {/* Sprint A: a time-slot booking is never a nightly
+                        stay by construction (no bookable unit is ever
+                        both time-slot AND accommodation) — showing
+                        "Nights: 0" for a same-day departure would be
+                        exactly the meaningless empty-time-UI this phase
+                        is meant to eliminate. */}
+                    {nights !== null && !timeRange && (
+                      <div className={styles.summaryRow}>
+                        <dt>{t('bookings.checkout.summary.nights')}</dt>
+                        <dd>{nights}</dd>
+                      </div>
+                    )}
+                  </>
                 )}
                 {holdItem.quantity > 1 && (
                   <div className={styles.summaryRow}>

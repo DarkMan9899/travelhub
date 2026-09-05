@@ -25,6 +25,7 @@ let admin;
 let partnerId;
 let languageId;
 let hotelCategoryId;
+let yerevanCityId;
 let pool;
 
 async function login(email, password) {
@@ -112,12 +113,68 @@ async function createHold(
   dateFrom,
   dateTo,
   quantity = 1,
+  { startTime, endTime } = {},
 ) {
   const res = await request(app)
     .post('/api/v1/booking-holds')
     .set('Authorization', `Bearer ${customerAuth.accessToken}`)
-    .send({ items: [{ bookableUnitId: unitId, dateFrom, dateTo, quantity }] });
+    .send({
+      items: [
+        {
+          bookableUnitId: unitId,
+          dateFrom,
+          dateTo,
+          quantity,
+          startTime,
+          endTime,
+        },
+      ],
+    });
   return res.body.data.items[0].hold_ids;
+}
+
+/**
+ * Sprint B (Car Rental Pickup/Return Interval) — unlike `createListing`
+ * above, sets a real `cityId` (not just lat/long): `pickup_location`/
+ * `return_location` are derived from the listing's own resolved
+ * `city_name`/`country_name` (`bookingService.js#formatListingLocationLabel`),
+ * which is `NULL` without a real city.
+ */
+async function createCarRentalListing(title) {
+  const res = await request(app)
+    .post('/api/v1/listings')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({
+      partnerId,
+      listingType: 'CAR_RENTAL',
+      translations: [{ languageId, title }],
+    });
+  const listingId = res.body.data.id;
+
+  await request(app)
+    .patch(`/api/v1/listings/${listingId}`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({
+      location: {
+        latitude: 40.1772,
+        longitude: 44.5035,
+        cityId: yerevanCityId,
+      },
+    });
+  await request(app)
+    .post(`/api/v1/listings/${listingId}/media`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .set('Content-Type', 'image/png')
+    .send(ONE_PX_PNG);
+  await request(app)
+    .post('/api/v1/availability/units')
+    .set('Authorization', `Bearer ${vendor.accessToken}`)
+    .send({ listingId, bookableUnitType: 'VEHICLE' });
+  await request(app)
+    .post(`/api/v1/listings/${listingId}/publish`)
+    .set('Authorization', `Bearer ${vendor.accessToken}`);
+
+  return listingId;
 }
 
 const GUEST_CONTACT = {
@@ -157,6 +214,10 @@ beforeAll(async () => {
     "SELECT id FROM listing_categories WHERE slug = 'hotels'",
   );
   hotelCategoryId = hotelCategory.id;
+  const [[yerevanCity]] = await pool.query(
+    "SELECT id FROM cities WHERE name = 'Yerevan' LIMIT 1",
+  );
+  yerevanCityId = yerevanCity.id;
 }, 60_000);
 
 afterAll(async () => {
@@ -1219,5 +1280,113 @@ describe('Sprint A (Time-Aware Booking Foundation) — booking_items.start_time/
     expect(res.status).toBe(201);
     expect(res.body.data.items[0].start_time).toBeNull();
     expect(res.body.data.items[0].end_time).toBeNull();
+  });
+});
+
+describe('Sprint B (Car Rental Pickup/Return Interval) — booking_items.pickup_location/return_location', () => {
+  test('a booking against a VEHICLE unit snapshots its real pickup/return time and location, visible to customer/partner/admin alike', async () => {
+    const listingId = await createCarRentalListing(
+      `Sprint B Rental Test ${Date.now()}`,
+    );
+    const unitId = await registerUnit(listingId, 'VEHICLE');
+    await setPrice(unitId, '2027-08-01', '2027-08-03', 15_000);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-08-01',
+      '2027-08-03',
+      1,
+      { startTime: '10:00', endTime: '18:00' },
+    );
+
+    const bookingRes = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(bookingRes.status).toBe(201);
+    expect(bookingRes.body.data.items[0].start_time).toBe('10:00');
+    expect(bookingRes.body.data.items[0].end_time).toBe('18:00');
+    expect(bookingRes.body.data.items[0].pickup_location).toBe(
+      'Yerevan, Armenia',
+    );
+    expect(bookingRes.body.data.items[0].return_location).toBe(
+      'Yerevan, Armenia',
+    );
+    const bookingId = bookingRes.body.data.id;
+
+    const customerDetailRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(customerDetailRes.body.data.items[0].pickup_location).toBe(
+      'Yerevan, Armenia',
+    );
+    expect(customerDetailRes.body.data.items[0].return_location).toBe(
+      'Yerevan, Armenia',
+    );
+
+    const partnerRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`);
+    expect(partnerRes.body.data.items[0].pickup_location).toBe(
+      'Yerevan, Armenia',
+    );
+    expect(partnerRes.body.data.items[0].start_time).toBe('10:00');
+
+    const adminRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(adminRes.body.data.items[0].return_location).toBe(
+      'Yerevan, Armenia',
+    );
+    expect(adminRes.body.data.items[0].end_time).toBe('18:00');
+
+    // A later change to the listing's own address must never retroactively
+    // change what an already-placed booking displays — same snapshot
+    // guarantee migration 0035 (unit_label) and Sprint A (start_time/
+    // end_time) already established, now proven for location too.
+    const [[otherCity]] = await pool.query(
+      "SELECT id FROM cities WHERE name != 'Yerevan' LIMIT 1",
+    );
+    await request(app)
+      .patch(`/api/v1/listings/${listingId}`)
+      .set('Authorization', `Bearer ${vendor.accessToken}`)
+      .send({ location: { cityId: otherCity.id } });
+    const afterMoveRes = await request(app)
+      .get(`/api/v1/bookings/${bookingId}`)
+      .set('Authorization', `Bearer ${customer.accessToken}`);
+    expect(afterMoveRes.body.data.items[0].pickup_location).toBe(
+      'Yerevan, Armenia',
+    );
+  });
+
+  test('a booking against a non-VEHICLE unit leaves pickup_location/return_location null — no regression for Hotel/Property/Tour', async () => {
+    const listingId = await createListing(
+      `Sprint B Non-Vehicle Regression Test ${Date.now()}`,
+    );
+    const unitId = await registerUnit(listingId);
+    await setPrice(unitId, '2027-08-10', '2027-08-11', 8_000);
+    const holdIds = await createHold(
+      customer,
+      unitId,
+      '2027-08-10',
+      '2027-08-11',
+      1,
+    );
+
+    const res = await request(app)
+      .post('/api/v1/bookings')
+      .set('Authorization', `Bearer ${customer.accessToken}`)
+      .send({
+        items: [{ holdIds, guests: [] }],
+        guestContactSnapshot: GUEST_CONTACT,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.items[0].pickup_location).toBeNull();
+    expect(res.body.data.items[0].return_location).toBeNull();
   });
 });

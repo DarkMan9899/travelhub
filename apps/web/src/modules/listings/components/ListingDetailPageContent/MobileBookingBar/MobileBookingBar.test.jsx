@@ -9,9 +9,10 @@ import MobileBookingBar from './MobileBookingBar.jsx';
 // widget's own booking logic is already covered by
 // ListingReservationWidget.test.jsx.
 vi.mock('../ListingReservationWidget/ListingReservationWidget.jsx', () => ({
-  default: ({ listingId, bookingCtaKey }) => (
+  default: ({ listingId, bookingCtaKey, location }) => (
     <div data-testid="reservation-widget">
       {`widget for listing ${listingId} (${bookingCtaKey})`}
+      {location && ` — ${location.city_name}, ${location.country_name}`}
     </div>
   ),
 }));
@@ -26,7 +27,7 @@ const NO_UNITS_AVAILABLE =
 
 const PRICING = { amount: 120, currency: 'USD', pricing_model: 'PER_NIGHT' };
 
-function renderBar({ listingId, pricing, bookingCtaKey }) {
+function renderBar({ listingId, pricing, bookingCtaKey, location }) {
   return render(
     <MemoryRouter initialEntries={['/en/listings/7']}>
       <Routes>
@@ -37,6 +38,7 @@ function renderBar({ listingId, pricing, bookingCtaKey }) {
               listingId={listingId}
               pricing={pricing}
               bookingCtaKey={bookingCtaKey}
+              location={location}
             />
           }
         />
@@ -93,5 +95,21 @@ describe('MobileBookingBar', () => {
     expect(
       screen.getByRole('button', { name: RESERVE_YOUR_SPOT }),
     ).toBeInTheDocument();
+  });
+
+  test('Sprint B (Car Rental Pickup/Return Interval): forwards the listing location through to the reservation widget', async () => {
+    const user = userEvent.setup();
+    renderBar({
+      listingId: 7,
+      pricing: PRICING,
+      bookingCtaKey: 'pages.listingDetail.reservation.requestToBook',
+      location: { city_name: 'Yerevan', country_name: 'Armenia' },
+    });
+
+    await user.click(screen.getByRole('button', { name: REQUEST_TO_BOOK }));
+
+    expect(screen.getByTestId('reservation-widget')).toHaveTextContent(
+      'Yerevan, Armenia',
+    );
   });
 });

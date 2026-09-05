@@ -41,6 +41,7 @@ import { enumerateDates } from '../../../core/domain/calendarExpansion.js';
 import { resolveConsumedRange } from '../../../core/domain/accommodationDateSemantics.js';
 import { resolvePriceForDate } from '../../../core/domain/accommodationPriceResolution.js';
 import { resolveBookingTypeCode } from '../../../core/domain/bookableUnitTypeToBookingType.js';
+import { isVehicleUnitType } from '../../../core/domain/rentalIntervalValidation.js';
 import { isValidBookingStatusTransition } from '../../../core/domain/bookingStatusTransitions.js';
 import { generateBookingReference } from '../../../core/domain/bookingReference.js';
 import {
@@ -69,6 +70,23 @@ const MAX_REFERENCE_ATTEMPTS = 5;
 
 function todayDateString() {
   return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Sprint B (Car Rental Pickup/Return Interval) — `listing_locations` is
+ * 1:1 per listing (migration 0005: `UNIQUE(listing_id)`), so this
+ * platform has no multi-location-per-listing model; a rental's pickup
+ * and return are always the listing's own single registered location
+ * (same-location return only). Mirrors the exact `[cityName, countryName]`
+ * join the public listing page itself already uses
+ * (`ListingHero.jsx`/`ListingLocationSection.jsx`), so a booking's
+ * snapshotted location reads identically to how the customer saw it.
+ */
+function formatListingLocationLabel(location) {
+  if (!location) return null;
+  return (
+    [location.cityName, location.countryName].filter(Boolean).join(', ') || null
+  );
 }
 
 export class BookingService {
@@ -200,6 +218,7 @@ export class BookingService {
     const unit = await this.#availabilityService.getUnitById(
       firstHold.bookableUnitId,
     );
+    const isVehicle = isVehicleUnitType(unit.bookableUnitTypeCode);
 
     const quantity = holds.length;
 
@@ -306,8 +325,25 @@ export class BookingService {
       // anything the client sent — the client only ever supplies
       // `bookableUnitId`, so a time-slot booking's exact time is exactly
       // as tamper-proof as its price already was.
-      timeSlotStart: unit.timeSlotStart,
-      timeSlotEnd: unit.timeSlotEnd,
+      //
+      // Sprint B (Car Rental Pickup/Return Interval): a VEHICLE unit has
+      // no `time_slot_start/end` of its own (no partner-authored default
+      // exists to derive it from) — its pickup/return time is a genuine
+      // customer choice, already validated once at hold-creation
+      // (`AvailabilityService#reserveCapacity`) and read back here off
+      // the consumed hold, never re-trusted from fresh client input at
+      // booking-creation time (`item` is never read for this).
+      timeSlotStart: isVehicle ? firstHold.startTime : unit.timeSlotStart,
+      timeSlotEnd: isVehicle ? firstHold.endTime : unit.timeSlotEnd,
+      // Same-location-return-only model (see `formatListingLocationLabel`)
+      // — both snapshots are the listing's own location today, never
+      // client-supplied, so there is nothing here for a client to tamper.
+      pickupLocationSnapshot: isVehicle
+        ? formatListingLocationLabel(listing.location)
+        : null,
+      returnLocationSnapshot: isVehicle
+        ? formatListingLocationLabel(listing.location)
+        : null,
       dateFrom: firstHold.dateFrom,
       dateTo: firstHold.dateTo,
       quantity,
@@ -437,6 +473,8 @@ export class BookingService {
             dateTo: resolved.dateTo,
             startTime: resolved.timeSlotStart,
             endTime: resolved.timeSlotEnd,
+            pickupLocationSnapshot: resolved.pickupLocationSnapshot,
+            returnLocationSnapshot: resolved.returnLocationSnapshot,
             quantity: resolved.quantity,
             unitPriceAmount: resolved.unitPrice.toDecimalString(),
           },

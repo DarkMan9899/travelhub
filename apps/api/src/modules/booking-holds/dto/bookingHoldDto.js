@@ -8,6 +8,11 @@ export function toHoldBatchResponse({ items, expiresAt }) {
       bookable_unit_id: item.unitId,
       date_from: item.dateFrom,
       date_to: item.dateTo,
+      // Sprint B (Car Rental Pickup/Return Interval) — the server-
+      // validated, granted value, echoed back the same way `date_from`/
+      // `date_to` already are; `null` for every non-VEHICLE hold.
+      start_time: item.startTime ?? null,
+      end_time: item.endTime ?? null,
       quantity: item.quantity,
       hold_ids: item.holdIds,
     })),

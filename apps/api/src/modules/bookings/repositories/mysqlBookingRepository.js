@@ -106,6 +106,14 @@ function toItemDomain(row) {
     // as `unit_label_snapshot` above.
     startTime: toTimeString(row.start_time),
     endTime: toTimeString(row.end_time),
+    // Sprint B (Car Rental Pickup/Return Interval): snapshotted at
+    // booking-creation time from the listing's own single registered
+    // location (`bookingService.js#resolveItem` — same-location-return
+    // model, see that file's `formatListingLocationLabel`) — never
+    // client-supplied. `NULL` for every non-VEHICLE booking and every
+    // booking created before this migration.
+    pickupLocation: row.pickup_location_snapshot ?? null,
+    returnLocation: row.return_location_snapshot ?? null,
     quantity: row.quantity,
     unitPriceAmount: row.unit_price_amount,
     createdAt: row.created_at,
@@ -391,6 +399,8 @@ export class MySqlBookingRepository {
       dateTo,
       startTime,
       endTime,
+      pickupLocationSnapshot,
+      returnLocationSnapshot,
       quantity,
       unitPriceAmount,
     },
@@ -398,8 +408,9 @@ export class MySqlBookingRepository {
   ) {
     const [result] = await connection.query(
       `INSERT INTO booking_items
-        (booking_id, bookable_unit_id, unit_label_snapshot, date_from, date_to, start_time, end_time, quantity, unit_price_amount)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (booking_id, bookable_unit_id, unit_label_snapshot, date_from, date_to, start_time, end_time,
+         pickup_location_snapshot, return_location_snapshot, quantity, unit_price_amount)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         bookingId,
         bookableUnitId,
@@ -408,6 +419,8 @@ export class MySqlBookingRepository {
         dateTo,
         startTime ?? null,
         endTime ?? null,
+        pickupLocationSnapshot ?? null,
+        returnLocationSnapshot ?? null,
         quantity,
         unitPriceAmount,
       ],

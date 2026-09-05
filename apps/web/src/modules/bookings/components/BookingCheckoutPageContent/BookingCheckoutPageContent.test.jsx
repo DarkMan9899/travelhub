@@ -307,4 +307,46 @@ describe('BookingCheckoutPageContent (apps/web/src/modules/bookings)', () => {
       expect(screen.queryByText('Գիշերներ')).not.toBeInTheDocument();
     });
   });
+
+  describe('Sprint B (Car Rental Pickup/Return Interval)', () => {
+    const RENTAL_HOLD_STATE = {
+      listingId: 10,
+      holdBatch: {
+        items: [
+          {
+            bookable_unit_id: 3,
+            date_from: '2027-09-10',
+            date_to: '2027-09-12',
+            quantity: 1,
+            hold_ids: [88],
+          },
+        ],
+        expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+      },
+      unitLabel: 'Toyota RAV4',
+      pickupTime: '10:00',
+      returnTime: '18:00',
+      rentalLocationLabel: 'Yerevan, Armenia',
+    };
+
+    test('shows distinct Pickup and Return rows combining location, date, and time — not the generic Dates row', () => {
+      renderPage(RENTAL_HOLD_STATE);
+
+      expect(screen.getByText('Ստացում')).toBeInTheDocument();
+      expect(
+        screen.getByText('Yerevan, Armenia · 2027-09-10 · 10:00'),
+      ).toBeInTheDocument();
+      expect(screen.getByText('Վերադարձ')).toBeInTheDocument();
+      expect(
+        screen.getByText('Yerevan, Armenia · 2027-09-12 · 18:00'),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Ամսաթվեր')).not.toBeInTheDocument();
+    });
+
+    test('a non-rental hold state never shows Pickup/Return rows', () => {
+      renderPage(HOLD_STATE);
+      expect(screen.queryByText('Ստացում')).not.toBeInTheDocument();
+      expect(screen.queryByText('Վերադարձ')).not.toBeInTheDocument();
+    });
+  });
 });

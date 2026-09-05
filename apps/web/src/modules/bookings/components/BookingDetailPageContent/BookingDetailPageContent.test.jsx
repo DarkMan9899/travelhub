@@ -511,4 +511,48 @@ describe('BookingDetailPageContent (apps/web/src/modules/bookings)', () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  describe('Sprint B (Car Rental Pickup/Return Interval)', () => {
+    test('shows the real persisted pickup/return location for a Car Rental item', () => {
+      useBookingQuery.mockReturnValue({
+        data: {
+          ...BASE_BOOKING,
+          items: [
+            {
+              ...BASE_BOOKING.items[0],
+              unit_label: 'Toyota RAV4',
+              start_time: '10:00',
+              end_time: '18:00',
+              pickup_location: 'Yerevan, Armenia',
+              return_location: 'Yerevan, Armenia',
+            },
+          ],
+        },
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+      renderPage();
+      expect(
+        screen.getByText('Ստացման վայրը: Yerevan, Armenia'),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Վերադարձի վայրը: Yerevan, Armenia'),
+      ).toBeInTheDocument();
+    });
+
+    test('never renders a pickup/return location row for a Hotel/Tour item (no empty rental-specific fields)', () => {
+      useBookingQuery.mockReturnValue({
+        data: BASE_BOOKING,
+        isPending: false,
+        isError: false,
+        error: null,
+        refetch: vi.fn(),
+      });
+      renderPage();
+      expect(screen.queryByText(/Ստացման վայրը/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Վերադարձի վայրը/)).not.toBeInTheDocument();
+    });
+  });
 });

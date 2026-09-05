@@ -20,7 +20,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Moon, Hash, Users2 } from 'lucide-react';
+import { Calendar, Clock, Moon, Hash, Users2, MapPin } from 'lucide-react';
 import { Section, Stack, Inline } from '@desavii/ui/components/layout';
 import {
   Skeleton,
@@ -265,6 +265,29 @@ export default function BookingDetailPageContent() {
                         <Clock aria-hidden="true" focusable="false" />
                         <span>
                           {formatTimeRange(item.start_time, item.end_time)}
+                        </span>
+                      </p>
+                    )}
+                    {/* Sprint B (Car Rental Pickup/Return Interval):
+                        `pickup_location`/`return_location` are only ever
+                        non-null for a VEHICLE booking item — every
+                        Hotel/Tour booking's view stays exactly as it was,
+                        with no empty rental-specific row rendered. */}
+                    {item.pickup_location && (
+                      <p className={styles.metaLine}>
+                        <MapPin aria-hidden="true" focusable="false" />
+                        <span>
+                          {t('bookings.detail.pickupLocation')}:{' '}
+                          {item.pickup_location}
+                        </span>
+                      </p>
+                    )}
+                    {item.return_location && (
+                      <p className={styles.metaLine}>
+                        <MapPin aria-hidden="true" focusable="false" />
+                        <span>
+                          {t('bookings.detail.returnLocation')}:{' '}
+                          {item.return_location}
                         </span>
                       </p>
                     )}

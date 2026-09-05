@@ -22,6 +22,11 @@ import { getMysqlPool } from '../../../infrastructure/database/mysqlPool.js';
 import { mapMysqlError } from '../../../infrastructure/database/errorMapping.js';
 import { toDateString } from '../../../infrastructure/database/dateFormat.js';
 
+/** `TIME` columns round-trip through mysql2 as `HH:MM:SS` strings already — trimmed to `HH:MM`, same convention as every other bookable-time repository in this codebase. */
+function toTimeString(value) {
+  return value ? String(value).slice(0, 5) : null;
+}
+
 function toDomain(row) {
   if (!row) return null;
   return {
@@ -30,6 +35,13 @@ function toDomain(row) {
     userId: row.user_id,
     dateFrom: toDateString(row.start_date),
     dateTo: toDateString(row.end_date),
+    // Sprint B (Car Rental Pickup/Return Interval): a customer-chosen
+    // pickup/return time, present only for VEHICLE-type holds — `NULL`
+    // for every other bookable unit type, which either has no time
+    // concept (Hotel/Property/Restaurant) or derives its time from the
+    // unit itself instead of the hold (Tour departures, see Sprint A).
+    startTime: toTimeString(row.start_time),
+    endTime: toTimeString(row.end_time),
     expiresAt: row.expires_at,
     createdAt: row.created_at,
   };
@@ -51,7 +63,16 @@ export class MySqlReservationHoldRepository {
    * @returns {Promise<number[]>} the created rows' ids, in insertion order
    */
   async createMany(
-    { bookableUnitId, userId, dateFrom, dateTo, expiresAt, count },
+    {
+      bookableUnitId,
+      userId,
+      dateFrom,
+      dateTo,
+      startTime,
+      endTime,
+      expiresAt,
+      count,
+    },
     connection = this.#pool,
   ) {
     const ids = [];
@@ -60,9 +81,17 @@ export class MySqlReservationHoldRepository {
         // eslint-disable-next-line no-await-in-loop -- each insert must observe the previous one under the same transaction/connection.
         const [result] = await connection.query(
           `INSERT INTO reservation_holds
-            (bookable_unit_id, user_id, start_date, end_date, expires_at)
-           VALUES (?, ?, ?, ?, ?)`,
-          [bookableUnitId, userId, dateFrom, dateTo, expiresAt],
+            (bookable_unit_id, user_id, start_date, end_date, start_time, end_time, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            bookableUnitId,
+            userId,
+            dateFrom,
+            dateTo,
+            startTime ?? null,
+            endTime ?? null,
+            expiresAt,
+          ],
         );
         ids.push(result.insertId);
       }
