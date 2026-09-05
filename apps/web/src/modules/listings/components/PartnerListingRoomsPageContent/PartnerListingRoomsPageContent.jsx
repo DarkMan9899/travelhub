@@ -19,6 +19,7 @@ import { Spinner, ErrorState } from '@desavii/ui/components/feedback-overlays';
 import PageHeader from '../../../../components/PageHeader/PageHeader.jsx';
 import { useListingQuery } from '../../queries/useListingQuery.js';
 import BookableUnitsManager from '../BookableUnitsManager/BookableUnitsManager.jsx';
+import getLocalizedTranslation from '../../utils/getLocalizedTranslation.js';
 
 export default function PartnerListingRoomsPageContent({ listingId }) {
   const { t } = useTranslation();
@@ -39,11 +40,15 @@ export default function PartnerListingRoomsPageContent({ listingId }) {
   }
 
   const listing = listingQuery.data;
+  const listingTitle = getLocalizedTranslation(
+    listing.translations,
+    locale,
+  )?.title;
 
   return (
     <Section>
       <PageHeader
-        title={t('partner.listingRooms.heading', { title: listing.title })}
+        title={t('partner.listingRooms.heading', { title: listingTitle })}
         breadcrumbs={[
           { label: t('partner.nav.dashboard'), href: `/${locale}/partner` },
           {
@@ -51,7 +56,7 @@ export default function PartnerListingRoomsPageContent({ listingId }) {
             href: `/${locale}/partner/listings`,
           },
           {
-            label: listing.title,
+            label: listingTitle,
             href: `/${locale}/partner/listings/${listingId}/rooms`,
           },
         ]}
